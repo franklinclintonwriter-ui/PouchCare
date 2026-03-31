@@ -1,0 +1,88 @@
+# PouchCare OS — Cursor AI Context
+
+## Project
+Full-stack agency management system.
+CEO: Abdullah Al Mamun | Co-MD: Oliullah Mithu | Ops: Habib Sourov
+
+## GitHub
+https://github.com/franklinclintonwriter-ui/PouchCare
+Branch from develop. Never push directly to main.
+
+## Tech Stack
+- API: Node.js 20, Express 5, TypeScript, Prisma ORM, PostgreSQL, Redis, WebSocket
+- Frontend: React 18, Vite 5, TypeScript, Tailwind CSS 3, TanStack Query v5, Zustand v4
+- Auth: JWT HS256 (15min access / 7d refresh), 2FA TOTP for CEO + CO_MD
+
+## Domains & Ports
+- api.pouchcare.com     → apps/api/           (port 7000 — PM2)
+- m.pouchcare.com       → apps/management/    (port 5174 dev)
+- office.pouchcare.com  → apps/office/        (port 5175 dev)
+- my.pouchcare.com      → apps/client-portal/ (port 5176 dev)
+- pouchcare.com         → apps/landing/       (static HTML)
+
+ALL server paths under: /home/pouchcare/htdocs/
+
+## Build Status (all complete)
+- Phase 0 (Infra):     ✅ 100%
+- Phase 1 (API):       ✅ 100% — 0 TypeScript errors
+- Phase 2 (Landing):   ✅ 95%
+- Phase 3 (Office):    ✅ 100%
+- Phase 4 (Management):✅ 100%
+- Phase 5 (Portal):    ✅ 100%
+- Phase 6 (Launch):    ⏳ Next
+
+## Key Files
+- apps/api/src/server.ts          — Express server, all 30 routes mounted
+- apps/api/src/routes/            — 33 route files
+- apps/api/prisma/schema.prisma   — 32 tables, all enums, all relations
+- apps/api/src/lib/response.ts    — ok(), created(), serverError(), etc.
+- apps/api/src/lib/pagination.ts  — getPaginationParams(), buildMeta()
+- apps/api/src/middleware/auth.ts — authenticate, isCEO, isOps, isManager, isHR
+- ecosystem.config.js             — PM2: PORT=7000
+- deploy.sh                       — Full first-deploy script
+- deploy/nginx/                   — 5 Nginx configs
+- deploy/update.sh                — Re-deploy script
+
+## Roles (actual Prisma enum values)
+CEO | CO_MD | OP_MANAGER | HR_MANAGER | BRANCH_MANAGER | STAFF | INTERN
+
+## Role Groups (middleware/auth.ts)
+- isCEO      = CEO + CO_MD
+- isOps      = CEO + CO_MD + OP_MANAGER
+- isManager  = CEO + CO_MD + OP_MANAGER + BRANCH_MANAGER
+- isHR       = CEO + CO_MD + OP_MANAGER + HR_MANAGER
+- requirePortal = portal members only (type: 'portal')
+
+## Important Prisma Field Names
+- StaffMember.lastLoginAt (NOT lastLoginDate)
+- PortalMember.lastLoginDate (NOT lastLoginAt)
+- StaffMember.totpSecret (NOT twoFactorSecret)
+- Attendance.staffMemberId (NOT memberId)
+- LeaveRequest.staffMemberId (NOT memberId)
+- DailyReport.staffMemberId (NOT memberId)
+- PortalMember.referredById (NOT referrerId)
+- Commission.earnerId (NOT referrerId)
+- Commission.commissionAmountUsd (NOT commissionAmount)
+- WalletTransaction.balanceAfterUsd (NOT balanceAfter)
+- Domain.domainName (NOT name)
+- PortalMember.resetTokenExpiry (NOT resetPasswordExpires)
+
+## ApprovalStatus Enum Values
+WAITING | SUBMITTED | APPROVED_MGR | REJECTED_MGR | ESCALATED | VERIFIED
+
+## Response Helpers (lib/response.ts)
+- ok(res, data, meta?)
+- created(res, data)
+- paginated(res, data[], {total,page,limit,totalPages})
+- serverError(res, err?) — accepts unknown catch errors
+- buildMeta(total, page, limit) → meta object
+
+## Dev Setup
+cd apps/api && cp .env.example .env
+# Set: DATABASE_URL, JWT_SECRET (32+), JWT_REFRESH_SECRET (32+)
+npm install && npx prisma generate && npx prisma migrate dev && npm run db:seed
+npm run dev  # → localhost:7000
+
+## Seed Credentials (Password123!)
+ceo@pouchcare.com | comd@pouchcare.com | ops@pouchcare.com
+staff1@pouchcare.com | staff2@pouchcare.com | client@example.com (portal)

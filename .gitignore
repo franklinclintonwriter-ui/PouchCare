@@ -1,0 +1,48 @@
+# ── Environment ────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+
+# ── Dependencies ───────────────────────────────────────
+node_modules/
+.pnp
+.pnp.js
+
+# ── Build outputs ──────────────────────────────────────
+dist/
+build/
+.next/
+.nuxt/
+out/
+
+# ── Turbo cache ────────────────────────────────────────
+.turbo/
+
+# ── TypeScript ─────────────────────────────────────────
+*.tsbuildinfo
+
+# ── Logs ───────────────────────────────────────────────
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ── OS ─────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── IDE ────────────────────────────────────────────────
+.idea/
+*.swp
+*.swo
+
+# ── Testing ────────────────────────────────────────────
+coverage/
+.nyc_output/
+
+# ── Misc ───────────────────────────────────────────────
+*.pem
+.vercel
+.netlify

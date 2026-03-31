@@ -1,0 +1,127 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+
+    // ── API (Node.js + TypeScript) ─────────────────────────────
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "🚀 API: Dev Server (port 7000)",
+      "cwd": "${workspaceFolder}/apps/api",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["-r", "tsconfig-paths/register"],
+      "program": "${workspaceFolder}/apps/api/dist/server.js",
+      "preLaunchTask": "build-api",
+      "envFile": "${workspaceFolder}/apps/api/.env",
+      "env": {
+        "NODE_ENV": "development",
+        "PORT": "7000"
+      },
+      "outFiles": ["${workspaceFolder}/apps/api/dist/**/*.js"],
+      "sourceMaps": true,
+      "skipFiles": ["<node_internals>/**"],
+      "restart": true,
+      "console": "integratedTerminal",
+      "presentation": { "group": "api", "order": 1 }
+    },
+
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "🔬 API: Test Server (port 7001)",
+      "cwd": "${workspaceFolder}/apps/api",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["-r", "tsconfig-paths/register"],
+      "program": "${workspaceFolder}/apps/api/dist/server.js",
+      "preLaunchTask": "build-api",
+      "envFile": "${workspaceFolder}/apps/api/.env",
+      "env": {
+        "NODE_ENV": "development",
+        "PORT": "7001",
+        "DATABASE_URL": "postgresql://postgres:postgres@localhost:5432/pouchcare_test"
+      },
+      "outFiles": ["${workspaceFolder}/apps/api/dist/**/*.js"],
+      "sourceMaps": true,
+      "skipFiles": ["<node_internals>/**"],
+      "console": "integratedTerminal",
+      "presentation": { "group": "api", "order": 2 }
+    },
+
+    // ── TypeScript watch (tsx) ─────────────────────────────────
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "🔥 API: tsx watch (hot reload)",
+      "cwd": "${workspaceFolder}/apps/api",
+      "runtimeExecutable": "${workspaceFolder}/apps/api/node_modules/.bin/tsx",
+      "runtimeArgs": ["watch", "src/server.ts"],
+      "envFile": "${workspaceFolder}/apps/api/.env",
+      "env": {
+        "NODE_ENV": "development",
+        "PORT": "7000"
+      },
+      "skipFiles": ["<node_internals>/**"],
+      "console": "integratedTerminal",
+      "presentation": { "group": "api", "order": 3 }
+    },
+
+    // ── Prisma ─────────────────────────────────────────────────
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "🗄️  Prisma: Studio (DB GUI port 5555)",
+      "cwd": "${workspaceFolder}/apps/api",
+      "runtimeExecutable": "${workspaceFolder}/apps/api/node_modules/.bin/prisma",
+      "runtimeArgs": ["studio"],
+      "envFile": "${workspaceFolder}/apps/api/.env",
+      "console": "integratedTerminal",
+      "presentation": { "group": "api", "order": 4 }
+    },
+
+    // ── Frontend Apps ──────────────────────────────────────────
+    {
+      "type": "chrome",
+      "request": "launch",
+      "name": "🖥️  Management Portal (port 5174)",
+      "url": "http://localhost:5174",
+      "webRoot": "${workspaceFolder}/apps/management/src",
+      "presentation": { "group": "frontend", "order": 1 }
+    },
+    {
+      "type": "chrome",
+      "request": "launch",
+      "name": "🏢 Staff Office (port 5175)",
+      "url": "http://localhost:5175",
+      "webRoot": "${workspaceFolder}/apps/office/src",
+      "presentation": { "group": "frontend", "order": 2 }
+    },
+    {
+      "type": "chrome",
+      "request": "launch",
+      "name": "🌐 Client Portal (port 5176)",
+      "url": "http://localhost:5176",
+      "webRoot": "${workspaceFolder}/apps/client-portal/src",
+      "presentation": { "group": "frontend", "order": 3 }
+    }
+  ],
+
+  "compounds": [
+    {
+      "name": "🚀 Full Stack (API + All Frontends)",
+      "configurations": [
+        "🚀 API: Dev Server (port 7000)",
+        "🖥️  Management Portal (port 5174)",
+        "🏢 Staff Office (port 5175)",
+        "🌐 Client Portal (port 5176)"
+      ],
+      "presentation": { "order": 1 }
+    },
+    {
+      "name": "🔬 API + Test DB",
+      "configurations": [
+        "🔬 API: Test Server (port 7001)"
+      ],
+      "presentation": { "order": 2 }
+    }
+  ]
+}

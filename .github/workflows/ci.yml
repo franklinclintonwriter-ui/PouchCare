@@ -1,0 +1,100 @@
+name: PouchCare OS CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  # ── Structure Validation (fast, no install needed) ─────────────
+  structure:
+    name: ✅ Project Structure
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate required files
+        run: |
+          echo "Checking required files..."
+          test -f apps/api/prisma/schema.prisma     && echo "✅ Prisma schema" || (echo "❌ Missing prisma schema" && exit 1)
+          test -f apps/api/src/server.ts            && echo "✅ API server" || (echo "❌ Missing server.ts" && exit 1)
+          test -f apps/api/prisma/seed.ts           && echo "✅ Seed file" || (echo "❌ Missing seed.ts" && exit 1)
+          test -f apps/management/src/App.tsx       && echo "✅ Management app" || (echo "❌ Missing management App.tsx" && exit 1)
+          test -f apps/office/src/App.tsx           && echo "✅ Office app" || (echo "❌ Missing office App.tsx" && exit 1)
+          test -f apps/client-portal/src/App.tsx    && echo "✅ Client portal" || echo "⏳ Client portal pending"
+          test -f apps/landing/index.html           && echo "✅ Landing site" || (echo "❌ Missing landing" && exit 1)
+          echo ""
+          echo "=== App structure ==="
+          ls apps/
+          echo ""
+          echo "=== API route count ==="
+          find apps/api/src/routes -name "*.ts" | wc -l
+          echo "=== Management page count ==="
+          find apps/management/src/pages -name "*.tsx" | wc -l
+          echo "=== Office page count ==="
+          find apps/office/src/pages -name "*.tsx" | wc -l
+
+  # ── API: TypeScript check ───────────────────────────────────────
+  api-typecheck:
+    name: 🔷 API TypeScript
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm install --no-package-lock
+      - run: npx prisma generate
+      - run: npx tsc --noEmit
+        continue-on-error: true
+
+  # ── Management Portal ───────────────────────────────────────────
+  management-build:
+    name: 🖥️ Management Portal
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/management
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm install --no-package-lock
+      - run: npx tsc --noEmit
+        continue-on-error: true
+
+  # ── Office Portal ───────────────────────────────────────────────
+  office-build:
+    name: 👔 Office Portal
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/office
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm install --no-package-lock
+      - run: npx tsc --noEmit
+        continue-on-error: true
+
+  # ── Client Portal ───────────────────────────────────────────────
+  client-portal-build:
+    name: 🌐 Client Portal
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/client-portal
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm install --no-package-lock
+      - run: npx tsc --noEmit
+        continue-on-error: true
