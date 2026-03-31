@@ -37,11 +37,19 @@ export function requireStaff(req: AuthRequest, res: Response, next: NextFunction
   next()
 }
 
+const ROLE = {
+  CEO: (SystemRole as any)?.CEO ?? 'CEO',
+  CO_MD: (SystemRole as any)?.CO_MD ?? 'CO_MD',
+  OP_MANAGER: (SystemRole as any)?.OP_MANAGER ?? 'OP_MANAGER',
+  HR_MANAGER: (SystemRole as any)?.HR_MANAGER ?? 'HR_MANAGER',
+  BRANCH_MANAGER: (SystemRole as any)?.BRANCH_MANAGER ?? 'BRANCH_MANAGER',
+} as const
+
 // Role group helpers — use OP_MANAGER (actual enum value)
-export const isCEO     = requireRoles(SystemRole.CEO, SystemRole.CO_MD)
-export const isOps     = requireRoles(SystemRole.CEO, SystemRole.CO_MD, SystemRole.OP_MANAGER)
-export const isManager = requireRoles(SystemRole.CEO, SystemRole.CO_MD, SystemRole.OP_MANAGER, SystemRole.BRANCH_MANAGER)
-export const isHR      = requireRoles(SystemRole.CEO, SystemRole.CO_MD, SystemRole.OP_MANAGER, SystemRole.HR_MANAGER)
+export const isCEO     = requireRoles(ROLE.CEO as SystemRole, ROLE.CO_MD as SystemRole)
+export const isOps     = requireRoles(ROLE.CEO as SystemRole, ROLE.CO_MD as SystemRole, ROLE.OP_MANAGER as SystemRole)
+export const isManager = requireRoles(ROLE.CEO as SystemRole, ROLE.CO_MD as SystemRole, ROLE.OP_MANAGER as SystemRole, ROLE.BRANCH_MANAGER as SystemRole)
+export const isHR      = requireRoles(ROLE.CEO as SystemRole, ROLE.CO_MD as SystemRole, ROLE.OP_MANAGER as SystemRole, ROLE.HR_MANAGER as SystemRole)
 export const isAnyStaff = requireStaff
 
 // Aliases for compatibility
@@ -51,10 +59,10 @@ export const managerOnly  = isManager
 export const managerAndAbove = isManager
 export const portalOnly   = requirePortal
 
-export const MANAGER_ROLES = [SystemRole.CEO, SystemRole.CO_MD, SystemRole.OP_MANAGER, SystemRole.HR_MANAGER, SystemRole.BRANCH_MANAGER] as SystemRole[]
-export const CEO_ROLES     = [SystemRole.CEO, SystemRole.CO_MD] as SystemRole[]
-export const SENIOR_ROLES  = [SystemRole.CEO, SystemRole.CO_MD, SystemRole.OP_MANAGER] as SystemRole[]
+export const MANAGER_ROLES = [ROLE.CEO, ROLE.CO_MD, ROLE.OP_MANAGER, ROLE.HR_MANAGER, ROLE.BRANCH_MANAGER] as SystemRole[]
+export const CEO_ROLES     = [ROLE.CEO, ROLE.CO_MD] as SystemRole[]
+export const SENIOR_ROLES  = [ROLE.CEO, ROLE.CO_MD, ROLE.OP_MANAGER] as SystemRole[]
 
 // Additional aliases
 export const requireAuth = authenticate
-export const HR_ROLES   = [SystemRole.CEO, SystemRole.CO_MD, SystemRole.OP_MANAGER, SystemRole.HR_MANAGER] as SystemRole[]
+export const HR_ROLES   = [ROLE.CEO, ROLE.CO_MD, ROLE.OP_MANAGER, ROLE.HR_MANAGER] as SystemRole[]

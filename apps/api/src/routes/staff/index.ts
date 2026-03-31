@@ -51,7 +51,7 @@ router.get('/members', requireStaff, async (req, res) => {
       }),
       prisma.staffMember.count({ where }),
     ])
-    return ok(res, members, buildMeta(page, limit, total))
+    return ok(res, members, buildMeta(total, page, limit))
   } catch (err) { serverError(res, err) }
 })
 

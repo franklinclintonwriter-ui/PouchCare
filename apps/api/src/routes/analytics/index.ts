@@ -14,7 +14,7 @@ router.get('/health', async (_, res) => {
       prisma.task.count({ where: { approvalStatus: "VERIFIED" as any } }),
       prisma.task.count(),
       prisma.attendance.count({ where: { status: 'PRESENT', date: { gte: new Date(new Date().setHours(0,0,0,0)) } } }),
-      prisma.staffMember.count({ where: { status: 'ACTIVE' } }),
+      prisma.staffMember.count({ where: { status: { equals: 'Active', mode: 'insensitive' } } }),
       prisma.crmLead.count({ where: { stage: 'WON' } }),
       prisma.crmLead.count(),
       prisma.portalMember.count({ where: { status: 'ACTIVE' } }),
@@ -50,8 +50,8 @@ router.get('/staff', async (_, res) => {
   try {
     const [total, active, onLeave] = await Promise.all([
       prisma.staffMember.count(),
-      prisma.staffMember.count({ where: { status: 'ACTIVE' } }),
-      prisma.staffMember.count({ where: { status: 'ON_LEAVE' } }),
+      prisma.staffMember.count({ where: { status: { equals: 'Active', mode: 'insensitive' } } }),
+      prisma.staffMember.count({ where: { status: { in: ['On Leave', 'ON_LEAVE', 'on_leave'] } } }),
     ])
     const topRated = await prisma.staffMember.findMany({
       where: { averageTaskRating: { not: null } },
@@ -84,7 +84,7 @@ router.get('/leaderboard', async (_, res) => {
   try {
     const [staffLb, referrerLb] = await Promise.all([
       prisma.staffMember.findMany({
-        where: { status: 'ACTIVE', averageTaskRating: { not: null } },
+        where: { status: { equals: 'Active', mode: 'insensitive' }, averageTaskRating: { not: null } },
         orderBy: { averageTaskRating: 'desc' }, take: 10,
         select: { id:true, name:true, branch:true, systemRole:true, tasksCompleted:true, averageTaskRating:true },
       }),

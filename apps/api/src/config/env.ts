@@ -17,7 +17,7 @@ const schema = z.object({
   S3_ACCESS_KEY:     z.string().default(''),
   S3_SECRET_KEY:     z.string().default(''),
   S3_ENDPOINT:       z.string().default(''),
-  ALLOWED_ORIGINS:   z.string().default('http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176'),
+  ALLOWED_ORIGINS:   z.string().default('http://localhost:3000,http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176'),
   COMMISSION_RATE:   z.coerce.number().default(0.20),
   COMMISSION_HOLD_DAYS: z.coerce.number().default(14),
   MIN_PAYOUT_USD:    z.coerce.number().default(50),

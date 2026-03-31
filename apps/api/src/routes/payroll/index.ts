@@ -34,7 +34,7 @@ router.get('/', async (req: AuthRequest, res) => {
       prisma.payroll.findMany({ where, skip, take: limit, orderBy: [{ year: 'desc' }, { month: 'asc' }] }),
       prisma.payroll.count({ where }),
     ])
-    return paginated(res, data, buildMeta(limit, total, page))
+    return paginated(res, data, buildMeta(total, page, limit))
   } catch { return serverError(res) }
 })
 

@@ -1,19 +1,48 @@
-import { cn } from '@/lib/utils'
+import { cn } from '@/utils/cn';
 
-interface Props { label: string; color?: 'green' | 'sky' | 'yellow' | 'red' | 'gray'; dot?: boolean; className?: string }
+type BadgeVariant = 'default' | 'primary' | 'success' | 'warning' | 'danger' | 'info' | 'custom';
+type BadgeSize = 'sm' | 'md';
 
-export function Badge({ label, color = 'gray', dot = true, className }: Props) {
-  const colors = {
-    green: 'bg-green-500/10 text-green-500 border-green-500/20',
-    sky: 'bg-sky-500/15 text-sky-500 border-sky-500/20',
-    yellow: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20',
-    red: 'bg-red-500/10 text-red-500 border-red-500/20',
-    gray: 'bg-white/5 text-text-secondary border-white/10',
-  }
-  return (
-    <span className={cn('inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border', colors[color], className)}>
-      {dot && <span className={cn('w-1.5 h-1.5 rounded-full', { 'bg-green-500': color==='green', 'bg-sky-500': color==='sky', 'bg-yellow-500': color==='yellow', 'bg-red-500': color==='red', 'bg-text-secondary': color==='gray' })} />}
-      {label}
-    </span>
-  )
+interface BadgeProps {
+  children: React.ReactNode;
+  variant?: BadgeVariant;
+  size?: BadgeSize;
+  dot?: boolean;
+  dotColor?: string;
+  className?: string;
 }
+
+const variantStyles: Record<BadgeVariant, string> = {
+  default: 'bg-gray-100 text-gray-700 dark:bg-gray-700/60 dark:text-gray-300',
+  primary: 'bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300',
+  success: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
+  warning: 'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
+  danger: 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300',
+  info: 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
+  custom: '',
+};
+
+const sizeStyles: Record<BadgeSize, string> = {
+  sm: 'px-1.5 py-0.5 text-[11px]',
+  md: 'px-2 py-0.5 text-xs',
+};
+
+function Badge({ children, variant = 'default', size = 'md', dot, dotColor, className }: BadgeProps) {
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center gap-1 rounded-md font-medium whitespace-nowrap',
+        variantStyles[variant],
+        sizeStyles[size],
+        className,
+      )}
+    >
+      {dot && (
+        <span className={cn('h-1.5 w-1.5 rounded-full', dotColor || 'bg-current opacity-60')} />
+      )}
+      {children}
+    </span>
+  );
+}
+
+export { Badge, type BadgeProps };

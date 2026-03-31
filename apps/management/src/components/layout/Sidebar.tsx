@@ -1,91 +1,401 @@
-import { NavLink, useNavigate } from 'react-router-dom'
-import { useAuthStore } from '@/stores/authStore'
-import { useUiStore } from '@/stores/uiStore'
-import { cn } from '@/lib/utils'
-import { ROLE_LABELS } from '@/types'
-import type { SystemRole } from '@/types'
+import { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from '@/utils/cn';
+import { useSidebarStore } from '@/store/sidebarStore';
+import { useAuthStore } from '@/store/authStore';
+import { usePermission } from '@/hooks/usePermission';
+import { useIsMobile } from '@/hooks/useMediaQuery';
+import { Avatar } from '@/components/ui/Avatar';
+import type { StaffUser } from '@/types/auth';
+import {
+  LayoutDashboard, CheckSquare, ListChecks, FolderKanban, Users, Clock, CalendarOff,
+  FileText, DollarSign, BarChart3, TrendingUp, Target, Globe, Server,
+  MonitorSmartphone, Megaphone, HeadphonesIcon, BellRing, UserPlus,
+  Receipt, CreditCard, Building2, ChevronDown, X, LogOut, Wallet,
+  Users2, Star, ShoppingCart, Package, ChevronsLeft, ChevronsRight,
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
-interface NavItem { icon: string; label: string; to: string; roles?: SystemRole[] }
+interface NavItem {
+  label: string;
+  icon: LucideIcon;
+  href?: string;
+  children?: { label: string; href: string; permission?: () => boolean }[];
+  permission?: () => boolean;
+}
 
-const NAV: NavItem[] = [
-  { icon: '⚡', label: 'Command Center', to: '/command-center', roles: ['CEO', 'CO_MD'] },
-  { icon: '📊', label: 'Dashboard',      to: '/' },
-  { icon: '✅', label: 'Tasks',          to: '/tasks' },
-  { icon: '📁', label: 'Projects',       to: '/projects' },
-  { icon: '👥', label: 'Staff',          to: '/staff' },
-  { icon: '🕐', label: 'Attendance',     to: '/attendance' },
-  { icon: '🌴', label: 'Leave',          to: '/leave' },
-  { icon: '📝', label: 'Reports',        to: '/reports' },
-  { icon: '💰', label: 'Finance',        to: '/finance', roles: ['CEO', 'CO_MD', 'OP_MANAGER'] },
-  { icon: '🎯', label: 'CRM / Sales',   to: '/crm' },
-  { icon: '🌐', label: 'Portal Admin',   to: '/portal' },
-  { icon: '📈', label: 'Analytics',      to: '/analytics' },
-  { icon: '🏢', label: 'Assets',         to: '/assets' },
-  { icon: '👔', label: 'HR & Jobs',      to: '/hr',     roles: ['CEO', 'CO_MD', 'OP_MANAGER', 'HR_MANAGER'] },
-  { icon: '📣', label: 'Broadcast',      to: '/broadcast', roles: ['CEO', 'CO_MD', 'OP_MANAGER'] },
-  { icon: '🎫', label: 'Support',        to: '/support' },
-  { icon: '⚙️', label: 'Settings',       to: '/settings' },
-]
+interface NavGroup {
+  label: string;
+  items: NavItem[];
+}
 
-export function Sidebar() {
-  const { user, logout } = useAuthStore()
-  const { sidebarCollapsed } = useUiStore()
-  const navigate = useNavigate()
+function Sidebar() {
+  const { isCollapsed, isMobileOpen, closeMobile, toggle } = useSidebarStore();
+  const { user, userType, logout } = useAuthStore();
+  const location = useLocation();
+  const perm = usePermission();
+  const isMobile = useIsMobile();
 
-  // CEO has unrestricted access — never filter items for CEO/CO_MD
-  const isCeoOrComd = user?.role === 'CEO' || user?.role === 'CO_MD'
-  const filtered = NAV.filter(item =>
-    !item.roles || isCeoOrComd || (user && item.roles.includes(user.role as SystemRole))
-  )
+  const staffUser = userType === 'staff' ? (user as StaffUser) : null;
 
-  const roleLabel = user?.role ? (ROLE_LABELS[user.role as SystemRole] || user.role) : ''
+  const staffNav: NavGroup[] = [
+    {
+      label: 'Overview',
+      items: [
+        { label: 'Dashboard', icon: LayoutDashboard, href: '/' },
+      ],
+    },
+    {
+      label: 'Work',
+      items: [
+        { label: 'Tasks', icon: CheckSquare, href: '/tasks' },
+        { label: 'My Tasks', icon: ListChecks, href: '/tasks/mine' },
+        { label: 'Projects', icon: FolderKanban, href: '/projects' },
+        { label: 'Daily Reports', icon: FileText, href: '/reports' },
+      ],
+    },
+    {
+      label: 'HR',
+      items: [
+        { label: 'Staff', icon: Users, href: '/staff' },
+        { label: 'Branches', icon: Building2, href: '/staff/branches', permission: () => perm.isOps },
+        { label: 'Attendance', icon: Clock, href: '/attendance' },
+        { label: 'Leave', icon: CalendarOff, href: '/leave' },
+        { label: 'Payroll', icon: DollarSign, href: '/payroll', permission: () => perm.isOps },
+        { label: 'Performance', icon: Star, href: '/performance' },
+        { label: 'Recruitment', icon: UserPlus, href: '/hr/positions', permission: () => perm.isHR },
+      ],
+    },
+    {
+      label: 'Business',
+      items: [
+        { label: 'Finance', icon: Receipt, children: [
+          { label: 'Invoices', href: '/finance/invoices' },
+          { label: 'Expenses', href: '/finance/expenses' },
+          { label: 'Revenue', href: '/finance/revenue' },
+          { label: 'Forecast', href: '/finance/forecast' },
+          { label: 'Exchange Rates', href: '/finance/exchange-rates' },
+        ], permission: () => perm.isOps },
+        { label: 'CRM', icon: Target, children: [
+          { label: 'Leads', href: '/crm/leads' },
+          { label: 'Pipeline', href: '/crm/pipeline' },
+          { label: 'Sales Orders', href: '/crm/orders' },
+          { label: 'Client Accounts', href: '/crm/clients', permission: () => perm.isOps },
+        ]},
+      ],
+    },
+    {
+      label: 'Assets',
+      items: [
+        { label: 'Domains', icon: Globe, href: '/assets/domains' },
+        { label: 'Servers', icon: Server, href: '/assets/servers' },
+        { label: 'Websites', icon: MonitorSmartphone, href: '/assets/websites' },
+        { label: 'Devices', icon: MonitorSmartphone, href: '/assets/devices', permission: () => perm.isOps },
+        { label: 'Services', icon: Package, href: '/services' },
+        { label: 'Backlinks', icon: TrendingUp, href: '/services/backlinks' },
+      ],
+    },
+    {
+      label: 'Communication',
+      items: [
+        { label: 'Support', icon: HeadphonesIcon, href: '/support' },
+        { label: 'Broadcast', icon: Megaphone, href: '/broadcast', permission: () => perm.isOps },
+        { label: 'Notifications', icon: BellRing, href: '/notifications' },
+      ],
+    },
+    {
+      label: 'Analytics',
+      items: [
+        { label: 'Analytics', icon: BarChart3, href: '/analytics', permission: () => perm.isOps },
+      ],
+    },
+    {
+      label: 'Admin',
+      items: [
+        { label: 'Portal', icon: Building2, children: [
+          { label: 'Members', href: '/admin/portal/members' },
+          { label: 'Orders', href: '/admin/portal/orders' },
+          { label: 'Commissions', href: '/admin/portal/commissions' },
+          { label: 'Payouts', href: '/admin/portal/payouts' },
+        ], permission: () => perm.isOps },
+      ],
+    },
+  ];
 
-  return (
-    <aside className={cn(
-      'fixed inset-y-0 left-0 z-30 flex flex-col bg-midnight-card border-r border-midnight-border transition-all duration-200',
-      sidebarCollapsed ? 'w-16' : 'w-60'
-    )}>
+  const portalNav: NavGroup[] = [
+    {
+      label: 'Main',
+      items: [
+        { label: 'Dashboard', icon: LayoutDashboard, href: '/portal' },
+        { label: 'Services', icon: ShoppingCart, href: '/portal/order' },
+        { label: 'My Orders', icon: Package, href: '/portal/orders' },
+        { label: 'Wallet', icon: Wallet, href: '/portal/wallet' },
+        { label: 'Referrals', icon: Users2, href: '/portal/referrals' },
+        { label: 'Commissions', icon: CreditCard, href: '/portal/commissions' },
+        { label: 'Support', icon: HeadphonesIcon, href: '/portal/support' },
+      ],
+    },
+  ];
+
+  const navGroups = userType === 'portal' ? portalNav : staffNav;
+
+  const sidebarContent = (
+    <div className="flex h-full flex-col">
       {/* Logo */}
-      <div className="h-16 flex items-center border-b border-midnight-border px-4 flex-shrink-0">
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-sky-500 to-indigo-500 flex items-center justify-center font-sora font-bold text-sm text-white flex-shrink-0 shadow-lg">P</div>
-        {!sidebarCollapsed && <span className="ml-2.5 font-sora font-bold text-base">Pouch<span className="text-sky-500">Care</span></span>}
-      </div>
-
-      {/* Nav */}
-      <nav className="flex-1 overflow-y-auto py-3 px-2">
-        {filtered.map((item) => (
-          <NavLink key={item.to} to={item.to} end={item.to === '/'} className={({ isActive }) => cn(
-            'flex items-center gap-3 px-3 py-2 rounded-lg mb-0.5 text-sm transition-all duration-150 group',
-            isActive
-              ? 'bg-sky-500/15 text-sky-500 font-semibold'
-              : 'text-text-secondary hover:text-text-primary hover:bg-white/5'
-          )}>
-            <span className="text-base flex-shrink-0 w-5 text-center">{item.icon}</span>
-            {!sidebarCollapsed && <span className="truncate font-inter">{item.label}</span>}
-          </NavLink>
-        ))}
-      </nav>
-
-      {/* User footer */}
-      <div className="border-t border-midnight-border p-3 flex-shrink-0">
-        <div className={cn('flex items-center gap-2.5', sidebarCollapsed && 'justify-center')}>
-          <div className="w-8 h-8 rounded-full bg-sky-500/20 border border-sky-500/30 flex items-center justify-center text-sky-500 text-xs font-bold flex-shrink-0">
-            {user?.name ? user.name[0].toUpperCase() : 'U'}
-          </div>
-          {!sidebarCollapsed && (
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-text-primary truncate">{user?.name}</p>
-              <p className="text-[10px] text-text-muted truncate">{roleLabel}</p>
-            </div>
-          )}
+      <div className="flex h-16 items-center gap-3 border-b border-gray-100 px-4 dark:border-gray-700/60">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-600 text-sm font-bold text-white">
+          P
         </div>
-        {!sidebarCollapsed && (
-          <button onClick={() => { logout(); navigate('/login') }}
-            className="mt-2 w-full text-xs text-text-muted hover:text-red-400 transition-colors py-1 text-left">
-            Sign out
+        {!isCollapsed && (
+          <span className="text-sm font-bold text-gray-900 dark:text-gray-100">PouchCare OS</span>
+        )}
+        {isMobile && (
+          <button onClick={closeMobile} aria-label="Close menu" className="ml-auto rounded-lg p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+            <X className="h-5 w-5" />
           </button>
         )}
       </div>
+
+      {/* Navigation */}
+      <nav className="flex-1 overflow-y-auto px-3 py-3 scrollbar-thin">
+        {navGroups.map((group) => {
+          const visibleItems = group.items.filter((item) => !item.permission || item.permission());
+          if (visibleItems.length === 0) return null;
+
+          return (
+            <div key={group.label} className="mb-4">
+              {!isCollapsed && (
+                <p className="mb-1.5 px-2 text-[10px] font-semibold uppercase tracking-widest text-gray-400 dark:text-gray-500">
+                  {group.label}
+                </p>
+              )}
+              <div className="space-y-0.5">
+                {visibleItems.map((item) => (
+                  <NavItemComponent
+                    key={item.label}
+                    item={item}
+                    isCollapsed={isCollapsed}
+                    currentPath={location.pathname}
+                    onNavigate={isMobile ? closeMobile : undefined}
+                  />
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </nav>
+
+      {/* User profile + collapse toggle */}
+      <div className="border-t border-gray-100 dark:border-gray-700/60">
+        {user && (
+          <div className={cn('flex items-center gap-2.5 p-3', isCollapsed && 'justify-center')}>
+            <Avatar name={staffUser?.name || (user as { fullName?: string }).fullName || ''} size="sm" />
+            {!isCollapsed && (
+              <>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
+                    {staffUser?.name || (user as { fullName?: string }).fullName}
+                  </p>
+                  <p className="truncate text-xs text-gray-400">{user.email}</p>
+                </div>
+                <button
+                  onClick={logout}
+                  aria-label="Sign out"
+                  className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800"
+                >
+                  <LogOut className="h-4 w-4" />
+                </button>
+              </>
+            )}
+          </div>
+        )}
+        {!isMobile && (
+          <button
+            onClick={toggle}
+            className={cn(
+              'flex w-full items-center gap-2 border-t border-gray-100 px-4 py-2.5 text-xs text-gray-400 transition-colors hover:bg-gray-50 hover:text-gray-600 dark:border-gray-700/40 dark:hover:bg-gray-800/60 dark:hover:text-gray-300',
+              isCollapsed && 'justify-center px-0',
+            )}
+          >
+            {isCollapsed ? <ChevronsRight className="h-4 w-4" /> : <ChevronsLeft className="h-4 w-4" />}
+            {!isCollapsed && <span>Collapse</span>}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+
+  // Mobile: overlay
+  if (isMobile) {
+    return (
+      <AnimatePresence>
+        {isMobileOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[45] bg-black/30 backdrop-blur-[2px]"
+              onClick={closeMobile}
+            />
+            <motion.aside
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+              className="fixed inset-y-0 left-0 z-50 w-[260px] bg-white shadow-2xl dark:bg-gray-900"
+            >
+              {sidebarContent}
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
+    );
+  }
+
+  // Desktop: fixed
+  return (
+    <aside
+      className={cn(
+        'fixed inset-y-0 left-0 z-30 hidden border-r border-gray-200/80 bg-white transition-all duration-200 lg:block',
+        'dark:border-gray-700/60 dark:bg-gray-900',
+        isCollapsed ? 'w-[72px]' : 'w-[260px]',
+      )}
+    >
+      {sidebarContent}
     </aside>
-  )
+  );
 }
+
+function NavItemComponent({
+  item,
+  isCollapsed,
+  currentPath,
+  onNavigate,
+}: {
+  item: NavItem;
+  isCollapsed: boolean;
+  currentPath: string;
+  onNavigate?: () => void;
+}) {
+  const visibleChildren = item.children?.filter((child) => !child.permission || child.permission()) ?? [];
+  const [isExpanded, setIsExpanded] = useState(
+    visibleChildren.some((c) => currentPath.startsWith(c.href)),
+  );
+
+  const isActive = item.href
+    ? item.href === '/' || item.href === '/portal'
+      ? currentPath === item.href
+      : currentPath === item.href || currentPath.startsWith(item.href + '/')
+    : false;
+  const isChildActive = visibleChildren.some((c) => currentPath.startsWith(c.href));
+  const Icon = item.icon;
+
+  if (visibleChildren.length > 0) {
+    // Collapsed: show popover on hover with child links
+    if (isCollapsed) {
+      return (
+        <div className="group relative">
+          <button
+            className={cn(
+              'flex w-full items-center justify-center rounded-lg px-2.5 py-2.5 text-sm transition-colors',
+              isChildActive
+                ? 'bg-primary-50/80 text-primary-700 dark:bg-primary-900/20 dark:text-primary-300'
+                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800/60 dark:hover:text-gray-200',
+            )}
+          >
+            <Icon className="h-4 w-4 shrink-0" />
+          </button>
+          <div className="invisible absolute left-full top-0 z-50 ml-2 min-w-[160px] rounded-lg border border-gray-200 bg-white py-1.5 opacity-0 shadow-elevated transition-all group-hover:visible group-hover:opacity-100 dark:border-gray-700 dark:bg-gray-800">
+            <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400">
+              {item.label}
+            </p>
+            {visibleChildren.map((child) => (
+              <Link
+                key={child.href}
+                to={child.href}
+                onClick={onNavigate}
+                className={cn(
+                  'block px-3 py-2 text-xs font-medium transition-colors',
+                  currentPath.startsWith(child.href)
+                    ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/20 dark:text-primary-300'
+                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-700/40',
+                )}
+              >
+                {child.label}
+              </Link>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    // Expanded sidebar: normal accordion
+    return (
+      <div>
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className={cn(
+            'flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2.5 text-sm transition-colors',
+            isChildActive
+              ? 'bg-primary-50/80 text-primary-700 dark:bg-primary-900/20 dark:text-primary-300'
+              : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800/60 dark:hover:text-gray-200',
+          )}
+        >
+          <Icon className="h-4 w-4 shrink-0" />
+          <span className="flex-1 text-left">{item.label}</span>
+          <ChevronDown
+            className={cn(
+              'h-3.5 w-3.5 transition-transform duration-200',
+              isExpanded && 'rotate-180',
+            )}
+          />
+        </button>
+        {isExpanded && (
+          <div className="ml-5 mt-0.5 space-y-0.5 border-l border-gray-100 pl-3 dark:border-gray-700/40">
+            {visibleChildren.map((child) => (
+              <Link
+                key={child.href}
+                to={child.href}
+                onClick={onNavigate}
+                className={cn(
+                  'block rounded-md px-2.5 py-2 text-xs font-medium transition-colors',
+                  currentPath.startsWith(child.href)
+                    ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/20 dark:text-primary-300'
+                    : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-800/40',
+                )}
+              >
+                {child.label}
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <Link
+      to={item.href!}
+      onClick={onNavigate}
+      title={isCollapsed ? item.label : undefined}
+      className={cn(
+        'group relative flex items-center gap-2.5 rounded-lg px-2.5 py-2.5 text-sm transition-colors',
+        isActive
+          ? 'bg-primary-50/80 font-medium text-primary-700 dark:bg-primary-900/20 dark:text-primary-300'
+          : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800/60 dark:hover:text-gray-200',
+      )}
+    >
+      <Icon className="h-4 w-4 shrink-0" />
+      {!isCollapsed && <span>{item.label}</span>}
+      {isCollapsed && (
+        <span className="invisible absolute left-full z-50 ml-2 whitespace-nowrap rounded-md bg-gray-900 px-2 py-1 text-xs text-white opacity-0 shadow-lg transition-all group-hover:visible group-hover:opacity-100 dark:bg-gray-700">
+          {item.label}
+        </span>
+      )}
+    </Link>
+  );
+}
+
+export { Sidebar };

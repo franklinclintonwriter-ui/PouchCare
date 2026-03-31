@@ -1,12 +1,11 @@
 import { Router } from 'express'
 import prisma from '@/lib/prisma'
-import { authenticate, requireStaff, requireRoles, CEO_ROLES  } from '@/middleware/auth'
+import { authenticate, requireStaff, requireRoles, SENIOR_ROLES } from '@/middleware/auth'
 import { getPagination, buildMeta } from '@/utils/pagination'
 import { ok, created, notFound, serverError } from '@/utils/response'
 
 const router = Router()
 router.use(authenticate)
-const CEO_OP = [...CEO_ROLES, 'Operation Manager']
 
 // ── DOMAINS ──
 router.get('/domains', requireStaff, async (req, res) => {
@@ -19,11 +18,11 @@ router.get('/domains', requireStaff, async (req, res) => {
       prisma.domain.findMany({ where, skip, take: limit, orderBy: { expiryDate: 'asc' } }),
       prisma.domain.count({ where }),
     ])
-    return ok(res, domains, buildMeta(page, limit, total))
+    return ok(res, domains, buildMeta(total, page, limit))
   } catch (err) { serverError(res, err) }
 })
 
-router.post('/domains', requireRoles(...CEO_OP as any), async (req, res) => {
+router.post('/domains', requireRoles(...SENIOR_ROLES as any), async (req, res) => {
   try {
     const domain = await prisma.domain.create({
       data: {
@@ -36,7 +35,7 @@ router.post('/domains', requireRoles(...CEO_OP as any), async (req, res) => {
   } catch (err) { serverError(res, err) }
 })
 
-router.put('/domains/:id', requireRoles(...CEO_OP as any), async (req, res) => {
+router.put('/domains/:id', requireRoles(...SENIOR_ROLES as any), async (req, res) => {
   try {
     const domain = await prisma.domain.update({ where: { id: req.params.id }, data: req.body })
     return ok(res, domain)
@@ -51,7 +50,7 @@ router.get('/servers', requireStaff, async (req, res) => {
   } catch (err) { serverError(res, err) }
 })
 
-router.post('/servers', requireRoles(...CEO_OP as any), async (req, res) => {
+router.post('/servers', requireRoles(...SENIOR_ROLES as any), async (req, res) => {
   try {
     const server = await prisma.server.create({ data: req.body })
     return created(res, server)
@@ -66,7 +65,7 @@ router.get('/websites', requireStaff, async (req, res) => {
   } catch (err) { serverError(res, err) }
 })
 
-router.post('/websites', requireRoles(...CEO_OP as any), async (req, res) => {
+router.post('/websites', requireRoles(...SENIOR_ROLES as any), async (req, res) => {
   try {
     const website = await prisma.website.create({ data: req.body })
     return created(res, website)

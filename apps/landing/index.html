@@ -148,7 +148,18 @@ const SVCS=[
   {i:'🎨',n:'Design',p:'from $49',c:'Design'},
   {i:'📝',n:'Content Writing',p:'from $25/art',c:'Content'},
 ];
-const PKGS=[
+function formatUsd(value){
+  const n = typeof value === 'number' ? value : Number(value);
+  if(!Number.isFinite(n)) return '—';
+  return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',minimumFractionDigits:0,maximumFractionDigits:2}).format(n);
+}
+
+const API_BASE = (() => {
+  if (window.location.hostname === 'localhost') return 'http://localhost:7000/v1';
+  return 'https://api.pouchcare.com/v1';
+})();
+
+const PKGS_FALLBACK=[
   {n:'Starter GP',da:'DA 20-30',t:'Guest Post',pl:'$15',p10:'$130',p50:'$600',p100:'$1,100',p1k:'$9,500'},
   {n:'Standard GP',da:'DA 30-40',t:'Guest Post',pl:'$30',p10:'$265',p50:'$1,300',p100:'$2,400',p1k:'$22,000',pop:true},
   {n:'Premium GP',da:'DA 50+',t:'Guest Post',pl:'$80',p10:'$720',p50:'$3,600',p100:'$6,800',p1k:'$65,000'},
@@ -157,6 +168,23 @@ const PKGS=[
   {n:'Web 2.0',da:'N/A',t:'Web 2.0',pl:'$2',p10:'$17',p50:'$80',p100:'$150',p1k:'$1,200'},
   {n:'Forum Profile',da:'N/A',t:'Profile',pl:'$0.50',p10:'$4',p50:'$18',p100:'$35',p1k:'$280'},
 ];
+
+function mapApiPkgs(rows){
+  if(!Array.isArray(rows)) return PKGS_FALLBACK;
+  const mapped = rows.map((r)=>({
+    n: r.name || 'Backlink Package',
+    da: r.daRange || '—',
+    t: r.type || '—',
+    pl: formatUsd(r.pricePerLink),
+    p10: r.priceX10!=null ? formatUsd(r.priceX10) : '—',
+    p50: r.priceX50!=null ? formatUsd(r.priceX50) : '—',
+    p100: r.priceX100!=null ? formatUsd(r.priceX100) : '—',
+    p1k: r.priceX1000!=null ? formatUsd(r.priceX1000) : '—',
+    pop: !!r.featured,
+    val: false,
+  }));
+  return mapped.length ? mapped : PKGS_FALLBACK;
+}
 const TESTS=[
   {n:"James O'Brien",c:'🇬🇧',r:'SEO Agency, London',q:"PouchCare's guest post quality is exceptional. DA 40+ placements at these prices — nowhere else comes close."},
   {n:'Fatima Ahmed',c:'🇵🇰',r:'E-commerce Founder',q:"Organic traffic tripled in 4 months. The SEO retainer is the best investment we've made."},
@@ -476,7 +504,7 @@ const Footer=({go})=>(
 );
 
 /* ── HOME ── */
-const Home=({go})=>(
+const Home=({go,pkgs})=>(
   <div>
     <section style={{minHeight:'100vh',position:'relative',overflow:'hidden',display:'flex',alignItems:'center',justifyContent:'center',padding:'80px 20px 60px'}}>
       <div style={{position:'absolute',inset:0,backgroundImage:'linear-gradient(rgba(14,165,233,.018) 1px,transparent 1px),linear-gradient(90deg,rgba(14,165,233,.018) 1px,transparent 1px)',backgroundSize:'72px 72px'}}/>
@@ -539,7 +567,7 @@ const Home=({go})=>(
                 <th key={i} style={{padding:'12px 14px',textAlign:'left',color:'#475569',fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:'.07em',whiteSpace:'nowrap'}}>{h}</th>
               ))}
             </tr></thead>
-            <tbody>{PKGS.slice(0,5).map((p,i)=>(
+            <tbody>{pkgs.slice(0,5).map((p,i)=>(
               <tr key={i} className={`pkg-tr${p.pop?' pop':''}`}>
                 <td style={{padding:'13px 14px'}}><div style={{display:'flex',alignItems:'center',gap:6}}><span style={{fontWeight:600,color:'#F1F5F9',fontSize:13}}>{p.n}</span>{p.pop&&<span style={{background:'rgba(14,165,233,.12)',color:'#0EA5E9',fontSize:9,fontWeight:700,padding:'2px 6px',borderRadius:3}}>TOP</span>}{p.val&&<span style={{background:'rgba(34,197,94,.1)',color:'#22C55E',fontSize:9,fontWeight:700,padding:'2px 6px',borderRadius:3}}>VALUE</span>}</div></td>
                 <td style={{padding:'13px 14px',color:'#94A3B8',fontSize:12,whiteSpace:'nowrap'}}>{p.da}</td>
@@ -665,10 +693,10 @@ const Services=({go})=>{
 };
 
 /* ── BACKLINKS ── */
-const Backlinks=({go})=>{
+const Backlinks=({go,pkgs})=>{
   const[type,setType]=useState('All');
   const types=['All','Guest Post','Niche Edit','Web 2.0','Profile'];
-  const filt=PKGS.filter(p=>type==='All'||p.t===type);
+  const filt=pkgs.filter(p=>type==='All'||p.t===type);
   return(
     <div style={{paddingTop:68,minHeight:'100vh'}}>
       <div style={{background:'#0D1628',borderBottom:'1px solid #1E2A3D',padding:'0 20px'}}>
@@ -924,9 +952,19 @@ function App(){
   const[page,setPage]=useState('home');
   const[open,setOpen]=useState(false);
   const[refCode,setRefCode]=useState('');
+  const[pkgs,setPkgs]=useState(PKGS_FALLBACK);
   const go=useCallback((p)=>{setPage(p);setOpen(false);window.scrollTo({top:0,behavior:'smooth'});},[]);
   useEffect(()=>{const u=new URLSearchParams(window.location.search);const r=u.get('ref');if(r){setRefCode(r);setPage('register');}},[]);
-  const pages={home:<Home go={go}/>,services:<Services go={go}/>,backlinks:<Backlinks go={go}/>,pricing:<Pricing go={go}/>,about:<About go={go}/>,contact:<Contact go={go}/>,login:<Login go={go}/>,register:<Register go={go} refCode={refCode}/>};
+  useEffect(()=>{
+    fetch(`${API_BASE}/backlink-packages?limit=200`)
+      .then((r)=>r.json())
+      .then((json)=>{
+        const rows = Array.isArray(json?.data) ? json.data : Array.isArray(json?.data?.data) ? json.data.data : [];
+        setPkgs(mapApiPkgs(rows));
+      })
+      .catch(()=>{});
+  },[]);
+  const pages={home:<Home go={go} pkgs={pkgs}/>,services:<Services go={go}/>,backlinks:<Backlinks go={go} pkgs={pkgs}/>,pricing:<Pricing go={go}/>,about:<About go={go}/>,contact:<Contact go={go}/>,login:<Login go={go}/>,register:<Register go={go} refCode={refCode}/>};
   return(
     <>
       <style>{S}</style>

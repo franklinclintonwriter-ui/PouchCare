@@ -1,10 +1,9 @@
 import { Router } from 'express'
 import prisma from '@/lib/prisma'
-import { authenticate, requireRoles, CEO_ROLES  } from '@/middleware/auth'
+import { authenticate, requireRoles, SENIOR_ROLES } from '@/middleware/auth'
 import { ok, created, serverError } from '@/utils/response'
 
 const router = Router()
-const CEO_OP = [...CEO_ROLES, 'Operation Manager']
 
 // Public endpoints
 router.get('/', async (req, res) => {
@@ -42,28 +41,28 @@ router.get('/:slug', async (req, res) => {
 })
 
 // Admin routes
-router.post('/admin', requireRoles(...CEO_OP as any), async (req, res) => {
+router.post('/admin', requireRoles(...SENIOR_ROLES as any), async (req, res) => {
   try {
     const svc = await prisma.service.create({ data: req.body })
     return created(res, svc)
   } catch (err) { serverError(res, err) }
 })
 
-router.put('/admin/:id', requireRoles(...CEO_OP as any), async (req, res) => {
+router.put('/admin/:id', requireRoles(...SENIOR_ROLES as any), async (req, res) => {
   try {
     const svc = await prisma.service.update({ where: { id: req.params.id }, data: req.body })
     return ok(res, svc)
   } catch (err) { serverError(res, err) }
 })
 
-router.post('/admin/backlink-packages', requireRoles(...CEO_OP as any), async (req, res) => {
+router.post('/admin/backlink-packages', requireRoles(...SENIOR_ROLES as any), async (req, res) => {
   try {
     const pkg = await prisma.backlinkPackage.create({ data: req.body })
     return created(res, pkg)
   } catch (err) { serverError(res, err) }
 })
 
-router.put('/admin/backlink-packages/:id', requireRoles(...CEO_OP as any), async (req, res) => {
+router.put('/admin/backlink-packages/:id', requireRoles(...SENIOR_ROLES as any), async (req, res) => {
   try {
     const pkg = await prisma.backlinkPackage.update({ where: { id: req.params.id }, data: req.body })
     return ok(res, pkg)

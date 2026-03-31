@@ -35,7 +35,7 @@ router.get('/', async (req: AuthRequest, res) => {
       prisma.performanceRating.findMany({ where, skip, take: limit, orderBy: { createdAt: 'desc' } }),
       prisma.performanceRating.count({ where }),
     ])
-    return paginated(res, data, buildMeta(limit, total, page))
+    return paginated(res, data, buildMeta(total, page, limit))
   } catch { return serverError(res) }
 })
 

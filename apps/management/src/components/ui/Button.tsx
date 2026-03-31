@@ -1,25 +1,80 @@
-import { cn } from '@/lib/utils'
-import type { ButtonHTMLAttributes } from 'react'
+import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from 'react';
+import { cn } from '@/utils/cn';
+import { Loader2 } from 'lucide-react';
 
-interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'ghost' | 'danger' | 'secondary'
-  size?: 'sm' | 'md' | 'lg'
-  loading?: boolean
+type Variant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
+type Size = 'sm' | 'md' | 'lg';
+
+interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: Variant;
+  size?: Size;
+  isLoading?: boolean;
+  icon?: ReactNode;
+  iconRight?: ReactNode;
+  fullWidth?: boolean;
 }
 
-export function Button({ variant = 'primary', size = 'md', loading, className, children, disabled, ...props }: Props) {
-  const base = 'inline-flex items-center justify-center gap-2 font-semibold font-inter rounded-lg transition-all duration-150 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap'
-  const variants = {
-    primary: 'bg-sky-500 hover:bg-sky-600 text-white shadow-[0_4px_14px_rgba(14,165,233,0.25)] hover:shadow-[0_6px_20px_rgba(14,165,233,0.35)] hover:-translate-y-px',
-    ghost: 'bg-transparent border border-sky-500/40 text-sky-500 hover:bg-sky-500/8 hover:border-sky-500',
-    danger: 'bg-transparent border border-red-500/40 text-red-500 hover:bg-red-500/10 hover:border-red-500',
-    secondary: 'bg-midnight-card border border-midnight-border text-text-secondary hover:text-text-primary hover:border-white/20',
-  }
-  const sizes = { sm: 'h-8 px-3 text-xs', md: 'h-9 px-4 text-sm', lg: 'h-11 px-6 text-base' }
-  return (
-    <button className={cn(base, variants[variant], sizes[size], className)} disabled={disabled || loading} {...props}>
-      {loading && <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />}
-      {children}
-    </button>
-  )
-}
+const variantStyles: Record<Variant, string> = {
+  primary:
+    'bg-primary-600 text-white shadow-sm hover:bg-primary-700 active:bg-primary-800 focus-visible:ring-primary-500/40',
+  secondary:
+    'bg-gray-100 text-gray-900 hover:bg-gray-200 active:bg-gray-300 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600',
+  outline:
+    'border border-gray-300 bg-white text-gray-700 shadow-sm hover:bg-gray-50 active:bg-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700',
+  ghost:
+    'text-gray-700 hover:bg-gray-100 active:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-800',
+  danger:
+    'bg-red-600 text-white shadow-sm hover:bg-red-700 active:bg-red-800 focus-visible:ring-red-500/40',
+};
+
+const sizeStyles: Record<Size, string> = {
+  sm: 'h-9 px-3 text-xs gap-1.5 rounded-lg',
+  md: 'h-10 px-4 text-sm gap-2 rounded-lg',
+  lg: 'h-11 px-6 text-sm gap-2 rounded-xl',
+};
+
+const Button = forwardRef<HTMLButtonElement, ButtonProps>(
+  (
+    {
+      className,
+      variant = 'primary',
+      size = 'md',
+      isLoading = false,
+      icon,
+      iconRight,
+      fullWidth = false,
+      disabled,
+      children,
+      ...props
+    },
+    ref,
+  ) => {
+    return (
+      <button
+        ref={ref}
+        disabled={disabled || isLoading}
+        className={cn(
+          'inline-flex items-center justify-center font-medium transition-all duration-150',
+          'disabled:pointer-events-none disabled:opacity-50',
+          'select-none whitespace-nowrap',
+          variantStyles[variant],
+          sizeStyles[size],
+          fullWidth && 'w-full',
+          className,
+        )}
+        {...props}
+      >
+        {isLoading ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          icon && <span className="shrink-0 [&>svg]:h-4 [&>svg]:w-4">{icon}</span>
+        )}
+        {children && <span>{children}</span>}
+        {iconRight && <span className="shrink-0 [&>svg]:h-4 [&>svg]:w-4">{iconRight}</span>}
+      </button>
+    );
+  },
+);
+
+Button.displayName = 'Button';
+export { Button, type ButtonProps };

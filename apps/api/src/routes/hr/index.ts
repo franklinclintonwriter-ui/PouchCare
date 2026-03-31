@@ -1,12 +1,12 @@
 import { Router } from 'express'
 import prisma from '@/lib/prisma'
-import { authenticate, requireRoles, CEO_ROLES  } from '@/middleware/auth'
+import { authenticate, requireRoles, CEO_ROLES } from '@/middleware/auth'
 import { getPagination, buildMeta } from '@/utils/pagination'
 import { ok, created, notFound, serverError } from '@/utils/response'
 
 const router = Router()
 router.use(authenticate)
-const HR_ROLES = [...CEO_ROLES, 'Operation Manager', 'HR Manager']
+const HR_ROLES = [...CEO_ROLES, 'OP_MANAGER', 'HR_MANAGER'] as const
 
 // ── JOB POSITIONS ──
 router.get('/positions', requireRoles(...HR_ROLES as any), async (req, res) => {
@@ -39,7 +39,17 @@ router.get('/applications', requireRoles(...HR_ROLES as any), async (req, res) =
     const { page, limit, skip } = getPagination(req)
     const { status, positionId } = req.query as Record<string, string>
     const where: any = {}
-    if (status)     where.status = status
+    if (status) {
+      const statusMap: Record<string, string> = {
+        new: 'New',
+        screening: 'Screening',
+        interview: 'Interview',
+        offer: 'Offer',
+        hired: 'Hired',
+        rejected: 'Rejected',
+      }
+      where.status = statusMap[status.toLowerCase()] ?? status
+    }
     if (positionId) where.positionId = positionId
     const [apps, total] = await Promise.all([
       prisma.jobApplication.findMany({
@@ -49,7 +59,7 @@ router.get('/applications', requireRoles(...HR_ROLES as any), async (req, res) =
       }),
       prisma.jobApplication.count({ where }),
     ])
-    return ok(res, apps, buildMeta(page, limit, total))
+    return ok(res, apps, buildMeta(total, page, limit))
   } catch (err) { serverError(res, err) }
 })
 
@@ -75,7 +85,7 @@ router.get('/performance', requireRoles(...HR_ROLES as any), async (req, res) =>
       prisma.performanceRating.findMany({ skip, take: limit, orderBy: { createdAt: 'desc' } }),
       prisma.performanceRating.count(),
     ])
-    return ok(res, ratings, buildMeta(page, limit, total))
+    return ok(res, ratings, buildMeta(total, page, limit))
   } catch (err) { serverError(res, err) }
 })
 

@@ -1,12 +1,11 @@
 import { Router } from 'express'
 import prisma from '@/lib/prisma'
-import { authenticate, requirePortal, requireRoles, CEO_ROLES  } from '@/middleware/auth'
+import { authenticate, requirePortal, requireRoles, SENIOR_ROLES } from '@/middleware/auth'
 import { getPagination, buildMeta } from '@/utils/pagination'
 import { ok, notFound, serverError } from '@/utils/response'
 
 const router = Router()
 router.use(authenticate)
-const CEO_OP = [...CEO_ROLES, 'Operation Manager']
 
 // GET /v1/portal/me
 router.get('/me', requirePortal, async (req, res) => {
@@ -42,7 +41,7 @@ router.put('/me', requirePortal, async (req, res) => {
 
 // Admin routes
 // GET /v1/admin/portal/members
-router.get('/admin/members', requireRoles(...CEO_OP as any), async (req, res) => {
+router.get('/admin/members', requireRoles(...SENIOR_ROLES as any), async (req, res) => {
   try {
     const { page, limit, skip } = getPagination(req)
     const { q, status } = req.query as Record<string, string>
@@ -65,12 +64,12 @@ router.get('/admin/members', requireRoles(...CEO_OP as any), async (req, res) =>
       }),
       prisma.portalMember.count({ where }),
     ])
-    return ok(res, members, buildMeta(page, limit, total))
+    return ok(res, members, buildMeta(total, page, limit))
   } catch (err) { serverError(res, err) }
 })
 
 // GET /v1/admin/portal/members/:id
-router.get('/admin/members/:id', requireRoles(...CEO_OP as any), async (req, res) => {
+router.get('/admin/members/:id', requireRoles(...SENIOR_ROLES as any), async (req, res) => {
   try {
     const member = await prisma.portalMember.findUnique({
       where: { id: req.params.id },
@@ -86,7 +85,7 @@ router.get('/admin/members/:id', requireRoles(...CEO_OP as any), async (req, res
 })
 
 // PUT /v1/admin/portal/members/:id/status
-router.put('/admin/members/:id/status', requireRoles(...CEO_OP as any), async (req, res) => {
+router.put('/admin/members/:id/status', requireRoles(...SENIOR_ROLES as any), async (req, res) => {
   try {
     const member = await prisma.portalMember.update({
       where: { id: req.params.id },

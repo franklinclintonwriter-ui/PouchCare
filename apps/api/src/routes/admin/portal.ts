@@ -11,9 +11,20 @@ router.use(authenticate, isOps)
 router.get('/members', async (req, res) => {
   try {
     const { page, limit, skip } = getPaginationParams(req.query as any)
+    const q = String(req.query.q ?? '').trim()
+    const status = String(req.query.status ?? '').trim()
+    const where: any = {}
+    if (q) {
+      where.OR = [
+        { fullName: { contains: q, mode: 'insensitive' } },
+        { email: { contains: q, mode: 'insensitive' } },
+        { referralCode: { contains: q, mode: 'insensitive' } },
+      ]
+    }
+    if (status) where.status = status as any
     const [items, total] = await Promise.all([
-      prisma.portalMember.findMany({ orderBy: { registrationDate: 'desc' }, skip, take: limit }),
-      prisma.portalMember.count(),
+      prisma.portalMember.findMany({ where, orderBy: { registrationDate: 'desc' }, skip, take: limit }),
+      prisma.portalMember.count({ where }),
     ])
     return ok(res, items.map(({ passwordHash: _, emailVerifyToken: __, resetPasswordToken: ___, refreshToken: ____, ...m }) => m), buildMeta(total, page, limit))
   } catch { return serverError(res) }
@@ -22,7 +33,14 @@ router.get('/members', async (req, res) => {
 // GET /admin/portal/members/:id
 router.get('/members/:id', async (req, res) => {
   try {
-    const m = await prisma.portalMember.findUnique({ where: { id: req.params.id }, include: { orders: { take: 10, orderBy: { orderDate: 'desc' } }, commissionsEarned: { take: 10, orderBy: { createdAt: 'desc' } } } })
+    const m = await prisma.portalMember.findUnique({
+      where: { id: req.params.id },
+      include: {
+        orders: { take: 10, orderBy: { orderDate: 'desc' } },
+        commissionsEarned: { take: 10, orderBy: { createdAt: 'desc' } },
+        walletTx: { take: 20, orderBy: { transactionDate: 'desc' } },
+      },
+    })
     if (!m) return notFound(res)
     const { passwordHash, emailVerifyToken, resetPasswordToken, refreshToken, ...safe } = m
     return ok(res, safe)
@@ -41,9 +59,22 @@ router.put('/members/:id/status', async (req, res) => {
 router.get('/orders', async (req, res) => {
   try {
     const { page, limit, skip } = getPaginationParams(req.query as any)
+    const q = String(req.query.q ?? '').trim()
+    const status = String(req.query.status ?? '').trim()
+    const where: any = {}
+    if (status) where.status = status as any
+    if (q) {
+      where.OR = [
+        { service: { contains: q, mode: 'insensitive' } },
+        { memberEmail: { contains: q, mode: 'insensitive' } },
+      ]
+      if (!Number.isNaN(Number(q))) {
+        where.OR.push({ orderId: Number(q) })
+      }
+    }
     const [items, total] = await Promise.all([
-      prisma.portalOrder.findMany({ orderBy: { orderDate: 'desc' }, skip, take: limit }),
-      prisma.portalOrder.count(),
+      prisma.portalOrder.findMany({ where, orderBy: { orderDate: 'desc' }, skip, take: limit }),
+      prisma.portalOrder.count({ where }),
     ])
     return ok(res, items.map(o => ({ ...o, serviceName: o.service })), buildMeta(total, page, limit))
   } catch { return serverError(res) }
@@ -74,9 +105,10 @@ router.get('/commissions', async (req, res) => {
 router.get('/payouts', async (req, res) => {
   try {
     const { page, limit, skip } = getPaginationParams(req.query as any)
+    const status = String(req.query.status ?? 'PENDING')
     const [items, total] = await Promise.all([
-      prisma.payoutRequest.findMany({ where: { status: 'PENDING' as any }, orderBy: { requestedDate: 'desc' }, skip, take: limit }),
-      prisma.payoutRequest.count({ where: { status: 'PENDING' as any } }),
+      prisma.payoutRequest.findMany({ where: status ? { status: status as any } : {}, orderBy: { requestedDate: 'desc' }, skip, take: limit }),
+      prisma.payoutRequest.count({ where: status ? { status: status as any } : {} }),
     ])
     return ok(res, items, buildMeta(total, page, limit))
   } catch { return serverError(res) }

@@ -1,24 +1,37 @@
-import { Outlet } from 'react-router-dom'
-import { Sidebar } from './Sidebar'
-import { MainHeader } from './MainHeader'
-import { SlideOver } from '@/components/ui/SlideOver'
-import { ToastStack } from '@/components/ui/Toast'
-import { useUiStore } from '@/stores/uiStore'
-import { cn } from '@/lib/utils'
+import { Outlet } from 'react-router-dom';
+import { cn } from '@/utils/cn';
+import { useSidebarStore } from '@/store/sidebarStore';
+import { useIsMobile } from '@/hooks/useMediaQuery';
+import { Header } from './Header';
+import { Sidebar } from './Sidebar';
+import { MobileNav } from './MobileNav';
 
-export function AppLayout() {
-  const { sidebarCollapsed } = useUiStore()
+function AppLayout() {
+  const { isCollapsed } = useSidebarStore();
+  const isMobile = useIsMobile();
+
   return (
-    <div className="min-h-screen bg-midnight">
+    <div className="min-h-screen bg-gray-50/70 dark:bg-gray-950">
       <Sidebar />
-      <MainHeader />
-      <main className={cn('pt-16 min-h-screen transition-all duration-200', sidebarCollapsed ? 'pl-16' : 'pl-60')}>
-        <div className="p-6">
-          <Outlet />
-        </div>
-      </main>
-      <SlideOver />
-      <ToastStack />
+
+      <div
+        className={cn(
+          'transition-all duration-200',
+          !isMobile && (isCollapsed ? 'lg:pl-[72px]' : 'lg:pl-[260px]'),
+        )}
+      >
+        <Header />
+
+        <main className="px-4 pb-20 pt-5 lg:px-6 lg:pb-6 lg:pt-6">
+          <div className="content-shell space-y-6">
+            <Outlet />
+          </div>
+        </main>
+      </div>
+
+      {isMobile && <MobileNav />}
     </div>
-  )
+  );
 }
+
+export { AppLayout };

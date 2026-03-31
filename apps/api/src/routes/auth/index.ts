@@ -28,6 +28,10 @@ const resetSchema = z.object({
   password: z.string().min(8),
 });
 const refreshSchema = z.object({ refresh_token: z.string() });
+const changePasswordSchema = z.object({
+  current_password: z.string().min(1),
+  new_password: z.string().min(8),
+});
 
 // POST /auth/login
 router.post("/login", validate(loginSchema), async (req, res) => {
@@ -65,7 +69,7 @@ router.post("/login", validate(loginSchema), async (req, res) => {
         id: staff.id,
         name: staff.name,
         email: staff.email,
-        role: staff.systemRole,
+        systemRole: staff.systemRole,
         branch: staff.branch,
         memberId: staff.memberId,
       },
@@ -131,5 +135,29 @@ router.post('/2fa/verify', authenticate, validate(z.object({ code: z.string().le
     return ok(res, { message: '2FA enabled' })
   } catch { return serverError(res) }
 })
+
+// POST /auth/change-password
+router.post('/change-password', authenticate, validate(changePasswordSchema), async (req: AuthRequest, res) => {
+  try {
+    const staff = await prisma.staffMember.findUnique({ where: { id: req.user!.id } });
+    if (!staff) return unauthorized(res, 'User not found');
+
+    const valid = await comparePassword(req.body.current_password, staff.passwordHash);
+    if (!valid) return badRequest(res, 'Current password is incorrect');
+
+    const sameAsCurrent = await comparePassword(req.body.new_password, staff.passwordHash);
+    if (sameAsCurrent) return badRequest(res, 'New password must be different');
+
+    const passwordHash = await hashPassword(req.body.new_password);
+    await prisma.staffMember.update({
+      where: { id: staff.id },
+      data: { passwordHash },
+    });
+
+    return ok(res, { message: 'Password changed successfully' });
+  } catch {
+    return serverError(res);
+  }
+});
 
 export default router;

@@ -1,0 +1,138 @@
+import { useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+  Bell,
+  CheckCircle2,
+  FileText,
+  CreditCard,
+  AlertCircle,
+  ShoppingCart,
+  CalendarOff,
+} from 'lucide-react';
+import { useHeaderConfig } from '@/hooks/useHeaderConfig';
+import { useNotifications } from '@/api/notifications';
+import { Card } from '@/components/ui/Card';
+import { PageTransition } from '@/components/ui/PageTransition';
+import { Skeleton } from '@/components/ui/Skeleton';
+import type { AppNotification } from '@/types/models';
+
+const typeIcons: Record<string, React.ReactNode> = {
+  task: <CheckCircle2 className="h-4 w-4 text-blue-500" />,
+  leave: <CalendarOff className="h-4 w-4 text-purple-500" />,
+  ticket: <FileText className="h-4 w-4 text-amber-500" />,
+  payment: <CreditCard className="h-4 w-4 text-emerald-500" />,
+  system: <AlertCircle className="h-4 w-4 text-red-500" />,
+  order: <ShoppingCart className="h-4 w-4 text-cyan-500" />,
+};
+
+function relativeTime(date: string): string {
+  const diff = Date.now() - new Date(date).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'Just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d ago`;
+  return new Date(date).toLocaleDateString();
+}
+
+function groupByDate(notifications: AppNotification[]): Record<string, AppNotification[]> {
+  const groups: Record<string, AppNotification[]> = {};
+  for (const n of notifications) {
+    const date = new Date(n.timestamp);
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    let label: string;
+    if (date.toDateString() === today.toDateString()) {
+      label = 'Today';
+    } else if (date.toDateString() === yesterday.toDateString()) {
+      label = 'Yesterday';
+    } else {
+      label = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+
+    if (!groups[label]) groups[label] = [];
+    groups[label].push(n);
+  }
+  return groups;
+}
+
+export default function NotificationList() {
+  const navigate = useNavigate();
+  const { data: notifications, isLoading } = useNotifications();
+
+  const headerConfig = useMemo(() => ({
+    title: 'Notifications',
+    breadcrumbs: [{ label: 'Notifications', icon: Bell }],
+    actions: [],
+  }), []);
+  useHeaderConfig(headerConfig);
+
+  const grouped = useMemo(
+    () => groupByDate(notifications ?? []),
+    [notifications],
+  );
+
+  if (isLoading) {
+    return (
+      <PageTransition className="space-y-3">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <Card key={i}>
+            <div className="flex items-center gap-3">
+              <Skeleton className="h-8 w-8 rounded-lg" />
+              <div className="space-y-1.5">
+                <Skeleton className="h-4 w-48 rounded" />
+                <Skeleton className="h-3 w-20 rounded" />
+              </div>
+            </div>
+          </Card>
+        ))}
+      </PageTransition>
+    );
+  }
+
+  return (
+    <PageTransition className="space-y-6">
+      {Object.entries(grouped).map(([dateLabel, items]) => (
+        <div key={dateLabel}>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+            {dateLabel}
+          </p>
+          <div className="space-y-2">
+            {items.map((notif) => (
+              <button
+                key={notif.id}
+                onClick={() => notif.resourceUrl && navigate(notif.resourceUrl)}
+                className={`flex w-full items-center gap-3 rounded-xl border bg-white p-3 text-left transition-all duration-150
+                  hover:shadow-card dark:bg-gray-800/80
+                  ${
+                    !notif.read
+                      ? 'border-l-4 border-l-primary-500 border-t-gray-200/80 border-r-gray-200/80 border-b-gray-200/80 dark:border-t-gray-700/60 dark:border-r-gray-700/60 dark:border-b-gray-700/60'
+                      : 'border-gray-200/80 dark:border-gray-700/60'
+                  }`}
+              >
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gray-50 dark:bg-gray-700/50">
+                  {typeIcons[notif.type] ?? <Bell className="h-4 w-4 text-gray-400" />}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className={`truncate text-sm ${!notif.read ? 'font-semibold text-gray-900 dark:text-gray-100' : 'text-gray-700 dark:text-gray-300'}`}>
+                    {notif.title}
+                  </p>
+                  <p className="text-[11px] text-gray-400 dark:text-gray-500">
+                    {relativeTime(notif.timestamp)}
+                  </p>
+                </div>
+                {!notif.read && (
+                  <span className="h-2 w-2 shrink-0 rounded-full bg-primary-500" />
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+      ))}
+    </PageTransition>
+  );
+}

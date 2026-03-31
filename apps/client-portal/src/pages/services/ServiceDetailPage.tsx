@@ -12,7 +12,7 @@ import api from '@/lib/api'
 export default function ServiceDetailPage() {
   const { slug } = useParams<{ slug: string }>()
   const navigate = useNavigate()
-  const { user, updateBalance } = useAuthStore()
+  const { updateBalance } = useAuthStore()
   const toast = useToast()
   const [qty, setQty] = useState(1)
   const [req, setReq] = useState('')

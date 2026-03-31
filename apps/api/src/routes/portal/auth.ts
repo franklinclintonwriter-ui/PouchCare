@@ -21,6 +21,10 @@ const registerSchema = z.object({
 })
 
 const loginSchema = z.object({ email: z.string().email(), password: z.string() })
+const changePasswordSchema = z.object({
+  current_password: z.string().min(1),
+  new_password: z.string().min(8),
+})
 
 function generateReferralCode() {
   return 'REF-' + nanoid(8).toUpperCase()
@@ -93,6 +97,23 @@ router.post('/verify-email', validate(z.object({ token: z.string() })), async (r
   } catch { return serverError(res) }
 })
 
+// POST /portal/resend-verification
+router.post('/resend-verification', validate(z.object({ email: z.string().email() })), async (req, res) => {
+  try {
+    const member = await prisma.portalMember.findUnique({ where: { email: req.body.email } })
+    if (member && !member.emailVerified) {
+      const token = crypto.randomBytes(32).toString('hex')
+      await prisma.portalMember.update({
+        where: { id: member.id },
+        data: { emailVerifyToken: token },
+      })
+      // TODO: send verification email via mail provider
+      console.log(`[DEV] Verification token for ${member.email}: ${token}`)
+    }
+    return ok(res, { message: 'If account exists and is unverified, a verification email has been sent' })
+  } catch { return serverError(res) }
+})
+
 // POST /portal/forgot-password
 router.post('/forgot-password', validate(z.object({ email: z.string().email() })), async (req, res) => {
   try {
@@ -134,6 +155,25 @@ router.post('/refresh', validate(z.object({ refresh_token: z.string() })), async
     const access_token = signAccess({ sub: member.id, role: 'PORTAL_MEMBER' as any, type: 'portal' })
     return ok(res, { access_token })
   } catch { return unauthorized(res, 'Invalid or expired refresh token') }
+})
+
+// POST /portal/change-password
+router.post('/change-password', authenticate, requirePortal, validate(changePasswordSchema), async (req: AuthRequest, res) => {
+  try {
+    const member = await prisma.portalMember.findUnique({ where: { id: req.user!.id } })
+    if (!member) return unauthorized(res, 'User not found')
+
+    const valid = await comparePassword(req.body.current_password, member.passwordHash)
+    if (!valid) return badRequest(res, 'Current password is incorrect')
+
+    const sameAsCurrent = await comparePassword(req.body.new_password, member.passwordHash)
+    if (sameAsCurrent) return badRequest(res, 'New password must be different')
+
+    const passwordHash = await hashPassword(req.body.new_password)
+    await prisma.portalMember.update({ where: { id: member.id }, data: { passwordHash } })
+
+    return ok(res, { message: 'Password changed successfully' })
+  } catch { return serverError(res) }
 })
 
 export default router

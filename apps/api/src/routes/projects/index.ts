@@ -38,13 +38,32 @@ router.get('/', async (req: AuthRequest, res) => {
       prisma.project.findMany({ where, skip, take: limit, orderBy: { createdAt: 'desc' } }),
       prisma.project.count({ where }),
     ])
-    return paginated(res, data, buildMeta(limit, total, page))
+    return paginated(res, data, buildMeta(total, page, limit))
   } catch { return serverError(res) }
 })
 
 router.get('/:id', async (req, res) => {
   try {
-    const project = await prisma.project.findUnique({ where: { id: req.params.id }, select: { id: true, projectId: true, name: true, status: true, priority: true, clientName: true, deadline: true, progress: true, paymentStatus: true, assignedTo: true } })
+    const project = await prisma.project.findUnique({
+      where: { id: req.params.id },
+      select: {
+        id: true,
+        projectId: true,
+        name: true,
+        status: true,
+        priority: true,
+        clientName: true,
+        notes: true,
+        startDate: true,
+        deadline: true,
+        progress: true,
+        price: true,
+        paidAmount: true,
+        paymentStatus: true,
+        assignedTo: true,
+        createdAt: true,
+      },
+    })
     if (!project) return notFound(res, 'Project')
     return ok(res, project)
   } catch { return serverError(res) }

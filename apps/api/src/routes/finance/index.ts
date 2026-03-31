@@ -21,7 +21,7 @@ router.get('/invoices', isOps, async (req, res) => {
       prisma.invoice.findMany({ where, skip, take: limit, orderBy: { issueDate: 'desc' } }),
       prisma.invoice.count({ where }),
     ])
-    return ok(res, invoices, buildMeta(page, limit, total))
+    return ok(res, invoices, buildMeta(total, page, limit))
   } catch (err) { serverError(res, err) }
 })
 
@@ -59,7 +59,7 @@ router.get('/expenses', isOps, async (req, res) => {
       prisma.expense.findMany({ skip, take: limit, orderBy: { expenseDate: 'desc' } }),
       prisma.expense.count(),
     ])
-    return ok(res, expenses, buildMeta(page, limit, total))
+    return ok(res, expenses, buildMeta(total, page, limit))
   } catch (err) { serverError(res, err) }
 })
 
@@ -87,7 +87,7 @@ router.get('/payroll', isOps, async (req, res) => {
       prisma.payroll.findMany({ skip, take: limit, orderBy: { year: 'desc' } }),
       prisma.payroll.count(),
     ])
-    return ok(res, records, buildMeta(page, limit, total))
+    return ok(res, records, buildMeta(total, page, limit))
   } catch (err) { serverError(res, err) }
 })
 
@@ -110,7 +110,7 @@ router.get('/revenue/monthly', isOps, async (req, res) => {
       prisma.monthlyRevenue.findMany({ skip, take: limit, orderBy: [{ year: 'desc' }, { month: 'desc' }] }),
       prisma.monthlyRevenue.count(),
     ])
-    return ok(res, records, buildMeta(page, limit, total))
+    return ok(res, records, buildMeta(total, page, limit))
   } catch (err) { serverError(res, err) }
 })
 

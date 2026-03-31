@@ -8,7 +8,6 @@ import { ok, created, badRequest, notFound, forbidden, serverError } from '@/uti
 
 const router = Router()
 router.use(authenticate)
-router.use(authenticate)
 
 const applySchema = z.object({
   leaveType:  z.string(),
@@ -77,7 +76,7 @@ router.put('/:id/reject', requireRoles(...MANAGER_ROLES as any), async (req, res
   try {
     const updated = await prisma.leaveRequest.update({
       where: { id: req.params.id },
-      data: { status: 'REJECTED', notes: req.body.note },
+      data: { status: 'REJECTED', notes: req.body.note ?? req.body.reason },
     })
     return ok(res, updated)
   } catch (err) { serverError(res, err) }

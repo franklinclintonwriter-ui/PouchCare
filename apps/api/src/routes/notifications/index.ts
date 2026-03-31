@@ -23,7 +23,7 @@ router.get('/', requireAuth, async (req, res) => {
       prisma.notification.count({ where }),
     ])
     const unreadCount = await prisma.notification.count({ where: { ...where, read: false } })
-    return ok(res, notifications, { ...buildMeta(page, limit, total), unreadCount })
+    return ok(res, notifications, { ...buildMeta(total, page, limit), unreadCount })
   } catch (err) { serverError(res, err) }
 })
 

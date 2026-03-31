@@ -1,19 +1,34 @@
-import { useAuthStore } from '@/stores/authStore'
-import type { SystemRole } from '@/types'
+import { useNavigate } from 'react-router-dom';
+import { useAuthStore } from '@/store/authStore';
+import { useStaffLogout, usePortalLogout } from '@/api/auth';
 
 export function useAuth() {
-  const { user, isAuthenticated, logout } = useAuthStore()
+  const { user, isAuthenticated, isLoading, userType, logout: clearStore } = useAuthStore();
+  const navigate = useNavigate();
 
-  // CEO has full unrestricted access — no role checks needed for CEO
-  const isCEO = () => !!user && (user.role === 'CEO' || user.role === 'CO_MD')
-  
-  const isOps = () => !!user && ['CEO', 'CO_MD', 'OP_MANAGER'].includes(user.role)
-  
-  const isManager = () => !!user && ['CEO', 'CO_MD', 'OP_MANAGER', 'BRANCH_MANAGER'].includes(user.role)
-  
-  const isHR = () => !!user && ['CEO', 'CO_MD', 'OP_MANAGER', 'HR_MANAGER'].includes(user.role)
-  
-  const hasRole = (...roles: SystemRole[]) => !!user && roles.includes(user.role)
+  const staffLogout = useStaffLogout();
+  const portalLogout = usePortalLogout();
 
-  return { user, isAuthenticated, logout, hasRole, isCEO, isOps, isManager, isHR }
+  const logout = async () => {
+    try {
+      if (userType === 'portal') {
+        await portalLogout.mutateAsync();
+      } else {
+        await staffLogout.mutateAsync();
+      }
+    } catch {
+      clearStore();
+    }
+    navigate(userType === 'portal' ? '/portal/login' : '/login');
+  };
+
+  return {
+    user,
+    isAuthenticated,
+    isLoading,
+    userType,
+    logout,
+    isStaff: userType === 'staff',
+    isPortal: userType === 'portal',
+  };
 }

@@ -6,13 +6,14 @@ import prisma from '@/lib/prisma'
 import { ok, created, badRequest, notFound, serverError, paginated } from '@/lib/response'
 import { getPagination, paginatedMeta, buildMeta} from '@/lib/pagination'
 import { env } from '@/config/env'
+import { PaymentMethod, PayoutStatus } from '@prisma/client'
 
 const router = Router()
 
 // GET /portal/commissions — my ledger
 router.get('/', authenticate, requirePortal, async (req: AuthRequest, res) => {
   try {
-    const { page, limit, skip } = getPagination(req)
+    const { page, limit, skip } = getPagination(req.query as Record<string, string>)
     const { status } = req.query as Record<string, string>
     const where: any = { earnerId: req.user!.id }
     if (status) where.status = status
@@ -20,7 +21,7 @@ router.get('/', authenticate, requirePortal, async (req: AuthRequest, res) => {
       prisma.commission.findMany({ where, skip, take: limit, orderBy: { createdAt: 'desc' } }),
       prisma.commission.count({ where }),
     ])
-    return paginated(res, data, buildMeta(limit, total, page))
+    return paginated(res, data, buildMeta(total, page, limit))
   } catch { return serverError(res) }
 })
 
@@ -45,19 +46,19 @@ router.get('/summary', authenticate, requirePortal, async (req: AuthRequest, res
 // GET /portal/commissions/payouts — payout history
 router.get('/payouts', authenticate, requirePortal, async (req: AuthRequest, res) => {
   try {
-    const { page, limit, skip } = getPagination(req)
+    const { page, limit, skip } = getPagination(req.query as Record<string, string>)
     const [data, total] = await Promise.all([
       prisma.payoutRequest.findMany({ where: { memberId: req.user!.id }, skip, take: limit, orderBy: { createdAt: 'desc' } }),
       prisma.payoutRequest.count({ where: { memberId: req.user!.id } }),
     ])
-    return paginated(res, data, buildMeta(limit, total, page))
+    return paginated(res, data, buildMeta(total, page, limit))
   } catch { return serverError(res) }
 })
 
 // POST /portal/commissions/payout-request
 router.post('/payout-request', authenticate, requirePortal, validate(z.object({
   amountUsd:      z.number().min(env.MIN_PAYOUT_USD),
-  paymentMethod:  z.enum(['Payoneer', 'USDT TRC20', 'Binance']),
+  paymentMethod:  z.nativeEnum(PaymentMethod),
   paymentDetails: z.string().min(5),
 })), async (req: AuthRequest, res) => {
   try {
@@ -73,7 +74,7 @@ router.post('/payout-request', authenticate, requirePortal, validate(z.object({
     }
 
     const payout = await prisma.payoutRequest.create({
-      data: { memberId: req.user!.id, memberName: member.fullName, memberEmail: member.email, ...req.body },
+      data: { memberId: req.user!.id, memberEmail: member.email, ...req.body },
     })
     return created(res, payout)
   } catch { return serverError(res) }
@@ -82,11 +83,12 @@ router.post('/payout-request', authenticate, requirePortal, validate(z.object({
 // Admin: process payout
 router.put('/:id/process', authenticate, isOps, async (req: AuthRequest, res) => {
   try {
+    const payoutStatus = req.body.status === 'REJECTED' ? PayoutStatus.REJECTED : PayoutStatus.COMPLETED
     const payout = await prisma.payoutRequest.update({
       where: { id: req.params.id },
-      data: { status: req.body.status || 'COMPLETED', processedDate: new Date(), processedBy: req.user!.id, transactionId: req.body.transactionId },
+      data: { status: payoutStatus, processedDate: new Date(), processedBy: req.user!.id, transactionId: req.body.transactionId },
     })
-    if (payout.status === 'COMPLETED') {
+    if (payout.status === PayoutStatus.COMPLETED) {
       await prisma.commission.updateMany({ where: { earnerId: payout.memberId, status: 'AVAILABLE' }, data: { status: 'PAID_OUT', payoutDate: new Date() } })
     }
     return ok(res, payout)

@@ -5,7 +5,6 @@ import { ok, serverError } from '@/utils/response'
 
 const router = Router()
 router.use(authenticate)
-router.use(authenticate)
 
 router.get('/', requireStaff, async (req, res) => {
   try {

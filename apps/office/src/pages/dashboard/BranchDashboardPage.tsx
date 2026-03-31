@@ -1,9 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
 import { KpiCard } from '@/components/ui/KpiCard'
 import { Badge } from '@/components/ui/Badge'
-import { Skeleton } from '@/components/ui/Skeleton'
 import { useAuthStore } from '@/stores/authStore'
-import { statusColor, formatDate, formatCurrency } from '@/lib/utils'
+import { statusColor } from '@/lib/utils'
 import api from '@/lib/api'
 import { usePageHeader } from '@/hooks/usePageHeader'
 

@@ -5,7 +5,7 @@ import { validate } from '@/middleware/validate'
 import prisma from '@/lib/prisma'
 import { ok, created, badRequest, notFound, serverError, paginated } from '@/lib/response'
 import { getPagination, paginatedMeta, buildMeta} from '@/lib/pagination'
-import { WalletTxType } from '@prisma/client'
+import { PaymentMethod, WalletTxType } from '@prisma/client'
 
 const router = Router()
 
@@ -32,14 +32,14 @@ router.get('/transactions', authenticate, requirePortal, async (req: AuthRequest
       prisma.walletTransaction.findMany({ where, skip, take: limit, orderBy: { createdAt: 'desc' } }),
       prisma.walletTransaction.count({ where }),
     ])
-    return paginated(res, data, buildMeta(limit, total, page))
+    return paginated(res, data, buildMeta(total, page, limit))
   } catch { return serverError(res) }
 })
 
 // POST /portal/wallet/deposit — submit deposit proof
 router.post('/deposit', authenticate, requirePortal, validate(z.object({
   amountUsd: z.number().positive(),
-  paymentMethod: z.enum(['Payoneer', 'USDT TRC20', 'Binance']),
+  paymentMethod: z.nativeEnum(PaymentMethod),
   proofUrl: z.string().url().optional(),
 })), async (req: AuthRequest, res) => {
   try {

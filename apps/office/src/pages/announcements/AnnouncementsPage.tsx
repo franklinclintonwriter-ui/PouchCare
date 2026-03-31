@@ -2,7 +2,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { timeAgo } from '@/lib/utils'
 import api from '@/lib/api'
-import type { Announcement } from '@/types'
 import { usePageHeader } from '@/hooks/usePageHeader'
 
 export default function AnnouncementsPage() {

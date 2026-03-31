@@ -1,18 +1,17 @@
 import { Router } from 'express'
 import { z } from 'zod'
 import prisma from '@/lib/prisma'
-import { authenticate, requireAuth, requirePortal, requireStaff, requireRoles, CEO_ROLES  } from '@/middleware/auth'
+import { authenticate, requireAuth, requireStaff } from '@/middleware/auth'
 import { validate } from '@/middleware/validate'
 import { getPagination, buildMeta } from '@/utils/pagination'
-import { ok, created, notFound, forbidden, serverError } from '@/utils/response'
+import { ok, created, notFound, forbidden, badRequest, serverError } from '@/utils/response'
 
 const router = Router()
-router.use(authenticate)
 router.use(authenticate)
 
 const ticketSchema = z.object({
   subject:  z.string().min(3),
-  message:  z.string().min(1).optional(),
+  message:  z.string().min(1),
   priority: z.string().optional().default("Medium"),
   category: z.string().optional(),
 })
@@ -21,12 +20,25 @@ router.get('/tickets', requireAuth, async (req, res) => {
   try {
     const { page, limit, skip } = getPagination(req)
     const where: any = {}
+    const statusQuery = typeof req.query.status === 'string' ? req.query.status.trim().toLowerCase() : ''
+    if (statusQuery === 'open') where.status = 'Open'
+    if (statusQuery === 'in_progress') where.status = 'In Progress'
+    if (statusQuery === 'resolved') where.status = 'Resolved'
+    if (statusQuery === 'closed') where.status = 'Closed'
     if (req.user?.type === 'portal') where.memberId = req.user.id
     const [tickets, total] = await Promise.all([
-      prisma.supportTicket.findMany({ where, skip, take: limit, orderBy: { createdAt: 'desc' } }),
+      prisma.supportTicket.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          replies: { orderBy: { createdAt: 'asc' } },
+        },
+      }),
       prisma.supportTicket.count({ where }),
     ])
-    return ok(res, tickets, buildMeta(page, limit, total))
+    return ok(res, tickets, buildMeta(total, page, limit))
   } catch (err) { serverError(res, err) }
 })
 
@@ -81,7 +93,7 @@ router.post("/tickets", validate(ticketSchema), async (req, res) => {
 router.post('/tickets/:id/reply', requireAuth, async (req, res) => {
   try {
     const { content } = req.body
-    if (!content?.trim()) return ok(res, { error: 'Content required' })
+    if (!content?.trim()) return badRequest(res, 'Content required')
 
     let authorName = 'Unknown'
     let authorType = req.user!.type

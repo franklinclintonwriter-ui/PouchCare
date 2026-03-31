@@ -36,6 +36,7 @@ import portalOrdersRouter from '@/routes/portal/orders'
 import portalReferralsRouter from '@/routes/portal/referrals'
 import portalCommissionsRouter from '@/routes/portal/commissions'
 import adminPortalRouter from '@/routes/admin/portal'
+import adminResourcesRouter from '@/routes/admin/resources'
 import { setupWebSocket } from '@/lib/websocket'
 import { startJobs } from '@/jobs/index'
 
@@ -104,6 +105,7 @@ app.use(`${v1}/portal/commissions`, portalCommissionsRouter)
 
 // Admin
 app.use(`${v1}/admin/portal`, adminPortalRouter)
+app.use(`${v1}/admin`, adminResourcesRouter)
 
 // ── Error handler ────────────────────────────────────
 app.use(errorHandler)

@@ -1,0 +1,126 @@
+import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { FileText, Clock, CheckCircle2, TrendingUp, Smile, Meh, Frown, Heart, type LucideIcon } from 'lucide-react';
+import { useHeaderConfig } from '@/hooks/useHeaderConfig';
+import { useDailyReports } from '@/api/reports';
+import { PageTransition } from '@/components/ui/PageTransition';
+import { DataTable, type Column } from '@/components/ui/DataTable';
+import { StatusBadge } from '@/components/ui/StatusBadge';
+import { Avatar } from '@/components/ui/Avatar';
+import { StatsRow } from '@/components/shared/StatsRow';
+import { cn } from '@/utils/cn';
+import type { DailyReport } from '@/types/models';
+
+const moodConfig: Record<string, { icon: LucideIcon; color: string }> = {
+  great: { icon: Heart, color: 'text-rose-500' },
+  good: { icon: Smile, color: 'text-emerald-500' },
+  okay: { icon: Meh, color: 'text-amber-500' },
+  bad: { icon: Frown, color: 'text-red-500' },
+};
+
+export default function DailyReports() {
+  const navigate = useNavigate();
+  const [page, setPage] = useState(1);
+
+  const { data, isLoading } = useDailyReports({ page, limit: 20 });
+
+  const reports = data?.data ?? [];
+  const meta = data?.meta;
+
+  const stats = useMemo(() => {
+    const total = meta?.total ?? 0;
+    const avgHours = reports.length > 0
+      ? (reports.reduce((s, r) => s + r.hoursWorked, 0) / reports.length).toFixed(1)
+      : '0';
+    const avgTasks = reports.length > 0
+      ? (reports.reduce((s, r) => s + r.tasksCompleted, 0) / reports.length).toFixed(1)
+      : '0';
+    const approved = reports.filter(r => r.status === 'APPROVED_MGR' || r.status === 'VERIFIED').length;
+    return [
+      { title: 'Total Reports', value: total, icon: <FileText />, iconBg: 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' },
+      { title: 'Avg Hours', value: avgHours, icon: <Clock />, iconBg: 'bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400' },
+      { title: 'Avg Tasks/Day', value: avgTasks, icon: <TrendingUp />, iconBg: 'bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400' },
+      { title: 'Approved', value: approved, icon: <CheckCircle2 />, iconBg: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400' },
+    ];
+  }, [reports, meta]);
+
+  const headerConfig = useMemo(() => ({
+    title: 'Daily Reports',
+    breadcrumbs: [{ label: 'Home', href: '/' }, { label: 'Reports' }, { label: 'Daily Reports' }],
+    actions: [{ type: 'button' as const, label: 'Submit Report', onClick: () => navigate('/reports/submit') }],
+  }), [navigate]);
+
+  useHeaderConfig(headerConfig);
+
+  const columns: Column<DailyReport>[] = [
+    {
+      key: 'staffName',
+      label: 'Staff',
+      sticky: true,
+      render: (row) => (
+        <div className="flex items-center gap-2">
+          <Avatar name={row.staffName} src={row.avatarUrl} size="xs" />
+          <span className="font-medium text-gray-900 dark:text-gray-100">{row.staffName}</span>
+        </div>
+      ),
+    },
+    {
+      key: 'date',
+      label: 'Date',
+      render: (row) => (
+        <span className="text-sm text-gray-600 dark:text-gray-400">
+          {new Date(row.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+        </span>
+      ),
+    },
+    {
+      key: 'tasksCompleted',
+      label: 'Tasks Done',
+      align: 'center',
+      render: (row) => (
+        <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">{row.tasksCompleted}</span>
+      ),
+    },
+    {
+      key: 'hoursWorked',
+      label: 'Hours',
+      align: 'center',
+      render: (row) => (
+        <span className="text-sm text-gray-700 dark:text-gray-300">{row.hoursWorked}h</span>
+      ),
+    },
+    {
+      key: 'mood',
+      label: 'Mood',
+      align: 'center',
+      render: (row) => {
+        const cfg = moodConfig[row.mood] ?? moodConfig.okay;
+        const Icon = cfg.icon;
+        return <Icon className={cn('mx-auto h-4.5 w-4.5', cfg.color)} />;
+      },
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (row) => <StatusBadge status={row.status} size="sm" />,
+    },
+  ];
+
+  return (
+    <PageTransition>
+      <div className="space-y-6">
+        <StatsRow items={stats} loading={isLoading} />
+
+        <DataTable
+          columns={columns}
+          data={reports}
+          isLoading={isLoading}
+          pagination={meta}
+          onPageChange={setPage}
+          emptyTitle="No reports found"
+          emptyDescription="No daily reports have been submitted yet"
+        />
+      </div>
+    </PageTransition>
+  );
+}

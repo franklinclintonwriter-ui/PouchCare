@@ -4,9 +4,31 @@ import { authenticate, requirePortal } from '@/middleware/auth'
 import { ok, created, badRequest, notFound, serverError } from '@/lib/response'
 import { getPaginationParams, buildMeta } from '@/lib/pagination'
 import { OrderStatus, WalletTxType } from '@prisma/client'
+import { z } from 'zod'
+import { validate } from '@/middleware/validate'
 
 const router = Router()
 router.use(authenticate, requirePortal)
+
+type OrderMessage = {
+  id: string
+  authorType: 'member' | 'staff'
+  authorName: string
+  content: string
+  createdAt: string
+}
+
+function parseOrderMessages(notes?: string | null): OrderMessage[] {
+  if (!notes) return []
+  try {
+    const parsed = JSON.parse(notes)
+    if (Array.isArray(parsed)) return parsed as OrderMessage[]
+    if (Array.isArray(parsed.messages)) return parsed.messages as OrderMessage[]
+    return []
+  } catch {
+    return []
+  }
+}
 
 // GET /portal/orders
 router.get('/', async (req, res) => {
@@ -72,6 +94,45 @@ router.post('/:id/revision', async (req, res) => {
     if (order.status !== OrderStatus.DELIVERED) return badRequest(res, 'Can only request revision on delivered orders')
     const updated = await prisma.portalOrder.update({ where: { id: req.params.id }, data: { status: OrderStatus.REVISION_REQUESTED, revisionCount: { increment: 1 } } })
     return ok(res, updated)
+  } catch { return serverError(res) }
+})
+
+// GET /portal/orders/:id/messages
+router.get('/:id/messages', async (req, res) => {
+  try {
+    const order = await prisma.portalOrder.findFirst({
+      where: { id: req.params.id, memberId: req.user!.id },
+      select: { notes: true },
+    })
+    if (!order) return notFound(res)
+    return ok(res, parseOrderMessages(order.notes))
+  } catch { return serverError(res) }
+})
+
+// POST /portal/orders/:id/messages
+router.post('/:id/messages', validate(z.object({ content: z.string().min(1).max(2000) })), async (req, res) => {
+  try {
+    const order = await prisma.portalOrder.findFirst({
+      where: { id: req.params.id, memberId: req.user!.id },
+      select: { id: true, notes: true, member: { select: { fullName: true } } },
+    })
+    if (!order) return notFound(res)
+
+    const messages = parseOrderMessages(order.notes)
+    const message: OrderMessage = {
+      id: `m_${Date.now()}`,
+      authorType: 'member',
+      authorName: order.member.fullName,
+      content: req.body.content,
+      createdAt: new Date().toISOString(),
+    }
+    const next = [...messages, message]
+    await prisma.portalOrder.update({
+      where: { id: order.id },
+      data: { notes: JSON.stringify({ messages: next }) },
+    })
+
+    return created(res, message)
   } catch { return serverError(res) }
 })
 

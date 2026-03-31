@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import prisma from '@/lib/prisma'
-import { authenticate, requirePortal } from '@/middleware/auth'
+import { authenticate, requirePortal, isOps } from '@/middleware/auth'
 import { ok, serverError } from '@/lib/response'
 import { getPaginationParams, buildMeta } from '@/lib/pagination'
 
@@ -51,7 +51,7 @@ router.get('/stats', async (req, res) => {
 
 
 // GET /portal/referrals/fraud — admin only
-router.get('/fraud', async (req, res) => {
+router.get('/fraud', isOps, async (req, res) => {
   try {
     const flagged = await prisma.commission.findMany({ where: { fraudFlag: true }, take: 50, orderBy: { createdAt: 'desc' } })
     return ok(res, flagged)

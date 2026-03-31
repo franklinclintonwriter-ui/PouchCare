@@ -8,20 +8,24 @@ import { ok, created, badRequest, notFound, serverError } from '@/utils/response
 
 const router = Router()
 router.use(authenticate)
-router.use(authenticate)
 
 // GET /v1/attendance
 router.get('/', requireStaff, async (req, res) => {
   try {
-    const { page, limit, skip } = getPagination(req)
-    const { memberId, startDate, endDate, status } = req.query as Record<string, string>
+    const { page, limit, skip } = getPagination(req.query as Record<string, string>)
+    const { memberId, startDate, endDate, date, status } = req.query as Record<string, string>
 
     const where: any = {}
-    if (!MANAGER_ROLES.includes(req.user!.role)) where.memberId = req.user!.id
-    else if (memberId) where.memberId = memberId
+    if (!MANAGER_ROLES.includes(req.user!.role)) where.staffMemberId = req.user!.id
+    else if (memberId) where.staffMemberId = memberId
 
     if (status) where.status = status
-    if (startDate || endDate) {
+    if (date) {
+      const day = new Date(date)
+      const next = new Date(day)
+      next.setDate(day.getDate() + 1)
+      where.date = { gte: day, lt: next }
+    } else if (startDate || endDate) {
       where.date = {}
       if (startDate) where.date.gte = new Date(startDate)
       if (endDate)   where.date.lte = new Date(endDate)

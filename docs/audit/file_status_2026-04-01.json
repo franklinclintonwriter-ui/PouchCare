@@ -1,0 +1,81 @@
+{
+  "generatedAt": "2026-04-01",
+  "categories": {
+    "complete": [
+      {
+        "path": "apps/api/src/server.ts",
+        "reason": "Central route mounting is consistent and app boots with env validation."
+      },
+      {
+        "path": "apps/api/src/lib/response.ts",
+        "reason": "Standard envelope helpers used across API."
+      },
+      {
+        "path": "apps/api/src/config/env.ts",
+        "reason": "Strong env validation via zod."
+      },
+      {
+        "path": "apps/management/src/api/client.ts",
+        "reason": "Refresh flow uses refresh_token and selects correct endpoint by userType."
+      },
+      {
+        "path": "apps/management/src/routes/index.tsx",
+        "reason": "Route wiring matches route constants; no obvious missing routes."
+      }
+    ],
+    "needsFix": [
+      {
+        "path": "apps/api/src/routes/auth/index.ts",
+        "priority": "P0",
+        "reason": "Mounted staff auth router has placeholder reset-password and incomplete forgot-password implementation."
+      },
+      {
+        "path": "apps/api/src/routes/portal/auth.ts",
+        "priority": "P0",
+        "reason": "Logs verification/reset tokens and does not send verification/reset emails."
+      },
+      {
+        "path": "apps/office/src/lib/api.ts",
+        "priority": "P0",
+        "reason": "Refresh request uses refreshToken instead of refresh_token; endpoint selection likely incorrect."
+      },
+      {
+        "path": "apps/client-portal/src/lib/api.ts",
+        "priority": "P0",
+        "reason": "Refresh request uses refreshToken instead of refresh_token; endpoint selection likely incorrect."
+      },
+      {
+        "path": "apps/management/src/pages/portal/Wallet.tsx",
+        "priority": "P1",
+        "reason": "Withdraw callback is a no-op; some wallet summary values are hardcoded."
+      },
+      {
+        "path": "apps/api/src/routes/search/index.ts",
+        "priority": "P2",
+        "reason": "Duplicate authenticate middleware call."
+      }
+    ],
+    "duplicateOrDead": [
+      {
+        "path": "apps/api/src/routes/auth/staff.ts",
+        "priority": "P1",
+        "reason": "Overlaps staff auth behavior but not mounted; also uses refreshToken field for reset tokens and logs reset token."
+      },
+      {
+        "path": "apps/api/src/routes/auth/portal.ts",
+        "priority": "P1",
+        "reason": "Implements portal reset email flow but not mounted; overlaps with portal/auth.ts."
+      }
+    ],
+    "legacyDocs": [
+      {
+        "path": "audit.md",
+        "reason": "Legacy audit; archived copy exists in docs/archive."
+      },
+      {
+        "path": "continue_tasks.md",
+        "reason": "Legacy task pack; archived copy exists in docs/archive."
+      }
+    ]
+  }
+}

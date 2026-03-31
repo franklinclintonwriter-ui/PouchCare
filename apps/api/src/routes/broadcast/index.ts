@@ -1,14 +1,13 @@
 import { Router } from 'express'
 import { z } from 'zod'
 import prisma from '@/lib/prisma'
-import { authenticate, requireRoles, CEO_ROLES  } from '@/middleware/auth'
+import { authenticate, requireRoles, SENIOR_ROLES } from '@/middleware/auth'
 import { validate } from '@/middleware/validate'
 import { getPagination, buildMeta } from '@/utils/pagination'
 import { ok, created, serverError } from '@/utils/response'
 
 const router = Router()
 router.use(authenticate)
-const CEO_OP = [...CEO_ROLES, 'Operation Manager']
 
 const schema = z.object({
   title:    z.string().min(1),
@@ -18,18 +17,18 @@ const schema = z.object({
   isUrgent: z.boolean().optional().default(false),
 })
 
-router.get('/', requireRoles(...CEO_OP as any), async (req, res) => {
+router.get('/', requireRoles(...SENIOR_ROLES as any), async (req, res) => {
   try {
     const { page, limit, skip } = getPagination(req)
     const [broadcasts, total] = await Promise.all([
       prisma.broadcast.findMany({ skip, take: limit, orderBy: { createdAt: 'desc' } }),
       prisma.broadcast.count(),
     ])
-    return ok(res, broadcasts, buildMeta(page, limit, total))
+    return ok(res, broadcasts, buildMeta(total, page, limit))
   } catch (err) { serverError(res, err) }
 })
 
-router.post('/', requireRoles(...CEO_OP as any), validate(schema), async (req, res) => {
+router.post('/', requireRoles(...SENIOR_ROLES as any), validate(schema), async (req, res) => {
   try {
     const { title, message, audience, channel, isUrgent } = req.body
     const staff = await prisma.staffMember.findUnique({ where: { id: req.user!.id }, select: { name: true } })

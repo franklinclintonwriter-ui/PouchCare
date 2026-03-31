@@ -29,7 +29,7 @@ router.get('/', async (req, res) => {
       prisma.backlinkPackage.findMany({ where, skip, take: limit, orderBy: { pricePerLink: 'asc' } }),
       prisma.backlinkPackage.count({ where }),
     ])
-    return paginated(res, data, buildMeta(limit, total, page))
+    return paginated(res, data, buildMeta(total, page, limit))
   } catch { return serverError(res) }
 })
 
@@ -52,6 +52,13 @@ router.post('/', authenticate, isOps, validate(schema), async (req, res) => {
 router.put('/:id', authenticate, isOps, validate(schema.partial()), async (req, res) => {
   try {
     const pkg = await prisma.backlinkPackage.update({ where: { id: req.params.id }, data: req.body })
+    return ok(res, pkg)
+  } catch { return serverError(res) }
+})
+
+router.delete('/:id', authenticate, isOps, async (req, res) => {
+  try {
+    const pkg = await prisma.backlinkPackage.update({ where: { id: req.params.id }, data: { status: 'Inactive' } })
     return ok(res, pkg)
   } catch { return serverError(res) }
 })

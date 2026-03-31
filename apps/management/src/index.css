@@ -1,0 +1,137 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-bg: 255 255 255;
+    --color-surface: 249 250 251;
+    --color-border: 229 231 235;
+    --color-text: 17 24 39;
+    --color-text-secondary: 107 114 128;
+    --sidebar-width: 260px;
+    --sidebar-collapsed-width: 72px;
+    --header-height: 56px;
+  }
+
+  .dark {
+    --color-bg: 17 24 39;
+    --color-surface: 31 41 55;
+    --color-border: 55 65 81;
+    --color-text: 243 244 246;
+    --color-text-secondary: 156 163 175;
+  }
+
+  html {
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-gradient-to-b from-gray-50 via-white to-gray-100 text-gray-900 dark:from-gray-950 dark:via-gray-950 dark:to-gray-900 dark:text-gray-100;
+    min-height: 100dvh;
+  }
+
+  * {
+    @apply border-gray-200 dark:border-gray-700/60;
+  }
+}
+
+@layer components {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(209 213 219) transparent;
+  }
+
+  .dark .scrollbar-thin {
+    scrollbar-color: rgb(75 85 99) transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: rgb(209 213 219);
+    border-radius: 3px;
+  }
+
+  .dark .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: rgb(75 85 99);
+  }
+
+  .scrollbar-none {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+
+  .gradient-primary {
+    @apply bg-gradient-to-r from-primary-600 to-primary-500;
+  }
+
+  .glass {
+    @apply bg-white/80 backdrop-blur-xl dark:bg-gray-900/80;
+  }
+
+  .glass-card {
+    @apply bg-white/60 backdrop-blur-md border border-white/20 dark:bg-gray-800/60 dark:border-gray-700/30;
+  }
+
+  /* Responsive content shell used by layouts */
+  .content-shell {
+    width: min(1200px, calc(100vw - 2.5rem));
+    margin: 0 auto;
+  }
+
+  @media (min-width: 1536px) {
+    .content-shell {
+      width: min(1360px, calc(100vw - 3rem));
+    }
+  }
+
+  /* Subtle edge fade for horizontal scrolling areas (tables, chip rows) */
+  .edge-fade {
+    mask-image: linear-gradient(
+      90deg,
+      transparent 0,
+      rgba(0, 0, 0, 0.8) 20px,
+      rgba(0, 0, 0, 0.8) calc(100% - 20px),
+      transparent 100%
+    );
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .animate-in {
+    animation: fadeIn 0.2s ease-out, slideUp 0.25s ease-out;
+  }
+}
+
+/* Focus ring utility */
+*:focus-visible {
+  @apply outline-none ring-2 ring-primary-500/40 ring-offset-2 ring-offset-white dark:ring-offset-gray-950;
+}
+
+/* Selection */
+::selection {
+  @apply bg-primary-100 text-primary-900 dark:bg-primary-900/40 dark:text-primary-100;
+}
+
+/* Smooth page transitions */
+#root {
+  min-height: 100dvh;
+}
