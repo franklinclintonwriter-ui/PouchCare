@@ -37,7 +37,10 @@ const changePasswordSchema = z.object({
 router.post("/login", validate(loginSchema), async (req, res) => {
   try {
     const { email, password, totp } = req.body
-    const staff = await prisma.staffMember.findUnique({ where: { email } })
+    const emailNorm = email.trim().toLowerCase()
+    const totpCode = totp?.trim() || undefined
+
+    const staff = await prisma.staffMember.findUnique({ where: { email: emailNorm } })
     if (!staff || !(await comparePassword(password, staff.passwordHash)))
       return unauthorized(res, "Invalid credentials");
     if (staff.status === "INACTIVE")
@@ -45,10 +48,12 @@ router.post("/login", validate(loginSchema), async (req, res) => {
 
     // 2FA for CEO/CO_MD
     if (staff.twoFactorEnabled && ['CEO', 'CO_MD'].includes(staff.systemRole)) {
-      if (!totp) return ok(res, { requireTotp: true })
+      if (!totpCode) return ok(res, { requireTotp: true })
+      if (!staff.totpSecret)
+        return badRequest(res, "2FA is enabled but no authenticator secret is configured. Contact an administrator.");
       const { TOTP } = await import('otpauth')
-      const otp = new TOTP({ secret: staff.totpSecret! })
-      if (otp.validate({ token: totp, window: 1 }) === null)
+      const otp = new TOTP({ secret: staff.totpSecret })
+      if (otp.validate({ token: totpCode, window: 1 }) === null)
         return unauthorized(res, "Invalid 2FA code");
     }
 
@@ -60,7 +65,11 @@ router.post("/login", validate(loginSchema), async (req, res) => {
     const access_token = signAccess(payload);
     const refresh_token = signRefresh(payload);
 
-    await prisma.staffMember.update({ where: { id: staff.id }, data: { lastLoginAt: new Date(), lastLoginIp: req.ip } })
+    const loginIp = typeof req.ip === "string" ? req.ip : undefined
+    await prisma.staffMember.update({
+      where: { id: staff.id },
+      data: { lastLoginAt: new Date(), ...(loginIp !== undefined && { lastLoginIp: loginIp }) },
+    })
 
     return ok(res, {
       access_token,
@@ -75,8 +84,8 @@ router.post("/login", validate(loginSchema), async (req, res) => {
       },
     });
   } catch (e) {
-    console.error(e);
-    return serverError(res);
+    console.error("[auth/login]", e);
+    return serverError(res, e);
   }
 });
 

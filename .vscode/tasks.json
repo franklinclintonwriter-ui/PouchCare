@@ -4,41 +4,62 @@
     {
       "label": "build-api",
       "type": "shell",
-      "command": "cd apps/api && npx tsc",
+      "command": "cd apps/api; npx tsc",
       "group": "build",
-      "presentation": { "reveal": "silent", "panel": "shared" },
-      "problemMatcher": ["$tsc"]
+      "presentation": {
+        "reveal": "silent",
+        "panel": "shared"
+      },
+      "problemMatcher": [
+        "$tsc"
+      ]
     },
     {
       "label": "dev: API (port 7000)",
       "type": "shell",
-      "command": "cd apps/api && npm run dev",
+      "command": "cd apps/api; npm run dev",
       "isBackground": true,
-      "presentation": { "reveal": "always", "panel": "dedicated", "group": "dev" },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "dev"
+      },
       "problemMatcher": []
     },
     {
       "label": "dev: Management (port 5174)",
       "type": "shell",
-      "command": "cd apps/management && npm run dev",
+      "command": "cd apps/management; npm run dev",
       "isBackground": true,
-      "presentation": { "reveal": "always", "panel": "dedicated", "group": "dev" },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "dev"
+      },
       "problemMatcher": []
     },
     {
       "label": "dev: Staff Office (port 5175)",
       "type": "shell",
-      "command": "cd apps/office && npm run dev",
+      "command": "cd apps/office; npm run dev",
       "isBackground": true,
-      "presentation": { "reveal": "always", "panel": "dedicated", "group": "dev" },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "dev"
+      },
       "problemMatcher": []
     },
     {
       "label": "dev: Client Portal (port 5176)",
       "type": "shell",
-      "command": "cd apps/client-portal && npm run dev",
+      "command": "cd apps/client-portal; npm run dev",
       "isBackground": true,
-      "presentation": { "reveal": "always", "panel": "dedicated", "group": "dev" },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "dev"
+      },
       "problemMatcher": []
     },
     {
@@ -50,34 +71,53 @@
         "dev: Client Portal (port 5176)"
       ],
       "dependsOrder": "parallel",
-      "group": { "kind": "build", "isDefault": true },
-      "presentation": { "reveal": "always" }
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "always"
+      }
     },
     {
       "label": "prisma: generate",
       "type": "shell",
-      "command": "cd apps/api && npx prisma generate",
-      "presentation": { "reveal": "always", "panel": "shared" }
+      "command": "cd apps/api; npx prisma generate",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
     },
     {
       "label": "prisma: migrate dev",
       "type": "shell",
       "command": "cd apps/api && npx prisma migrate dev",
-      "presentation": { "reveal": "always", "panel": "shared" }
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
     },
     {
       "label": "prisma: seed",
       "type": "shell",
       "command": "cd apps/api && npm run db:seed",
-      "presentation": { "reveal": "always", "panel": "shared" }
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
     },
     {
       "label": "type-check: all",
       "type": "shell",
       "command": "cd apps/api && npx tsc --noEmit && echo '✅ API OK' && cd ../management && npx tsc --noEmit && echo '✅ Management OK' && cd ../office && npx tsc --noEmit && echo '✅ Office OK' && cd ../client-portal && npx tsc --noEmit && echo '✅ Client Portal OK'",
       "group": "test",
-      "presentation": { "reveal": "always", "panel": "shared" },
-      "problemMatcher": ["$tsc"]
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": [
+        "$tsc"
+      ]
     }
   ]
 }

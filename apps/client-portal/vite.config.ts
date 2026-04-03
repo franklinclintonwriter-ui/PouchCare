@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
+import { apiDevOrigin } from '../dev/getApiDevOrigin'
 
 export default defineConfig({
   plugins: [react()],
@@ -8,10 +9,12 @@ export default defineConfig({
     alias: { '@': path.resolve(__dirname, './src') },
   },
   server: {
+    // Listen on IPv4 + IPv6 so http://localhost (127.0.0.1) works on Windows
+    host: true,
     port: 5176,
     proxy: {
       '/v1': {
-        target: 'http://127.0.0.1:7000',
+        target: apiDevOrigin(),
         changeOrigin: true,
       },
     },
