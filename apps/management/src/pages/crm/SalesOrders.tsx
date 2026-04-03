@@ -1,18 +1,29 @@
 import { useState, useMemo } from 'react';
+import { Trash2 } from 'lucide-react';
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
-import { useSalesOrders } from '@/api/crm';
+import { useSalesOrders, useDeleteSalesOrder, useUpdateSalesOrder } from '@/api/crm';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { StatsRow } from '@/components/shared/StatsRow';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
+import { Button } from '@/components/ui/Button';
 import { formatCurrency } from '@/mocks/generators';
+import { useAuthStore } from '@/store/authStore';
+import type { StaffUser } from '@/types/auth';
 import { ShoppingCart, DollarSign, CheckCircle, Clock, CircleDot } from 'lucide-react';
 import type { SalesOrder } from '@/types/models';
+import { toast } from 'sonner';
+
+const SENIOR_ROLES = ['CEO', 'CO_MD', 'OP_MANAGER'];
 
 export default function SalesOrders() {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const [page, setPage] = useState(1);
+  const deleteSalesOrder = useDeleteSalesOrder();
+  const updateSalesOrder = useUpdateSalesOrder();
+  const user = useAuthStore((s) => s.user) as StaffUser | null;
+  const canDelete = SENIOR_ROLES.includes(user?.systemRole ?? '');
 
   const { data, isLoading } = useSalesOrders({ q: search, status, page, limit: 20 });
   const orders = data?.data ?? [];
@@ -28,6 +39,25 @@ export default function SalesOrders() {
     const pending = allOrders.filter(o => o.status === 'UNPAID' || o.status === 'PARTIAL').length;
     return { totalOrders, totalValue, paid, pending };
   }, [allOrders]);
+
+  const handleMarkPaid = async (row: SalesOrder) => {
+    try {
+      await updateSalesOrder.mutateAsync({ id: row.id, paymentStatus: 'PAID' });
+      toast.success('Marked as paid');
+    } catch {
+      toast.error('Failed to update');
+    }
+  };
+
+  const handleDelete = async (row: SalesOrder) => {
+    if (!confirm(`Delete order "${row.number}"?`)) return;
+    try {
+      await deleteSalesOrder.mutateAsync(row.id);
+      toast.success('Order deleted');
+    } catch {
+      toast.error('Failed to delete');
+    }
+  };
 
   useHeaderConfig({
     title: 'Sales Orders',
@@ -58,6 +88,25 @@ export default function SalesOrders() {
     { key: 'status', label: 'Status', render: (row) => <StatusBadge status={row.status} /> },
     { key: 'date', label: 'Date' },
     { key: 'assigneeName', label: 'Assignee' },
+    {
+      key: 'actions' as keyof SalesOrder,
+      label: '',
+      align: 'right',
+      render: (row) => (
+        <div className="flex items-center justify-end gap-1">
+          {row.status !== 'PAID' && (
+            <Button size="xs" variant="outline" onClick={(e) => { e.stopPropagation(); handleMarkPaid(row); }}>
+              Mark Paid
+            </Button>
+          )}
+          {canDelete && (
+            <Button size="xs" variant="ghost" className="text-red-500 hover:text-red-700" onClick={(e) => { e.stopPropagation(); handleDelete(row); }}>
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          )}
+        </div>
+      ),
+    },
   ];
 
   return (

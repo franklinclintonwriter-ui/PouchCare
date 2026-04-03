@@ -1,16 +1,82 @@
-import { useMemo } from 'react';
-import { Globe2 } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Globe2, Plus, Pencil, Trash2 } from 'lucide-react';
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
-import { useWebsites } from '@/api/assets';
+import { useWebsites, useCreateWebsite, useUpdateWebsite, useDeleteWebsite } from '@/api/assets';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
+import { Modal } from '@/components/ui/Modal';
+import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { formatCompact } from '@/mocks/generators';
+import { useAuthStore } from '@/store/authStore';
+import type { StaffUser } from '@/types/auth';
 import type { WebsiteAsset } from '@/types/models';
+import { toast } from 'sonner';
+
+const SENIOR_ROLES = ['CEO', 'CO_MD', 'OP_MANAGER'];
+const emptyForm = { name: '', url: '', hostedOn: '', domainLinked: '', status: 'live', monthlyTraffic: '' };
 
 export default function Websites() {
   const { data, isLoading } = useWebsites();
   const websites = data?.data ?? [];
+  const createWebsite = useCreateWebsite();
+  const updateWebsite = useUpdateWebsite();
+  const deleteWebsite = useDeleteWebsite();
+  const user = useAuthStore((s) => s.user) as StaffUser | null;
+  const canManage = SENIOR_ROLES.includes(user?.systemRole ?? '');
+
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editRow, setEditRow] = useState<WebsiteAsset | null>(null);
+  const [form, setForm] = useState(emptyForm);
+
+  const openCreate = () => { setEditRow(null); setForm(emptyForm); setModalOpen(true); };
+  const openEdit = (row: WebsiteAsset) => {
+    setEditRow(row);
+    setForm({
+      name: row.name,
+      url: row.url,
+      hostedOn: row.serverName,
+      domainLinked: row.domainName,
+      status: row.status,
+      monthlyTraffic: String(row.monthlyTraffic),
+    });
+    setModalOpen(true);
+  };
+
+  const handleSave = async () => {
+    if (!form.name.trim()) return toast.error('Website name is required');
+    const payload = {
+      name: form.name.trim(),
+      url: form.url || undefined,
+      hostedOn: form.hostedOn || undefined,
+      domainLinked: form.domainLinked || undefined,
+      status: form.status || 'live',
+      monthlyTraffic: form.monthlyTraffic ? Number(form.monthlyTraffic) : undefined,
+    };
+    try {
+      if (editRow) {
+        await updateWebsite.mutateAsync({ id: editRow.id, ...payload });
+        toast.success('Website updated');
+      } else {
+        await createWebsite.mutateAsync(payload);
+        toast.success('Website added');
+      }
+      setModalOpen(false);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Save failed');
+    }
+  };
+
+  const handleDelete = async (row: WebsiteAsset) => {
+    if (!confirm(`Delete website "${row.name}"?`)) return;
+    try {
+      await deleteWebsite.mutateAsync(row.id);
+      toast.success('Website deleted');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Delete failed');
+    }
+  };
 
   const headerConfig = useMemo(() => ({
     title: 'Websites',
@@ -18,8 +84,11 @@ export default function Websites() {
       { label: 'Assets', href: '/assets' },
       { label: 'Websites', icon: Globe2 },
     ],
-    actions: [],
-  }), []);
+    actions: canManage
+      ? [{ type: 'button' as const, label: 'Add Website', icon: Plus, onClick: openCreate }]
+      : [],
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [canManage]);
   useHeaderConfig(headerConfig);
 
   const columns: Column<WebsiteAsset>[] = [
@@ -68,10 +137,25 @@ export default function Websites() {
         <span className="text-gray-500 dark:text-gray-400">{row.lastDeploy}</span>
       ),
     },
+    ...(canManage ? [{
+      key: 'actions' as keyof WebsiteAsset,
+      label: '',
+      align: 'right' as const,
+      render: (row: WebsiteAsset) => (
+        <div className="flex items-center justify-end gap-1">
+          <Button size="xs" variant="ghost" onClick={(e) => { e.stopPropagation(); openEdit(row); }}>
+            <Pencil className="h-3.5 w-3.5" />
+          </Button>
+          <Button size="xs" variant="ghost" className="text-red-500 hover:text-red-700" onClick={(e) => { e.stopPropagation(); handleDelete(row); }}>
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      ),
+    }] : []),
   ];
 
   return (
-    <PageTransition>
+    <PageTransition className="space-y-4">
       <DataTable
         columns={columns}
         data={websites}
@@ -79,6 +163,28 @@ export default function Websites() {
         getRowId={(row) => row.id}
         emptyTitle="No websites found"
       />
+
+      <Modal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title={editRow ? 'Edit Website' : 'Add Website'}
+        footer={(
+          <>
+            <Button variant="outline" size="sm" onClick={() => setModalOpen(false)}>Cancel</Button>
+            <Button size="sm" isLoading={createWebsite.isPending || updateWebsite.isPending} onClick={handleSave}>
+              {editRow ? 'Update' : 'Add'}
+            </Button>
+          </>
+        )}
+      >
+        <div className="space-y-3">
+          <Input label="Website Name" value={form.name} onChange={(e) => setForm(f => ({ ...f, name: e.target.value }))} />
+          <Input label="URL" placeholder="https://example.com" value={form.url} onChange={(e) => setForm(f => ({ ...f, url: e.target.value }))} />
+          <Input label="Hosted On (Server)" value={form.hostedOn} onChange={(e) => setForm(f => ({ ...f, hostedOn: e.target.value }))} />
+          <Input label="Domain Linked" value={form.domainLinked} onChange={(e) => setForm(f => ({ ...f, domainLinked: e.target.value }))} />
+          <Input type="number" label="Monthly Traffic" value={form.monthlyTraffic} onChange={(e) => setForm(f => ({ ...f, monthlyTraffic: e.target.value }))} />
+        </div>
+      </Modal>
     </PageTransition>
   );
 }

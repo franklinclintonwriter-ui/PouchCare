@@ -123,4 +123,52 @@ router.put('/payouts/:id/process', async (req, res) => {
   } catch { return serverError(res) }
 })
 
+// GET /admin/portal/deposits — list wallet deposit requests
+router.get('/deposits', async (req, res) => {
+  try {
+    const { page, limit, skip } = getPaginationParams(req.query as any)
+    const status = String(req.query.status ?? '').trim()
+    const where: any = { type: 'DEPOSIT' }
+    if (status) where.status = status
+    const [items, total] = await Promise.all([
+      prisma.walletTransaction.findMany({ where, orderBy: { transactionDate: 'desc' }, skip, take: limit,
+        include: { member: { select: { fullName: true, email: true } } },
+      }),
+      prisma.walletTransaction.count({ where }),
+    ])
+    return ok(res, items, buildMeta(total, page, limit))
+  } catch { return serverError(res) }
+})
+
+// PUT /admin/portal/deposits/:id/approve
+router.put('/deposits/:id/approve', async (req: any, res) => {
+  try {
+    const tx = await prisma.walletTransaction.findUnique({ where: { id: req.params.id } })
+    if (!tx || tx.type !== 'DEPOSIT') return notFound(res, 'Deposit')
+    if (tx.status !== 'Pending') return badRequest(res, 'Already processed')
+
+    const member = await prisma.portalMember.findUnique({ where: { id: tx.memberId }, select: { walletBalance: true } })
+    if (!member) return notFound(res, 'Member')
+
+    const newBalance = member.walletBalance + tx.amountUsd
+    await prisma.$transaction([
+      prisma.walletTransaction.update({ where: { id: tx.id }, data: { status: 'Confirmed', balanceAfterUsd: newBalance, approvedBy: req.user!.id } }),
+      prisma.portalMember.update({ where: { id: tx.memberId }, data: { walletBalance: { increment: tx.amountUsd }, totalDeposited: { increment: tx.amountUsd } } }),
+    ])
+    return ok(res, { message: 'Deposit approved', newBalance })
+  } catch { return serverError(res) }
+})
+
+// PUT /admin/portal/deposits/:id/reject
+router.put('/deposits/:id/reject', async (req: any, res) => {
+  try {
+    const tx = await prisma.walletTransaction.findUnique({ where: { id: req.params.id } })
+    if (!tx || tx.type !== 'DEPOSIT') return notFound(res, 'Deposit')
+    if (tx.status !== 'Pending') return badRequest(res, 'Already processed')
+
+    await prisma.walletTransaction.update({ where: { id: tx.id }, data: { status: 'Failed', approvedBy: req.user!.id } })
+    return ok(res, { message: 'Deposit rejected' })
+  } catch { return serverError(res) }
+})
+
 export default router

@@ -62,6 +62,32 @@ router.get('/:id', async (req: AuthRequest, res) => {
   } catch { return serverError(res) }
 })
 
+// PUT /payroll/:id — edit a payroll record
+router.put('/:id', isOps, async (req: AuthRequest, res) => {
+  try {
+    const { bonus, deductions, baseSalary, ...rest } = req.body
+    const existing = await prisma.payroll.findUnique({ where: { id: req.params.id } })
+    if (!existing) return notFound(res, 'Payroll record')
+    const base = baseSalary ?? existing.baseSalary
+    const b    = bonus      ?? existing.bonus ?? 0
+    const d    = deductions ?? existing.deductions ?? 0
+    const netSalary = base + b - d
+    const record = await prisma.payroll.update({
+      where: { id: req.params.id },
+      data:  { ...rest, baseSalary: base, bonus: b, deductions: d, netSalary },
+    })
+    return ok(res, record)
+  } catch { return serverError(res) }
+})
+
+// DELETE /payroll/:id
+router.delete('/:id', isCEO, async (req: AuthRequest, res) => {
+  try {
+    await prisma.payroll.delete({ where: { id: req.params.id } })
+    return ok(res, { message: 'Payroll record deleted' })
+  } catch { return serverError(res) }
+})
+
 // PUT /payroll/:id/mark-paid
 router.put('/:id/mark-paid', isCEO, async (req: AuthRequest, res) => {
   try {

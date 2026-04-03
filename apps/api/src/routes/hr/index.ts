@@ -26,10 +26,28 @@ router.post('/positions', requireRoles(...HR_ROLES as any), async (req, res) => 
   } catch (err) { serverError(res, err) }
 })
 
+router.get('/positions/:id', requireRoles(...HR_ROLES as any), async (req, res) => {
+  try {
+    const pos = await prisma.jobPosition.findUnique({
+      where: { id: req.params.id },
+      include: { _count: { select: { jobApplications: true } } },
+    })
+    if (!pos) return notFound(res)
+    return ok(res, pos)
+  } catch (err) { serverError(res, err) }
+})
+
 router.put('/positions/:id', requireRoles(...HR_ROLES as any), async (req, res) => {
   try {
     const pos = await prisma.jobPosition.update({ where: { id: req.params.id }, data: req.body })
     return ok(res, pos)
+  } catch (err) { serverError(res, err) }
+})
+
+router.delete('/positions/:id', requireRoles(...HR_ROLES as any), async (req, res) => {
+  try {
+    await prisma.jobPosition.delete({ where: { id: req.params.id } })
+    return ok(res, { message: 'Position deleted' })
   } catch (err) { serverError(res, err) }
 })
 
@@ -70,10 +88,28 @@ router.post('/applications', async (req, res) => {
   } catch (err) { serverError(res, err) }
 })
 
+router.get('/applications/:id', requireRoles(...HR_ROLES as any), async (req, res) => {
+  try {
+    const app = await prisma.jobApplication.findUnique({
+      where: { id: req.params.id },
+      include: { position: { select: { title: true } } },
+    })
+    if (!app) return notFound(res)
+    return ok(res, app)
+  } catch (err) { serverError(res, err) }
+})
+
 router.put('/applications/:id', requireRoles(...HR_ROLES as any), async (req, res) => {
   try {
     const app = await prisma.jobApplication.update({ where: { id: req.params.id }, data: req.body })
     return ok(res, app)
+  } catch (err) { serverError(res, err) }
+})
+
+router.delete('/applications/:id', requireRoles(...HR_ROLES as any), async (req, res) => {
+  try {
+    await prisma.jobApplication.delete({ where: { id: req.params.id } })
+    return ok(res, { message: 'Application deleted' })
   } catch (err) { serverError(res, err) }
 })
 
@@ -93,6 +129,28 @@ router.post('/performance', requireRoles(...HR_ROLES as any), async (req, res) =
   try {
     const rating = await prisma.performanceRating.create({ data: { ...req.body, ratedBy: req.user!.id } })
     return created(res, rating)
+  } catch (err) { serverError(res, err) }
+})
+
+router.get('/performance/:id', requireRoles(...HR_ROLES as any), async (req, res) => {
+  try {
+    const rating = await prisma.performanceRating.findUnique({ where: { id: req.params.id } })
+    if (!rating) return notFound(res)
+    return ok(res, rating)
+  } catch (err) { serverError(res, err) }
+})
+
+router.put('/performance/:id', requireRoles(...HR_ROLES as any), async (req, res) => {
+  try {
+    const rating = await prisma.performanceRating.update({ where: { id: req.params.id }, data: req.body })
+    return ok(res, rating)
+  } catch (err) { serverError(res, err) }
+})
+
+router.delete('/performance/:id', requireRoles(...HR_ROLES as any), async (req, res) => {
+  try {
+    await prisma.performanceRating.delete({ where: { id: req.params.id } })
+    return ok(res, { message: 'Rating deleted' })
   } catch (err) { serverError(res, err) }
 })
 

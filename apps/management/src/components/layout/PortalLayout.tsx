@@ -22,8 +22,8 @@ function PortalLayout() {
       >
         <Header />
 
-        <main className="px-4 pb-20 pt-5 lg:px-6 lg:pb-6 lg:pt-6">
-          <div className="content-shell max-w-5xl space-y-6">
+        <main className="px-4 pb-20 pt-4 lg:px-6 lg:pb-6 lg:pt-5">
+          <div className="content-shell max-w-5xl space-y-4 lg:space-y-6">
             <Outlet />
           </div>
         </main>

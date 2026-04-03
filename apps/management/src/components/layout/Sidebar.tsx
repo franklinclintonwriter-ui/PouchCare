@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/utils/cn';
@@ -7,6 +7,7 @@ import { useAuthStore } from '@/store/authStore';
 import { usePermission } from '@/hooks/usePermission';
 import { useIsMobile } from '@/hooks/useMediaQuery';
 import { Avatar } from '@/components/ui/Avatar';
+import api from '@/api/client';
 import type { StaffUser } from '@/types/auth';
 import {
   LayoutDashboard, CheckSquare, ListChecks, FolderKanban, Users, Clock, CalendarOff,
@@ -39,6 +40,17 @@ function Sidebar() {
 
   const staffUser = userType === 'staff' ? (user as StaffUser) : null;
 
+  const handleLogout = useCallback(async () => {
+    try {
+      const endpoint = userType === 'portal' ? '/portal/logout' : '/auth/logout';
+      await api.post(endpoint);
+    } catch {
+      // ignore server errors — still log out locally
+    } finally {
+      logout();
+    }
+  }, [userType, logout]);
+
   const staffNav: NavGroup[] = [
     {
       label: 'Overview',
@@ -64,7 +76,10 @@ function Sidebar() {
         { label: 'Leave', icon: CalendarOff, href: '/leave' },
         { label: 'Payroll', icon: DollarSign, href: '/payroll', permission: () => perm.isOps },
         { label: 'Performance', icon: Star, href: '/performance' },
-        { label: 'Recruitment', icon: UserPlus, href: '/hr/positions', permission: () => perm.isHR },
+        { label: 'Recruitment', icon: UserPlus, children: [
+          { label: 'Positions', href: '/hr/positions' },
+          { label: 'Applications', href: '/hr/applications' },
+        ], permission: () => perm.isHR },
       ],
     },
     {
@@ -118,6 +133,7 @@ function Sidebar() {
           { label: 'Orders', href: '/admin/portal/orders' },
           { label: 'Commissions', href: '/admin/portal/commissions' },
           { label: 'Payouts', href: '/admin/portal/payouts' },
+          { label: 'Deposits', href: '/admin/portal/deposits' },
         ], permission: () => perm.isOps },
       ],
     },
@@ -200,7 +216,7 @@ function Sidebar() {
                   <p className="truncate text-xs text-gray-400">{user.email}</p>
                 </div>
                 <button
-                  onClick={logout}
+                  onClick={handleLogout}
                   aria-label="Sign out"
                   className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800"
                 >

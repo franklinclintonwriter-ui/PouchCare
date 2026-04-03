@@ -2,15 +2,19 @@ import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Calendar, Clock, CheckCircle2, XCircle } from 'lucide-react';
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
-import { useLeaveRequests } from '@/api/leave';
+import { useLeaveRequests, useApproveLeave, useRejectLeave, useCancelLeave } from '@/api/leave';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
 import { Tabs } from '@/components/ui/Tabs';
 import { StatsRow } from '@/components/shared/StatsRow';
+import { useAuthStore } from '@/store/authStore';
+import { usePermission } from '@/hooks/usePermission';
 import type { LeaveRequest } from '@/types/models';
+import { toast } from 'sonner';
 
 const leaveTypeBadge: Record<string, 'primary' | 'success' | 'warning' | 'danger' | 'info' | 'default'> = {
   ANNUAL: 'primary',
@@ -23,6 +27,8 @@ const leaveTypeBadge: Record<string, 'primary' | 'success' | 'warning' | 'danger
 
 export default function LeaveList() {
   const navigate = useNavigate();
+  const { user } = useAuthStore();
+  const perm = usePermission();
   const [tab, setTab] = useState('all');
   const [page, setPage] = useState(1);
 
@@ -39,6 +45,10 @@ export default function LeaveList() {
 
   const leaves = data?.data ?? [];
   const meta = data?.meta;
+
+  const approveLeave = useApproveLeave();
+  const rejectLeave = useRejectLeave();
+  const cancelLeave = useCancelLeave();
 
   const stats = useMemo(() => {
     const total = allData.data?.meta?.total ?? 0;
@@ -70,6 +80,36 @@ export default function LeaveList() {
   const handleTabChange = (val: string) => {
     setTab(val);
     setPage(1);
+  };
+
+  const handleApprove = async (row: LeaveRequest, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await approveLeave.mutateAsync(row.id);
+      toast.success('Leave approved');
+    } catch {
+      toast.error('Failed to approve leave');
+    }
+  };
+
+  const handleReject = async (row: LeaveRequest, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await rejectLeave.mutateAsync({ id: row.id });
+      toast.success('Leave rejected');
+    } catch {
+      toast.error('Failed to reject leave');
+    }
+  };
+
+  const handleCancel = async (row: LeaveRequest, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await cancelLeave.mutateAsync(row.id);
+      toast.success('Leave cancelled');
+    } catch {
+      toast.error('Failed to cancel leave');
+    }
   };
 
   const columns: Column<LeaveRequest>[] = [
@@ -132,6 +172,48 @@ export default function LeaveList() {
           {new Date(row.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
         </span>
       ),
+    },
+    {
+      key: 'actions',
+      label: 'Actions',
+      render: (row) => {
+        if (row.status !== 'PENDING') return null;
+        const isOwn = row.staffId === user?.id;
+        return (
+          <div className="flex gap-1">
+            {perm.isManager && (
+              <>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  isLoading={approveLeave.isPending}
+                  onClick={(e) => handleApprove(row, e)}
+                >
+                  Approve
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  isLoading={rejectLeave.isPending}
+                  onClick={(e) => handleReject(row, e)}
+                >
+                  Reject
+                </Button>
+              </>
+            )}
+            {isOwn && (
+              <Button
+                size="sm"
+                variant="ghost"
+                isLoading={cancelLeave.isPending}
+                onClick={(e) => handleCancel(row, e)}
+              >
+                Cancel
+              </Button>
+            )}
+          </div>
+        );
+      },
     },
   ];
 

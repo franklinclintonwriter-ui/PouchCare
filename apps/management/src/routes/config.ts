@@ -95,10 +95,33 @@ export const ROUTES = {
   PORTAL_SUPPORT: '/portal/support',
   PORTAL_SETTINGS: '/portal/settings',
 
+  // Staff Branches
+  BRANCHES: '/staff/branches',
+
+  // Finance detail pages
+  INVOICE_DETAIL: '/finance/invoices/:id',
+  EXPENSE_DETAIL: '/finance/expenses/:id',
+  EXCHANGE_RATES: '/finance/exchange-rates',
+
+  // Payroll detail
+  PAYROLL_DETAIL: '/payroll/:id',
+
+  // Assets detail
+  DOMAIN_DETAIL: '/assets/domains/:id',
+  SERVER_DETAIL: '/assets/servers/:id',
+  WEBSITE_DETAIL: '/assets/websites/:id',
+
+  // HR detail
+  APPLICATION_DETAIL: '/hr/applications/:id',
+
+  // CRM Clients
+  CRM_CLIENTS: '/crm/clients',
+
   // Admin Portal
   ADMIN_PORTAL_MEMBERS: '/admin/portal/members',
   ADMIN_PORTAL_MEMBER_DETAIL: '/admin/portal/members/:id',
   ADMIN_PORTAL_ORDERS: '/admin/portal/orders',
   ADMIN_PORTAL_COMMISSIONS: '/admin/portal/commissions',
   ADMIN_PORTAL_PAYOUTS: '/admin/portal/payouts',
+  ADMIN_PORTAL_DEPOSITS: '/admin/portal/deposits',
 } as const;

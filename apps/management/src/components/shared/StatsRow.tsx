@@ -23,8 +23,8 @@ function StatsRow({ items, loading = false, columns }: StatsRowProps) {
       className={cn(
         'grid gap-3 sm:gap-4',
         columns || (items.length <= 3
-          ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
-          : 'grid-cols-1 min-[400px]:grid-cols-2 lg:grid-cols-4'),
+          ? 'grid-cols-2 lg:grid-cols-3'
+          : 'grid-cols-2 lg:grid-cols-4'),
       )}
     >
       {items.map((item, i) => (

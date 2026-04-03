@@ -11,7 +11,7 @@
     --color-text-secondary: 107 114 128;
     --sidebar-width: 260px;
     --sidebar-collapsed-width: 72px;
-    --header-height: 56px;
+    --header-height: 48px;
   }
 
   .dark {
@@ -89,14 +89,9 @@
 
   /* Responsive content shell used by layouts */
   .content-shell {
-    width: min(1200px, calc(100vw - 2.5rem));
+    width: 100%;
+    max-width: 1480px;
     margin: 0 auto;
-  }
-
-  @media (min-width: 1536px) {
-    .content-shell {
-      width: min(1360px, calc(100vw - 3rem));
-    }
   }
 
   /* Subtle edge fade for horizontal scrolling areas (tables, chip rows) */

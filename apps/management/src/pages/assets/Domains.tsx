@@ -1,17 +1,84 @@
-import { useMemo } from 'react';
-import { Globe, AlertTriangle } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Globe, AlertTriangle, Plus, Pencil, Trash2 } from 'lucide-react';
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
-import { useDomains } from '@/api/assets';
+import { useDomains, useCreateDomain, useUpdateDomain, useDeleteDomain } from '@/api/assets';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Card } from '@/components/ui/Card';
+import { Modal } from '@/components/ui/Modal';
+import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { formatCurrency } from '@/mocks/generators';
+import { useAuthStore } from '@/store/authStore';
+import type { StaffUser } from '@/types/auth';
 import type { Domain } from '@/types/models';
+import { toast } from 'sonner';
+
+const SENIOR_ROLES = ['CEO', 'CO_MD', 'OP_MANAGER'];
+
+const emptyForm = { domainName: '', registrar: '', expiryDate: '', dnsProvider: '', annualCost: '', status: 'active' };
 
 export default function Domains() {
   const { data, isLoading } = useDomains();
   const domains = data?.data ?? [];
+  const createDomain = useCreateDomain();
+  const updateDomain = useUpdateDomain();
+  const deleteDomain = useDeleteDomain();
+  const user = useAuthStore((s) => s.user) as StaffUser | null;
+  const canManage = SENIOR_ROLES.includes(user?.systemRole ?? '');
+
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editRow, setEditRow] = useState<Domain | null>(null);
+  const [form, setForm] = useState(emptyForm);
+
+  const openCreate = () => { setEditRow(null); setForm(emptyForm); setModalOpen(true); };
+  const openEdit = (row: Domain) => {
+    setEditRow(row);
+    setForm({
+      domainName: row.domain,
+      registrar: row.registrar,
+      expiryDate: row.expiryDate ? row.expiryDate.slice(0, 10) : '',
+      dnsProvider: row.dnsProvider,
+      annualCost: String(row.annualCost),
+      status: row.status,
+    });
+    setModalOpen(true);
+  };
+
+  const handleSave = async () => {
+    if (!form.domainName.trim()) return toast.error('Domain name is required');
+    const payload = {
+      domainName: form.domainName.trim(),
+      registrar: form.registrar || undefined,
+      expiryDate: form.expiryDate || undefined,
+      hostingServer: form.dnsProvider || undefined,
+      annualRenewalCost: form.annualCost ? Number(form.annualCost) : undefined,
+      status: form.status || 'active',
+    };
+    try {
+      if (editRow) {
+        await updateDomain.mutateAsync({ id: editRow.id, ...payload });
+        toast.success('Domain updated');
+      } else {
+        await createDomain.mutateAsync(payload);
+        toast.success('Domain added');
+      }
+      setModalOpen(false);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Save failed');
+    }
+  };
+
+  const handleDelete = async (row: Domain) => {
+    if (!confirm(`Delete domain "${row.domain}"?`)) return;
+    try {
+      await deleteDomain.mutateAsync(row.id);
+      toast.success('Domain deleted');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Delete failed');
+    }
+  };
 
   const headerConfig = useMemo(() => ({
     title: 'Domains',
@@ -19,8 +86,11 @@ export default function Domains() {
       { label: 'Assets', href: '/assets' },
       { label: 'Domains', icon: Globe },
     ],
-    actions: [],
-  }), []);
+    actions: canManage
+      ? [{ type: 'button' as const, label: 'Add Domain', icon: Plus, onClick: openCreate }]
+      : [],
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [canManage]);
   useHeaderConfig(headerConfig);
 
   const now = new Date();
@@ -47,7 +117,7 @@ export default function Domains() {
         const isExpiring = diff < 30;
         return (
           <span className={isExpiring ? 'font-medium text-red-600 dark:text-red-400' : ''}>
-            {row.expiryDate}
+            {row.expiryDate ? row.expiryDate.slice(0, 10) : '-'}
           </span>
         );
       },
@@ -78,6 +148,21 @@ export default function Domains() {
         <span className="font-medium">{formatCurrency(row.annualCost)}/yr</span>
       ),
     },
+    ...(canManage ? [{
+      key: 'actions' as keyof Domain,
+      label: '',
+      align: 'right' as const,
+      render: (row: Domain) => (
+        <div className="flex items-center justify-end gap-1">
+          <Button size="xs" variant="ghost" onClick={(e) => { e.stopPropagation(); openEdit(row); }}>
+            <Pencil className="h-3.5 w-3.5" />
+          </Button>
+          <Button size="xs" variant="ghost" className="text-red-500 hover:text-red-700" onClick={(e) => { e.stopPropagation(); handleDelete(row); }}>
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      ),
+    }] : []),
   ];
 
   return (
@@ -107,6 +192,28 @@ export default function Domains() {
         getRowId={(row) => row.id}
         emptyTitle="No domains found"
       />
+
+      <Modal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title={editRow ? 'Edit Domain' : 'Add Domain'}
+        footer={(
+          <>
+            <Button variant="outline" size="sm" onClick={() => setModalOpen(false)}>Cancel</Button>
+            <Button size="sm" isLoading={createDomain.isPending || updateDomain.isPending} onClick={handleSave}>
+              {editRow ? 'Update' : 'Add'}
+            </Button>
+          </>
+        )}
+      >
+        <div className="space-y-3">
+          <Input label="Domain Name" placeholder="example.com" value={form.domainName} onChange={(e) => setForm(f => ({ ...f, domainName: e.target.value }))} />
+          <Input label="Registrar" placeholder="Namecheap, GoDaddy..." value={form.registrar} onChange={(e) => setForm(f => ({ ...f, registrar: e.target.value }))} />
+          <Input type="date" label="Expiry Date" value={form.expiryDate} onChange={(e) => setForm(f => ({ ...f, expiryDate: e.target.value }))} />
+          <Input label="DNS / Hosting Server" value={form.dnsProvider} onChange={(e) => setForm(f => ({ ...f, dnsProvider: e.target.value }))} />
+          <Input type="number" label="Annual Cost (USD)" value={form.annualCost} onChange={(e) => setForm(f => ({ ...f, annualCost: e.target.value }))} />
+        </div>
+      </Modal>
     </PageTransition>
   );
 }

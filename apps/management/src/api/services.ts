@@ -74,6 +74,30 @@ export function useServices(category?: string) {
   });
 }
 
+export function useCreateService() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: Record<string, unknown>) => api.post('/services/admin', body),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['services'] }),
+  });
+}
+
+export function useUpdateService() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...body }: Record<string, unknown> & { id: string }) => api.put(`/services/admin/${id}`, body),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['services'] }),
+  });
+}
+
+export function useDeleteService() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.delete(`/services/admin/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['services'] }),
+  });
+}
+
 export function useBacklinkPackages() {
   return useQuery<BacklinkPackage[]>({
     queryKey: ['backlink-packages'],

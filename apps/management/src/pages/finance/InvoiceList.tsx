@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
 import { useCreateInvoice, useInvoices } from '@/api/finance';
 import { PageTransition } from '@/components/ui/PageTransition';
@@ -14,6 +15,7 @@ import type { Invoice } from '@/types/models';
 import { toast } from 'sonner';
 
 export default function InvoiceList() {
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const [page, setPage] = useState(1);
@@ -91,6 +93,7 @@ export default function InvoiceList() {
         pagination={meta}
         onPageChange={setPage}
         getRowId={(row) => row.id}
+        onRowClick={(row) => navigate(`/finance/invoices/${row.id}`)}
       />
 
       <Modal

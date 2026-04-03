@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
 import { useCreateExpense, useExpenses } from '@/api/finance';
 import { PageTransition } from '@/components/ui/PageTransition';
@@ -23,6 +24,7 @@ const categoryVariants: Record<string, 'primary' | 'success' | 'warning' | 'dang
 };
 
 export default function ExpenseList() {
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
   const [page, setPage] = useState(1);
@@ -94,6 +96,7 @@ export default function ExpenseList() {
         pagination={meta}
         onPageChange={setPage}
         getRowId={(row) => row.id}
+        onRowClick={(row) => navigate(`/finance/expenses/${row.id}`)}
       />
 
       <Modal

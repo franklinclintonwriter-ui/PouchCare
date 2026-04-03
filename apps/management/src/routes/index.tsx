@@ -91,6 +91,11 @@ const PortalMemberDetail = lazy(() => import('@/pages/portal/admin/PortalMemberD
 const PortalOrdersAdmin = lazy(() => import('@/pages/portal/admin/PortalOrdersAdmin'));
 const PortalCommissions = lazy(() => import('@/pages/portal/admin/PortalCommissions'));
 const PortalPayouts = lazy(() => import('@/pages/portal/admin/PortalPayouts'));
+const PortalDeposits = lazy(() => import('@/pages/portal/admin/PortalDeposits'));
+const InvoiceDetail = lazy(() => import('@/pages/finance/InvoiceDetail'));
+const ExpenseDetail = lazy(() => import('@/pages/finance/ExpenseDetail'));
+const PayrollDetail = lazy(() => import('@/pages/payroll/PayrollDetail'));
+const ApplicationDetail = lazy(() => import('@/pages/hr/ApplicationDetail'));
 
 export const routes: RouteObject[] = [
   // Auth routes (guest only)
@@ -155,6 +160,14 @@ export const routes: RouteObject[] = [
           </RoleGuard>
         ),
       },
+      {
+        path: 'payroll/:id',
+        element: (
+          <RoleGuard roles={['CEO', 'CO_MD', 'OP_MANAGER']}>
+            <LazyPage element={<PayrollDetail />} />
+          </RoleGuard>
+        ),
+      },
       { path: 'performance', element: <LazyPage element={<Performance />} /> },
       {
         path: 'finance/invoices',
@@ -165,10 +178,26 @@ export const routes: RouteObject[] = [
         ),
       },
       {
+        path: 'finance/invoices/:id',
+        element: (
+          <RoleGuard roles={['CEO', 'CO_MD', 'OP_MANAGER']}>
+            <LazyPage element={<InvoiceDetail />} />
+          </RoleGuard>
+        ),
+      },
+      {
         path: 'finance/expenses',
         element: (
           <RoleGuard roles={['CEO', 'CO_MD', 'OP_MANAGER']}>
             <LazyPage element={<ExpenseList />} />
+          </RoleGuard>
+        ),
+      },
+      {
+        path: 'finance/expenses/:id',
+        element: (
+          <RoleGuard roles={['CEO', 'CO_MD', 'OP_MANAGER']}>
+            <LazyPage element={<ExpenseDetail />} />
           </RoleGuard>
         ),
       },
@@ -221,6 +250,14 @@ export const routes: RouteObject[] = [
         element: (
           <RoleGuard roles={['CEO', 'CO_MD', 'OP_MANAGER', 'HR_MANAGER']}>
             <LazyPage element={<Applications />} />
+          </RoleGuard>
+        ),
+      },
+      {
+        path: 'hr/applications/:id',
+        element: (
+          <RoleGuard roles={['CEO', 'CO_MD', 'OP_MANAGER', 'HR_MANAGER']}>
+            <LazyPage element={<ApplicationDetail />} />
           </RoleGuard>
         ),
       },
@@ -297,6 +334,14 @@ export const routes: RouteObject[] = [
         element: (
           <RoleGuard roles={['CEO', 'CO_MD', 'OP_MANAGER']}>
             <LazyPage element={<PortalPayouts />} />
+          </RoleGuard>
+        ),
+      },
+      {
+        path: 'admin/portal/deposits',
+        element: (
+          <RoleGuard roles={['CEO', 'CO_MD', 'OP_MANAGER']}>
+            <LazyPage element={<PortalDeposits />} />
           </RoleGuard>
         ),
       },

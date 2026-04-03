@@ -51,6 +51,13 @@ router.put('/invoices/:id', isOps, async (req, res) => {
   } catch (err) { serverError(res, err) }
 })
 
+router.delete('/invoices/:id', isOps, async (req, res) => {
+  try {
+    await prisma.invoice.delete({ where: { id: req.params.id } })
+    return ok(res, { message: 'Invoice deleted' })
+  } catch (err) { serverError(res, err) }
+})
+
 // ── EXPENSES ──
 router.get('/expenses', isOps, async (req, res) => {
   try {
@@ -72,10 +79,25 @@ router.post('/expenses', isOps, async (req, res) => {
   } catch (err) { serverError(res, err) }
 })
 
+router.get('/expenses/:id', isOps, async (req, res) => {
+  try {
+    const exp = await prisma.expense.findUnique({ where: { id: req.params.id } })
+    if (!exp) return notFound(res)
+    return ok(res, exp)
+  } catch (err) { serverError(res, err) }
+})
+
 router.put('/expenses/:id', isOps, async (req, res) => {
   try {
     const exp = await prisma.expense.update({ where: { id: req.params.id }, data: req.body })
     return ok(res, exp)
+  } catch (err) { serverError(res, err) }
+})
+
+router.delete('/expenses/:id', isOps, async (req, res) => {
+  try {
+    await prisma.expense.delete({ where: { id: req.params.id } })
+    return ok(res, { message: 'Expense deleted' })
   } catch (err) { serverError(res, err) }
 })
 

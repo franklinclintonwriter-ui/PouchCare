@@ -156,11 +156,59 @@ export function useCreateExpense() {
   });
 }
 
+export function useDeleteInvoice() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.delete(`/finance/invoices/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['invoices'] }),
+  });
+}
+
+export function useInvoice(id: string) {
+  return useQuery<Invoice>({
+    queryKey: ['invoice', id],
+    queryFn: async () => {
+      const { data } = await api.get(`/finance/invoices/${id}`);
+      return mapInvoice(data);
+    },
+    enabled: !!id,
+  });
+}
+
+export function useExpense(id: string) {
+  return useQuery<Expense>({
+    queryKey: ['expense', id],
+    queryFn: async () => {
+      const { data } = await api.get(`/finance/expenses/${id}`);
+      return mapExpense(data);
+    },
+    enabled: !!id,
+  });
+}
+
 export function useUpdateExpense() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, ...body }: Record<string, unknown> & { id: string }) => api.put(`/finance/expenses/${id}`, body),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['expenses'] }),
+  });
+}
+
+export function useDeleteExpense() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.delete(`/finance/expenses/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['expenses'] }),
+  });
+}
+
+export function useForecast() {
+  return useQuery<{ forecast: Array<{ month: string; year: number; projectedRevenue: number; projectedExpenses: number; projectedProfit: number }>; basedOnMonths?: number }>({
+    queryKey: ['forecast'],
+    queryFn: async () => {
+      const { data } = await api.get('/finance/forecast');
+      return data;
+    },
   });
 }
 

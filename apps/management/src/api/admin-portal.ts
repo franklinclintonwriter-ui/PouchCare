@@ -246,3 +246,62 @@ export function useProcessPayout() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-payouts'] }),
   });
 }
+
+export type DepositRecord = {
+  id: string;
+  memberId: string;
+  memberName: string;
+  memberEmail: string;
+  amountUsd: number;
+  paymentMethod: string;
+  proofUrl?: string;
+  status: string;
+  transactionDate: string;
+};
+
+function mapDeposit(raw: any): DepositRecord {
+  return {
+    id: raw.id,
+    memberId: raw.memberId,
+    memberName: raw.member?.fullName ?? 'Member',
+    memberEmail: raw.member?.email ?? '-',
+    amountUsd: raw.amountUsd ?? 0,
+    paymentMethod: raw.paymentMethod ?? '-',
+    proofUrl: raw.proofUrl ?? undefined,
+    status: raw.status ?? 'Pending',
+    transactionDate: raw.transactionDate ?? raw.createdAt ?? new Date().toISOString(),
+  };
+}
+
+export function useAdminDeposits(params?: QueryParams) {
+  return useQuery<PaginatedResponse<DepositRecord>>({
+    queryKey: ['admin-deposits', params],
+    queryFn: async () => {
+      const { data } = await api.get('/admin/portal/deposits', { params });
+      const rows = Array.isArray(data?.data) ? data.data : [];
+      return { ...data, data: rows.map(mapDeposit) };
+    },
+  });
+}
+
+export function useApproveDeposit() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await api.put(`/admin/portal/deposits/${id}/approve`);
+      return data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-deposits'] }),
+  });
+}
+
+export function useRejectDeposit() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await api.put(`/admin/portal/deposits/${id}/reject`);
+      return data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-deposits'] }),
+  });
+}

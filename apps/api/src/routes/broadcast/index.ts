@@ -4,7 +4,7 @@ import prisma from '@/lib/prisma'
 import { authenticate, requireRoles, SENIOR_ROLES } from '@/middleware/auth'
 import { validate } from '@/middleware/validate'
 import { getPagination, buildMeta } from '@/utils/pagination'
-import { ok, created, serverError } from '@/utils/response'
+import { ok, created, notFound, serverError } from '@/utils/response'
 
 const router = Router()
 router.use(authenticate)
@@ -25,6 +25,21 @@ router.get('/', requireRoles(...SENIOR_ROLES as any), async (req, res) => {
       prisma.broadcast.count(),
     ])
     return ok(res, broadcasts, buildMeta(total, page, limit))
+  } catch (err) { serverError(res, err) }
+})
+
+router.get('/:id', requireRoles(...SENIOR_ROLES as any), async (req, res) => {
+  try {
+    const broadcast = await prisma.broadcast.findUnique({ where: { id: req.params.id } })
+    if (!broadcast) return notFound(res)
+    return ok(res, broadcast)
+  } catch (err) { serverError(res, err) }
+})
+
+router.delete('/:id', requireRoles(...SENIOR_ROLES as any), async (req, res) => {
+  try {
+    await prisma.broadcast.delete({ where: { id: req.params.id } })
+    return ok(res, { message: 'Broadcast deleted' })
   } catch (err) { serverError(res, err) }
 })
 

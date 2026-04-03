@@ -133,6 +133,14 @@ export function useUpdateDomain() {
   });
 }
 
+export function useDeleteDomain() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.delete(`/assets/domains/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['domains'] }),
+  });
+}
+
 export function useServers() {
   return useQuery<ServerAsset[]>({
     queryKey: ['servers'],
@@ -148,6 +156,22 @@ export function useCreateServer() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: Record<string, unknown>) => api.post('/assets/servers', body),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['servers'] }),
+  });
+}
+
+export function useUpdateServer() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...body }: Record<string, unknown> & { id: string }) => api.put(`/assets/servers/${id}`, body),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['servers'] }),
+  });
+}
+
+export function useDeleteServer() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.delete(`/assets/servers/${id}`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['servers'] }),
   });
 }
@@ -168,6 +192,22 @@ export function useCreateWebsite() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: Record<string, unknown>) => api.post('/assets/websites', body),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['websites'] }),
+  });
+}
+
+export function useUpdateWebsite() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...body }: Record<string, unknown> & { id: string }) => api.put(`/assets/websites/${id}`, body),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['websites'] }),
+  });
+}
+
+export function useDeleteWebsite() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.delete(`/assets/websites/${id}`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['websites'] }),
   });
 }

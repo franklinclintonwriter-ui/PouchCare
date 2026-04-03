@@ -13,6 +13,8 @@ import {
   serverError,
   notFound,
 } from "@/lib/response";
+import { sendPasswordResetEmail } from "@/lib/email";
+import { redis } from "@/lib/redis";
 import crypto from "crypto";
 
 const router = Router();
@@ -108,15 +110,32 @@ router.post("/logout", authenticate, async (req: AuthRequest, res) => {
 // POST /auth/forgot-password
 router.post("/forgot-password", validate(forgotSchema), async (req, res) => {
   try {
-    const staff = await prisma.staffMember.findUnique({ where: { email: req.body.email } })
-    if (staff) console.log(`[DEV] Password reset requested for ${staff.email}`)
-    return ok(res, { message: 'If email exists, reset link sent' })
-  } catch { return serverError(res) }
-})
+    const email = req.body.email.trim().toLowerCase();
+    const staff = await prisma.staffMember.findUnique({ where: { email } });
+    if (staff) {
+      const token = crypto.randomBytes(32).toString("hex");
+      await redis.setex(`reset:staff:${token}`, 3600, staff.id);
+      await sendPasswordResetEmail(staff.email, token, false);
+    }
+    return ok(res, { message: "If email exists, a reset link has been sent" });
+  } catch { return serverError(res); }
+});
 
 // POST /auth/reset-password
 router.post("/reset-password", validate(resetSchema), async (req, res) => {
-  return ok(res, { message: "Password reset — implement token storage" });
+  try {
+    const { token, password } = req.body;
+    const staffId = await redis.get(`reset:staff:${token}`);
+    if (!staffId) return badRequest(res, "Invalid or expired reset token");
+
+    const staff = await prisma.staffMember.findUnique({ where: { id: staffId } });
+    if (!staff) return notFound(res, "User");
+
+    const passwordHash = await hashPassword(password);
+    await prisma.staffMember.update({ where: { id: staffId }, data: { passwordHash } });
+    await redis.del(`reset:staff:${token}`);
+    return ok(res, { message: "Password reset successfully" });
+  } catch { return serverError(res); }
 });
 
 // POST /auth/2fa/setup

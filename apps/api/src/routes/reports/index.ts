@@ -4,7 +4,7 @@ import prisma from '@/lib/prisma'
 import { authenticate, requireStaff, requireRoles, MANAGER_ROLES  } from '@/middleware/auth'
 import { validate } from '@/middleware/validate'
 import { getPagination, paginatedMeta, buildMeta} from '@/utils/pagination'
-import { ok, created, badRequest, serverError } from '@/utils/response'
+import { ok, created, badRequest, notFound, serverError } from '@/utils/response'
 
 const router = Router()
 router.use(authenticate)
@@ -63,6 +63,25 @@ router.post('/daily', requireStaff, validate(submitSchema), async (req, res) => 
       },
     })
     return created(res, report)
+  } catch (err) { serverError(res, err) }
+})
+
+// GET /v1/reports/daily/:id
+router.get('/daily/:id', requireStaff, async (req, res) => {
+  try {
+    const report = await prisma.dailyReport.findUnique({ where: { id: req.params.id } })
+    if (!report) return notFound(res)
+    if (!MANAGER_ROLES.includes(req.user!.role) && report.staffMemberId !== req.user!.id)
+      return notFound(res)
+    return ok(res, report)
+  } catch (err) { serverError(res, err) }
+})
+
+// DELETE /v1/reports/daily/:id
+router.delete('/daily/:id', requireRoles(...MANAGER_ROLES as any), async (req, res) => {
+  try {
+    await prisma.dailyReport.delete({ where: { id: req.params.id } })
+    return ok(res, { message: 'Report deleted' })
   } catch (err) { serverError(res, err) }
 })
 

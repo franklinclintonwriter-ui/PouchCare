@@ -108,10 +108,25 @@ router.post('/orders', requireStaff, async (req, res) => {
   } catch (err) { return serverError(res, err) }
 })
 
+router.get('/orders/:id', requireStaff, async (req, res) => {
+  try {
+    const order = await prisma.salesOrder.findUnique({ where: { id: req.params.id } })
+    if (!order) return notFound(res)
+    return ok(res, order)
+  } catch (err) { return serverError(res, err) }
+})
+
 router.put('/orders/:id', requireStaff, async (req, res) => {
   try {
     const order = await prisma.salesOrder.update({ where: { id: req.params.id }, data: req.body })
     return ok(res, order)
+  } catch (err) { return serverError(res, err) }
+})
+
+router.delete('/orders/:id', requireRoles(...CEO_ROLES as any), async (req, res) => {
+  try {
+    await prisma.salesOrder.delete({ where: { id: req.params.id } })
+    return ok(res, { message: 'Order deleted' })
   } catch (err) { return serverError(res, err) }
 })
 

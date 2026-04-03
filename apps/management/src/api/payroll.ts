@@ -104,6 +104,17 @@ export function useCreatePayroll() {
   });
 }
 
+export function usePayrollEntry(id: string) {
+  return useQuery<PayrollEntry>({
+    queryKey: ['payroll-entry', id],
+    queryFn: async () => {
+      const { data } = await api.get(`/payroll/${id}`);
+      return mapPayrollEntry(data as RawPayrollEntry);
+    },
+    enabled: !!id,
+  });
+}
+
 export function useMarkPayrollPaid() {
   const qc = useQueryClient();
   return useMutation({

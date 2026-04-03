@@ -31,6 +31,25 @@ router.get('/', requireStaff, async (req, res) => {
   } catch (err) { serverError(res, err) }
 })
 
+// GET /v1/leave/:id
+router.get('/:id', requireStaff, async (req, res) => {
+  try {
+    const request = await prisma.leaveRequest.findUnique({ where: { id: req.params.id } })
+    if (!request) return notFound(res)
+    if (!MANAGER_ROLES.includes(req.user!.role) && request.staffMemberId !== req.user!.id)
+      return notFound(res)
+    return ok(res, request)
+  } catch (err) { serverError(res, err) }
+})
+
+// DELETE /v1/leave/:id
+router.delete('/:id', requireRoles(...MANAGER_ROLES as any), async (req, res) => {
+  try {
+    await prisma.leaveRequest.delete({ where: { id: req.params.id } })
+    return ok(res, { message: 'Leave request deleted' })
+  } catch (err) { serverError(res, err) }
+})
+
 // POST /v1/leave/apply
 router.post('/apply', requireStaff, validate(applySchema), async (req, res) => {
   try {

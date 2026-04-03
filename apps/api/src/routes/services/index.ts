@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import prisma from '@/lib/prisma'
 import { authenticate, requireRoles, SENIOR_ROLES } from '@/middleware/auth'
-import { ok, created, serverError } from '@/utils/response'
+import { ok, created, notFound, serverError } from '@/utils/response'
 
 const router = Router()
 
@@ -40,32 +40,50 @@ router.get('/:slug', async (req, res) => {
   } catch (err) { serverError(res, err) }
 })
 
-// Admin routes
-router.post('/admin', requireRoles(...SENIOR_ROLES as any), async (req, res) => {
+// Admin routes (require authentication)
+router.post('/admin', authenticate, requireRoles(...SENIOR_ROLES as any), async (req, res) => {
   try {
     const svc = await prisma.service.create({ data: req.body })
     return created(res, svc)
   } catch (err) { serverError(res, err) }
 })
 
-router.put('/admin/:id', requireRoles(...SENIOR_ROLES as any), async (req, res) => {
+router.put('/admin/:id', authenticate, requireRoles(...SENIOR_ROLES as any), async (req, res) => {
   try {
     const svc = await prisma.service.update({ where: { id: req.params.id }, data: req.body })
     return ok(res, svc)
   } catch (err) { serverError(res, err) }
 })
 
-router.post('/admin/backlink-packages', requireRoles(...SENIOR_ROLES as any), async (req, res) => {
+router.delete('/admin/:id', authenticate, requireRoles(...SENIOR_ROLES as any), async (req, res) => {
+  try {
+    const svc = await prisma.service.findUnique({ where: { id: req.params.id } })
+    if (!svc) return notFound(res)
+    await prisma.service.delete({ where: { id: req.params.id } })
+    return ok(res, { message: 'Service deleted' })
+  } catch (err) { serverError(res, err) }
+})
+
+router.post('/admin/backlink-packages', authenticate, requireRoles(...SENIOR_ROLES as any), async (req, res) => {
   try {
     const pkg = await prisma.backlinkPackage.create({ data: req.body })
     return created(res, pkg)
   } catch (err) { serverError(res, err) }
 })
 
-router.put('/admin/backlink-packages/:id', requireRoles(...SENIOR_ROLES as any), async (req, res) => {
+router.put('/admin/backlink-packages/:id', authenticate, requireRoles(...SENIOR_ROLES as any), async (req, res) => {
   try {
     const pkg = await prisma.backlinkPackage.update({ where: { id: req.params.id }, data: req.body })
     return ok(res, pkg)
+  } catch (err) { serverError(res, err) }
+})
+
+router.delete('/admin/backlink-packages/:id', authenticate, requireRoles(...SENIOR_ROLES as any), async (req, res) => {
+  try {
+    const pkg = await prisma.backlinkPackage.findUnique({ where: { id: req.params.id } })
+    if (!pkg) return notFound(res)
+    await prisma.backlinkPackage.delete({ where: { id: req.params.id } })
+    return ok(res, { message: 'Package deleted' })
   } catch (err) { serverError(res, err) }
 })
 

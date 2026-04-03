@@ -38,38 +38,58 @@ export default function Analytics() {
     return { totalRevenue, totalExpenses, totalProfit };
   }, [chartData]);
 
-  const kpis = useMemo(() => [
-    {
-      title: 'Total Revenue',
-      value: formatCurrency(totals.totalRevenue),
-      change: 12.5,
-      changeLabel: 'vs last year',
-      icon: <DollarSign />,
-      iconBg: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400',
-    },
-    {
-      title: 'Total Expenses',
-      value: formatCurrency(totals.totalExpenses),
-      change: -3.2,
-      changeLabel: 'vs last year',
-      icon: <TrendingUp />,
-      iconBg: 'bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400',
-    },
-    {
-      title: 'Net Profit',
-      value: formatCurrency(totals.totalProfit),
-      change: 8.1,
-      changeLabel: 'vs last year',
-      icon: <ShoppingCart />,
-      iconBg: 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400',
-    },
-    {
-      title: 'Avg Monthly',
-      value: formatCurrency(Math.round(totals.totalRevenue / 12)),
-      icon: <Users />,
-      iconBg: 'bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400',
-    },
-  ], [totals]);
+  const kpis = useMemo(() => {
+    const months = chartData.length;
+    const half = Math.floor(months / 2);
+    const firstHalf = chartData.slice(0, half);
+    const secondHalf = chartData.slice(half);
+
+    const sumHalf = (arr: typeof chartData, key: 'revenue' | 'expenses' | 'profit') =>
+      arr.reduce((s, r) => s + r[key], 0);
+
+    const pct = (curr: number, prev: number): number | undefined =>
+      prev === 0 ? undefined : parseFloat(((curr - prev) / prev * 100).toFixed(1));
+
+    const revPrev = sumHalf(firstHalf, 'revenue');
+    const revCurr = sumHalf(secondHalf, 'revenue');
+    const expPrev = sumHalf(firstHalf, 'expenses');
+    const expCurr = sumHalf(secondHalf, 'expenses');
+    const profPrev = sumHalf(firstHalf, 'profit');
+    const profCurr = sumHalf(secondHalf, 'profit');
+
+    return [
+      {
+        title: 'Total Revenue',
+        value: formatCurrency(totals.totalRevenue),
+        change: pct(revCurr, revPrev),
+        changeLabel: 'vs prior half',
+        icon: <DollarSign />,
+        iconBg: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400',
+      },
+      {
+        title: 'Total Expenses',
+        value: formatCurrency(totals.totalExpenses),
+        change: pct(expCurr, expPrev),
+        changeLabel: 'vs prior half',
+        icon: <TrendingUp />,
+        iconBg: 'bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400',
+      },
+      {
+        title: 'Net Profit',
+        value: formatCurrency(totals.totalProfit),
+        change: pct(profCurr, profPrev),
+        changeLabel: 'vs prior half',
+        icon: <ShoppingCart />,
+        iconBg: 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400',
+      },
+      {
+        title: 'Avg Monthly',
+        value: formatCurrency(months > 0 ? Math.round(totals.totalRevenue / months) : 0),
+        icon: <Users />,
+        iconBg: 'bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400',
+      },
+    ];
+  }, [totals, chartData]);
 
   const tableColumns: Column<MonthlyRevenue>[] = [
     {

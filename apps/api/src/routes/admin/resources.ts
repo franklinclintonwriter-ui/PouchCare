@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import prisma from '@/lib/prisma'
 import { authenticate, isOps } from '@/middleware/auth'
-import { ok, created, serverError } from '@/lib/response'
+import { ok, created, notFound, serverError } from '@/lib/response'
 import { getPaginationParams, buildMeta } from '@/lib/pagination'
 
 const router = Router()
@@ -74,6 +74,14 @@ router.get('/devices', async (req, res) => {
   } catch (err) { return serverError(res, err) }
 })
 
+router.get('/devices/:id', async (req, res) => {
+  try {
+    const item = await prisma.device.findUnique({ where: { id: req.params.id } })
+    if (!item) return notFound(res)
+    return ok(res, item)
+  } catch (err) { return serverError(res, err) }
+})
+
 router.post('/devices', async (req, res) => {
   try {
     const item = await prisma.device.create({ data: req.body })
@@ -115,6 +123,14 @@ router.get('/client-accounts', async (req, res) => {
       prisma.clientAccount.count({ where }),
     ])
     return ok(res, items, buildMeta(total, page, limit))
+  } catch (err) { return serverError(res, err) }
+})
+
+router.get('/client-accounts/:id', async (req, res) => {
+  try {
+    const item = await prisma.clientAccount.findUnique({ where: { id: req.params.id } })
+    if (!item) return notFound(res)
+    return ok(res, item)
   } catch (err) { return serverError(res, err) }
 })
 

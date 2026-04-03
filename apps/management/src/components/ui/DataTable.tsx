@@ -151,7 +151,7 @@ function DataTable<T>({
               ))
             ) : data.length === 0 ? (
               <tr>
-                <td colSpan={columns.length + (selectable ? 1 : 0)} className="py-16">
+                <td colSpan={columns.length + (selectable ? 1 : 0)} className="py-10 sm:py-16">
                   <EmptyState
                     icon={emptyIcon}
                     title={emptyTitle}
@@ -212,7 +212,7 @@ function DataTable<T>({
       <div className="block space-y-3 sm:hidden">
         {isLoading
           ? Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="rounded-xl border border-gray-200/80 bg-white p-4 shadow-soft dark:border-gray-700/60 dark:bg-gray-800/80">
+            <div key={i} className="rounded-xl border border-gray-200/80 bg-white p-3 sm:p-4 shadow-soft dark:border-gray-700/60 dark:bg-gray-800/80">
               <div className="mb-2 flex items-center justify-between">
                 <Skeleton className="h-4 w-32 rounded" />
                 <Skeleton className="h-4 w-14 rounded" />
@@ -237,7 +237,7 @@ function DataTable<T>({
                   key={rowId}
                   onClick={() => onRowClick?.(row)}
                   className={cn(
-                    'w-full rounded-xl border border-gray-200/80 bg-white p-4 text-left shadow-soft transition-all duration-150',
+                    'w-full rounded-xl border border-gray-200/80 bg-white p-3 text-left shadow-soft transition-all duration-150 sm:p-4',
                     'dark:border-gray-700/60 dark:bg-gray-800/80',
                     onRowClick
                       ? 'hover:shadow-elevated hover:-translate-y-[1px] active:scale-[0.99]'

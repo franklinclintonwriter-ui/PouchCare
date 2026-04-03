@@ -39,6 +39,31 @@ router.get('/', async (req: AuthRequest, res) => {
   } catch { return serverError(res) }
 })
 
+// GET /performance/:id
+router.get('/:id', async (req: AuthRequest, res) => {
+  try {
+    const rating = await prisma.performanceRating.findUnique({ where: { id: req.params.id } })
+    if (!rating) return notFound(res, 'Rating')
+    return ok(res, rating)
+  } catch { return serverError(res) }
+})
+
+// PUT /performance/:id
+router.put('/:id', isManager, async (req: AuthRequest, res) => {
+  try {
+    const rating = await prisma.performanceRating.update({ where: { id: req.params.id }, data: req.body })
+    return ok(res, rating)
+  } catch { return serverError(res) }
+})
+
+// DELETE /performance/:id
+router.delete('/:id', isCEO, async (req: AuthRequest, res) => {
+  try {
+    await prisma.performanceRating.delete({ where: { id: req.params.id } })
+    return ok(res, { message: 'Rating deleted' })
+  } catch { return serverError(res) }
+})
+
 // POST /performance — CEO/manager rates
 router.post('/', isManager, validate(rateSchema), async (req: AuthRequest, res) => {
   try {

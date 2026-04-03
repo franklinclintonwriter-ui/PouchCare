@@ -14,7 +14,7 @@
     "type-check":   "turbo run type-check",
     "dev:api":      "turbo run dev --filter=api",
     "dev:landing":  "turbo run dev --filter=landing",
-    "dev:mgmt":     "turbo run dev --filter=management",
+    "dev:mgmt":     "turbo run dev --filter=m.pouchcare.com",
     "dev:office":   "turbo run dev --filter=office",
     "dev:portal":   "turbo run dev --filter=client-portal",
     "export:notion": "node scripts/export-notion.mjs",

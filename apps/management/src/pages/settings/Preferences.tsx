@@ -6,10 +6,38 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Toggle } from '@/components/ui/Toggle';
 import { Select } from '@/components/ui/Select';
 
+const PREFS_KEY = 'pouchcare_preferences';
+
+interface Prefs {
+  denseTables: boolean;
+  autoRefresh: boolean;
+  timezone: string;
+}
+
+function loadPrefs(): Prefs {
+  try {
+    const raw = localStorage.getItem(PREFS_KEY);
+    if (raw) return { ...defaultPrefs, ...JSON.parse(raw) };
+  } catch { /* ignore */ }
+  return defaultPrefs;
+}
+
+const defaultPrefs: Prefs = {
+  denseTables: false,
+  autoRefresh: true,
+  timezone: 'Asia/Dhaka',
+};
+
 export default function Preferences() {
-  const [denseTables, setDenseTables] = useState(false);
-  const [autoRefresh, setAutoRefresh] = useState(true);
-  const [timezone, setTimezone] = useState('UTC');
+  const [prefs, setPrefs] = useState<Prefs>(loadPrefs);
+
+  const save = (updates: Partial<Prefs>) => {
+    setPrefs(prev => {
+      const next = { ...prev, ...updates };
+      localStorage.setItem(PREFS_KEY, JSON.stringify(next));
+      return next;
+    });
+  };
 
   const headerConfig = useMemo(() => ({
     title: 'Preferences',
@@ -34,14 +62,14 @@ export default function Preferences() {
               <p className="text-sm font-medium">Dense Tables</p>
               <p className="text-xs text-gray-500 dark:text-gray-400">Show tighter row spacing in data tables.</p>
             </div>
-            <Toggle checked={denseTables} onChange={setDenseTables} />
+            <Toggle checked={prefs.denseTables} onChange={v => save({ denseTables: v })} />
           </div>
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium">Auto Refresh</p>
               <p className="text-xs text-gray-500 dark:text-gray-400">Refresh dashboard and lists periodically.</p>
             </div>
-            <Toggle checked={autoRefresh} onChange={setAutoRefresh} />
+            <Toggle checked={prefs.autoRefresh} onChange={v => save({ autoRefresh: v })} />
           </div>
         </CardContent>
       </Card>
@@ -53,8 +81,8 @@ export default function Preferences() {
         <CardContent>
           <Select
             label="Timezone"
-            value={timezone}
-            onChange={(e) => setTimezone(e.target.value)}
+            value={prefs.timezone}
+            onChange={(e) => save({ timezone: e.target.value })}
             options={[
               { label: 'UTC', value: 'UTC' },
               { label: 'Asia/Dhaka', value: 'Asia/Dhaka' },
@@ -64,6 +92,8 @@ export default function Preferences() {
           />
         </CardContent>
       </Card>
+
+      <p className="text-center text-xs text-gray-400">Preferences are saved automatically to your browser.</p>
     </PageTransition>
   );
 }

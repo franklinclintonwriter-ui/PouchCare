@@ -32,7 +32,7 @@ export default function Dashboard() {
   useHeaderConfig(headerConfig);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* KPI Cards Row */}
       <KPIRow
         health={health.data}
@@ -43,7 +43,7 @@ export default function Dashboard() {
       />
 
       {/* Charts Row */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <RevenueChart data={revenue.data?.data} loading={revenue.isLoading} />
         </div>
@@ -51,7 +51,7 @@ export default function Dashboard() {
       </div>
 
       {/* Forecast + Staff Overview */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <ForecastChart forecast={forecast.data} loading={forecast.isLoading} />
         </div>
@@ -59,7 +59,7 @@ export default function Dashboard() {
       </div>
 
       {/* Leaderboards Row */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
         <StaffLeaderboard leaderboard={leaderboard.data} loading={leaderboard.isLoading} />
         <TopClients clients={clients.data} loading={clients.isLoading} />
         <TopReferrers leaderboard={leaderboard.data} loading={leaderboard.isLoading} />

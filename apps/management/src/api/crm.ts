@@ -154,3 +154,11 @@ export function useUpdateSalesOrder() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['sales-orders'] }),
   });
 }
+
+export function useDeleteSalesOrder() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.delete(`/crm/orders/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['sales-orders'] }),
+  });
+}
