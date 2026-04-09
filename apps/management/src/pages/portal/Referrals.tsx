@@ -3,7 +3,7 @@ import { Copy, Check } from 'lucide-react';
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
 import { useAuthStore } from '@/store/authStore';
 import { useReferrals, useReferralStats } from '@/api/portal';
-import { formatCurrency } from '@/mocks/generators';
+import { formatCurrency } from '@/lib/format';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';

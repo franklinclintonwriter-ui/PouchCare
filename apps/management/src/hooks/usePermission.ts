@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import type { SystemRole } from '@/types/enums';
 import type { StaffUser } from '@/types/auth';
+import type { PermissionKey } from '@/constants/permissionKeys';
 import { isCEO, isOps, isManager, isHR, normalizeRole } from '@/utils/permissions';
 
 export function usePermission() {
@@ -19,10 +20,18 @@ export function usePermission() {
         isStaff: false,
         isPortal: userType === 'portal',
         hasRole: (_roles: SystemRole[]) => false,
+        can: (_key: PermissionKey) => false,
       };
     }
 
-    const role = normalizeRole((user as StaffUser).systemRole ?? (user as { role?: string }).role);
+    const staff = user as StaffUser;
+    const role = normalizeRole(staff.systemRole ?? (user as { role?: string }).role);
+    const permissions = staff.permissions;
+
+    const can = (key: PermissionKey) => {
+      if (!permissions) return false;
+      return permissions[key] === true;
+    };
 
     return {
       role,
@@ -33,6 +42,7 @@ export function usePermission() {
       isStaff: true,
       isPortal: false,
       hasRole: (roles: SystemRole[]) => !!role && roles.includes(role),
+      can,
     };
   }, [user, userType]);
 }

@@ -232,18 +232,15 @@ function DataTable<T>({
           ) : (
             data.map((row, index) => {
               const rowId = getRowId?.(row) ?? index.toString();
-              return (
-                <button
-                  key={rowId}
-                  onClick={() => onRowClick?.(row)}
-                  className={cn(
-                    'w-full rounded-xl border border-gray-200/80 bg-white p-3 text-left shadow-soft transition-all duration-150 sm:p-4',
-                    'dark:border-gray-700/60 dark:bg-gray-800/80',
-                    onRowClick
-                      ? 'hover:shadow-elevated hover:-translate-y-[1px] active:scale-[0.99]'
-                      : 'cursor-default',
-                  )}
-                >
+              const cardClass = cn(
+                'w-full rounded-xl border border-gray-200/80 bg-white p-3 text-left shadow-soft transition-all duration-150 sm:p-4',
+                'dark:border-gray-700/60 dark:bg-gray-800/80',
+                onRowClick
+                  ? 'hover:shadow-elevated hover:-translate-y-[1px] active:scale-[0.99]'
+                  : 'cursor-default',
+              );
+              const mobileInner = (
+                <>
                   <div className="flex items-start justify-between gap-2">
                     <div className="space-y-1">
                       <p className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100">
@@ -277,7 +274,16 @@ function DataTable<T>({
                       </div>
                     ))}
                   </div>
+                </>
+              );
+              return onRowClick ? (
+                <button key={rowId} type="button" onClick={() => onRowClick(row)} className={cardClass}>
+                  {mobileInner}
                 </button>
+              ) : (
+                <div key={rowId} className={cardClass}>
+                  {mobileInner}
+                </div>
               );
             })
           )}

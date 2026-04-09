@@ -36,9 +36,13 @@ import portalOrdersRouter from '@/routes/portal/orders'
 import portalReferralsRouter from '@/routes/portal/referrals'
 import portalCommissionsRouter from '@/routes/portal/commissions'
 import adminPortalRouter from '@/routes/admin/portal'
+import adminRolePermissionsRouter from '@/routes/admin/role-permissions'
 import adminResourcesRouter from '@/routes/admin/resources'
+import pluginsRouter from '@/routes/plugins/index'
+import apiKeysRouter from '@/routes/api-keys/index'
 import { setupWebSocket } from '@/lib/websocket'
 import { startJobs } from '@/jobs/index'
+import prisma from '@/lib/prisma'
 
 const app = express()
 const httpServer = createServer(app)
@@ -49,7 +53,7 @@ app.use(cors({
   origin: env.ALLOWED_ORIGINS.split(','),
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Api-Key'],
 }))
 
 // ── Parsing ───────────────────────────────────────────
@@ -64,6 +68,21 @@ app.use(generalRateLimit)
 // ── Health check ──────────────────────────────────────
 app.get('/health', (_, res) => {
   res.json({ status: 'ok', ts: new Date().toISOString(), version: '1.0.0' })
+})
+
+/** Returns 200 only when PostgreSQL accepts a query (use for readiness probes). */
+app.get('/health/ready', async (_, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`
+    return res.json({ ok: true, db: true, ts: new Date().toISOString() })
+  } catch {
+    return res.status(503).json({
+      ok: false,
+      db: false,
+      error: 'database_unreachable',
+      hint: 'Start PostgreSQL and run prisma db push + db seed (see README)',
+    })
+  }
 })
 
 // ── API Routes ────────────────────────────────────────
@@ -105,7 +124,12 @@ app.use(`${v1}/portal/commissions`, portalCommissionsRouter)
 
 // Admin
 app.use(`${v1}/admin/portal`, adminPortalRouter)
+app.use(`${v1}/admin/role-permissions`, adminRolePermissionsRouter)
 app.use(`${v1}/admin`, adminResourcesRouter)
+
+// Plugin Platform
+app.use(`${v1}/plugins`, pluginsRouter)
+app.use(`${v1}/api-keys`, apiKeysRouter)
 
 // ── Error handler ────────────────────────────────────
 app.use(errorHandler)
@@ -119,6 +143,15 @@ httpServer.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 PouchCare API running on port ${PORT}`)
   console.log(`   Mode: ${env.NODE_ENV}`)
   startJobs()
+  void prisma.$connect().then(
+    () => console.log(`   PostgreSQL: connected`),
+    (e: unknown) => {
+      const msg = e instanceof Error ? e.message : String(e)
+      console.error(`   PostgreSQL: NOT CONNECTED — logins and DB routes will fail until the server is up.`)
+      console.error(`   ${msg}`)
+      console.error(`   Fix: docker compose up -d (repo root) or install PostgreSQL; then: cd apps/api && npx prisma db push && npx prisma db seed`)
+    },
+  )
 })
 
 export default app

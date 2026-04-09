@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Medal } from 'lucide-react';
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
 import { useReferralLeaderboard } from '@/api/portal';
-import { formatCurrency } from '@/mocks/generators';
+import { formatCurrency } from '@/lib/format';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { Badge } from '@/components/ui/Badge';

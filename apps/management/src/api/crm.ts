@@ -139,6 +139,48 @@ export function useSalesOrders(params?: QueryParams) {
   });
 }
 
+export function useSalesOrder(id: string | undefined) {
+  return useQuery<SalesOrder>({
+    queryKey: ['sales-order', id],
+    queryFn: async () => {
+      const { data } = await api.get(`/crm/orders/${id}`);
+      return mapSalesOrder(data as RawSalesOrder);
+    },
+    enabled: !!id,
+  });
+}
+
+/** Full API row for staff order detail (matches Prisma SalesOrder). */
+export type SalesOrderRecord = {
+  id: string;
+  orderId: number;
+  clientName: string;
+  service?: string | null;
+  status?: string | null;
+  paymentStatus: string;
+  amountUsd: number;
+  assignedTo?: string | null;
+  branch?: string | null;
+  orderDate: string;
+  deadline?: string | null;
+  deliveryDate?: string | null;
+  deliveryLink?: string | null;
+  invoiceReference?: string | null;
+  revisionCount?: number;
+  notes?: string | null;
+};
+
+export function useSalesOrderRecord(id: string | undefined) {
+  return useQuery<SalesOrderRecord>({
+    queryKey: ['sales-order-record', id],
+    queryFn: async () => {
+      const { data } = await api.get(`/crm/orders/${id}`);
+      return data as SalesOrderRecord;
+    },
+    enabled: !!id,
+  });
+}
+
 export function useCreateSalesOrder() {
   const qc = useQueryClient();
   return useMutation({
@@ -151,7 +193,11 @@ export function useUpdateSalesOrder() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, ...body }: Record<string, unknown> & { id: string }) => api.put(`/crm/orders/${id}`, body),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['sales-orders'] }),
+    onSuccess: (_, v) => {
+      qc.invalidateQueries({ queryKey: ['sales-orders'] });
+      qc.invalidateQueries({ queryKey: ['sales-order', v.id] });
+      qc.invalidateQueries({ queryKey: ['sales-order-record', v.id] });
+    },
   });
 }
 
@@ -159,6 +205,10 @@ export function useDeleteSalesOrder() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => api.delete(`/crm/orders/${id}`),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['sales-orders'] }),
+    onSuccess: (_, id) => {
+      qc.invalidateQueries({ queryKey: ['sales-orders'] });
+      qc.removeQueries({ queryKey: ['sales-order', id] });
+      qc.removeQueries({ queryKey: ['sales-order-record', id] });
+    },
   });
 }

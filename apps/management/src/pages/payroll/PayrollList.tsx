@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
 import { usePayroll, useCreatePayroll, useMarkPayrollPaid } from '@/api/payroll';
@@ -9,8 +9,11 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
-import { formatCurrency } from '@/mocks/generators';
-import { Wallet, Users, Gift, TrendingUp, Plus } from 'lucide-react';
+import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
+import { Textarea } from '@/components/ui/Textarea';
+import { formatCurrency } from '@/lib/format';
+import { Wallet, Users, Gift, TrendingUp, Plus, CalendarRange, RotateCcw } from 'lucide-react';
 import { usePermission } from '@/hooks/usePermission';
 import type { PayrollEntry } from '@/types/models';
 import { toast } from 'sonner';
@@ -39,7 +42,11 @@ export default function PayrollList() {
   const [showCreate, setShowCreate] = useState(false);
   const perm = usePermission();
 
-  const { data, isLoading } = usePayroll(filterMonth, filterYear, page, 20);
+  useEffect(() => {
+    setPage(1);
+  }, [filterMonth, filterYear]);
+
+  const { data, isLoading, isError, error } = usePayroll(filterMonth, filterYear, page, 20);
   const entries = data?.data ?? [];
   const meta = data?.meta;
 
@@ -65,13 +72,31 @@ export default function PayrollList() {
     return { totalPayroll, avgSalary, headcount, totalBonus };
   }, [entries]);
 
-  useHeaderConfig({
+  const yearOptions = useMemo(() => {
+    const y = new Date().getFullYear();
+    return Array.from({ length: 7 }, (_, i) => ({ label: String(y - 3 + i), value: String(y - 3 + i) }));
+  }, []);
+
+  const monthOptions = useMemo(() =>
+    MONTHS.map((m, i) => ({ label: m, value: String(i + 1) })),
+  []);
+
+  const onMonthChange = useCallback((v: string) => { setFilterMonth(Number(v)); setPage(1); }, []);
+  const onYearChange = useCallback((v: string) => { setFilterYear(Number(v)); setPage(1); }, []);
+  const onThisMonth = useCallback(() => { setFilterMonth(now.getMonth() + 1); setFilterYear(now.getFullYear()); setPage(1); }, [now]);
+
+  useHeaderConfig(useMemo(() => ({
     title: 'Payroll',
     breadcrumbs: [{ label: 'Payroll' }],
-    actions: perm.isOps ? [
-      { type: 'button' as const, label: 'Process Payroll', icon: Plus, onClick: () => setShowCreate(true) },
-    ] : [],
-  });
+    actions: [
+      { type: 'filter' as const, label: 'Month', icon: CalendarRange, options: monthOptions, value: String(filterMonth), onChange: onMonthChange },
+      { type: 'filter' as const, label: 'Year', options: yearOptions, value: String(filterYear), onChange: onYearChange },
+      { type: 'button' as const, label: 'This month', icon: RotateCcw, variant: 'outline' as const, onClick: onThisMonth },
+      ...(perm.can('payroll.access') ? [
+        { type: 'button' as const, label: 'Process Payroll', icon: Plus, onClick: () => setShowCreate(true) },
+      ] : []),
+    ],
+  }), [monthOptions, yearOptions, filterMonth, filterYear, onMonthChange, onYearChange, onThisMonth, perm]));
 
   const handleCreate = async () => {
     if (!form.memberId || !form.baseSalary) {
@@ -143,11 +168,14 @@ export default function PayrollList() {
     }] : []),
   ];
 
-  const inputCls = 'w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100';
-  const labelCls = 'block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1';
-
   return (
     <PageTransition className="space-y-6">
+      {isError && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-200">
+          {error instanceof Error ? error.message : 'Failed to load payroll'}
+        </div>
+      )}
+
       <StatsRow
         loading={isLoading}
         items={[
@@ -182,44 +210,62 @@ export default function PayrollList() {
         }
       >
         <div className="space-y-4">
-          <div>
-            <label className={labelCls}>Staff Member ID *</label>
-            <input className={inputCls} placeholder="Staff UUID" value={form.memberId} onChange={e => setForm(f => ({ ...f, memberId: e.target.value }))} />
+          <Input
+            label="Staff Member ID *"
+            placeholder="Staff UUID"
+            value={form.memberId}
+            onChange={e => setForm(f => ({ ...f, memberId: e.target.value }))}
+          />
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <Select
+              label="Month"
+              value={form.month}
+              onChange={e => setForm(f => ({ ...f, month: e.target.value }))}
+              options={MONTHS.map(m => ({ label: m, value: m }))}
+            />
+            <Input
+              label="Year"
+              type="number"
+              value={String(form.year)}
+              onChange={e => setForm(f => ({ ...f, year: Number(e.target.value) }))}
+            />
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className={labelCls}>Month</label>
-              <select className={inputCls} value={form.month} onChange={e => setForm(f => ({ ...f, month: e.target.value }))}>
-                {MONTHS.map(m => <option key={m} value={m}>{m}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className={labelCls}>Year</label>
-              <input className={inputCls} type="number" value={form.year} onChange={e => setForm(f => ({ ...f, year: Number(e.target.value) }))} />
-            </div>
+          <Input
+            label="Base Salary (USD) *"
+            type="number"
+            min="0"
+            placeholder="0.00"
+            value={form.baseSalary}
+            onChange={e => setForm(f => ({ ...f, baseSalary: e.target.value }))}
+          />
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <Input
+              label="Bonus (USD)"
+              type="number"
+              min="0"
+              value={form.bonus}
+              onChange={e => setForm(f => ({ ...f, bonus: e.target.value }))}
+            />
+            <Input
+              label="Deductions (USD)"
+              type="number"
+              min="0"
+              value={form.deductions}
+              onChange={e => setForm(f => ({ ...f, deductions: e.target.value }))}
+            />
           </div>
-          <div>
-            <label className={labelCls}>Base Salary (USD) *</label>
-            <input className={inputCls} type="number" min="0" placeholder="0.00" value={form.baseSalary} onChange={e => setForm(f => ({ ...f, baseSalary: e.target.value }))} />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className={labelCls}>Bonus (USD)</label>
-              <input className={inputCls} type="number" min="0" value={form.bonus} onChange={e => setForm(f => ({ ...f, bonus: e.target.value }))} />
-            </div>
-            <div>
-              <label className={labelCls}>Deductions (USD)</label>
-              <input className={inputCls} type="number" min="0" value={form.deductions} onChange={e => setForm(f => ({ ...f, deductions: e.target.value }))} />
-            </div>
-          </div>
-          <div>
-            <label className={labelCls}>Payment Method</label>
-            <input className={inputCls} placeholder="e.g. Bank Transfer" value={form.paymentMethod} onChange={e => setForm(f => ({ ...f, paymentMethod: e.target.value }))} />
-          </div>
-          <div>
-            <label className={labelCls}>Notes</label>
-            <textarea className={inputCls} rows={2} value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
-          </div>
+          <Input
+            label="Payment Method"
+            placeholder="e.g. Bank Transfer"
+            value={form.paymentMethod}
+            onChange={e => setForm(f => ({ ...f, paymentMethod: e.target.value }))}
+          />
+          <Textarea
+            label="Notes"
+            rows={2}
+            value={form.notes}
+            onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
+          />
         </div>
       </Modal>
     </PageTransition>

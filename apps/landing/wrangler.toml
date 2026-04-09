@@ -1,0 +1,3 @@
+# Cloudflare Pages — PouchCare public frontend
+name = "pouchcare"
+pages_build_output_dir = "dist"

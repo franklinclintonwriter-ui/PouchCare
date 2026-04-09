@@ -1,15 +1,16 @@
 import { Router } from 'express'
 import prisma from '@/lib/prisma'
-import { authenticate, requireRoles, CEO_ROLES } from '@/middleware/auth'
+import { authenticate } from '@/middleware/auth'
+import { requirePermission } from '@/middleware/rbac'
 import { getPagination, buildMeta } from '@/utils/pagination'
 import { ok, created, notFound, serverError } from '@/utils/response'
 
 const router = Router()
 router.use(authenticate)
-const HR_ROLES = [...CEO_ROLES, 'OP_MANAGER', 'HR_MANAGER'] as const
+const hr = requirePermission('hr.recruitment')
 
 // ── JOB POSITIONS ──
-router.get('/positions', requireRoles(...HR_ROLES as any), async (req, res) => {
+router.get('/positions', hr, async (req, res) => {
   try {
     const positions = await prisma.jobPosition.findMany({
       orderBy: { createdAt: 'desc' },
@@ -19,14 +20,14 @@ router.get('/positions', requireRoles(...HR_ROLES as any), async (req, res) => {
   } catch (err) { serverError(res, err) }
 })
 
-router.post('/positions', requireRoles(...HR_ROLES as any), async (req, res) => {
+router.post('/positions', hr, async (req, res) => {
   try {
     const pos = await prisma.jobPosition.create({ data: req.body })
     return created(res, pos)
   } catch (err) { serverError(res, err) }
 })
 
-router.get('/positions/:id', requireRoles(...HR_ROLES as any), async (req, res) => {
+router.get('/positions/:id', hr, async (req, res) => {
   try {
     const pos = await prisma.jobPosition.findUnique({
       where: { id: req.params.id },
@@ -37,14 +38,14 @@ router.get('/positions/:id', requireRoles(...HR_ROLES as any), async (req, res) 
   } catch (err) { serverError(res, err) }
 })
 
-router.put('/positions/:id', requireRoles(...HR_ROLES as any), async (req, res) => {
+router.put('/positions/:id', hr, async (req, res) => {
   try {
     const pos = await prisma.jobPosition.update({ where: { id: req.params.id }, data: req.body })
     return ok(res, pos)
   } catch (err) { serverError(res, err) }
 })
 
-router.delete('/positions/:id', requireRoles(...HR_ROLES as any), async (req, res) => {
+router.delete('/positions/:id', hr, async (req, res) => {
   try {
     await prisma.jobPosition.delete({ where: { id: req.params.id } })
     return ok(res, { message: 'Position deleted' })
@@ -52,7 +53,7 @@ router.delete('/positions/:id', requireRoles(...HR_ROLES as any), async (req, re
 })
 
 // ── JOB APPLICATIONS ──
-router.get('/applications', requireRoles(...HR_ROLES as any), async (req, res) => {
+router.get('/applications', hr, async (req, res) => {
   try {
     const { page, limit, skip } = getPagination(req)
     const { status, positionId } = req.query as Record<string, string>
@@ -88,7 +89,7 @@ router.post('/applications', async (req, res) => {
   } catch (err) { serverError(res, err) }
 })
 
-router.get('/applications/:id', requireRoles(...HR_ROLES as any), async (req, res) => {
+router.get('/applications/:id', hr, async (req, res) => {
   try {
     const app = await prisma.jobApplication.findUnique({
       where: { id: req.params.id },
@@ -99,14 +100,14 @@ router.get('/applications/:id', requireRoles(...HR_ROLES as any), async (req, re
   } catch (err) { serverError(res, err) }
 })
 
-router.put('/applications/:id', requireRoles(...HR_ROLES as any), async (req, res) => {
+router.put('/applications/:id', hr, async (req, res) => {
   try {
     const app = await prisma.jobApplication.update({ where: { id: req.params.id }, data: req.body })
     return ok(res, app)
   } catch (err) { serverError(res, err) }
 })
 
-router.delete('/applications/:id', requireRoles(...HR_ROLES as any), async (req, res) => {
+router.delete('/applications/:id', hr, async (req, res) => {
   try {
     await prisma.jobApplication.delete({ where: { id: req.params.id } })
     return ok(res, { message: 'Application deleted' })
@@ -114,7 +115,7 @@ router.delete('/applications/:id', requireRoles(...HR_ROLES as any), async (req,
 })
 
 // ── PERFORMANCE RATINGS ──
-router.get('/performance', requireRoles(...HR_ROLES as any), async (req, res) => {
+router.get('/performance', hr, async (req, res) => {
   try {
     const { page, limit, skip } = getPagination(req)
     const [ratings, total] = await Promise.all([
@@ -125,14 +126,14 @@ router.get('/performance', requireRoles(...HR_ROLES as any), async (req, res) =>
   } catch (err) { serverError(res, err) }
 })
 
-router.post('/performance', requireRoles(...HR_ROLES as any), async (req, res) => {
+router.post('/performance', hr, async (req, res) => {
   try {
     const rating = await prisma.performanceRating.create({ data: { ...req.body, ratedBy: req.user!.id } })
     return created(res, rating)
   } catch (err) { serverError(res, err) }
 })
 
-router.get('/performance/:id', requireRoles(...HR_ROLES as any), async (req, res) => {
+router.get('/performance/:id', hr, async (req, res) => {
   try {
     const rating = await prisma.performanceRating.findUnique({ where: { id: req.params.id } })
     if (!rating) return notFound(res)
@@ -140,14 +141,14 @@ router.get('/performance/:id', requireRoles(...HR_ROLES as any), async (req, res
   } catch (err) { serverError(res, err) }
 })
 
-router.put('/performance/:id', requireRoles(...HR_ROLES as any), async (req, res) => {
+router.put('/performance/:id', hr, async (req, res) => {
   try {
     const rating = await prisma.performanceRating.update({ where: { id: req.params.id }, data: req.body })
     return ok(res, rating)
   } catch (err) { serverError(res, err) }
 })
 
-router.delete('/performance/:id', requireRoles(...HR_ROLES as any), async (req, res) => {
+router.delete('/performance/:id', hr, async (req, res) => {
   try {
     await prisma.performanceRating.delete({ where: { id: req.params.id } })
     return ok(res, { message: 'Rating deleted' })

@@ -1,23 +1,119 @@
-import { useParams } from 'react-router-dom';
+import { useState, useMemo, useCallback } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
-import { useLead } from '@/api/crm';
+import { useLead, useUpdateLead, useDeleteLead } from '@/api/crm';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Badge } from '@/components/ui/Badge';
 import { Avatar } from '@/components/ui/Avatar';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { formatCurrency } from '@/mocks/generators';
-import { Mail, Phone, Building2, Globe, Calendar, User, DollarSign, Tag } from 'lucide-react';
+import { Modal } from '@/components/ui/Modal';
+import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
+import { Textarea } from '@/components/ui/Textarea';
+import { Button } from '@/components/ui/Button';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { formatCurrency } from '@/lib/format';
+import { usePermission } from '@/hooks/usePermission';
+import { Pencil, Trash2, Mail, Phone, Building2, Globe, Calendar, User, DollarSign, Tag } from 'lucide-react';
+import { toast } from 'sonner';
+import type { Lead } from '@/types/models';
+
+const STAGE_OPTIONS = [
+  { label: 'New', value: 'NEW' },
+  { label: 'Qualified', value: 'QUALIFIED' },
+  { label: 'Proposal', value: 'PROPOSAL' },
+  { label: 'Negotiation', value: 'NEGOTIATION' },
+  { label: 'Won', value: 'WON' },
+  { label: 'Lost', value: 'LOST' },
+];
+
+const SOURCE_OPTIONS = [
+  { label: 'Unknown', value: 'Unknown' },
+  { label: 'Referral', value: 'Referral' },
+  { label: 'Website', value: 'Website' },
+  { label: 'Cold Outreach', value: 'Cold Outreach' },
+  { label: 'Social Media', value: 'Social Media' },
+  { label: 'Event', value: 'Event' },
+  { label: 'Partner', value: 'Partner' },
+];
+
+function leadToForm(lead: Lead) {
+  return {
+    company: lead.company,
+    contactName: lead.name,
+    email: lead.email,
+    phone: lead.phone,
+    stage: lead.stage,
+    source: lead.source,
+    estimatedValue: String(lead.value),
+    notes: lead.notes,
+  };
+}
 
 export default function LeadDetail() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const perm = usePermission();
   const { data: lead, isLoading } = useLead(id!);
+  const updateLead = useUpdateLead();
+  const deleteLead = useDeleteLead();
 
-  useHeaderConfig({
+  const canEdit = perm.isCEO || perm.isOps || perm.isManager;
+
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [form, setForm] = useState<Record<string, string>>({});
+
+  const openEdit = useCallback(() => {
+    if (lead) setForm(leadToForm(lead));
+    setEditOpen(true);
+  }, [lead]);
+
+  const handleSave = async () => {
+    if (!id) return;
+    try {
+      await updateLead.mutateAsync({
+        id,
+        company: form.company,
+        contactName: form.contactName,
+        email: form.email || undefined,
+        phone: form.phone || undefined,
+        stage: form.stage,
+        source: form.source || undefined,
+        estimatedValue: form.estimatedValue ? Number(form.estimatedValue) : undefined,
+        notes: form.notes || undefined,
+      });
+      toast.success('Lead updated');
+      setEditOpen(false);
+    } catch {
+      toast.error('Failed to update lead');
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!id) return;
+    try {
+      await deleteLead.mutateAsync(id);
+      toast.success('Lead deleted');
+      navigate('/crm/leads');
+    } catch {
+      toast.error('Failed to delete lead');
+    }
+  };
+
+  const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
+    setForm(f => ({ ...f, [k]: e.target.value }));
+
+  useHeaderConfig(useMemo(() => ({
     title: lead?.name ?? 'Lead',
     breadcrumbs: [{ label: 'CRM' }, { label: 'Leads', href: '/crm/leads' }, { label: lead?.name ?? '...' }],
-  });
+    actions: canEdit ? [
+      { type: 'button' as const, label: 'Edit', icon: Pencil, variant: 'outline' as const, onClick: openEdit },
+      { type: 'button' as const, label: 'Delete', icon: Trash2, variant: 'danger' as const, onClick: () => setDeleteOpen(true) },
+    ] : [],
+  }), [lead, canEdit, openEdit]));
 
   if (isLoading) {
     return (
@@ -73,11 +169,8 @@ export default function LeadDetail() {
 
       {/* Two-column layout */}
       <div className="grid gap-6 lg:grid-cols-2">
-        {/* Contact Info */}
         <Card>
-          <CardHeader>
-            <CardTitle>Contact Information</CardTitle>
-          </CardHeader>
+          <CardHeader><CardTitle>Contact Information</CardTitle></CardHeader>
           <CardContent>
             <div className="space-y-4">
               <InfoRow icon={<Mail className="h-4 w-4" />} label="Email" value={lead.email} />
@@ -88,11 +181,8 @@ export default function LeadDetail() {
           </CardContent>
         </Card>
 
-        {/* Deal Info */}
         <Card>
-          <CardHeader>
-            <CardTitle>Deal Information</CardTitle>
-          </CardHeader>
+          <CardHeader><CardTitle>Deal Information</CardTitle></CardHeader>
           <CardContent>
             <div className="space-y-4">
               <InfoRow icon={<DollarSign className="h-4 w-4" />} label="Value" value={formatCurrency(lead.value)} />
@@ -109,6 +199,58 @@ export default function LeadDetail() {
           </CardContent>
         </Card>
       </div>
+
+      {lead.notes && (
+        <Card>
+          <CardHeader><CardTitle>Notes</CardTitle></CardHeader>
+          <CardContent>
+            <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{lead.notes}</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Edit modal */}
+      <Modal
+        isOpen={editOpen}
+        onClose={() => setEditOpen(false)}
+        title="Edit Lead"
+        size="md"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setEditOpen(false)}>Cancel</Button>
+            <Button isLoading={updateLead.isPending} onClick={handleSave}>Save Changes</Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <Input label="Contact Name" value={form.contactName ?? ''} onChange={set('contactName')} />
+            <Input label="Company" value={form.company ?? ''} onChange={set('company')} />
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <Input label="Email" type="email" value={form.email ?? ''} onChange={set('email')} />
+            <Input label="Phone" value={form.phone ?? ''} onChange={set('phone')} />
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <Select label="Stage" options={STAGE_OPTIONS} value={form.stage ?? 'NEW'} onChange={set('stage')} />
+            <Select label="Source" options={SOURCE_OPTIONS} value={form.source ?? 'Unknown'} onChange={set('source')} />
+          </div>
+          <Input label="Estimated Value (USD)" type="number" min="0" value={form.estimatedValue ?? ''} onChange={set('estimatedValue')} />
+          <Textarea label="Notes" value={form.notes ?? ''} onChange={set('notes')} rows={3} />
+        </div>
+      </Modal>
+
+      {/* Delete confirm */}
+      <ConfirmDialog
+        isOpen={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        title="Delete Lead"
+        message={`Are you sure you want to delete "${lead.name}"? This cannot be undone.`}
+        confirmLabel="Delete"
+        variant="danger"
+        isLoading={deleteLead.isPending}
+        onConfirm={handleDelete}
+      />
     </PageTransition>
   );
 }

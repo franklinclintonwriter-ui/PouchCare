@@ -5,6 +5,8 @@ import { useThemeStore } from '@/store/themeStore';
 import { useAuthStore } from '@/store/authStore';
 import { CommandPalette } from '@/components/shared/CommandPalette';
 import api from '@/api/client';
+import { normalizeStaffUser } from '@/api/auth';
+import type { StaffUser, PortalUser } from '@/types/auth';
 
 export default function App() {
   const theme = useThemeStore((s) => s.theme);
@@ -25,16 +27,38 @@ export default function App() {
       return;
     }
 
-    if (user) {
+    if (userType === 'portal') {
+      if (user) {
+        setLoading(false);
+        return;
+      }
+      api
+        .get('/portal/me')
+        .then((res) => {
+          useAuthStore.getState().setUser(res.data as PortalUser);
+        })
+        .catch(() => {
+          useAuthStore.getState().logout();
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+      return;
+    }
+
+    // Staff: login payload may omit permissions — always hydrate from /staff/me until present
+    const staff = user as StaffUser | null;
+    if (staff?.permissions) {
       setLoading(false);
       return;
     }
 
-    const endpoint = userType === 'portal' ? '/portal/me' : '/staff/me';
+    setLoading(true);
     api
-      .get(endpoint)
+      .get('/staff/me')
       .then((res) => {
-        useAuthStore.getState().setUser(res.data);
+        const data = res.data as StaffUser;
+        useAuthStore.getState().setUser(normalizeStaffUser(data));
       })
       .catch(() => {
         useAuthStore.getState().logout();

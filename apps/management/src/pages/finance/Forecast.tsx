@@ -4,7 +4,7 @@ import { useRevenue, useForecast } from '@/api/finance';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { StatsRow } from '@/components/shared/StatsRow';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
-import { formatCurrency } from '@/mocks/generators';
+import { formatCurrency } from '@/lib/format';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { TrendingUp, Target, Calendar, Zap } from 'lucide-react';
 

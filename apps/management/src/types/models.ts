@@ -21,6 +21,42 @@ export interface StaffMember {
   avatarUrl?: string;
 }
 
+/** Full staff record from GET /staff/members/:id (extends list fields). */
+export interface StaffProfileDetail extends StaffMember {
+  profileAdmin?: boolean;
+  rolePermissions?: Record<string, boolean> | null;
+  email2?: string | null;
+  whatsapp?: string | null;
+  primarySkill?: string | null;
+  status?: string;
+  skillLevel?: string | null;
+  secondarySkills?: string | null;
+  toolsKnown?: string | null;
+  yearsExperience?: number | null;
+  employmentType?: string | null;
+  country?: string | null;
+  address?: string | null;
+  nidPassport?: string | null;
+  emergencyContact?: string | null;
+  terminationDate?: string | null;
+  exitReason?: string | null;
+  portfolioUrl?: string | null;
+  linkedinUrl?: string | null;
+  githubUrl?: string | null;
+  certifications?: string | null;
+  averageTaskRating?: number | null;
+  ceoPerformanceRating?: number | null;
+  ceoRatingNote?: string | null;
+  ceoLastRatedDate?: string | null;
+  tasksAssigned?: number;
+  tasksCompleted?: number;
+  totalTasksRated?: number;
+  performanceScore?: number | null;
+  twoFactorEnabled?: boolean;
+  lastLoginAt?: string | null;
+  lastLoginIp?: string | null;
+}
+
 export interface Task {
   id: string;
   title: string;
@@ -286,17 +322,16 @@ export interface Ticket {
   lastReplyAt: string;
 }
 
+/** Matches `GET/POST /v1/broadcast` (Prisma Broadcast model). */
 export interface Broadcast {
   id: string;
   title: string;
-  channel: 'email' | 'sms' | 'push';
+  message: string;
+  sentBy: string;
   audience: string;
-  status: 'draft' | 'scheduled' | 'sent';
-  sentDate?: string;
-  scheduledDate?: string;
-  openRate?: number;
-  content: string;
-  recipientCount: number;
+  channel: 'in_app' | 'email';
+  isUrgent: boolean;
+  createdAt: string;
 }
 
 export interface AppNotification {

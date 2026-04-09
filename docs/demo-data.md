@@ -1,6 +1,12 @@
 // PouchCare OS — Prisma Schema
 // Database: PostgreSQL
 // Generated: March 2026
+//
+// ── Load seed data for local UI testing (canonical schema: apps/api/prisma/schema.prisma) ──
+// 1) Start PostgreSQL (matches apps/api/.env DATABASE_URL), e.g. repo root: docker compose up -d
+// 2) cd apps/api && npx prisma db push && npx prisma db seed
+//    (or from repo root: npm run db:setup — Windows: npm run db:setup:win)
+// Seeded logins use password: Password123! — see README.md "Seed Credentials"
 
 generator client {
   provider = "prisma-client-js"

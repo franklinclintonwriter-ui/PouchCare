@@ -1,11 +1,12 @@
 import { Router } from 'express'
 import prisma from '@/lib/prisma'
-import { authenticate, isOps } from '@/middleware/auth'
+import { authenticate } from '@/middleware/auth'
+import { requirePermission } from '@/middleware/rbac'
 import { ok, serverError, notFound, badRequest } from '@/lib/response'
 import { getPaginationParams, buildMeta } from '@/lib/pagination'
 
 const router = Router()
-router.use(authenticate, isOps)
+router.use(authenticate, requirePermission('admin_portal.access'))
 
 // GET /admin/portal/members
 router.get('/members', async (req, res) => {

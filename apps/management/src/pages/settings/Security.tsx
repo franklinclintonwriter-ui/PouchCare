@@ -1,27 +1,21 @@
 import { useMemo, useState } from 'react';
-import { Shield, Monitor, Smartphone, Globe } from 'lucide-react';
+import { Shield } from 'lucide-react';
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
-import { useChangeStaffPassword, useSetup2FA, useVerify2FA } from '@/api/auth';
+import { useChangeStaffPassword, useSetup2FA, useVerify2FA, useStaffMe } from '@/api/auth';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { Toggle } from '@/components/ui/Toggle';
 import { Badge } from '@/components/ui/Badge';
 import { PageTransition } from '@/components/ui/PageTransition';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { toast } from 'sonner';
-
-const sessions = [
-  { id: '1', device: 'Chrome on Windows', icon: <Monitor className="h-4 w-4" />, ip: '192.168.1.42', lastActive: '2 minutes ago', current: true },
-  { id: '2', device: 'Safari on iPhone', icon: <Smartphone className="h-4 w-4" />, ip: '10.0.0.15', lastActive: '1 hour ago', current: false },
-  { id: '3', device: 'Firefox on MacOS', icon: <Globe className="h-4 w-4" />, ip: '172.16.0.8', lastActive: '3 days ago', current: false },
-];
 
 export default function Security() {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [twoFactor, setTwoFactor] = useState(false);
   const [twoFactorCode, setTwoFactorCode] = useState('');
+  const { data: me, isLoading: meLoading } = useStaffMe();
   const changePassword = useChangeStaffPassword();
   const setup2FA = useSetup2FA();
   const verify2FA = useVerify2FA();
@@ -99,17 +93,30 @@ export default function Security() {
           <CardTitle>Two-Factor Authentication</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <p className="text-sm text-gray-700 dark:text-gray-300">
                 Add an extra layer of security to your account
               </p>
               <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-                You will be asked for a verification code when signing in.
+                After verification, you may be asked for a code at sign-in (depending on role policy).
               </p>
             </div>
-            <Toggle checked={twoFactor} onChange={setTwoFactor} />
+            {meLoading ? (
+              <Skeleton className="h-7 w-24 rounded-full" />
+            ) : me?.twoFactorEnabled ? (
+              <Badge variant="success">2FA enabled</Badge>
+            ) : me?.twoFactorPending ? (
+              <Badge variant="warning">Verification pending</Badge>
+            ) : (
+              <Badge variant="default">2FA off</Badge>
+            )}
           </div>
+          {me?.twoFactorPending && (
+            <p className="mt-2 text-xs text-amber-800 dark:text-amber-200/90">
+              Authenticator secret was created—enter the 6-digit code from your app and click Verify to finish.
+            </p>
+          )}
           <div className="mt-3 flex flex-wrap gap-2">
             <Button
               size="sm"
@@ -158,33 +165,10 @@ export default function Security() {
         <CardHeader>
           <CardTitle>Active Sessions</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
-          {sessions.map((session) => (
-            <div
-              key={session.id}
-              className="flex items-center justify-between rounded-lg border border-gray-100 p-3 dark:border-gray-700/40"
-            >
-              <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gray-50 text-gray-500 dark:bg-gray-700/50 dark:text-gray-400">
-                  {session.icon}
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                      {session.device}
-                    </p>
-                    {session.current && <Badge variant="success" size="sm">Current</Badge>}
-                  </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {session.ip} &middot; {session.lastActive}
-                  </p>
-                </div>
-              </div>
-              {!session.current && (
-                <Button variant="ghost" size="sm">Revoke</Button>
-              )}
-            </div>
-          ))}
+        <CardContent>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Per-device session listing and remote revoke are not available yet. Use <strong>Log out</strong> in the sidebar to end this browser session.
+          </p>
         </CardContent>
       </Card>
     </PageTransition>

@@ -10,7 +10,7 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Tabs } from '@/components/ui/Tabs';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { StatsRow } from '@/components/shared/StatsRow';
-import { formatCurrency } from '@/mocks/generators';
+import { formatCurrency } from '@/lib/format';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 
 export default function PortalMemberDetail() {

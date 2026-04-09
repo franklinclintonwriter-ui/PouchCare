@@ -23,6 +23,11 @@ export default function Dashboard() {
 
   const isLoading = health.isLoading || revenue.isLoading || staff.isLoading || clients.isLoading;
 
+  const failedQueries = [health, revenue, staff, clients, leaderboard, forecast].filter((q) => q.isError);
+  const firstErrorMessage = failedQueries[0]?.error instanceof Error
+    ? failedQueries[0].error.message
+    : failedQueries.length ? 'One or more requests failed' : null;
+
   const headerConfig = useMemo(() => ({
     title: 'Dashboard',
     breadcrumbs: [{ label: 'Dashboard', icon: LayoutDashboard }],
@@ -33,6 +38,18 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-4 sm:space-y-6">
+      {failedQueries.length > 0 && (
+        <div
+          role="alert"
+          className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-100"
+        >
+          <p className="font-medium">Some dashboard data could not be loaded</p>
+          <p className="mt-1 text-amber-900/90 dark:text-amber-200/90">
+            {firstErrorMessage}. Other sections below may still show partial information.
+          </p>
+        </div>
+      )}
+
       {/* KPI Cards Row */}
       <KPIRow
         health={health.data}

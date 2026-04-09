@@ -1,14 +1,12 @@
-import { useState, useMemo } from 'react';
+import { useCallback, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
 import { usePortalOrders } from '@/api/portal';
-import { formatCurrency } from '@/mocks/generators';
+import { formatCurrency } from '@/lib/format';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { Tabs } from '@/components/ui/Tabs';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
-import { SearchInput } from '@/components/ui/SearchInput';
-import { FilterDropdown } from '@/components/ui/FilterDropdown';
 import type { PortalOrder } from '@/types/models';
 
 const STATUS_OPTIONS = [
@@ -27,13 +25,32 @@ export default function PortalOrders() {
   const [statusFilter, setStatusFilter] = useState('');
   const [page, setPage] = useState(1);
 
-  useHeaderConfig({
+  const onSearchChange = useCallback((v: string) => { setSearch(v); setPage(1); }, []);
+  const onStatusChange = useCallback((v: string) => { setStatusFilter(v); setPage(1); }, []);
+
+  useHeaderConfig(useMemo(() => ({
     title: 'My Orders',
     breadcrumbs: [
       { label: 'Dashboard', href: '/portal' },
       { label: 'Orders' },
     ],
-  });
+    actions: [
+      {
+        type: 'search' as const,
+        placeholder: 'Search orders…',
+        value: search,
+        onChange: onSearchChange,
+      },
+      ...(tab === 'all' ? [{
+        type: 'filter' as const,
+        label: 'Status',
+        options: STATUS_OPTIONS,
+        value: statusFilter,
+        onChange: onStatusChange,
+      }] : []),
+    ],
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [search, statusFilter, tab]));
 
   const params = useMemo(() => {
     const status = tab === 'active' ? 'PROCESSING' : tab === 'completed' ? 'COMPLETED' : tab === 'cancelled' ? 'CANCELLED' : statusFilter || undefined;
@@ -74,18 +91,6 @@ export default function PortalOrders() {
     <PageTransition>
       <div className="space-y-4">
         <Tabs tabs={tabs} value={tab} onChange={(v) => { setTab(v); setPage(1); }} />
-
-        <div className="flex flex-wrap items-center gap-2">
-          <SearchInput value={search} onChange={(v) => { setSearch(v); setPage(1); }} placeholder="Search orders..." className="w-full sm:w-56" />
-          {tab === 'all' && (
-            <FilterDropdown
-              label="Status"
-              options={STATUS_OPTIONS}
-              value={statusFilter}
-              onChange={(v) => { setStatusFilter(v); setPage(1); }}
-            />
-          )}
-        </div>
 
         <DataTable
           columns={columns}

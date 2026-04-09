@@ -51,11 +51,12 @@ function Header() {
   return (
     <header
       className={cn(
-        'sticky top-0 z-[35] border-b border-gray-200/80 bg-white/95 backdrop-blur-sm dark:border-gray-700/60 dark:bg-gray-900/95 transition-shadow duration-200',
+        // Match Sidebar top bar (h-16) + solid bg so desktop chrome reads as one shell
+        'sticky top-0 z-[35] border-b border-gray-200/80 bg-white backdrop-blur-sm dark:border-gray-700/60 dark:bg-gray-900 transition-shadow duration-200',
         scrolled && 'shadow-sm shadow-gray-200/60 dark:shadow-black/20',
       )}
     >
-      <div className="flex h-12 items-center gap-1 px-3 lg:px-5">
+      <div className="flex h-16 items-center gap-1 px-3 lg:px-5">
         {/* Mobile menu */}
         <button
           onClick={openMobile}

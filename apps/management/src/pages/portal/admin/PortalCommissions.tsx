@@ -6,7 +6,7 @@ import { PageTransition } from '@/components/ui/PageTransition';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { StatsRow } from '@/components/shared/StatsRow';
-import { formatCurrency } from '@/mocks/generators';
+import { formatCurrency } from '@/lib/format';
 import type { CommissionRecord } from '@/types/models';
 
 export default function PortalCommissions() {

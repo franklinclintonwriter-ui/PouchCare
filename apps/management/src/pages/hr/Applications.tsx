@@ -126,7 +126,7 @@ export default function Applications() {
         </span>
       ),
     },
-    ...(perm.isHR ? [{
+    ...(perm.can('hr.recruitment') ? [{
       key: 'actions' as keyof JobApplication,
       label: 'Actions',
       render: (row: JobApplication) => {

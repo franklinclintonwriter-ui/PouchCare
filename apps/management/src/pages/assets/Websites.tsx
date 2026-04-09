@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Globe2, Plus, Pencil, Trash2 } from 'lucide-react';
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
 import { useWebsites, useCreateWebsite, useUpdateWebsite, useDeleteWebsite } from '@/api/assets';
@@ -7,8 +8,9 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Modal } from '@/components/ui/Modal';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { PageTransition } from '@/components/ui/PageTransition';
-import { formatCompact } from '@/mocks/generators';
+import { formatCompact } from '@/lib/format';
 import { useAuthStore } from '@/store/authStore';
 import type { StaffUser } from '@/types/auth';
 import type { WebsiteAsset } from '@/types/models';
@@ -18,6 +20,7 @@ const SENIOR_ROLES = ['CEO', 'CO_MD', 'OP_MANAGER'];
 const emptyForm = { name: '', url: '', hostedOn: '', domainLinked: '', status: 'live', monthlyTraffic: '' };
 
 export default function Websites() {
+  const navigate = useNavigate();
   const { data, isLoading } = useWebsites();
   const websites = data?.data ?? [];
   const createWebsite = useCreateWebsite();
@@ -29,6 +32,7 @@ export default function Websites() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editRow, setEditRow] = useState<WebsiteAsset | null>(null);
   const [form, setForm] = useState(emptyForm);
+  const [deleteTarget, setDeleteTarget] = useState<WebsiteAsset | null>(null);
 
   const openCreate = () => { setEditRow(null); setForm(emptyForm); setModalOpen(true); };
   const openEdit = (row: WebsiteAsset) => {
@@ -68,11 +72,12 @@ export default function Websites() {
     }
   };
 
-  const handleDelete = async (row: WebsiteAsset) => {
-    if (!confirm(`Delete website "${row.name}"?`)) return;
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
     try {
-      await deleteWebsite.mutateAsync(row.id);
+      await deleteWebsite.mutateAsync(deleteTarget.id);
       toast.success('Website deleted');
+      setDeleteTarget(null);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Delete failed');
     }
@@ -143,10 +148,10 @@ export default function Websites() {
       align: 'right' as const,
       render: (row: WebsiteAsset) => (
         <div className="flex items-center justify-end gap-1">
-          <Button size="xs" variant="ghost" onClick={(e) => { e.stopPropagation(); openEdit(row); }}>
+          <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={(e) => { e.stopPropagation(); openEdit(row); }}>
             <Pencil className="h-3.5 w-3.5" />
           </Button>
-          <Button size="xs" variant="ghost" className="text-red-500 hover:text-red-700" onClick={(e) => { e.stopPropagation(); handleDelete(row); }}>
+          <Button size="sm" variant="ghost" className="h-7 px-2 text-xs text-red-500 hover:text-red-700" onClick={(e) => { e.stopPropagation(); setDeleteTarget(row); }}>
             <Trash2 className="h-3.5 w-3.5" />
           </Button>
         </div>
@@ -162,6 +167,7 @@ export default function Websites() {
         isLoading={isLoading}
         getRowId={(row) => row.id}
         emptyTitle="No websites found"
+        onRowClick={(row) => navigate(`/assets/websites/${row.id}`)}
       />
 
       <Modal
@@ -185,6 +191,17 @@ export default function Websites() {
           <Input type="number" label="Monthly Traffic" value={form.monthlyTraffic} onChange={(e) => setForm(f => ({ ...f, monthlyTraffic: e.target.value }))} />
         </div>
       </Modal>
+
+      <ConfirmDialog
+        isOpen={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        title="Delete Website"
+        message={`Delete website "${deleteTarget?.name}"? This cannot be undone.`}
+        confirmLabel="Delete"
+        variant="danger"
+        isLoading={deleteWebsite.isPending}
+        onConfirm={handleDelete}
+      />
     </PageTransition>
   );
 }

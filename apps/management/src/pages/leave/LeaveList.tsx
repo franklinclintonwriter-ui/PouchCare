@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Tabs } from '@/components/ui/Tabs';
 import { StatsRow } from '@/components/shared/StatsRow';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useAuthStore } from '@/store/authStore';
 import { usePermission } from '@/hooks/usePermission';
 import type { LeaveRequest } from '@/types/models';
@@ -49,6 +50,8 @@ export default function LeaveList() {
   const approveLeave = useApproveLeave();
   const rejectLeave = useRejectLeave();
   const cancelLeave = useCancelLeave();
+  const [rejectTarget, setRejectTarget] = useState<LeaveRequest | null>(null);
+  const [cancelTarget, setCancelTarget] = useState<LeaveRequest | null>(null);
 
   const stats = useMemo(() => {
     const total = allData.data?.meta?.total ?? 0;
@@ -92,21 +95,23 @@ export default function LeaveList() {
     }
   };
 
-  const handleReject = async (row: LeaveRequest, e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleReject = async () => {
+    if (!rejectTarget) return;
     try {
-      await rejectLeave.mutateAsync({ id: row.id });
+      await rejectLeave.mutateAsync({ id: rejectTarget.id });
       toast.success('Leave rejected');
+      setRejectTarget(null);
     } catch {
       toast.error('Failed to reject leave');
     }
   };
 
-  const handleCancel = async (row: LeaveRequest, e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleCancel = async () => {
+    if (!cancelTarget) return;
     try {
-      await cancelLeave.mutateAsync(row.id);
+      await cancelLeave.mutateAsync(cancelTarget.id);
       toast.success('Leave cancelled');
+      setCancelTarget(null);
     } catch {
       toast.error('Failed to cancel leave');
     }
@@ -194,8 +199,8 @@ export default function LeaveList() {
                 <Button
                   size="sm"
                   variant="ghost"
-                  isLoading={rejectLeave.isPending}
-                  onClick={(e) => handleReject(row, e)}
+                  className="text-red-500 hover:text-red-700"
+                  onClick={(e) => { e.stopPropagation(); setRejectTarget(row); }}
                 >
                   Reject
                 </Button>
@@ -205,8 +210,8 @@ export default function LeaveList() {
               <Button
                 size="sm"
                 variant="ghost"
-                isLoading={cancelLeave.isPending}
-                onClick={(e) => handleCancel(row, e)}
+                className="text-gray-500 hover:text-gray-700"
+                onClick={(e) => { e.stopPropagation(); setCancelTarget(row); }}
               >
                 Cancel
               </Button>
@@ -234,6 +239,28 @@ export default function LeaveList() {
           emptyDescription="No requests found in this category"
         />
       </div>
+
+      <ConfirmDialog
+        isOpen={!!rejectTarget}
+        onClose={() => setRejectTarget(null)}
+        title="Reject Leave Request"
+        message={`Reject ${rejectTarget?.staffName}'s ${rejectTarget?.type?.toLowerCase()} leave request?`}
+        confirmLabel="Reject"
+        variant="danger"
+        isLoading={rejectLeave.isPending}
+        onConfirm={handleReject}
+      />
+
+      <ConfirmDialog
+        isOpen={!!cancelTarget}
+        onClose={() => setCancelTarget(null)}
+        title="Cancel Leave Request"
+        message="Are you sure you want to cancel this leave request?"
+        confirmLabel="Cancel Request"
+        variant="danger"
+        isLoading={cancelLeave.isPending}
+        onConfirm={handleCancel}
+      />
     </PageTransition>
   );
 }

@@ -1,12 +1,15 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { Users, Plus, Pencil, Trash2 } from 'lucide-react';
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
-import { usePositions, useCreatePosition, useUpdatePosition } from '@/api/hr';
+import { usePositions, useCreatePosition, useUpdatePosition, useDeletePosition } from '@/api/hr';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
+import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { usePermission } from '@/hooks/usePermission';
 import type { Position } from '@/types/models';
@@ -26,6 +29,19 @@ const typeVariants: Record<string, 'primary' | 'success' | 'warning' | 'info'> =
   internship: 'success',
 };
 
+const TYPE_OPTIONS = [
+  { label: 'Full Time', value: 'full_time' },
+  { label: 'Part Time', value: 'part_time' },
+  { label: 'Contract', value: 'contract' },
+  { label: 'Internship', value: 'internship' },
+];
+
+const STATUS_OPTIONS = [
+  { label: 'Open', value: 'open' },
+  { label: 'Paused', value: 'paused' },
+  { label: 'Closed', value: 'closed' },
+];
+
 const EMPTY_FORM = {
   title: '',
   department: '',
@@ -43,18 +59,20 @@ export default function Positions() {
   const perm = usePermission();
   const createPosition = useCreatePosition();
   const updatePosition = useUpdatePosition();
+  const deletePosition = useDeletePosition();
 
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<Position | null>(null);
   const [form, setForm] = useState({ ...EMPTY_FORM });
+  const [deleteTarget, setDeleteTarget] = useState<Position | null>(null);
 
-  const openCreate = () => {
+  const openCreate = useCallback(() => {
     setEditing(null);
     setForm({ ...EMPTY_FORM });
     setShowModal(true);
-  };
+  }, []);
 
-  const openEdit = (pos: Position) => {
+  const openEdit = useCallback((pos: Position) => {
     setEditing(pos);
     setForm({
       title: pos.title,
@@ -67,7 +85,7 @@ export default function Positions() {
       postedDate: pos.postedDate ? pos.postedDate.split('T')[0] : EMPTY_FORM.postedDate,
     });
     setShowModal(true);
-  };
+  }, []);
 
   const handleSubmit = async () => {
     if (!form.title.trim()) {
@@ -98,16 +116,30 @@ export default function Positions() {
     }
   };
 
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      await deletePosition.mutateAsync(deleteTarget.id);
+      toast.success('Position deleted');
+      setDeleteTarget(null);
+    } catch {
+      toast.error('Failed to delete position');
+    }
+  };
+
+  const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+    setForm(f => ({ ...f, [k]: e.target.value }));
+
   const headerConfig = useMemo(() => ({
     title: 'Open Positions',
     breadcrumbs: [
       { label: 'HR', href: '/hr' },
       { label: 'Positions', icon: Users },
     ],
-    actions: perm.isHR ? [
+    actions: perm.can('hr.recruitment') ? [
       { type: 'button' as const, label: 'Add Position', icon: Plus, onClick: openCreate },
     ] : [],
-  }), [perm.isHR]);
+  }), [perm, openCreate]);
   useHeaderConfig(headerConfig);
 
   const columns: Column<Position>[] = [
@@ -134,9 +166,7 @@ export default function Positions() {
       key: 'applicationsCount',
       label: 'Applications',
       align: 'center',
-      render: (row) => (
-        <span className="font-medium">{row.applicationsCount}</span>
-      ),
+      render: (row) => <span className="font-medium">{row.applicationsCount}</span>,
     },
     {
       key: 'status',
@@ -152,7 +182,7 @@ export default function Positions() {
         </span>
       ),
     },
-    ...(perm.isHR ? [{
+    ...(perm.can('hr.recruitment') ? [{
       key: 'actions' as keyof Position,
       label: 'Actions',
       render: (row: Position) => (
@@ -160,13 +190,14 @@ export default function Positions() {
           <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); openEdit(row); }}>
             <Pencil className="h-3.5 w-3.5" />
           </Button>
+          <Button size="sm" variant="ghost" className="text-red-500 hover:text-red-600" onClick={(e) => { e.stopPropagation(); setDeleteTarget(row); }}>
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
         </div>
       ),
     }] : []),
   ];
 
-  const inputCls = 'w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100';
-  const labelCls = 'block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1';
   const isPending = createPosition.isPending || updatePosition.isPending;
 
   return (
@@ -194,55 +225,33 @@ export default function Positions() {
         }
       >
         <div className="space-y-4">
-          <div>
-            <label className={labelCls}>Position Title *</label>
-            <input className={inputCls} placeholder="e.g. Frontend Developer" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} />
+          <Input label="Position Title *" placeholder="e.g. Frontend Developer" value={form.title} onChange={set('title')} />
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <Input label="Department" placeholder="e.g. Engineering" value={form.department} onChange={set('department')} />
+            <Input label="Location / Branch" placeholder="e.g. Dhaka" value={form.branch} onChange={set('branch')} />
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className={labelCls}>Department</label>
-              <input className={inputCls} placeholder="e.g. Engineering" value={form.department} onChange={e => setForm(f => ({ ...f, department: e.target.value }))} />
-            </div>
-            <div>
-              <label className={labelCls}>Location / Branch</label>
-              <input className={inputCls} placeholder="e.g. Dhaka" value={form.branch} onChange={e => setForm(f => ({ ...f, branch: e.target.value }))} />
-            </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <Select label="Employment Type" options={TYPE_OPTIONS} value={form.employmentType} onChange={set('employmentType')} />
+            <Select label="Status" options={STATUS_OPTIONS} value={form.status} onChange={set('status')} />
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className={labelCls}>Employment Type</label>
-              <select className={inputCls} value={form.employmentType} onChange={e => setForm(f => ({ ...f, employmentType: e.target.value }))}>
-                <option value="full_time">Full Time</option>
-                <option value="part_time">Part Time</option>
-                <option value="contract">Contract</option>
-                <option value="internship">Internship</option>
-              </select>
-            </div>
-            <div>
-              <label className={labelCls}>Status</label>
-              <select className={inputCls} value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))}>
-                <option value="open">Open</option>
-                <option value="paused">Paused</option>
-                <option value="closed">Closed</option>
-              </select>
-            </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <Input label="Min Salary (USD)" type="number" min="0" value={form.salaryMin} onChange={set('salaryMin')} />
+            <Input label="Max Salary (USD)" type="number" min="0" value={form.salaryMax} onChange={set('salaryMax')} />
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className={labelCls}>Min Salary (USD)</label>
-              <input className={inputCls} type="number" min="0" value={form.salaryMin} onChange={e => setForm(f => ({ ...f, salaryMin: e.target.value }))} />
-            </div>
-            <div>
-              <label className={labelCls}>Max Salary (USD)</label>
-              <input className={inputCls} type="number" min="0" value={form.salaryMax} onChange={e => setForm(f => ({ ...f, salaryMax: e.target.value }))} />
-            </div>
-          </div>
-          <div>
-            <label className={labelCls}>Posted Date</label>
-            <input className={inputCls} type="date" value={form.postedDate} onChange={e => setForm(f => ({ ...f, postedDate: e.target.value }))} />
-          </div>
+          <Input label="Posted Date" type="date" value={form.postedDate} onChange={set('postedDate')} />
         </div>
       </Modal>
+
+      <ConfirmDialog
+        isOpen={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        title="Delete Position"
+        message={`Delete position "${deleteTarget?.title}"? This cannot be undone.`}
+        confirmLabel="Delete"
+        variant="danger"
+        isLoading={deletePosition.isPending}
+        onConfirm={handleDelete}
+      />
     </PageTransition>
   );
 }

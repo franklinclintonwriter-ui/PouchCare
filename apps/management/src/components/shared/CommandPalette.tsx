@@ -7,8 +7,9 @@ import { useKeyboard } from '@/hooks/useKeyboard';
 import { useGlobalSearch } from '@/api/search';
 import {
   LayoutDashboard, CheckSquare, FolderKanban, Users, Clock, DollarSign,
-  Target, Globe, HeadphonesIcon, BarChart3, Settings,
+  Target, Globe, HeadphonesIcon, BarChart3, Settings, Shield,
 } from 'lucide-react';
+import { usePermission } from '@/hooks/usePermission';
 
 interface CommandItem {
   id: string;
@@ -19,24 +20,37 @@ interface CommandItem {
   category: string;
 }
 
-const commands: CommandItem[] = [
-  { id: 'dashboard', label: 'Dashboard', href: '/', icon: <LayoutDashboard className="h-4 w-4" />, category: 'Navigation' },
-  { id: 'tasks', label: 'Tasks', href: '/tasks', icon: <CheckSquare className="h-4 w-4" />, category: 'Navigation' },
-  { id: 'my-tasks', label: 'My Tasks', href: '/tasks/mine', icon: <CheckSquare className="h-4 w-4" />, category: 'Navigation' },
-  { id: 'projects', label: 'Projects', href: '/projects', icon: <FolderKanban className="h-4 w-4" />, category: 'Navigation' },
-  { id: 'staff', label: 'Staff Members', href: '/staff', icon: <Users className="h-4 w-4" />, category: 'Navigation' },
-  { id: 'attendance', label: 'Attendance', href: '/attendance', icon: <Clock className="h-4 w-4" />, category: 'Navigation' },
-  { id: 'payroll', label: 'Payroll', href: '/payroll', icon: <DollarSign className="h-4 w-4" />, category: 'Finance' },
-  { id: 'invoices', label: 'Invoices', href: '/finance/invoices', icon: <DollarSign className="h-4 w-4" />, category: 'Finance' },
-  { id: 'leads', label: 'CRM Leads', href: '/crm/leads', icon: <Target className="h-4 w-4" />, category: 'Business' },
-  { id: 'pipeline', label: 'Sales Pipeline', href: '/crm/pipeline', icon: <Target className="h-4 w-4" />, category: 'Business' },
-  { id: 'domains', label: 'Domains', href: '/assets/domains', icon: <Globe className="h-4 w-4" />, category: 'Assets' },
-  { id: 'support', label: 'Support Tickets', href: '/support', icon: <HeadphonesIcon className="h-4 w-4" />, category: 'Support' },
-  { id: 'analytics', label: 'Analytics', href: '/analytics', icon: <BarChart3 className="h-4 w-4" />, category: 'Analytics' },
-  { id: 'settings', label: 'Settings', href: '/settings/profile', icon: <Settings className="h-4 w-4" />, category: 'Settings' },
-];
-
 function CommandPalette() {
+  const perm = usePermission();
+
+  const commands: CommandItem[] = useMemo(() => {
+    const base: CommandItem[] = [
+      { id: 'dashboard', label: 'Dashboard', href: '/', icon: <LayoutDashboard className="h-4 w-4" />, category: 'Navigation' },
+      { id: 'tasks', label: 'Tasks', href: '/tasks', icon: <CheckSquare className="h-4 w-4" />, category: 'Navigation' },
+      { id: 'my-tasks', label: 'My Tasks', href: '/tasks/mine', icon: <CheckSquare className="h-4 w-4" />, category: 'Navigation' },
+      { id: 'projects', label: 'Projects', href: '/projects', icon: <FolderKanban className="h-4 w-4" />, category: 'Navigation' },
+      { id: 'staff', label: 'Staff Members', href: '/staff', icon: <Users className="h-4 w-4" />, category: 'Navigation' },
+      { id: 'attendance', label: 'Attendance', href: '/attendance', icon: <Clock className="h-4 w-4" />, category: 'Navigation' },
+      { id: 'payroll', label: 'Payroll', href: '/payroll', icon: <DollarSign className="h-4 w-4" />, category: 'Finance' },
+      { id: 'invoices', label: 'Invoices', href: '/finance/invoices', icon: <DollarSign className="h-4 w-4" />, category: 'Finance' },
+      { id: 'leads', label: 'CRM Leads', href: '/crm/leads', icon: <Target className="h-4 w-4" />, category: 'Business' },
+      { id: 'pipeline', label: 'Sales Pipeline', href: '/crm/pipeline', icon: <Target className="h-4 w-4" />, category: 'Business' },
+      { id: 'domains', label: 'Domains', href: '/assets/domains', icon: <Globe className="h-4 w-4" />, category: 'Assets' },
+      { id: 'support', label: 'Support Tickets', href: '/support', icon: <HeadphonesIcon className="h-4 w-4" />, category: 'Support' },
+      { id: 'analytics', label: 'Analytics', href: '/analytics', icon: <BarChart3 className="h-4 w-4" />, category: 'Analytics' },
+      { id: 'settings', label: 'Settings', href: '/settings/profile', icon: <Settings className="h-4 w-4" />, category: 'Settings' },
+    ];
+    if (perm.can('settings.role_permissions')) {
+      base.push({
+        id: 'role-permissions',
+        label: 'Role permissions',
+        href: '/settings/role-permissions',
+        icon: <Shield className="h-4 w-4" />,
+        category: 'Settings',
+      });
+    }
+    return base;
+  }, [perm]);
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -61,7 +75,7 @@ function CommandPalette() {
     return commands.filter(
       (c) => c.label.toLowerCase().includes(q) || c.category.toLowerCase().includes(q),
     );
-  }, [query]);
+  }, [query, commands]);
 
   const { data: liveSearch } = useGlobalSearch(query);
   const liveCommands = useMemo<CommandItem[]>(() => {

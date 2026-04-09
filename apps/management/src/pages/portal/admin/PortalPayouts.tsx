@@ -8,7 +8,8 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Badge } from '@/components/ui/Badge';
 import { StatsRow } from '@/components/shared/StatsRow';
 import { Button } from '@/components/ui/Button';
-import { formatCurrency } from '@/mocks/generators';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { formatCurrency } from '@/lib/format';
 import type { PayoutRecord } from '@/types/models';
 import { toast } from 'sonner';
 
@@ -30,10 +31,14 @@ const methodLabel: Record<string, string> = {
 
 export default function PortalPayouts() {
   const [status, setStatus] = useState('');
+  const [page, setPage] = useState(1);
+  const [actionTarget, setActionTarget] = useState<{ row: PayoutRecord; action: 'COMPLETED' | 'REJECTED' } | null>(null);
   const processPayout = useProcessPayout();
 
   const { data, isLoading } = useAdminPayouts({
     status: status || undefined,
+    page,
+    limit: 20,
   });
 
   const payouts = data?.data ?? [];
@@ -138,44 +143,34 @@ export default function PortalPayouts() {
     {
       key: 'actions',
       label: 'Actions',
-      render: (row) => (
-        <div className="flex gap-1">
-          <Button
-            size="sm"
-            variant="outline"
-            isLoading={processPayout.isPending}
-            onClick={async (e) => {
-              e.stopPropagation();
-              try {
-                await processPayout.mutateAsync({ id: row.id, status: 'COMPLETED' });
-                toast.success('Payout approved');
-              } catch (err) {
-                toast.error(err instanceof Error ? err.message : 'Failed');
-              }
-            }}
-          >
-            Approve
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            isLoading={processPayout.isPending}
-            onClick={async (e) => {
-              e.stopPropagation();
-              try {
-                await processPayout.mutateAsync({ id: row.id, status: 'REJECTED' });
-                toast.success('Payout rejected');
-              } catch (err) {
-                toast.error(err instanceof Error ? err.message : 'Failed');
-              }
-            }}
-          >
-            Reject
-          </Button>
-        </div>
-      ),
+      render: (row) => {
+        if (row.status !== 'PENDING') return <StatusBadge status={row.status} size="sm" />;
+        return (
+          <div className="flex gap-1">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={(e) => { e.stopPropagation(); setActionTarget({ row, action: 'COMPLETED' }); }}
+            >
+              Approve
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="text-red-500 hover:text-red-700"
+              onClick={(e) => { e.stopPropagation(); setActionTarget({ row, action: 'REJECTED' }); }}
+            >
+              Reject
+            </Button>
+          </div>
+        );
+      },
     },
   ];
+
+  const confirmMessage = actionTarget?.action === 'COMPLETED'
+    ? `Approve payout of ${actionTarget ? formatCurrency(actionTarget.row.amount) : ''} for ${actionTarget?.row.memberName}?`
+    : `Reject payout request from ${actionTarget?.row.memberName}?`;
 
   return (
     <PageTransition>
@@ -187,8 +182,29 @@ export default function PortalPayouts() {
           data={payouts}
           isLoading={isLoading}
           pagination={meta}
+          onPageChange={setPage}
           emptyTitle="No payouts found"
           emptyDescription="Try adjusting your filters"
+        />
+
+        <ConfirmDialog
+          isOpen={!!actionTarget}
+          onClose={() => setActionTarget(null)}
+          title={actionTarget?.action === 'COMPLETED' ? 'Approve Payout' : 'Reject Payout'}
+          message={confirmMessage}
+          confirmLabel={actionTarget?.action === 'COMPLETED' ? 'Approve' : 'Reject'}
+          variant={actionTarget?.action === 'COMPLETED' ? 'info' : 'danger'}
+          isLoading={processPayout.isPending}
+          onConfirm={async () => {
+            if (!actionTarget) return;
+            try {
+              await processPayout.mutateAsync({ id: actionTarget.row.id, status: actionTarget.action });
+              toast.success(actionTarget.action === 'COMPLETED' ? 'Payout approved' : 'Payout rejected');
+              setActionTarget(null);
+            } catch (err) {
+              toast.error(err instanceof Error ? err.message : 'Failed');
+            }
+          }}
         />
       </div>
     </PageTransition>

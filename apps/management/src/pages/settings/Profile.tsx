@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'react';
-import { UserCircle } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { UserCircle, Shield } from 'lucide-react';
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
 import { useAuthStore } from '@/store/authStore';
+import { usePermission } from '@/hooks/usePermission';
 import { useUpdateStaffProfile } from '@/api/auth';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
@@ -11,6 +13,7 @@ import { PageTransition } from '@/components/ui/PageTransition';
 import { toast } from 'sonner';
 
 export default function Profile() {
+  const perm = usePermission();
   const user = useAuthStore((s) => s.user) as { name?: string; email?: string; phone?: string };
   const [name, setName] = useState(user?.name ?? '');
   const [phone, setPhone] = useState(user?.phone ?? '');
@@ -81,6 +84,27 @@ export default function Profile() {
           </div>
         </CardContent>
       </Card>
+
+      {perm.can('settings.role_permissions') && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Organization</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Link
+              to="/settings/role-permissions"
+              className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-3 text-sm font-medium text-gray-800 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:text-gray-100 dark:hover:bg-gray-800/60"
+              data-testid="link-role-permissions"
+            >
+              <Shield className="h-4 w-4 text-primary-600" />
+              Role permissions
+            </Link>
+            <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+              Configure which management areas each staff role can access.
+            </p>
+          </CardContent>
+        </Card>
+      )}
     </PageTransition>
   );
 }

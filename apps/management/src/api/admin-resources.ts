@@ -58,8 +58,70 @@ export interface Branch {
   staffCount?: number;
   email?: string;
   phone?: string;
+  address?: string;
+  notes?: string;
+  establishedDate?: string;
   createdAt: string;
 }
+
+export interface BranchStats {
+  memberCount: number;
+  activeCount: number;
+  byRole: Record<string, number>;
+  totalTasksCompleted: number;
+  avgTaskRating: number | null;
+}
+
+/** Mirrors API: counts of rows that store this branch name (blocks delete until zero). */
+export interface BranchReferenceBreakdown {
+  total: number;
+  staffMembers: number;
+  tasks: number;
+  projects: number;
+  attendance: number;
+  leaveRequests: number;
+  dailyReports: number;
+  performanceRatings: number;
+  payroll: number;
+  devices: number;
+  expenses: number;
+  salesOrders: number;
+  jobPositions: number;
+}
+
+export interface BranchManagerMember {
+  id: string;
+  name: string;
+  email: string;
+  systemRole: string;
+  jobRole?: string | null;
+}
+
+export interface BranchDetailPayload {
+  branch: Branch;
+  stats: BranchStats;
+  managerMember: BranchManagerMember | null;
+  references: BranchReferenceBreakdown;
+}
+
+export type BranchMemberRow = {
+  id: string;
+  memberId: number;
+  name: string;
+  email: string;
+  systemRole: string;
+  status: string;
+  branch: string | null;
+  jobRole: string | null;
+  primarySkill: string | null;
+  joinDate: string | null;
+  salary: number | null;
+  averageTaskRating: number | null;
+  ceoPerformanceRating: number | null;
+  tasksCompleted: number;
+  phone: string | null;
+  whatsapp: string | null;
+};
 
 export interface Device {
   id: string;
@@ -102,7 +164,7 @@ function normalizeStatus(status?: string | null): string {
   return status ?? 'Active';
 }
 
-function mapBranch(raw: RawBranch): Branch {
+function mapBranch(raw: RawBranch & { address?: string | null; notes?: string | null; establishedDate?: string | null }): Branch {
   return {
     id: raw.id,
     name: raw.name,
@@ -114,6 +176,9 @@ function mapBranch(raw: RawBranch): Branch {
     staffCount: raw.staffCount ?? 0,
     email: raw.email ?? undefined,
     phone: raw.phone ?? undefined,
+    address: raw.address ?? undefined,
+    notes: raw.notes ?? undefined,
+    establishedDate: raw.establishedDate ?? undefined,
     createdAt: raw.createdAt,
   };
 }
@@ -166,11 +231,63 @@ export function useBranches(params?: QueryParams) {
   });
 }
 
+export function useBranchDetail(id: string | undefined) {
+  return useQuery<BranchDetailPayload>({
+    queryKey: ['admin-branch', id],
+    queryFn: async () => {
+      const { data } = await api.get(`/admin/branches/${id}`);
+      const emptyRefs: BranchReferenceBreakdown = {
+        total: 0,
+        staffMembers: 0,
+        tasks: 0,
+        projects: 0,
+        attendance: 0,
+        leaveRequests: 0,
+        dailyReports: 0,
+        performanceRatings: 0,
+        payroll: 0,
+        devices: 0,
+        expenses: 0,
+        salesOrders: 0,
+        jobPositions: 0,
+      };
+      const payload = data as {
+        branch: RawBranch & { address?: string | null; notes?: string | null; establishedDate?: string | null };
+        stats: BranchStats;
+        managerMember: BranchManagerMember | null;
+        references?: BranchReferenceBreakdown;
+      };
+      return {
+        branch: mapBranch(payload.branch),
+        stats: payload.stats,
+        managerMember: payload.managerMember,
+        references: payload.references ?? emptyRefs,
+      };
+    },
+    enabled: !!id,
+  });
+}
+
+export function useBranchMembers(branchId: string | undefined, params?: QueryParams) {
+  return useQuery<PaginatedResponse<BranchMemberRow>>({
+    queryKey: ['admin-branch-members', branchId, params],
+    queryFn: async () => {
+      const { data } = await api.get(`/admin/branches/${branchId}/members`, { params });
+      const rows = Array.isArray(data?.data) ? data.data : [];
+      return { ...data, data: rows as BranchMemberRow[] };
+    },
+    enabled: !!branchId,
+  });
+}
+
 export function useCreateBranch() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: Partial<Branch>) => api.post('/admin/branches', body),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-branches'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-branches'] });
+      qc.invalidateQueries({ queryKey: ['staff-list'] });
+    },
   });
 }
 
@@ -178,7 +295,13 @@ export function useUpdateBranch() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, ...body }: Partial<Branch> & { id: string }) => api.put(`/admin/branches/${id}`, body),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-branches'] }),
+    onSuccess: (_, v) => {
+      qc.invalidateQueries({ queryKey: ['admin-branches'] });
+      qc.invalidateQueries({ queryKey: ['admin-branch', v.id] });
+      qc.invalidateQueries({ queryKey: ['admin-branch-members', v.id] });
+      qc.invalidateQueries({ queryKey: ['staff-list'] });
+      qc.invalidateQueries({ queryKey: ['staff-leaderboard'] });
+    },
   });
 }
 
@@ -186,7 +309,12 @@ export function useDeleteBranch() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => api.delete(`/admin/branches/${id}`),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-branches'] }),
+    onSuccess: (_, id) => {
+      qc.invalidateQueries({ queryKey: ['admin-branches'] });
+      qc.invalidateQueries({ queryKey: ['staff-list'] });
+      qc.removeQueries({ queryKey: ['admin-branch', id] });
+      qc.removeQueries({ queryKey: ['admin-branch-members', id] });
+    },
   });
 }
 
@@ -224,6 +352,22 @@ export function useCreateClientAccount() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: Partial<ClientAccount>) => api.post('/admin/client-accounts', body),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-client-accounts'] }),
+  });
+}
+
+export function useUpdateClientAccount() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...body }: Partial<ClientAccount> & { id: string }) => api.put(`/admin/client-accounts/${id}`, body),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-client-accounts'] }),
+  });
+}
+
+export function useDeleteClientAccount() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.delete(`/admin/client-accounts/${id}`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-client-accounts'] }),
   });
 }

@@ -1,0 +1,177 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Base ──────────────────────────────────────────────────────────────── */
+@layer base {
+  html {
+    /* Only smooth-scroll for in-page anchor jumps, not for route changes
+       (route changes use instant scroll via ScrollToTop) */
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* Prevent rubber-band bounce from feeling disconnected */
+    overscroll-behavior-y: none;
+    /* Improve text rendering on high-DPI screens */
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    @apply bg-[#080e1a] text-slate-100;
+    overflow-x: hidden;
+    /* Momentum scrolling on iOS */
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Reduce motion for users who prefer it */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  ::selection {
+    @apply bg-sky-500/30 text-sky-100;
+  }
+
+  /* Thin, styled scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: #1e2a3d;
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: #0ea5e9; }
+
+  /* Focus ring — keyboard navigation */
+  :focus-visible {
+    outline: 2px solid #0ea5e9;
+    outline-offset: 3px;
+  }
+}
+
+/* ─── Components ────────────────────────────────────────────────────────── */
+@layer components {
+  .section-pad {
+    @apply px-4 sm:px-6 lg:px-8 py-16 sm:py-20 lg:py-24;
+  }
+
+  .container-max {
+    @apply max-w-7xl mx-auto;
+  }
+
+  .glass-card {
+    @apply bg-navy-700/50 border border-navy-600/60 rounded-2xl;
+    /* Remove backdrop-blur from glass-card — it causes scroll jank on many
+       devices when dozens of cards are on screen at once */
+  }
+
+  .text-gradient {
+    background: linear-gradient(135deg, #38bdf8 0%, #818cf8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .glow-border {
+    @apply border border-sky-500/30 shadow-[0_0_30px_rgba(14,165,233,0.15)];
+  }
+
+  .hero-grid {
+    background-image: linear-gradient(rgba(148,163,184,0.04) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(148,163,184,0.04) 1px, transparent 1px);
+    background-size: 60px 60px;
+  }
+
+  /* Interactive card — uses only GPU-composited properties */
+  .card-hover {
+    transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+                box-shadow 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+                border-color 0.2s ease;
+  }
+  .card-hover:hover {
+    transform: translateY(-2px);
+  }
+}
+
+/* ─── Utilities ─────────────────────────────────────────────────────────── */
+@layer utilities {
+  .animation-delay-100 { animation-delay: 100ms; }
+  .animation-delay-200 { animation-delay: 200ms; }
+  .animation-delay-300 { animation-delay: 300ms; }
+  .animation-delay-400 { animation-delay: 400ms; }
+  .animation-delay-500 { animation-delay: 500ms; }
+
+  /* Scrollbar-free but scrollable */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+
+  /* Blog prose styles */
+  .prose-custom p {
+    @apply text-slate-400 leading-relaxed text-base;
+  }
+  .prose-custom strong {
+    @apply text-slate-200 font-semibold;
+  }
+
+  /* GPU layer promotion — use sparingly on key animated elements */
+  .gpu {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+  }
+}
+
+/* ─── Keyframes ─────────────────────────────────────────────────────────── */
+
+/* Shimmer gradient text */
+@keyframes shimmer {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Hero fade-up — runs once on mount */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-up {
+  /* Use only opacity + transform to stay on GPU compositor thread */
+  animation: fadeUp 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: opacity, transform;
+}
+
+/* Floating cards in hero — GPU only */
+@keyframes float {
+  0%,  100% { transform: translateY(0px)   translateX(0px);   }
+  33%        { transform: translateY(-18px) translateX(10px);  }
+  66%        { transform: translateY(8px)   translateX(-8px);  }
+}
+
+/* Pulse ring */
+@keyframes pingOnce {
+  0%   { transform: scale(1);   opacity: 0.8; }
+  80%  { transform: scale(1.8); opacity: 0; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+
+/* Smooth nav underline slide */
+@keyframes slideIn {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}

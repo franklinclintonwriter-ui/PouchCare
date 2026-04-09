@@ -5,7 +5,7 @@ import { PageTransition } from '@/components/ui/PageTransition';
 import { StatsRow } from '@/components/shared/StatsRow';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
-import { formatCurrency } from '@/mocks/generators';
+import { formatCurrency } from '@/lib/format';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { TrendingUp, TrendingDown, DollarSign, Percent } from 'lucide-react';
 import type { MonthlyRevenue } from '@/types/models';

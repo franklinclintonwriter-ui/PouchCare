@@ -9,7 +9,7 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Modal } from '@/components/ui/Modal';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { formatCurrency } from '@/mocks/generators';
+import { formatCurrency } from '@/lib/format';
 import { DollarSign, FileText, CheckCircle, AlertTriangle, CircleDot, Plus } from 'lucide-react';
 import type { Invoice } from '@/types/models';
 import { toast } from 'sonner';

@@ -14,14 +14,36 @@ export async function sendEmail(to: string, subject: string, html: string) {
   await resend.emails.send({ from: env.EMAIL_FROM, to, subject, html })
 }
 
-export async function sendPasswordResetEmail(to: string, token: string, _isPortal = true) {
-  const url = `${env.FRONTEND_URL}/reset-password?token=${token}`
+/** Broadcast batch: returns outcome per send (Resend missing = skipped, not failed). */
+export async function sendBroadcastEmail(
+  to: string,
+  subject: string,
+  html: string,
+): Promise<'sent' | 'skipped' | 'failed'> {
+  if (!env.RESEND_API_KEY) {
+    console.log(`[DEV] Email → ${to} | ${subject}`)
+    return 'skipped'
+  }
+  try {
+    const resend = await getResend()
+    await resend.emails.send({ from: env.EMAIL_FROM, to, subject, html })
+    return 'sent'
+  } catch (err) {
+    console.error('[broadcast email]', to, err)
+    return 'failed'
+  }
+}
+
+export async function sendPasswordResetEmail(to: string, token: string, isPortal = false) {
+  const base = isPortal ? env.PORTAL_URL : env.FRONTEND_URL
+  const url = `${base.replace(/\/$/, '')}/reset-password?token=${token}`
   await sendEmail(to, 'Reset your PouchCare password',
     `<p>Click <a href="${url}">here</a> to reset your password. Expires in 1 hour.</p>`)
 }
 
-export async function sendVerificationEmail(to: string, token: string) {
-  const url = `${env.FRONTEND_URL}/verify-email?token=${token}`
+export async function sendVerificationEmail(to: string, token: string, baseUrl?: string) {
+  const base = (baseUrl ?? env.PORTAL_URL).replace(/\/$/, '')
+  const url = `${base}/verify-email?token=${token}`
   await sendEmail(to, 'Verify your PouchCare account',
     `<p>Click <a href="${url}">here</a> to verify your email.</p>`)
 }

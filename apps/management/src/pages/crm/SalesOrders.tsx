@@ -1,5 +1,7 @@
 import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Trash2 } from 'lucide-react';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
 import { useSalesOrders, useDeleteSalesOrder, useUpdateSalesOrder } from '@/api/crm';
 import { PageTransition } from '@/components/ui/PageTransition';
@@ -7,7 +9,7 @@ import { StatsRow } from '@/components/shared/StatsRow';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/Button';
-import { formatCurrency } from '@/mocks/generators';
+import { formatCurrency } from '@/lib/format';
 import { useAuthStore } from '@/store/authStore';
 import type { StaffUser } from '@/types/auth';
 import { ShoppingCart, DollarSign, CheckCircle, Clock, CircleDot } from 'lucide-react';
@@ -17,6 +19,7 @@ import { toast } from 'sonner';
 const SENIOR_ROLES = ['CEO', 'CO_MD', 'OP_MANAGER'];
 
 export default function SalesOrders() {
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const [page, setPage] = useState(1);
@@ -49,11 +52,14 @@ export default function SalesOrders() {
     }
   };
 
-  const handleDelete = async (row: SalesOrder) => {
-    if (!confirm(`Delete order "${row.number}"?`)) return;
+  const [deleteTarget, setDeleteTarget] = useState<SalesOrder | null>(null);
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
     try {
-      await deleteSalesOrder.mutateAsync(row.id);
+      await deleteSalesOrder.mutateAsync(deleteTarget.id);
       toast.success('Order deleted');
+      setDeleteTarget(null);
     } catch {
       toast.error('Failed to delete');
     }
@@ -95,12 +101,12 @@ export default function SalesOrders() {
       render: (row) => (
         <div className="flex items-center justify-end gap-1">
           {row.status !== 'PAID' && (
-            <Button size="xs" variant="outline" onClick={(e) => { e.stopPropagation(); handleMarkPaid(row); }}>
+            <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={(e) => { e.stopPropagation(); handleMarkPaid(row); }}>
               Mark Paid
             </Button>
           )}
           {canDelete && (
-            <Button size="xs" variant="ghost" className="text-red-500 hover:text-red-700" onClick={(e) => { e.stopPropagation(); handleDelete(row); }}>
+            <Button size="sm" variant="ghost" className="h-7 px-2 text-xs text-red-500 hover:text-red-700" onClick={(e) => { e.stopPropagation(); setDeleteTarget(row); }}>
               <Trash2 className="h-3.5 w-3.5" />
             </Button>
           )}
@@ -128,6 +134,18 @@ export default function SalesOrders() {
         pagination={meta}
         onPageChange={setPage}
         getRowId={(row) => row.id}
+        onRowClick={(row) => navigate(`/crm/orders/${row.id}`)}
+      />
+
+      <ConfirmDialog
+        isOpen={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        title="Delete Order"
+        message={`Delete order "${deleteTarget?.number}"? This cannot be undone.`}
+        confirmLabel="Delete"
+        variant="danger"
+        isLoading={deleteSalesOrder.isPending}
+        onConfirm={handleDelete}
       />
     </PageTransition>
   );

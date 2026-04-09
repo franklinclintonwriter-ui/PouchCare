@@ -1,9 +1,10 @@
+import { useNavigate } from 'react-router-dom';
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
 import { useLeadsByStage } from '@/api/crm';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { Badge } from '@/components/ui/Badge';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { formatCurrency } from '@/mocks/generators';
+import { formatCurrency } from '@/lib/format';
 import type { Lead } from '@/types/models';
 import type { LeadStage } from '@/types/enums';
 
@@ -26,6 +27,7 @@ const STAGE_BADGE_VARIANT: Record<string, 'default' | 'primary' | 'info' | 'warn
 };
 
 export default function Pipeline() {
+  const navigate = useNavigate();
   const { data: grouped, isLoading } = useLeadsByStage();
 
   useHeaderConfig({
@@ -70,7 +72,7 @@ export default function Pipeline() {
                       <span className="text-xs text-gray-400 dark:text-gray-500">No leads</span>
                     </div>
                   ) : (
-                    leads.map((lead) => <LeadCard key={lead.id} lead={lead} />)
+                    leads.map((lead) => <LeadCard key={lead.id} lead={lead} onClick={() => navigate(`/crm/leads/${lead.id}`)} />)
                   )}
                 </div>
               </div>
@@ -82,14 +84,18 @@ export default function Pipeline() {
   );
 }
 
-function LeadCard({ lead }: { lead: Lead }) {
+function LeadCard({ lead, onClick }: { lead: Lead; onClick: () => void }) {
   return (
-    <div className="rounded-lg border border-gray-200/80 bg-white p-3 shadow-soft transition-all duration-150 hover:shadow-elevated hover:-translate-y-[1px] dark:border-gray-700/60 dark:bg-gray-800/80">
+    <button
+      type="button"
+      onClick={onClick}
+      className="w-full rounded-lg border border-gray-200/80 bg-white p-3 text-left shadow-soft transition-all duration-150 hover:shadow-elevated hover:-translate-y-[1px] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 dark:border-gray-700/60 dark:bg-gray-800/80"
+    >
       <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{lead.name}</p>
       <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400 truncate">{lead.company}</p>
       <div className="mt-2">
         <Badge variant="success" size="sm">{formatCurrency(lead.value)}</Badge>
       </div>
-    </div>
+    </button>
   );
 }

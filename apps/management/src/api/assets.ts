@@ -117,6 +117,17 @@ export function useDomains(params?: QueryParams) {
   });
 }
 
+export function useDomain(id: string | undefined) {
+  return useQuery<Domain>({
+    queryKey: ['domain', id],
+    queryFn: async () => {
+      const { data } = await api.get(`/assets/domains/${id}`);
+      return mapDomain(data as RawDomain);
+    },
+    enabled: !!id,
+  });
+}
+
 export function useCreateDomain() {
   const qc = useQueryClient();
   return useMutation({
@@ -129,7 +140,10 @@ export function useUpdateDomain() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, ...body }: Record<string, unknown> & { id: string }) => api.put(`/assets/domains/${id}`, body),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['domains'] }),
+    onSuccess: (_, v) => {
+      qc.invalidateQueries({ queryKey: ['domains'] });
+      qc.invalidateQueries({ queryKey: ['domain', v.id] });
+    },
   });
 }
 
@@ -137,7 +151,10 @@ export function useDeleteDomain() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => api.delete(`/assets/domains/${id}`),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['domains'] }),
+    onSuccess: (_, id) => {
+      qc.invalidateQueries({ queryKey: ['domains'] });
+      qc.removeQueries({ queryKey: ['domain', id] });
+    },
   });
 }
 
@@ -149,6 +166,17 @@ export function useServers() {
       const rows = Array.isArray(data) ? data : data?.data ?? [];
       return rows.map((item: RawServer) => mapServer(item));
     },
+  });
+}
+
+export function useServer(id: string | undefined) {
+  return useQuery<ServerAsset>({
+    queryKey: ['server', id],
+    queryFn: async () => {
+      const { data } = await api.get(`/assets/servers/${id}`);
+      return mapServer(data as RawServer);
+    },
+    enabled: !!id,
   });
 }
 
@@ -164,7 +192,10 @@ export function useUpdateServer() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, ...body }: Record<string, unknown> & { id: string }) => api.put(`/assets/servers/${id}`, body),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['servers'] }),
+    onSuccess: (_, v) => {
+      qc.invalidateQueries({ queryKey: ['servers'] });
+      qc.invalidateQueries({ queryKey: ['server', v.id] });
+    },
   });
 }
 
@@ -172,7 +203,10 @@ export function useDeleteServer() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => api.delete(`/assets/servers/${id}`),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['servers'] }),
+    onSuccess: (_, id) => {
+      qc.invalidateQueries({ queryKey: ['servers'] });
+      qc.removeQueries({ queryKey: ['server', id] });
+    },
   });
 }
 
@@ -188,6 +222,17 @@ export function useWebsites(params?: QueryParams) {
   });
 }
 
+export function useWebsite(id: string | undefined) {
+  return useQuery<WebsiteAsset>({
+    queryKey: ['website', id],
+    queryFn: async () => {
+      const { data } = await api.get(`/assets/websites/${id}`);
+      return mapWebsite(data as RawWebsite);
+    },
+    enabled: !!id,
+  });
+}
+
 export function useCreateWebsite() {
   const qc = useQueryClient();
   return useMutation({
@@ -200,7 +245,10 @@ export function useUpdateWebsite() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, ...body }: Record<string, unknown> & { id: string }) => api.put(`/assets/websites/${id}`, body),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['websites'] }),
+    onSuccess: (_, v) => {
+      qc.invalidateQueries({ queryKey: ['websites'] });
+      qc.invalidateQueries({ queryKey: ['website', v.id] });
+    },
   });
 }
 
@@ -208,6 +256,9 @@ export function useDeleteWebsite() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => api.delete(`/assets/websites/${id}`),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['websites'] }),
+    onSuccess: (_, id) => {
+      qc.invalidateQueries({ queryKey: ['websites'] });
+      qc.removeQueries({ queryKey: ['website', id] });
+    },
   });
 }

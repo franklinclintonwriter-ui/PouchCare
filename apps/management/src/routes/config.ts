@@ -51,19 +51,20 @@ export const ROUTES = {
   LEAD_DETAIL: '/crm/leads/:id',
   PIPELINE: '/crm/pipeline',
   SALES_ORDERS: '/crm/orders',
+  SALES_ORDER_DETAIL: '/crm/orders/:id',
 
   // HR
   POSITIONS: '/hr/positions',
   APPLICATIONS: '/hr/applications',
 
-  // Assets
+  // Assets (hub redirects to /assets/domains)
+  ASSETS: '/assets',
   DOMAINS: '/assets/domains',
   SERVERS: '/assets/servers',
   WEBSITES: '/assets/websites',
 
-  // Services
+  // Services (backlinks tab is inside /services now)
   SERVICES: '/services',
-  BACKLINKS: '/services/backlinks',
 
   // Support
   SUPPORT: '/support',
@@ -82,6 +83,7 @@ export const ROUTES = {
   SETTINGS_PROFILE: '/settings/profile',
   SETTINGS_SECURITY: '/settings/security',
   SETTINGS_PREFERENCES: '/settings/preferences',
+  SETTINGS_ROLE_PERMISSIONS: '/settings/role-permissions',
 
   // Portal
   PORTAL_DASHBOARD: '/portal',
@@ -111,11 +113,24 @@ export const ROUTES = {
   SERVER_DETAIL: '/assets/servers/:id',
   WEBSITE_DETAIL: '/assets/websites/:id',
 
+  // HR hub (redirects to /hr/positions)
+  HR: '/hr',
   // HR detail
   APPLICATION_DETAIL: '/hr/applications/:id',
 
   // CRM Clients
   CRM_CLIENTS: '/crm/clients',
+
+  // Plugins
+  PLUGINS: '/plugins',
+  PLUGIN_DETAIL: '/plugins/:id',
+
+  // Settings - API Keys
+  SETTINGS_API_KEYS: '/settings/api-keys',
+
+  // Monitor (CCTV)
+  MONITOR: '/monitor',
+  MONITOR_BRANCH: '/monitor/:branchId',
 
   // Admin Portal
   ADMIN_PORTAL_MEMBERS: '/admin/portal/members',

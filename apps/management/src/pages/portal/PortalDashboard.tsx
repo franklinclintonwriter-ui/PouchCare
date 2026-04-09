@@ -4,7 +4,7 @@ import { ShoppingBag, Wallet, UserPlus } from 'lucide-react';
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
 import { useAuthStore } from '@/store/authStore';
 import { usePortalOrders } from '@/api/portal';
-import { formatCurrency } from '@/mocks/generators';
+import { formatCurrency } from '@/lib/format';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';

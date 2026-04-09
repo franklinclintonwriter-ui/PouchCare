@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { formatCurrency } from '@/mocks/generators';
+import { formatCurrency } from '@/lib/format';
 import { Receipt, CheckCircle, Clock, Tag, Plus } from 'lucide-react';
 import type { Expense } from '@/types/models';
 import { toast } from 'sonner';

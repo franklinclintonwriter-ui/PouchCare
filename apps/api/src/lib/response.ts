@@ -3,8 +3,8 @@ import type { Response } from 'express'
 export function ok<T>(res: Response, data: T, meta?: object) {
   return res.json({ success: true, data, ...(meta && { meta }) })
 }
-export function created<T>(res: Response, data: T) {
-  return res.status(201).json({ success: true, data })
+export function created<T>(res: Response, data: T, meta?: object) {
+  return res.status(201).json({ success: true, data, ...(meta && { meta }) })
 }
 export function noContent(res: Response) {
   return res.status(204).send()
@@ -20,6 +20,8 @@ export const unauthorized = (res: Response, msg = 'Unauthorized')         => err
 export const forbidden    = (res: Response, msg = 'Forbidden')            => err(res, msg, 'FORBIDDEN', 403)
 export const notFound     = (res: Response, resource = 'Resource')        => err(res, `${resource} not found`, 'NOT_FOUND', 404)
 export const conflict     = (res: Response, msg = 'Conflict')             => err(res, msg, 'CONFLICT', 409)
+export const serviceUnavailable = (res: Response, msg = 'Service unavailable') =>
+  err(res, msg, 'SERVICE_UNAVAILABLE', 503)
 // Accept unknown for catch(err) blocks
 export const serverError  = (res: Response, _err?: unknown) => {
   const msg = _err instanceof Error ? _err.message : 'Internal server error'

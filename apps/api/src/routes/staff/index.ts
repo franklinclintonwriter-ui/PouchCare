@@ -5,8 +5,11 @@ import prisma from '@/lib/prisma'
 import { authenticate, requireStaff, requireRoles, MANAGER_ROLES, HR_ROLES, CEO_ROLES, type AuthRequest } from '@/middleware/auth'
 import { validate } from '@/middleware/validate'
 import { getPagination, buildMeta } from '@/utils/pagination'
-import { ok, created, badRequest, notFound, serverError } from '@/utils/response'
+import { ok, created, badRequest, notFound, serverError, forbidden } from '@/utils/response'
 import { env } from '@/config/env'
+import { getEffectivePermissions } from '@/lib/managementPermissions'
+import { canAccessStaffProfileAdmin, canAssignSystemRole } from '@/lib/staffProfileAdmin'
+import { staffAdminUpdateSchema } from '@/routes/staff/staffAdminUpdateSchema'
 
 const router = Router()
 router.use(authenticate)
@@ -22,8 +25,6 @@ const createSchema = z.object({
   employmentType: z.string().optional(),
   primarySkill:   z.string().optional(),
 })
-
-const updateSchema = createSchema.partial().omit({ password: true })
 
 // GET /v1/staff/members
 router.get('/members', requireStaff, async (req, res) => {
@@ -55,25 +56,33 @@ router.get('/members', requireStaff, async (req, res) => {
   } catch (err) { serverError(res, err) }
 })
 
-// GET /v1/staff/members/:id
+// GET /v1/staff/members/:id — extended fields + rolePermissions when caller can manage profiles
 router.get('/members/:id', requireStaff, async (req, res) => {
   try {
+    const admin = await canAccessStaffProfileAdmin(req)
     const member = await prisma.staffMember.findUnique({
       where: { id: req.params.id },
       select: {
-        id: true, memberId: true, name: true, email: true,
+        id: true, memberId: true, name: true, email: true, email2: true,
         systemRole: true, status: true, branch: true, jobRole: true,
         primarySkill: true, skillLevel: true, secondarySkills: true,
         toolsKnown: true, yearsExperience: true, employmentType: true,
         salary: true, phone: true, whatsapp: true, country: true,
-        address: true, joinDate: true, portfolioUrl: true,
-        linkedinUrl: true, githubUrl: true, certifications: true,
-        averageTaskRating: true, ceoPerformanceRating: true,
-        tasksAssigned: true, tasksCompleted: true, performanceScore: true,
+        address: true, nidPassport: true, emergencyContact: true,
+        joinDate: true, terminationDate: true, exitReason: true,
+        portfolioUrl: true, linkedinUrl: true, githubUrl: true, certifications: true,
+        averageTaskRating: true, ceoPerformanceRating: true, ceoRatingNote: true, ceoLastRatedDate: true,
+        tasksAssigned: true, tasksCompleted: true, totalTasksRated: true, performanceScore: true,
+        twoFactorEnabled: true,
+        ...(admin ? { lastLoginAt: true, lastLoginIp: true } : {}),
       },
     })
     if (!member) return notFound(res)
-    return ok(res, member)
+    if (admin) {
+      const rolePermissions = await getEffectivePermissions(member.systemRole)
+      return ok(res, { ...member, rolePermissions, profileAdmin: true })
+    }
+    return ok(res, { ...member, profileAdmin: false })
   } catch (err) { serverError(res, err) }
 })
 
@@ -93,15 +102,50 @@ router.post('/members', requireRoles(...HR_ROLES as any), validate(createSchema)
   } catch (err) { serverError(res, err) }
 })
 
-// PUT /v1/staff/members/:id
-router.put('/members/:id', requireRoles(...HR_ROLES as any), validate(updateSchema), async (req, res) => {
+// PUT /v1/staff/members/:id — HR / staff.manage_profiles; full whitelisted profile fields
+router.put('/members/:id', requireStaff, async (req, res, next) => {
   try {
+    if (!(await canAccessStaffProfileAdmin(req))) return forbidden(res, 'Insufficient permissions')
+    next()
+  } catch (err) { return serverError(res, err) }
+}, validate(staffAdminUpdateSchema), async (req: AuthRequest, res) => {
+  try {
+    const target = await prisma.staffMember.findUnique({ where: { id: req.params.id } })
+    if (!target) return notFound(res)
+
+    const data = req.body as z.infer<typeof staffAdminUpdateSchema>
+    if (data.systemRole !== undefined && data.systemRole !== target.systemRole) {
+      if (!canAssignSystemRole(req.user!.role, data.systemRole)) {
+        return badRequest(res, 'You cannot assign this system role')
+      }
+    }
+    if (data.email !== undefined && data.email.toLowerCase() !== target.email) {
+      const clash = await prisma.staffMember.findUnique({ where: { email: data.email.toLowerCase() } })
+      if (clash) return badRequest(res, 'Email already in use')
+    }
+
+    const prismaData: Record<string, unknown> = { ...data }
+    if (data.email !== undefined) prismaData.email = data.email.toLowerCase()
+
     const member = await prisma.staffMember.update({
       where: { id: req.params.id },
-      data: req.body,
-      select: { id: true, name: true, email: true, systemRole: true, status: true },
+      data: prismaData as any,
+      select: {
+        id: true, memberId: true, name: true, email: true, email2: true,
+        systemRole: true, status: true, branch: true, jobRole: true,
+        primarySkill: true, skillLevel: true, secondarySkills: true,
+        toolsKnown: true, yearsExperience: true, employmentType: true,
+        salary: true, phone: true, whatsapp: true, country: true,
+        address: true, nidPassport: true, emergencyContact: true,
+        joinDate: true, terminationDate: true, exitReason: true,
+        portfolioUrl: true, linkedinUrl: true, githubUrl: true, certifications: true,
+        averageTaskRating: true, ceoPerformanceRating: true, ceoRatingNote: true, ceoLastRatedDate: true,
+        tasksAssigned: true, tasksCompleted: true, totalTasksRated: true, performanceScore: true,
+        twoFactorEnabled: true, lastLoginAt: true, lastLoginIp: true,
+      },
     })
-    return ok(res, member)
+    const rolePermissions = await getEffectivePermissions(member.systemRole)
+    return ok(res, { ...member, rolePermissions, profileAdmin: true })
   } catch (err) { serverError(res, err) }
 })
 
@@ -119,7 +163,7 @@ router.delete('/members/:id', requireRoles(...CEO_ROLES as any), async (req, res
 // GET /v1/staff/me
 router.get('/me', requireStaff, async (req, res) => {
   try {
-    const member = await prisma.staffMember.findUnique({
+    const row = await prisma.staffMember.findUnique({
       where: { id: req.user!.id },
       select: {
         id: true, memberId: true, name: true, email: true,
@@ -127,10 +171,15 @@ router.get('/me', requireStaff, async (req, res) => {
         primarySkill: true, phone: true, whatsapp: true, country: true,
         joinDate: true, salary: true, averageTaskRating: true,
         ceoPerformanceRating: true, portfolioUrl: true,
+        twoFactorEnabled: true,
+        totpSecret: true,
       },
     })
-    if (!member) return notFound(res)
-    return ok(res, member)
+    if (!row) return notFound(res)
+    const { totpSecret, ...member } = row
+    const permissions = await getEffectivePermissions(member.systemRole)
+    const twoFactorPending = Boolean(totpSecret) && !member.twoFactorEnabled
+    return ok(res, { ...member, twoFactorPending, permissions })
   } catch (err) { serverError(res, err) }
 })
 
@@ -163,8 +212,8 @@ router.get('/leaderboard', async (req, res) => {
   } catch { return serverError(res) }
 })
 
-// POST /v1/staff/members/:id/rate — CEO rates staff performance
-router.post('/members/:id/rate', async (req: AuthRequest, res) => {
+// POST /v1/staff/members/:id/rate — CEO / Co-MD rates staff performance
+router.post('/members/:id/rate', requireStaff, requireRoles(...CEO_ROLES as any), async (req: AuthRequest, res) => {
   try {
     const { rating, note } = req.body
     if (!rating || rating < 1 || rating > 10) return badRequest(res, 'Rating must be 1–10')

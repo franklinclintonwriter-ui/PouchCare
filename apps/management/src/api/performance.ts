@@ -57,7 +57,41 @@ export function usePerformanceReviews(period?: string) {
 export function useCreatePerformanceReview() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: Record<string, unknown>) => api.post('/performance', body),
+    mutationFn: (body: Record<string, unknown>) => {
+      const memberId = String(body.staffMemberId ?? body.memberId ?? '').trim();
+      const reviewQuarter = String(body.reviewQuarter ?? 'Q1');
+      const reviewYear = Number(body.reviewYear ?? new Date().getFullYear());
+      const reviewPeriod = String(body.reviewPeriod ?? `${reviewQuarter} ${reviewYear}`);
+      return api.post('/performance', {
+        memberId,
+        reviewPeriod,
+        reviewQuarter,
+        reviewYear,
+        overallRating: body.overallRating,
+        taskQuality: body.taskQuality,
+        communication: body.communication,
+        punctuality: body.punctuality,
+        teamwork: body.teamwork,
+        notes: body.notes,
+      });
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['performance'] }),
+  });
+}
+
+export function useUpdatePerformanceReview() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...body }: Record<string, unknown> & { id: string }) =>
+      api.put(`/performance/${id}`, body),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['performance'] }),
+  });
+}
+
+export function useDeletePerformanceReview() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.delete(`/performance/${id}`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['performance'] }),
   });
 }

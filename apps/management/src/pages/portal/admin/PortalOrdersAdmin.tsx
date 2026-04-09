@@ -7,7 +7,7 @@ import { DataTable, type Column } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { StatsRow } from '@/components/shared/StatsRow';
 import { Button } from '@/components/ui/Button';
-import { formatCurrency } from '@/mocks/generators';
+import { formatCurrency } from '@/lib/format';
 import type { PortalOrder } from '@/types/models';
 import { toast } from 'sonner';
 

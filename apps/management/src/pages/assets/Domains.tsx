@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Globe, AlertTriangle, Plus, Pencil, Trash2 } from 'lucide-react';
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
 import { useDomains, useCreateDomain, useUpdateDomain, useDeleteDomain } from '@/api/assets';
@@ -8,8 +9,9 @@ import { Card } from '@/components/ui/Card';
 import { Modal } from '@/components/ui/Modal';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { PageTransition } from '@/components/ui/PageTransition';
-import { formatCurrency } from '@/mocks/generators';
+import { formatCurrency } from '@/lib/format';
 import { useAuthStore } from '@/store/authStore';
 import type { StaffUser } from '@/types/auth';
 import type { Domain } from '@/types/models';
@@ -20,6 +22,7 @@ const SENIOR_ROLES = ['CEO', 'CO_MD', 'OP_MANAGER'];
 const emptyForm = { domainName: '', registrar: '', expiryDate: '', dnsProvider: '', annualCost: '', status: 'active' };
 
 export default function Domains() {
+  const navigate = useNavigate();
   const { data, isLoading } = useDomains();
   const domains = data?.data ?? [];
   const createDomain = useCreateDomain();
@@ -31,6 +34,7 @@ export default function Domains() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editRow, setEditRow] = useState<Domain | null>(null);
   const [form, setForm] = useState(emptyForm);
+  const [deleteTarget, setDeleteTarget] = useState<Domain | null>(null);
 
   const openCreate = () => { setEditRow(null); setForm(emptyForm); setModalOpen(true); };
   const openEdit = (row: Domain) => {
@@ -70,11 +74,12 @@ export default function Domains() {
     }
   };
 
-  const handleDelete = async (row: Domain) => {
-    if (!confirm(`Delete domain "${row.domain}"?`)) return;
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
     try {
-      await deleteDomain.mutateAsync(row.id);
+      await deleteDomain.mutateAsync(deleteTarget.id);
       toast.success('Domain deleted');
+      setDeleteTarget(null);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Delete failed');
     }
@@ -154,10 +159,10 @@ export default function Domains() {
       align: 'right' as const,
       render: (row: Domain) => (
         <div className="flex items-center justify-end gap-1">
-          <Button size="xs" variant="ghost" onClick={(e) => { e.stopPropagation(); openEdit(row); }}>
+          <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={(e) => { e.stopPropagation(); openEdit(row); }}>
             <Pencil className="h-3.5 w-3.5" />
           </Button>
-          <Button size="xs" variant="ghost" className="text-red-500 hover:text-red-700" onClick={(e) => { e.stopPropagation(); handleDelete(row); }}>
+          <Button size="sm" variant="ghost" className="h-7 px-2 text-xs text-red-500 hover:text-red-700" onClick={(e) => { e.stopPropagation(); setDeleteTarget(row); }}>
             <Trash2 className="h-3.5 w-3.5" />
           </Button>
         </div>
@@ -191,6 +196,7 @@ export default function Domains() {
         isLoading={isLoading}
         getRowId={(row) => row.id}
         emptyTitle="No domains found"
+        onRowClick={(row) => navigate(`/assets/domains/${row.id}`)}
       />
 
       <Modal
@@ -214,6 +220,17 @@ export default function Domains() {
           <Input type="number" label="Annual Cost (USD)" value={form.annualCost} onChange={(e) => setForm(f => ({ ...f, annualCost: e.target.value }))} />
         </div>
       </Modal>
+
+      <ConfirmDialog
+        isOpen={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        title="Delete Domain"
+        message={`Delete domain "${deleteTarget?.domain}"? This cannot be undone.`}
+        confirmLabel="Delete"
+        variant="danger"
+        isLoading={deleteDomain.isPending}
+        onConfirm={handleDelete}
+      />
     </PageTransition>
   );
 }

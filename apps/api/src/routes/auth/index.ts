@@ -12,7 +12,9 @@ import {
   unauthorized,
   serverError,
   notFound,
+  serviceUnavailable,
 } from "@/lib/response";
+import { isDbConnectionError, DB_UNAVAILABLE_MESSAGE } from "@/lib/dbErrors";
 import { sendPasswordResetEmail } from "@/lib/email";
 import { redis } from "@/lib/redis";
 import crypto from "crypto";
@@ -86,6 +88,10 @@ router.post("/login", validate(loginSchema), async (req, res) => {
       },
     });
   } catch (e) {
+    if (isDbConnectionError(e)) {
+      console.error("[auth/login] database unreachable");
+      return serviceUnavailable(res, DB_UNAVAILABLE_MESSAGE);
+    }
     console.error("[auth/login]", e);
     return serverError(res, e);
   }
@@ -99,7 +105,12 @@ router.post("/refresh", validate(refreshSchema), async (req, res) => {
     if (!staff) return unauthorized(res, 'Invalid token')
     const access_token = signAccess({ sub: staff.id, role: staff.systemRole, type: 'staff' })
     return ok(res, { access_token })
-  } catch { return unauthorized(res, 'Invalid or expired refresh token') }
+  } catch (e) {
+    if (isDbConnectionError(e)) {
+      return serviceUnavailable(res, DB_UNAVAILABLE_MESSAGE);
+    }
+    return unauthorized(res, 'Invalid or expired refresh token')
+  }
 })
 
 // POST /auth/logout

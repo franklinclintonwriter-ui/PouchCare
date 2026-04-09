@@ -23,6 +23,8 @@ const schema = z.object({
   MIN_PAYOUT_USD:    z.coerce.number().default(50),
   DEFAULT_USD_TO_BDT: z.coerce.number().default(124),
   FRONTEND_URL:      z.string().default('http://localhost:5173'),
+  /** Base URL for client portal (verify email, reset password links). */
+  PORTAL_URL:        z.string().default('http://localhost:5176'),
   IP_WHITELIST_ENABLED: z.string().default('false'),
   IP_WHITELIST:         z.string().default('127.0.0.1,::1'),
 })

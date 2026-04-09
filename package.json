@@ -18,7 +18,16 @@
     "dev:office":   "turbo run dev --filter=office",
     "dev:portal":   "turbo run dev --filter=client-portal",
     "export:notion": "node scripts/export-notion.mjs",
-    "sync:github":  "node scripts/sync-tasks-to-github.mjs"
+    "sync:github":  "node scripts/sync-tasks-to-github.mjs",
+    "db:up":        "docker compose up -d",
+    "db:down":      "docker compose down",
+    "db:setup":     "npm run db:push -w api && npm run db:seed -w api",
+    "db:setup:win": "powershell -ExecutionPolicy Bypass -File scripts/dev-db-setup.ps1",
+    "dev:full": "powershell -ExecutionPolicy Bypass -File scripts/dev-full.ps1",
+    "db:push":      "npm run db:push -w api",
+    "db:seed":      "npm run db:seed -w api",
+    "test:e2e":     "playwright test",
+    "test:e2e:ui":  "playwright test --ui"
   },
   "devDependencies": {
     "turbo": "^2.0.0",
@@ -27,6 +36,7 @@
     "eslint": "^8.57.0",
     "@typescript-eslint/eslint-plugin": "^7.18.0",
     "@typescript-eslint/parser": "^7.18.0",
+    "@playwright/test": "^1.49.0",
     "eslint-plugin-react": "^7.35.0",
     "eslint-plugin-react-hooks": "^4.6.2"
   },

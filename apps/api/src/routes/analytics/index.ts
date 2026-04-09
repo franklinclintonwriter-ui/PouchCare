@@ -1,11 +1,12 @@
 import { ApprovalStatus } from '@prisma/client'
 import { Router } from 'express'
-import { authenticate, isOps } from '@/middleware/auth'
+import { authenticate } from '@/middleware/auth'
+import { requirePermission } from '@/middleware/rbac'
 import prisma from '@/lib/prisma'
 import { ok, serverError } from '@/lib/response'
 
 const router = Router()
-router.use(authenticate, isOps)
+router.use(authenticate, requirePermission('analytics.access'))
 
 // GET /analytics/health — Company Health Score
 router.get('/health', async (_, res) => {

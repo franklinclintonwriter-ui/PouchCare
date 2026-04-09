@@ -62,8 +62,4 @@ export const serviceNames = [
   'Video Production', 'Backlink Building',
 ];
 
-export const formatCurrency = (n: number) =>
-  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(n);
-
-export const formatCompact = (n: number) =>
-  new Intl.NumberFormat('en-US', { notation: 'compact' }).format(n);
+export { formatCurrency, formatCompact } from '@/lib/format';

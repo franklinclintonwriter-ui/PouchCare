@@ -10,7 +10,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Modal } from '@/components/ui/Modal';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { formatCurrency } from '@/mocks/generators';
+import { formatCurrency } from '@/lib/format';
 import { Users, Target, DollarSign, GitBranch, Plus } from 'lucide-react';
 import type { Lead } from '@/types/models';
 import { toast } from 'sonner';

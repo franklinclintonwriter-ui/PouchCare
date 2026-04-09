@@ -1,16 +1,15 @@
 import { Router } from 'express'
 import { z } from 'zod'
 import prisma from '@/lib/prisma'
-import { authenticate, requireRoles, isOps, isCEO, CEO_ROLES } from '@/middleware/auth'
+import { authenticate } from '@/middleware/auth'
+import { requirePermission } from '@/middleware/rbac'
 import { getPagination, buildMeta } from '@/utils/pagination'
 import { ok, created, notFound, serverError } from '@/utils/response'
 
 const router = Router()
 router.use(authenticate)
-// isOps = CEO + CO_MD + OP_MANAGER (correct enum-based check)
-
 // ── INVOICES ──
-router.get('/invoices', isOps, async (req, res) => {
+router.get('/invoices', requirePermission('finance.access'), async (req, res) => {
   try {
     const { page, limit, skip } = getPagination(req)
     const { status, q } = req.query as Record<string, string>
@@ -25,7 +24,7 @@ router.get('/invoices', isOps, async (req, res) => {
   } catch (err) { serverError(res, err) }
 })
 
-router.get('/invoices/:id', isOps, async (req, res) => {
+router.get('/invoices/:id', requirePermission('finance.access'), async (req, res) => {
   try {
     const inv = await prisma.invoice.findUnique({ where: { id: req.params.id } })
     if (!inv) return notFound(res)
@@ -33,7 +32,7 @@ router.get('/invoices/:id', isOps, async (req, res) => {
   } catch (err) { serverError(res, err) }
 })
 
-router.post('/invoices', isOps, async (req, res) => {
+router.post('/invoices', requirePermission('finance.access'), async (req, res) => {
   try {
     const count = await prisma.invoice.count()
     const invoiceNumber = `INV-${String(count + 1).padStart(4, '0')}`
@@ -44,14 +43,14 @@ router.post('/invoices', isOps, async (req, res) => {
   } catch (err) { serverError(res, err) }
 })
 
-router.put('/invoices/:id', isOps, async (req, res) => {
+router.put('/invoices/:id', requirePermission('finance.access'), async (req, res) => {
   try {
     const inv = await prisma.invoice.update({ where: { id: req.params.id }, data: req.body })
     return ok(res, inv)
   } catch (err) { serverError(res, err) }
 })
 
-router.delete('/invoices/:id', isOps, async (req, res) => {
+router.delete('/invoices/:id', requirePermission('finance.access'), async (req, res) => {
   try {
     await prisma.invoice.delete({ where: { id: req.params.id } })
     return ok(res, { message: 'Invoice deleted' })
@@ -59,7 +58,7 @@ router.delete('/invoices/:id', isOps, async (req, res) => {
 })
 
 // ── EXPENSES ──
-router.get('/expenses', isOps, async (req, res) => {
+router.get('/expenses', requirePermission('finance.access'), async (req, res) => {
   try {
     const { page, limit, skip } = getPagination(req)
     const [expenses, total] = await Promise.all([
@@ -70,7 +69,7 @@ router.get('/expenses', isOps, async (req, res) => {
   } catch (err) { serverError(res, err) }
 })
 
-router.post('/expenses', isOps, async (req, res) => {
+router.post('/expenses', requirePermission('finance.access'), async (req, res) => {
   try {
     const exp = await prisma.expense.create({
       data: { ...req.body, expenseDate: new Date(req.body.expenseDate || Date.now()) },
@@ -79,7 +78,7 @@ router.post('/expenses', isOps, async (req, res) => {
   } catch (err) { serverError(res, err) }
 })
 
-router.get('/expenses/:id', isOps, async (req, res) => {
+router.get('/expenses/:id', requirePermission('finance.access'), async (req, res) => {
   try {
     const exp = await prisma.expense.findUnique({ where: { id: req.params.id } })
     if (!exp) return notFound(res)
@@ -87,14 +86,14 @@ router.get('/expenses/:id', isOps, async (req, res) => {
   } catch (err) { serverError(res, err) }
 })
 
-router.put('/expenses/:id', isOps, async (req, res) => {
+router.put('/expenses/:id', requirePermission('finance.access'), async (req, res) => {
   try {
     const exp = await prisma.expense.update({ where: { id: req.params.id }, data: req.body })
     return ok(res, exp)
   } catch (err) { serverError(res, err) }
 })
 
-router.delete('/expenses/:id', isOps, async (req, res) => {
+router.delete('/expenses/:id', requirePermission('finance.access'), async (req, res) => {
   try {
     await prisma.expense.delete({ where: { id: req.params.id } })
     return ok(res, { message: 'Expense deleted' })
@@ -102,7 +101,7 @@ router.delete('/expenses/:id', isOps, async (req, res) => {
 })
 
 // ── PAYROLL ──
-router.get('/payroll', isOps, async (req, res) => {
+router.get('/payroll', requirePermission('finance.access'), async (req, res) => {
   try {
     const { page, limit, skip } = getPagination(req)
     const [records, total] = await Promise.all([
@@ -113,7 +112,7 @@ router.get('/payroll', isOps, async (req, res) => {
   } catch (err) { serverError(res, err) }
 })
 
-router.post('/payroll', isOps, async (req, res) => {
+router.post('/payroll', requirePermission('finance.access'), async (req, res) => {
   try {
     const { baseSalary = 0, bonus = 0, deductions = 0 } = req.body
     const netSalary = baseSalary + bonus - deductions
@@ -125,7 +124,7 @@ router.post('/payroll', isOps, async (req, res) => {
 })
 
 // ── REVENUE ──
-router.get('/revenue/monthly', isOps, async (req, res) => {
+router.get('/revenue/monthly', requirePermission('finance.access'), async (req, res) => {
   try {
     const { page, limit, skip } = getPagination(req)
     const [records, total] = await Promise.all([
@@ -137,7 +136,7 @@ router.get('/revenue/monthly', isOps, async (req, res) => {
 })
 
 // ── FORECAST ── simple projection from last 3 months average
-router.get('/forecast', isCEO, async (req, res) => {
+router.get('/forecast', requirePermission('finance.access'), async (req, res) => {
   try {
     const recent = await prisma.monthlyRevenue.findMany({
       orderBy: [{ year: 'desc' }, { month: 'desc' }],

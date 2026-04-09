@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useCallback, useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Server, Plus, Pencil, Trash2 } from 'lucide-react';
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
 import { useServers, useCreateServer, useUpdateServer, useDeleteServer } from '@/api/assets';
@@ -9,8 +10,9 @@ import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { PageTransition } from '@/components/ui/PageTransition';
-import { formatCurrency } from '@/mocks/generators';
+import { formatCurrency } from '@/lib/format';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useAuthStore } from '@/store/authStore';
 import type { StaffUser } from '@/types/auth';
@@ -21,6 +23,7 @@ const SENIOR_ROLES = ['CEO', 'CO_MD', 'OP_MANAGER'];
 const emptyForm = { name: '', provider: '', ipAddress: '', type: '', ramGb: '', storageGb: '', monthlyCostUsd: '', status: 'online' };
 
 export default function Servers() {
+  const navigate = useNavigate();
   const { data: servers, isLoading } = useServers();
   const createServer = useCreateServer();
   const updateServer = useUpdateServer();
@@ -28,9 +31,11 @@ export default function Servers() {
   const user = useAuthStore((s) => s.user) as StaffUser | null;
   const canManage = SENIOR_ROLES.includes(user?.systemRole ?? '');
 
+  const [search, setSearch] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [editRow, setEditRow] = useState<ServerAsset | null>(null);
   const [form, setForm] = useState(emptyForm);
+  const [deleteTarget, setDeleteTarget] = useState<ServerAsset | null>(null);
 
   const openCreate = () => { setEditRow(null); setForm(emptyForm); setModalOpen(true); };
   const openEdit = (row: ServerAsset) => {
@@ -74,15 +79,18 @@ export default function Servers() {
     }
   };
 
-  const handleDelete = async (row: ServerAsset) => {
-    if (!confirm(`Delete server "${row.name}"?`)) return;
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
     try {
-      await deleteServer.mutateAsync(row.id);
+      await deleteServer.mutateAsync(deleteTarget.id);
       toast.success('Server deleted');
+      setDeleteTarget(null);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Delete failed');
     }
   };
+
+  const onSearchChange = useCallback((v: string) => setSearch(v), []);
 
   const headerConfig = useMemo(() => ({
     title: 'Servers',
@@ -90,12 +98,22 @@ export default function Servers() {
       { label: 'Assets', href: '/assets' },
       { label: 'Servers', icon: Server },
     ],
-    actions: canManage
-      ? [{ type: 'button' as const, label: 'Add Server', icon: Plus, onClick: openCreate }]
-      : [],
+    actions: [
+      { type: 'search' as const, placeholder: 'Search servers…', value: search, onChange: onSearchChange },
+      ...(canManage ? [{ type: 'button' as const, label: 'Add Server', icon: Plus, onClick: openCreate }] : []),
+    ],
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), [canManage]);
+  }), [canManage, search]);
   useHeaderConfig(headerConfig);
+
+  const q = search.toLowerCase().trim();
+  const filteredServers = q
+    ? (servers ?? []).filter(s =>
+        s.name.toLowerCase().includes(q) ||
+        s.provider.toLowerCase().includes(q) ||
+        s.ip.toLowerCase().includes(q)
+      )
+    : (servers ?? []);
 
   return (
     <PageTransition>
@@ -112,8 +130,13 @@ export default function Servers() {
                 </div>
               </Card>
             ))
-          : servers?.map((server) => (
-              <Card key={server.id} hover>
+          : filteredServers.map((server) => (
+              <Card
+                key={server.id}
+                hover
+                onClick={() => navigate(`/assets/servers/${server.id}`)}
+                className="cursor-pointer"
+              >
                 <CardHeader>
                   <div className="flex items-center gap-2">
                     <div className="rounded-lg bg-blue-50 p-2 dark:bg-blue-900/30">
@@ -124,14 +147,14 @@ export default function Servers() {
                       <p className="text-xs text-gray-500 dark:text-gray-400">{server.provider}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                     <StatusBadge status={server.status} size="sm" />
                     {canManage && (
                       <>
                         <Button size="sm" variant="ghost" onClick={() => openEdit(server)}>
                           <Pencil className="h-3.5 w-3.5" />
                         </Button>
-                        <Button size="sm" variant="ghost" className="text-red-500 hover:text-red-700" onClick={() => handleDelete(server)}>
+                        <Button size="sm" variant="ghost" className="text-red-500 hover:text-red-700" onClick={() => setDeleteTarget(server)}>
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
                       </>
@@ -219,6 +242,17 @@ export default function Servers() {
           <Input type="number" label="Monthly Cost (USD)" value={form.monthlyCostUsd} onChange={(e) => setForm(f => ({ ...f, monthlyCostUsd: e.target.value }))} />
         </div>
       </Modal>
+
+      <ConfirmDialog
+        isOpen={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        title="Delete Server"
+        message={`Delete server "${deleteTarget?.name}"? This cannot be undone.`}
+        confirmLabel="Delete"
+        variant="danger"
+        isLoading={deleteServer.isPending}
+        onConfirm={handleDelete}
+      />
     </PageTransition>
   );
 }

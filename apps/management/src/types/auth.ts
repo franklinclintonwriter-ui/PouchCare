@@ -11,6 +11,10 @@ export interface StaffUser {
   whatsapp?: string;
   avatarUrl?: string;
   twoFactorEnabled?: boolean;
+  /** True when authenticator was set up but `/auth/2fa/verify` not completed yet. */
+  twoFactorPending?: boolean;
+  /** Effective RBAC flags from GET /staff/me (merged defaults + DB overrides). */
+  permissions?: Record<string, boolean>;
 }
 
 export interface PortalUser {

@@ -1,16 +1,14 @@
 import { useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Star, FileText } from 'lucide-react';
+import { useParams } from 'react-router-dom';
+import { Star, FileText } from 'lucide-react';
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
-import { useApplications, useUpdateApplication } from '@/api/hr';
+import { useApplication, useUpdateApplication } from '@/api/hr';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/Button';
 import { usePermission } from '@/hooks/usePermission';
 import { toast } from 'sonner';
-import { useQuery } from '@tanstack/react-query';
-import api from '@/api/client';
 import type { JobApplication } from '@/types/models';
 
 const STAGE_TRANSITIONS: Record<JobApplication['stage'], JobApplication['stage'][]> = {
@@ -44,31 +42,10 @@ function StarRating({ rating }: { rating: number }) {
 
 export default function ApplicationDetail() {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const perm = usePermission();
   const updateApplication = useUpdateApplication();
 
-  const { data: app, isLoading } = useQuery<JobApplication | null>({
-    queryKey: ['application', id],
-    queryFn: async () => {
-      if (!id) return null;
-      const { data } = await api.get(`/hr/applications/${id}`);
-      const inferredRating = Math.max(1, Math.min(5, Math.round((data.experienceYears ?? 0) / 2) || 3));
-      return {
-        id: data.id,
-        applicantName: data.applicantName,
-        applicantEmail: data.email,
-        positionId: data.positionId,
-        positionTitle: data.position?.title ?? 'Unknown Position',
-        stage: (data.status ?? 'new').toLowerCase() as JobApplication['stage'],
-        resumeUrl: data.cvUrl ?? undefined,
-        rating: inferredRating,
-        appliedDate: data.appliedDate ?? new Date().toISOString(),
-        notes: data.notes ?? '',
-      };
-    },
-    enabled: !!id,
-  });
+  const { data: app, isLoading } = useApplication(id);
 
   const headerConfig = useMemo(() => ({
     title: app?.applicantName ?? 'Application',
@@ -108,9 +85,6 @@ export default function ApplicationDetail() {
       <PageTransition>
         <div className="flex flex-col items-center gap-4 py-16">
           <p className="text-gray-500">Application not found</p>
-          <Button variant="outline" onClick={() => navigate('/hr/applications')}>
-            <ArrowLeft className="mr-2 h-4 w-4" /> Back
-          </Button>
         </div>
       </PageTransition>
     );
@@ -120,10 +94,6 @@ export default function ApplicationDetail() {
 
   return (
     <PageTransition className="space-y-4">
-      <Button variant="ghost" size="sm" onClick={() => navigate('/hr/applications')}>
-        <ArrowLeft className="mr-1.5 h-4 w-4" /> Back
-      </Button>
-
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader>
@@ -180,7 +150,7 @@ export default function ApplicationDetail() {
         </Card>
       </div>
 
-      {perm.isHR && transitions.length > 0 && (
+      {perm.can('hr.recruitment') && transitions.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle>Move to Stage</CardTitle>

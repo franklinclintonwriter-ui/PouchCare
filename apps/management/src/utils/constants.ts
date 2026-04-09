@@ -111,8 +111,9 @@ export const PRIORITY_ICONS: Record<string, { color: string; label: string }> = 
   LOW: { color: 'text-gray-500 dark:text-gray-400', label: 'Low' },
 };
 
-export function getStatusLabel(status: string): string {
-  return status
+export function getStatusLabel(status: string | undefined | null): string {
+  if (status == null || status === '') return '—';
+  return String(status)
     .replace(/_/g, ' ')
     .toLowerCase()
     .replace(/\b\w/g, (c) => c.toUpperCase());

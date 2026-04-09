@@ -37,14 +37,27 @@ Internet → Nginx :80/:443
 
 ## Quick Start
 
+**One-shot local restart (stop old dev ports → Docker DB if present → `prisma db push` + seed → API + 3 UIs):**
+
+```bash
+npm run dev:full
+```
+
+**Database (PostgreSQL + Redis):** from repo root, `docker compose up -d` (see `docker-compose.yml`). Ensure `apps/api/.env` has `DATABASE_URL` matching the Postgres user/password (default in `.env.example`: `pouchcare` / `pouchcare` on port `5432`). Then apply schema and seed:
+
+```bash
+# From repo root (Windows: npm run db:setup:win)
+npm run db:setup
+```
+
 ```bash
 # API (port 7000)
 cd apps/api && cp .env.example .env
 # Edit .env: set JWT_SECRET + JWT_REFRESH_SECRET (both 32+ chars)
-npm install && npx prisma generate && npx prisma migrate dev --name init
+npm install && npx prisma generate && npx prisma db push
 npm run db:seed && npm run dev
 
-# Management Portal (port 5174)
+# Management Portal (port 3000 in dev — see apps/management/vite.config.ts)
 cd apps/management && npm install && npm run dev
 
 # Staff Office (port 5175)
@@ -62,7 +75,7 @@ cd apps/client-portal && npm install && npm run dev
 | Co-MD | comd@pouchcare.com | m.pouchcare.com |
 | Ops Manager | ops@pouchcare.com | m.pouchcare.com |
 | Staff | staff1@pouchcare.com | office.pouchcare.com |
-| Client | client@example.com | my.pouchcare.com |
+| Client | john@example.com | my.pouchcare.com |
 
 ## Deploy
 

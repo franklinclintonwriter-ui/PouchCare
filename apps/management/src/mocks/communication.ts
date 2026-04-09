@@ -51,12 +51,12 @@ export const mockTickets: Ticket[] = Array.from({ length: 22 }, (_, i) => {
 });
 
 export const mockBroadcasts: Broadcast[] = [
-  { id: fakeId(), title: 'New Year Sale - 50% Off', channel: 'email', audience: 'All Members', status: 'sent', sentDate: fakeDateRecent(5), openRate: 34.5, content: 'Enjoy our new year special...', recipientCount: 1250 },
-  { id: fakeId(), title: 'Service Update Notice', channel: 'email', audience: 'Active Members', status: 'sent', sentDate: fakeDateRecent(10), openRate: 28.2, content: 'Important update about...', recipientCount: 890 },
-  { id: fakeId(), title: 'Flash Deal Alert', channel: 'push', audience: 'All Members', status: 'scheduled', scheduledDate: fakeDateFuture(3), content: 'Limited time offer...', recipientCount: 2100 },
-  { id: fakeId(), title: 'Maintenance Window', channel: 'sms', audience: 'Active Members', status: 'sent', sentDate: fakeDateRecent(2), openRate: 92.1, content: 'Scheduled maintenance...', recipientCount: 450 },
-  { id: fakeId(), title: 'Referral Program Launch', channel: 'email', audience: 'Verified Members', status: 'draft', content: 'Introducing our referral...', recipientCount: 0 },
-  { id: fakeId(), title: 'Monthly Newsletter', channel: 'email', audience: 'Subscribed Members', status: 'sent', sentDate: fakeDateRecent(15), openRate: 22.8, content: 'This month highlights...', recipientCount: 1800 },
+  { id: fakeId(), title: 'New Year Sale - 50% Off', message: 'Enjoy our new year special...', sentBy: 'Admin', audience: 'all', channel: 'email', isUrgent: false, createdAt: fakeDateRecent(5) },
+  { id: fakeId(), title: 'Service Update Notice', message: 'Important update about...', sentBy: 'Admin', audience: 'clients', channel: 'email', isUrgent: false, createdAt: fakeDateRecent(10) },
+  { id: fakeId(), title: 'Flash Deal Alert', message: 'Limited time offer...', sentBy: 'Admin', audience: 'all', channel: 'in_app', isUrgent: true, createdAt: fakeDateFuture(3) },
+  { id: fakeId(), title: 'Maintenance Window', message: 'Scheduled maintenance...', sentBy: 'Ops', audience: 'staff', channel: 'email', isUrgent: true, createdAt: fakeDateRecent(2) },
+  { id: fakeId(), title: 'Referral Program Launch', message: 'Introducing our referral...', sentBy: 'Marketing', audience: 'clients', channel: 'in_app', isUrgent: false, createdAt: fakeDateRecent(20) },
+  { id: fakeId(), title: 'Monthly Newsletter', message: 'This month highlights...', sentBy: 'Admin', audience: 'all', channel: 'email', isUrgent: false, createdAt: fakeDateRecent(15) },
 ];
 
 const notifTypes: AppNotification['type'][] = ['task', 'leave', 'ticket', 'payment', 'system', 'order'];

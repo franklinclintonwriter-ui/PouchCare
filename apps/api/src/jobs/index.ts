@@ -1,6 +1,5 @@
 import cron from 'node-cron'
 import prisma from '@/lib/prisma'
-import { sendPasswordResetEmail, sendVerificationEmail } from '@/lib/email'
 
 // Job 1: Release commissions after hold period (daily at 2am)
 cron.schedule('0 2 * * *', async () => {

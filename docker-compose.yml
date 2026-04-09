@@ -1,0 +1,41 @@
+# Local development: PostgreSQL + Redis (matches apps/api/.env.example)
+# Usage: docker compose up -d
+# Then from repo root: cd apps/api && npx prisma db push && npm run db:seed
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: pouchcare-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: pouchcare
+      POSTGRES_PASSWORD: pouchcare
+      POSTGRES_DB: pouchcare
+    ports:
+      - "5432:5432"
+    volumes:
+      - pouchcare_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pouchcare -d pouchcare"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: pouchcare-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - pouchcare_redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  pouchcare_pg_data:
+  pouchcare_redis_data:

@@ -1,14 +1,12 @@
 import { useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { useParams } from 'react-router-dom';
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
 import { usePayrollEntry, useMarkPayrollPaid } from '@/api/payroll';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Badge } from '@/components/ui/Badge';
-import { Button } from '@/components/ui/Button';
-import { formatCurrency } from '@/mocks/generators';
+import { formatCurrency } from '@/lib/format';
 import { usePermission } from '@/hooks/usePermission';
 import { toast } from 'sonner';
 
@@ -16,7 +14,6 @@ const MONTH_NAMES = ['January','February','March','April','May','June','July','A
 
 export default function PayrollDetail() {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const perm = usePermission();
   const { data: entry, isLoading } = usePayrollEntry(id ?? '');
   const markPaid = useMarkPayrollPaid();
@@ -62,9 +59,6 @@ export default function PayrollDetail() {
       <PageTransition>
         <div className="flex flex-col items-center gap-4 py-16">
           <p className="text-gray-500">Payroll record not found</p>
-          <Button variant="outline" onClick={() => navigate('/payroll')}>
-            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Payroll
-          </Button>
         </div>
       </PageTransition>
     );
@@ -72,10 +66,6 @@ export default function PayrollDetail() {
 
   return (
     <PageTransition className="space-y-4">
-      <Button variant="ghost" size="sm" onClick={() => navigate('/payroll')}>
-        <ArrowLeft className="mr-1.5 h-4 w-4" /> Back
-      </Button>
-
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader>

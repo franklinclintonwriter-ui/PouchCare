@@ -1,13 +1,14 @@
 import { Router } from 'express'
 import { z } from 'zod'
-import { authenticate, isCEO, isOps, type AuthRequest } from '@/middleware/auth'
+import { authenticate, isCEO, type AuthRequest } from '@/middleware/auth'
+import { requirePermission } from '@/middleware/rbac'
 import { validate } from '@/middleware/validate'
 import prisma from '@/lib/prisma'
 import { ok, created, notFound, serverError, paginated } from '@/lib/response'
 import { getPagination, paginatedMeta, buildMeta} from '@/lib/pagination'
 
 const router = Router()
-router.use(authenticate, isOps)
+router.use(authenticate, requirePermission('payroll.access'))
 
 const schema = z.object({
   memberId:      z.string(),
@@ -63,7 +64,7 @@ router.get('/:id', async (req: AuthRequest, res) => {
 })
 
 // PUT /payroll/:id — edit a payroll record
-router.put('/:id', isOps, async (req: AuthRequest, res) => {
+router.put('/:id', requirePermission('payroll.access'), async (req: AuthRequest, res) => {
   try {
     const { bonus, deductions, baseSalary, ...rest } = req.body
     const existing = await prisma.payroll.findUnique({ where: { id: req.params.id } })

@@ -11,10 +11,11 @@ import api from '@/api/client';
 import type { StaffUser } from '@/types/auth';
 import {
   LayoutDashboard, CheckSquare, ListChecks, FolderKanban, Users, Clock, CalendarOff,
-  FileText, DollarSign, BarChart3, TrendingUp, Target, Globe, Server,
+  FileText, DollarSign, BarChart3, Target, Globe, Server,
   MonitorSmartphone, Megaphone, HeadphonesIcon, BellRing, UserPlus,
   Receipt, CreditCard, Building2, ChevronDown, X, LogOut, Wallet,
   Users2, Star, ShoppingCart, Package, ChevronsLeft, ChevronsRight,
+  Settings, Puzzle, Cctv,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -71,15 +72,15 @@ function Sidebar() {
       label: 'HR',
       items: [
         { label: 'Staff', icon: Users, href: '/staff' },
-        { label: 'Branches', icon: Building2, href: '/staff/branches', permission: () => perm.isOps },
+        { label: 'Branches', icon: Building2, href: '/staff/branches', permission: () => perm.can('staff.branches') },
         { label: 'Attendance', icon: Clock, href: '/attendance' },
         { label: 'Leave', icon: CalendarOff, href: '/leave' },
-        { label: 'Payroll', icon: DollarSign, href: '/payroll', permission: () => perm.isOps },
+        { label: 'Payroll', icon: DollarSign, href: '/payroll', permission: () => perm.can('payroll.access') },
         { label: 'Performance', icon: Star, href: '/performance' },
         { label: 'Recruitment', icon: UserPlus, children: [
           { label: 'Positions', href: '/hr/positions' },
           { label: 'Applications', href: '/hr/applications' },
-        ], permission: () => perm.isHR },
+        ], permission: () => perm.can('hr.recruitment') },
       ],
     },
     {
@@ -91,38 +92,39 @@ function Sidebar() {
           { label: 'Revenue', href: '/finance/revenue' },
           { label: 'Forecast', href: '/finance/forecast' },
           { label: 'Exchange Rates', href: '/finance/exchange-rates' },
-        ], permission: () => perm.isOps },
+        ], permission: () => perm.can('finance.access') },
         { label: 'CRM', icon: Target, children: [
           { label: 'Leads', href: '/crm/leads' },
           { label: 'Pipeline', href: '/crm/pipeline' },
           { label: 'Sales Orders', href: '/crm/orders' },
-          { label: 'Client Accounts', href: '/crm/clients', permission: () => perm.isOps },
+          { label: 'Client Accounts', href: '/crm/clients', permission: () => perm.can('crm.client_accounts') },
         ]},
       ],
     },
     {
-      label: 'Assets',
+      label: 'Assets & Services',
       items: [
         { label: 'Domains', icon: Globe, href: '/assets/domains' },
         { label: 'Servers', icon: Server, href: '/assets/servers' },
         { label: 'Websites', icon: MonitorSmartphone, href: '/assets/websites' },
-        { label: 'Devices', icon: MonitorSmartphone, href: '/assets/devices', permission: () => perm.isOps },
+        { label: 'Monitor', icon: Cctv, href: '/monitor', permission: () => perm.can('monitor.view') },
+        { label: 'Devices', icon: MonitorSmartphone, href: '/assets/devices', permission: () => perm.can('assets.devices') },
         { label: 'Services', icon: Package, href: '/services' },
-        { label: 'Backlinks', icon: TrendingUp, href: '/services/backlinks' },
+        { label: 'Plugins', icon: Puzzle, href: '/plugins' },
       ],
     },
     {
       label: 'Communication',
       items: [
         { label: 'Support', icon: HeadphonesIcon, href: '/support' },
-        { label: 'Broadcast', icon: Megaphone, href: '/broadcast', permission: () => perm.isOps },
+        { label: 'Broadcast', icon: Megaphone, href: '/broadcast', permission: () => perm.can('broadcast.access') },
         { label: 'Notifications', icon: BellRing, href: '/notifications' },
       ],
     },
     {
       label: 'Analytics',
       items: [
-        { label: 'Analytics', icon: BarChart3, href: '/analytics', permission: () => perm.isOps },
+        { label: 'Analytics', icon: BarChart3, href: '/analytics', permission: () => perm.can('analytics.access') },
       ],
     },
     {
@@ -134,7 +136,19 @@ function Sidebar() {
           { label: 'Commissions', href: '/admin/portal/commissions' },
           { label: 'Payouts', href: '/admin/portal/payouts' },
           { label: 'Deposits', href: '/admin/portal/deposits' },
-        ], permission: () => perm.isOps },
+        ], permission: () => perm.can('admin_portal.access') },
+      ],
+    },
+    {
+      label: 'Settings',
+      items: [
+        { label: 'Settings', icon: Settings, children: [
+          { label: 'Profile', href: '/settings/profile' },
+          { label: 'Security', href: '/settings/security' },
+          { label: 'Preferences', href: '/settings/preferences' },
+          { label: 'Role Permissions', href: '/settings/role-permissions', permission: () => perm.can('settings.role_permissions') },
+          { label: 'API Keys', href: '/settings/api-keys', permission: () => perm.isCEO },
+        ]},
       ],
     },
   ];
@@ -159,7 +173,7 @@ function Sidebar() {
   const sidebarContent = (
     <div className="flex h-full flex-col">
       {/* Logo */}
-      <div className="flex h-16 items-center gap-3 border-b border-gray-100 px-4 dark:border-gray-700/60">
+      <div className="flex h-16 items-center gap-3 border-b border-gray-200/80 px-4 dark:border-gray-700/60">
         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-600 text-sm font-bold text-white">
           P
         </div>

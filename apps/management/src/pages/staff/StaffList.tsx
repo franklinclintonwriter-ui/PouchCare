@@ -57,21 +57,24 @@ export default function StaffList() {
     limit: 20,
   });
 
+  const { data: allData } = useStaffList({ limit: 500 });
+
   const staff = data?.data ?? [];
+  const allStaff = allData?.data ?? [];
   const meta = data?.meta;
 
   const stats = useMemo(() => {
-    const total = meta?.total ?? 0;
-    const active = staff.filter(s => s.isActive).length;
-    const inactive = staff.filter(s => !s.isActive).length;
-    const branches = new Set(staff.map(s => s.branch)).size;
+    const total = meta?.total ?? allStaff.length;
+    const active = allStaff.filter(s => s.isActive).length;
+    const inactive = allStaff.filter(s => !s.isActive).length;
+    const branches = new Set(allStaff.map(s => s.branch)).size;
     return [
       { title: 'Total Staff', value: total, icon: <Users />, iconBg: 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' },
       { title: 'Active', value: active, icon: <UserCheck />, iconBg: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400' },
       { title: 'Inactive', value: inactive, icon: <UserX />, iconBg: 'bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400' },
       { title: 'Branches', value: branches, icon: <Building />, iconBg: 'bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400' },
     ];
-  }, [staff, meta]);
+  }, [allStaff, meta]);
 
   const headerConfig = useMemo(() => ({
     title: 'Staff',

@@ -1,12 +1,12 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
 import { useCommissions } from '@/api/portal';
-import { formatCurrency } from '@/mocks/generators';
+import { formatCurrency } from '@/lib/format';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { StatsRow } from '@/components/shared/StatsRow';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
-import { FilterDropdown } from '@/components/ui/FilterDropdown';
+import { Filter } from 'lucide-react';
 import type { CommissionRecord } from '@/types/models';
 
 const STATUS_OPTIONS = [
@@ -21,13 +21,18 @@ export default function Commissions() {
   const [statusFilter, setStatusFilter] = useState('');
   const [page, setPage] = useState(1);
 
-  useHeaderConfig({
+  const onStatusChange = useCallback((v: string) => { setStatusFilter(v); setPage(1); }, []);
+
+  useHeaderConfig(useMemo(() => ({
     title: 'Commissions',
     breadcrumbs: [
       { label: 'Dashboard', href: '/portal' },
       { label: 'Commissions' },
     ],
-  });
+    actions: [
+      { type: 'filter' as const, label: 'Status', icon: Filter, options: STATUS_OPTIONS, value: statusFilter, onChange: onStatusChange },
+    ],
+  }), [statusFilter, onStatusChange]));
 
   const { data, isLoading } = useCommissions({
     page,
@@ -67,15 +72,6 @@ export default function Commissions() {
             { title: 'Paid Out', value: formatCurrency(stats.paid) },
           ]}
         />
-
-        <div className="flex items-center">
-          <FilterDropdown
-            label="Status"
-            options={STATUS_OPTIONS}
-            value={statusFilter}
-            onChange={(v) => { setStatusFilter(v); setPage(1); }}
-          />
-        </div>
 
         <DataTable
           columns={columns}

@@ -1,20 +1,27 @@
 import { useMemo } from 'react';
-import { BarChart3, DollarSign, TrendingUp, Users, ShoppingCart } from 'lucide-react';
+import { BarChart3, DollarSign, TrendingUp, Users, ShoppingCart, Activity, Building2 } from 'lucide-react';
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Legend,
 } from 'recharts';
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
 import { useRevenue } from '@/api/finance';
+import { useHealthScore, useStaffStats, useClientStats } from '@/api/analytics';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { StatsRow } from '@/components/shared/StatsRow';
 import { PageTransition } from '@/components/ui/PageTransition';
-import { formatCurrency, formatCompact } from '@/mocks/generators';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { formatCurrency, formatCompact } from '@/lib/format';
 import type { MonthlyRevenue } from '@/types/models';
 
 export default function Analytics() {
   const { data: revenueData, isLoading } = useRevenue();
+  const health = useHealthScore();
+  const staffStats = useStaffStats();
+  const clientStats = useClientStats();
+  const opsLoading = health.isLoading || staffStats.isLoading || clientStats.isLoading;
+  const opsError = health.isError || staffStats.isError || clientStats.isError;
   const chartData = useMemo(() => {
     return (revenueData ?? []).map((r: any) => ({
       month: `${r.month}-${String(r.year).slice(-2)}`,
@@ -123,6 +130,103 @@ export default function Analytics() {
 
   return (
     <PageTransition className="space-y-4">
+      <p className="text-sm text-gray-600 dark:text-gray-400">
+        Operations metrics use <span className="font-mono text-xs">/v1/analytics</span>; charts use monthly revenue from finance.
+      </p>
+
+      {opsError && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-100">
+          Some operations endpoints failed to load. Revenue data below may still be available.
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Activity className="h-4 w-4 text-primary-600" />
+              Company health
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {opsLoading ? (
+              <Skeleton className="h-12 w-24 rounded-lg" />
+            ) : (
+              <div className="flex items-baseline gap-2">
+                <span className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+                  {health.data?.total ?? '—'}
+                </span>
+                <span className="text-sm text-gray-500">/ 100</span>
+              </div>
+            )}
+            {health.data?.breakdown && (
+              <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                Tasks {health.data.breakdown.tasks} · Attendance {health.data.breakdown.attendance} · Pipeline{' '}
+                {health.data.breakdown.pipeline} · Clients {health.data.breakdown.clients}
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Building2 className="h-4 w-4 text-primary-600" />
+              Staff
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {opsLoading ? (
+              <Skeleton className="h-16 w-full rounded-lg" />
+            ) : (
+              <dl className="grid grid-cols-3 gap-2 text-center text-sm">
+                <div>
+                  <dt className="text-xs text-gray-500">Total</dt>
+                  <dd className="font-semibold text-gray-900 dark:text-gray-100">{staffStats.data?.total ?? '—'}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-gray-500">Active</dt>
+                  <dd className="font-semibold text-emerald-600 dark:text-emerald-400">{staffStats.data?.active ?? '—'}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-gray-500">On leave</dt>
+                  <dd className="font-semibold text-amber-600 dark:text-amber-400">{staffStats.data?.onLeave ?? '—'}</dd>
+                </div>
+              </dl>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Users className="h-4 w-4 text-primary-600" />
+              Portal clients
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {opsLoading ? (
+              <Skeleton className="h-16 w-full rounded-lg" />
+            ) : (
+              <dl className="grid grid-cols-3 gap-2 text-center text-sm">
+                <div>
+                  <dt className="text-xs text-gray-500">Total</dt>
+                  <dd className="font-semibold text-gray-900 dark:text-gray-100">{clientStats.data?.total ?? '—'}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-gray-500">Active</dt>
+                  <dd className="font-semibold text-emerald-600 dark:text-emerald-400">{clientStats.data?.active ?? '—'}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-gray-500">New (mo)</dt>
+                  <dd className="font-semibold text-indigo-600 dark:text-indigo-400">{clientStats.data?.newThisMonth ?? '—'}</dd>
+                </div>
+              </dl>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
       <StatsRow items={kpis} loading={isLoading} />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">

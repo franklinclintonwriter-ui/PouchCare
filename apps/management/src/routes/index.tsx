@@ -1,8 +1,9 @@
 import { lazy, Suspense, type ReactNode } from 'react';
 import type { RouteObject } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PortalLayout } from '@/components/layout/PortalLayout';
-import { AuthGuard, GuestGuard, RoleGuard } from './guards';
+import { AuthGuard, GuestGuard, PermissionGuard } from './guards';
 
 function PageLoader() {
   return (
@@ -42,6 +43,7 @@ const StaffList = lazy(() => import('@/pages/staff/StaffList'));
 const StaffDetail = lazy(() => import('@/pages/staff/StaffDetail'));
 const StaffLeaderboard = lazy(() => import('@/pages/staff/Leaderboard'));
 const BranchManagement = lazy(() => import('@/pages/staff/BranchManagement'));
+const BranchDetail = lazy(() => import('@/pages/staff/BranchDetail'));
 const TaskDetail = lazy(() => import('@/pages/tasks/TaskDetail'));
 const ProjectDetail = lazy(() => import('@/pages/projects/ProjectDetail'));
 const MyAttendance = lazy(() => import('@/pages/attendance/MyAttendance'));
@@ -62,15 +64,18 @@ const LeadList = lazy(() => import('@/pages/crm/LeadList'));
 const LeadDetail = lazy(() => import('@/pages/crm/LeadDetail'));
 const Pipeline = lazy(() => import('@/pages/crm/Pipeline'));
 const SalesOrders = lazy(() => import('@/pages/crm/SalesOrders'));
+const SalesOrderDetail = lazy(() => import('@/pages/crm/SalesOrderDetail'));
 const ClientAccounts = lazy(() => import('@/pages/crm/ClientAccounts'));
 const Positions = lazy(() => import('@/pages/hr/Positions'));
 const Applications = lazy(() => import('@/pages/hr/Applications'));
 const Domains = lazy(() => import('@/pages/assets/Domains'));
+const DomainDetail = lazy(() => import('@/pages/assets/DomainDetail'));
 const Servers = lazy(() => import('@/pages/assets/Servers'));
+const ServerDetail = lazy(() => import('@/pages/assets/ServerDetail'));
 const Websites = lazy(() => import('@/pages/assets/Websites'));
+const WebsiteDetail = lazy(() => import('@/pages/assets/WebsiteDetail'));
 const Devices = lazy(() => import('@/pages/assets/Devices'));
 const ServiceList = lazy(() => import('@/pages/services/ServiceList'));
-const BacklinkPackages = lazy(() => import('@/pages/services/BacklinkPackages'));
 const TicketList = lazy(() => import('@/pages/support/TicketList'));
 const TicketDetail = lazy(() => import('@/pages/support/TicketDetail'));
 const BroadcastList = lazy(() => import('@/pages/broadcast/BroadcastList'));
@@ -78,6 +83,7 @@ const Analytics = lazy(() => import('@/pages/analytics/Analytics'));
 const Profile = lazy(() => import('@/pages/settings/Profile'));
 const Security = lazy(() => import('@/pages/settings/Security'));
 const Preferences = lazy(() => import('@/pages/settings/Preferences'));
+const RolePermissions = lazy(() => import('@/pages/settings/RolePermissions'));
 
 const PortalOrderDetail = lazy(() => import('@/pages/portal/PortalOrderDetail'));
 const Referrals = lazy(() => import('@/pages/portal/Referrals'));
@@ -96,6 +102,11 @@ const InvoiceDetail = lazy(() => import('@/pages/finance/InvoiceDetail'));
 const ExpenseDetail = lazy(() => import('@/pages/finance/ExpenseDetail'));
 const PayrollDetail = lazy(() => import('@/pages/payroll/PayrollDetail'));
 const ApplicationDetail = lazy(() => import('@/pages/hr/ApplicationDetail'));
+const PluginList = lazy(() => import('@/pages/plugins/PluginList'));
+const PluginDetail = lazy(() => import('@/pages/plugins/PluginDetail'));
+const ApiKeys = lazy(() => import('@/pages/settings/ApiKeys'));
+const MonitorDashboard = lazy(() => import('@/pages/monitor/MonitorDashboard'));
+const BranchCameras = lazy(() => import('@/pages/monitor/BranchCameras'));
 
 export const routes: RouteObject[] = [
   // Auth routes (guest only)
@@ -130,16 +141,24 @@ export const routes: RouteObject[] = [
     children: [
       { index: true, element: <Dashboard /> },
       { path: 'staff', element: <LazyPage element={<StaffList />} /> },
-      { path: 'staff/:id', element: <LazyPage element={<StaffDetail />} /> },
       { path: 'staff/leaderboard', element: <LazyPage element={<StaffLeaderboard />} /> },
       {
         path: 'staff/branches',
         element: (
-          <RoleGuard roles={['CEO', 'CO_MD', 'OP_MANAGER']}>
+          <PermissionGuard permission="staff.branches">
             <LazyPage element={<BranchManagement />} />
-          </RoleGuard>
+          </PermissionGuard>
         ),
       },
+      {
+        path: 'staff/branches/:branchId',
+        element: (
+          <PermissionGuard permission="staff.branches">
+            <LazyPage element={<BranchDetail />} />
+          </PermissionGuard>
+        ),
+      },
+      { path: 'staff/:id', element: <LazyPage element={<StaffDetail />} /> },
       { path: 'tasks', element: <TaskList /> },
       { path: 'tasks/mine', element: <MyTasks /> },
       { path: 'tasks/:id', element: <LazyPage element={<TaskDetail />} /> },
@@ -155,194 +174,227 @@ export const routes: RouteObject[] = [
       {
         path: 'payroll',
         element: (
-          <RoleGuard roles={['CEO', 'CO_MD', 'OP_MANAGER']}>
+          <PermissionGuard permission="payroll.access">
             <LazyPage element={<PayrollList />} />
-          </RoleGuard>
+          </PermissionGuard>
         ),
       },
       {
         path: 'payroll/:id',
         element: (
-          <RoleGuard roles={['CEO', 'CO_MD', 'OP_MANAGER']}>
+          <PermissionGuard permission="payroll.access">
             <LazyPage element={<PayrollDetail />} />
-          </RoleGuard>
+          </PermissionGuard>
         ),
       },
       { path: 'performance', element: <LazyPage element={<Performance />} /> },
       {
         path: 'finance/invoices',
         element: (
-          <RoleGuard roles={['CEO', 'CO_MD', 'OP_MANAGER']}>
+          <PermissionGuard permission="finance.access">
             <LazyPage element={<InvoiceList />} />
-          </RoleGuard>
+          </PermissionGuard>
         ),
       },
       {
         path: 'finance/invoices/:id',
         element: (
-          <RoleGuard roles={['CEO', 'CO_MD', 'OP_MANAGER']}>
+          <PermissionGuard permission="finance.access">
             <LazyPage element={<InvoiceDetail />} />
-          </RoleGuard>
+          </PermissionGuard>
         ),
       },
       {
         path: 'finance/expenses',
         element: (
-          <RoleGuard roles={['CEO', 'CO_MD', 'OP_MANAGER']}>
+          <PermissionGuard permission="finance.access">
             <LazyPage element={<ExpenseList />} />
-          </RoleGuard>
+          </PermissionGuard>
         ),
       },
       {
         path: 'finance/expenses/:id',
         element: (
-          <RoleGuard roles={['CEO', 'CO_MD', 'OP_MANAGER']}>
+          <PermissionGuard permission="finance.access">
             <LazyPage element={<ExpenseDetail />} />
-          </RoleGuard>
+          </PermissionGuard>
         ),
       },
       {
         path: 'finance/revenue',
         element: (
-          <RoleGuard roles={['CEO', 'CO_MD', 'OP_MANAGER']}>
+          <PermissionGuard permission="finance.access">
             <LazyPage element={<Revenue />} />
-          </RoleGuard>
+          </PermissionGuard>
         ),
       },
       {
         path: 'finance/forecast',
         element: (
-          <RoleGuard roles={['CEO', 'CO_MD', 'OP_MANAGER']}>
+          <PermissionGuard permission="finance.access">
             <LazyPage element={<Forecast />} />
-          </RoleGuard>
+          </PermissionGuard>
         ),
       },
       {
         path: 'finance/exchange-rates',
         element: (
-          <RoleGuard roles={['CEO', 'CO_MD', 'OP_MANAGER']}>
+          <PermissionGuard permission="finance.exchange_rates">
             <LazyPage element={<ExchangeRates />} />
-          </RoleGuard>
+          </PermissionGuard>
         ),
       },
       { path: 'crm/leads', element: <LazyPage element={<LeadList />} /> },
       { path: 'crm/leads/:id', element: <LazyPage element={<LeadDetail />} /> },
       { path: 'crm/pipeline', element: <LazyPage element={<Pipeline />} /> },
+      { path: 'crm/orders/:id', element: <LazyPage element={<SalesOrderDetail />} /> },
       { path: 'crm/orders', element: <LazyPage element={<SalesOrders />} /> },
       {
         path: 'crm/clients',
         element: (
-          <RoleGuard roles={['CEO', 'CO_MD', 'OP_MANAGER']}>
+          <PermissionGuard permission="crm.client_accounts">
             <LazyPage element={<ClientAccounts />} />
-          </RoleGuard>
+          </PermissionGuard>
         ),
       },
+      { path: 'hr', element: <Navigate to="/hr/positions" replace /> },
       {
         path: 'hr/positions',
         element: (
-          <RoleGuard roles={['CEO', 'CO_MD', 'OP_MANAGER', 'HR_MANAGER']}>
+          <PermissionGuard permission="hr.recruitment">
             <LazyPage element={<Positions />} />
-          </RoleGuard>
+          </PermissionGuard>
         ),
       },
       {
         path: 'hr/applications',
         element: (
-          <RoleGuard roles={['CEO', 'CO_MD', 'OP_MANAGER', 'HR_MANAGER']}>
+          <PermissionGuard permission="hr.recruitment">
             <LazyPage element={<Applications />} />
-          </RoleGuard>
+          </PermissionGuard>
         ),
       },
       {
         path: 'hr/applications/:id',
         element: (
-          <RoleGuard roles={['CEO', 'CO_MD', 'OP_MANAGER', 'HR_MANAGER']}>
+          <PermissionGuard permission="hr.recruitment">
             <LazyPage element={<ApplicationDetail />} />
-          </RoleGuard>
+          </PermissionGuard>
         ),
       },
+      { path: 'assets', element: <Navigate to="/assets/domains" replace /> },
+      { path: 'assets/domains/:id', element: <LazyPage element={<DomainDetail />} /> },
       { path: 'assets/domains', element: <LazyPage element={<Domains />} /> },
+      { path: 'assets/servers/:id', element: <LazyPage element={<ServerDetail />} /> },
       { path: 'assets/servers', element: <LazyPage element={<Servers />} /> },
+      { path: 'assets/websites/:id', element: <LazyPage element={<WebsiteDetail />} /> },
       { path: 'assets/websites', element: <LazyPage element={<Websites />} /> },
       {
         path: 'assets/devices',
         element: (
-          <RoleGuard roles={['CEO', 'CO_MD', 'OP_MANAGER']}>
+          <PermissionGuard permission="assets.devices">
             <LazyPage element={<Devices />} />
-          </RoleGuard>
+          </PermissionGuard>
         ),
       },
       { path: 'services', element: <LazyPage element={<ServiceList />} /> },
-      { path: 'services/backlinks', element: <LazyPage element={<BacklinkPackages />} /> },
+      { path: 'services/backlinks', element: <Navigate to="/services" replace /> },
       { path: 'support', element: <LazyPage element={<TicketList />} /> },
       { path: 'support/:id', element: <LazyPage element={<TicketDetail />} /> },
       {
         path: 'broadcast',
         element: (
-          <RoleGuard roles={['CEO', 'CO_MD', 'OP_MANAGER']}>
+          <PermissionGuard permission="broadcast.access">
             <LazyPage element={<BroadcastList />} />
-          </RoleGuard>
+          </PermissionGuard>
         ),
       },
       {
         path: 'analytics',
         element: (
-          <RoleGuard roles={['CEO', 'CO_MD', 'OP_MANAGER']}>
+          <PermissionGuard permission="analytics.access">
             <LazyPage element={<Analytics />} />
-          </RoleGuard>
+          </PermissionGuard>
         ),
       },
       { path: 'notifications', element: <NotificationList /> },
       { path: 'settings/profile', element: <LazyPage element={<Profile />} /> },
       { path: 'settings/security', element: <LazyPage element={<Security />} /> },
       { path: 'settings/preferences', element: <LazyPage element={<Preferences />} /> },
+      {
+        path: 'settings/role-permissions',
+        element: (
+          <PermissionGuard permission="settings.role_permissions">
+            <LazyPage element={<RolePermissions />} />
+          </PermissionGuard>
+        ),
+      },
+      { path: 'settings/api-keys', element: <LazyPage element={<ApiKeys />} /> },
+      {
+        path: 'monitor',
+        element: (
+          <PermissionGuard permission="monitor.view">
+            <LazyPage element={<MonitorDashboard />} />
+          </PermissionGuard>
+        ),
+      },
+      {
+        path: 'monitor/:branchId',
+        element: (
+          <PermissionGuard permission="monitor.view">
+            <LazyPage element={<BranchCameras />} />
+          </PermissionGuard>
+        ),
+      },
+      { path: 'plugins', element: <LazyPage element={<PluginList />} /> },
+      { path: 'plugins/:id', element: <LazyPage element={<PluginDetail />} /> },
       // Admin Portal
       {
         path: 'admin/portal/members',
         element: (
-          <RoleGuard roles={['CEO', 'CO_MD', 'OP_MANAGER']}>
+          <PermissionGuard permission="admin_portal.access">
             <LazyPage element={<PortalMembers />} />
-          </RoleGuard>
+          </PermissionGuard>
         ),
       },
       {
         path: 'admin/portal/members/:id',
         element: (
-          <RoleGuard roles={['CEO', 'CO_MD', 'OP_MANAGER']}>
+          <PermissionGuard permission="admin_portal.access">
             <LazyPage element={<PortalMemberDetail />} />
-          </RoleGuard>
+          </PermissionGuard>
         ),
       },
       {
         path: 'admin/portal/orders',
         element: (
-          <RoleGuard roles={['CEO', 'CO_MD', 'OP_MANAGER']}>
+          <PermissionGuard permission="admin_portal.access">
             <LazyPage element={<PortalOrdersAdmin />} />
-          </RoleGuard>
+          </PermissionGuard>
         ),
       },
       {
         path: 'admin/portal/commissions',
         element: (
-          <RoleGuard roles={['CEO', 'CO_MD', 'OP_MANAGER']}>
+          <PermissionGuard permission="admin_portal.access">
             <LazyPage element={<PortalCommissions />} />
-          </RoleGuard>
+          </PermissionGuard>
         ),
       },
       {
         path: 'admin/portal/payouts',
         element: (
-          <RoleGuard roles={['CEO', 'CO_MD', 'OP_MANAGER']}>
+          <PermissionGuard permission="admin_portal.access">
             <LazyPage element={<PortalPayouts />} />
-          </RoleGuard>
+          </PermissionGuard>
         ),
       },
       {
         path: 'admin/portal/deposits',
         element: (
-          <RoleGuard roles={['CEO', 'CO_MD', 'OP_MANAGER']}>
+          <PermissionGuard permission="admin_portal.access">
             <LazyPage element={<PortalDeposits />} />
-          </RoleGuard>
+          </PermissionGuard>
         ),
       },
     ],

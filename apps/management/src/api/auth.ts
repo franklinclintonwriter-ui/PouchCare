@@ -13,7 +13,7 @@ import type {
   PortalUser,
 } from '@/types/auth';
 
-function normalizeStaffUser(user: StaffUser & { role?: StaffUser['systemRole'] }): StaffUser {
+export function normalizeStaffUser(user: StaffUser & { role?: StaffUser['systemRole'] }): StaffUser {
   const normalizedRole = normalizeRole(user.systemRole ?? user.role);
   return {
     ...user,
@@ -82,19 +82,27 @@ export function useStaffLogout() {
 }
 
 export function useSetup2FA() {
+  const qc = useQueryClient();
   return useMutation({
     mutationFn: async (password: string) => {
       const res = await api.post<{ secret: string; otpauthUrl: string }>('/auth/2fa/setup', { password });
       return res.data;
     },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['auth', 'me'] });
+    },
   });
 }
 
 export function useVerify2FA() {
+  const qc = useQueryClient();
   return useMutation({
     mutationFn: async (code: string) => {
       const res = await api.post<{ message: string }>('/auth/2fa/verify', { code });
       return res.data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['auth', 'me'] });
     },
   });
 }

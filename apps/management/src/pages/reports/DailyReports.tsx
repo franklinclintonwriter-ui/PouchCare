@@ -2,14 +2,19 @@ import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FileText, Clock, CheckCircle2, TrendingUp, Smile, Meh, Frown, Heart, type LucideIcon } from 'lucide-react';
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
-import { useDailyReports } from '@/api/reports';
+import { useDailyReports, useReviewReport } from '@/api/reports';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Avatar } from '@/components/ui/Avatar';
+import { Button } from '@/components/ui/Button';
+import { Modal } from '@/components/ui/Modal';
+import { Textarea } from '@/components/ui/Textarea';
 import { StatsRow } from '@/components/shared/StatsRow';
+import { usePermission } from '@/hooks/usePermission';
 import { cn } from '@/utils/cn';
 import type { DailyReport } from '@/types/models';
+import { toast } from 'sonner';
 
 const moodConfig: Record<string, { icon: LucideIcon; color: string }> = {
   great: { icon: Heart, color: 'text-rose-500' },
@@ -20,9 +25,27 @@ const moodConfig: Record<string, { icon: LucideIcon; color: string }> = {
 
 export default function DailyReports() {
   const navigate = useNavigate();
+  const perm = usePermission();
   const [page, setPage] = useState(1);
+  const [reviewTarget, setReviewTarget] = useState<DailyReport | null>(null);
+  const [reviewNote, setReviewNote] = useState('');
 
   const { data, isLoading } = useDailyReports({ page, limit: 20 });
+  const reviewReport = useReviewReport();
+
+  const canReview = perm.can('hr.performance') || perm.isManager;
+
+  const handleReview = async () => {
+    if (!reviewTarget) return;
+    try {
+      await reviewReport.mutateAsync({ id: reviewTarget.id, note: reviewNote });
+      toast.success('Report reviewed');
+      setReviewTarget(null);
+      setReviewNote('');
+    } catch {
+      toast.error('Failed to submit review');
+    }
+  };
 
   const reports = data?.data ?? [];
   const meta = data?.meta;
@@ -104,6 +127,18 @@ export default function DailyReports() {
       label: 'Status',
       render: (row) => <StatusBadge status={row.status} size="sm" />,
     },
+    ...(canReview ? [{
+      key: 'review' as keyof DailyReport,
+      label: 'Review',
+      render: (row: DailyReport) => {
+        const canAct = row.status === 'SUBMITTED' || row.status === 'ESCALATED';
+        return canAct ? (
+          <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); setReviewTarget(row); setReviewNote(''); }}>
+            Review
+          </Button>
+        ) : null;
+      },
+    }] : []),
   ];
 
   return (
@@ -121,6 +156,32 @@ export default function DailyReports() {
           emptyDescription="No daily reports have been submitted yet"
         />
       </div>
+
+      <Modal
+        isOpen={!!reviewTarget}
+        onClose={() => { setReviewTarget(null); setReviewNote(''); }}
+        title={`Review: ${reviewTarget?.staffName ?? ''}`}
+        size="sm"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => { setReviewTarget(null); setReviewNote(''); }}>Cancel</Button>
+            <Button isLoading={reviewReport.isPending} onClick={handleReview}>Submit Review</Button>
+          </>
+        }
+      >
+        <div className="space-y-3">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Report date: <span className="font-medium">{reviewTarget ? new Date(reviewTarget.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}</span>
+          </p>
+          <Textarea
+            label="Review note"
+            placeholder="Feedback or approval note…"
+            value={reviewNote}
+            onChange={(e) => setReviewNote(e.target.value)}
+            rows={3}
+          />
+        </div>
+      </Modal>
     </PageTransition>
   );
 }

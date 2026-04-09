@@ -5,7 +5,10 @@ import { authenticate, requirePortal, type AuthRequest } from '@/middleware/auth
 import prisma from '@/lib/prisma'
 import { hashPassword, comparePassword } from '@/lib/hash'
 import { signAccess, signRefresh, verifyRefresh } from '@/lib/jwt'
-import { ok, created, badRequest, unauthorized, conflict, serverError, notFound } from '@/lib/response'
+import { ok, created, badRequest, unauthorized, conflict, serverError, notFound, serviceUnavailable } from '@/lib/response'
+import { isDbConnectionError, DB_UNAVAILABLE_MESSAGE } from '@/lib/dbErrors'
+import { sendVerificationEmail, sendPasswordResetEmail } from '@/lib/email'
+import { env } from '@/config/env'
 import crypto from 'crypto'
 import { nanoid } from 'nanoid'
 
@@ -54,11 +57,16 @@ router.post('/register', validate(registerSchema), async (req, res) => {
       }
     }
 
-    // TODO: Send verification email via Resend
-    console.log(`[DEV] Verify token for ${member.email}: ${verifyToken}`)
+    await sendVerificationEmail(member.email, verifyToken, env.PORTAL_URL).catch((err) =>
+      console.error('[portal/register] verification email:', err),
+    )
 
     return created(res, { ...member, message: 'Verification email sent' })
-  } catch (e) { console.error(e); return serverError(res) }
+  } catch (e) {
+    if (isDbConnectionError(e)) return serviceUnavailable(res, DB_UNAVAILABLE_MESSAGE)
+    console.error(e)
+    return serverError(res)
+  }
 })
 
 // POST /portal/login
@@ -84,7 +92,10 @@ router.post('/login', validate(loginSchema), async (req, res) => {
       access_token, refresh_token,
       user: { id: member.id, fullName: member.fullName, email: member.email, referralCode: member.referralCode, walletBalance: member.walletBalance },
     })
-  } catch { return serverError(res) }
+  } catch (e) {
+    if (isDbConnectionError(e)) return serviceUnavailable(res, DB_UNAVAILABLE_MESSAGE)
+    return serverError(res)
+  }
 })
 
 // POST /portal/verify-email
@@ -107,8 +118,9 @@ router.post('/resend-verification', validate(z.object({ email: z.string().email(
         where: { id: member.id },
         data: { emailVerifyToken: token },
       })
-      // TODO: send verification email via mail provider
-      console.log(`[DEV] Verification token for ${member.email}: ${token}`)
+      await sendVerificationEmail(member.email, token, env.PORTAL_URL).catch((err) =>
+        console.error('[portal/resend-verification] email:', err),
+      )
     }
     return ok(res, { message: 'If account exists and is unverified, a verification email has been sent' })
   } catch { return serverError(res) }
@@ -122,7 +134,9 @@ router.post('/forgot-password', validate(z.object({ email: z.string().email() })
       const token = crypto.randomBytes(32).toString('hex')
       const expires = new Date(Date.now() + 3600000) // 1 hour
       await prisma.portalMember.update({ where: { id: member.id }, data: { resetPasswordToken: token, resetTokenExpiry: expires } })
-      console.log(`[DEV] Reset token for ${member.email}: ${token}`)
+      await sendPasswordResetEmail(member.email, token, true).catch((err) =>
+        console.error('[portal/forgot-password] email:', err),
+      )
     }
     return ok(res, { message: 'If email exists, reset link has been sent' })
   } catch { return serverError(res) }

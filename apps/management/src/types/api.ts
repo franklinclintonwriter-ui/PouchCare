@@ -33,3 +33,12 @@ export interface FilterParams {
 }
 
 export type QueryParams = PaginationParams & FilterParams;
+
+/** Returned in `meta` when creating an email broadcast. */
+export interface BroadcastDeliverySummary {
+  attempted: number;
+  sent: number;
+  skipped: number;
+  failed: number;
+  failures?: { to: string; error: string }[];
+}

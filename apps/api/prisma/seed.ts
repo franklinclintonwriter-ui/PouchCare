@@ -1,3 +1,5 @@
+import 'dotenv/config'
+
 import {
   PrismaClient,
   SystemRole,
@@ -23,6 +25,8 @@ import bcrypt from 'bcryptjs'
 const prisma = new PrismaClient()
 
 const HASH = bcrypt.hashSync('Password123!', 10)
+/** Ops login: habib@pouchcare.com / Test@123 */
+const HABIB_OPS_HASH = bcrypt.hashSync('Test@123', 10)
 const now = new Date()
 const daysAgo = (d: number) => new Date(now.getTime() - d * 86_400_000)
 const daysFrom = (d: number) => new Date(now.getTime() + d * 86_400_000)
@@ -42,6 +46,48 @@ async function seedBranches() {
   console.log('✅ Branches seeded')
 }
 
+async function seedCameras() {
+  await prisma.cameraDevice.deleteMany({})
+
+  const branches = await prisma.branch.findMany({ orderBy: { name: 'asc' } })
+  const locations = [
+    'Main Entrance', 'Reception', 'Server Room', 'Office Floor', 'Parking Lot',
+    'Meeting Room A', 'Warehouse', 'Fire Exit',
+  ]
+  const nvrs = ['Hikvision DS-9632NI-I8', 'Dahua NVR5216-4KS2', 'Axis S3016', 'Synology NVR1218']
+  const angles = ['Wide 140°', 'Standard 90°', 'Narrow 60°', 'PTZ 360°']
+
+  let idx = 0
+  for (const b of branches) {
+    const count = b.name === 'London' ? 2 : b.name === 'Dhaka' ? 5 : 4
+    for (let i = 0; i < count; i++) {
+      idx++
+      const mod = idx % 5
+      const status = mod === 0 ? 'offline' : mod === 1 || mod === 2 ? 'recording' : 'online'
+      const lastMotion = status !== 'offline' ? daysAgo((idx * 7) % 48) : null
+      await prisma.cameraDevice.create({
+        data: {
+          branchId: b.id,
+          branchName: b.name,
+          label: `CAM-${String(i + 1).padStart(2, '0')}`,
+          location: locations[(i + idx) % locations.length],
+          status,
+          resolution: i % 2 === 0 ? '1080p' : '4K',
+          fps: [15, 25, 30][idx % 3],
+          angle: angles[idx % angles.length],
+          hasAudio: idx % 3 === 0,
+          hasMotionDetect: true,
+          nvrDevice: nvrs[(i + idx) % nvrs.length],
+          rtspUrl: `rtsp://nvr.local/${b.id}/stream/${i + 1}`,
+          lastMotionAt: lastMotion,
+          lastPingAt: status !== 'offline' ? now : daysAgo(3),
+        },
+      })
+    }
+  }
+  console.log('✅ Camera devices seeded')
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function seedStaff() {
@@ -49,6 +95,7 @@ async function seedStaff() {
     { email: 'ceo@pouchcare.com',    name: 'Abdullah Al Mamun', role: SystemRole.CEO,            branch: 'Dubai HQ',      jobRole: 'CEO & Founder',          skill: 'On-Page SEO',        level: 'Expert',        exp: 10, salary: null,  join: new Date('2016-01-01') },
     { email: 'comd@pouchcare.com',   name: 'Oliullah Mithu',    role: SystemRole.CO_MD,          branch: 'Bangladesh HQ', jobRole: 'Co-MD & Partner',        skill: 'Project Management', level: 'Expert',        exp: 8,  salary: null,  join: new Date('2017-06-01') },
     { email: 'ops@pouchcare.com',    name: 'Habib Sourov',      role: SystemRole.OP_MANAGER,     branch: 'Bangladesh HQ', jobRole: 'Operations Manager',     skill: 'Off-Page SEO',       level: 'Expert',        exp: 6,  salary: 2500, join: new Date('2019-03-01') },
+    { email: 'habib@pouchcare.com',  name: 'Habib Sourov',      role: SystemRole.OP_MANAGER,     branch: 'Bangladesh HQ', jobRole: 'Operations Manager',     skill: 'Off-Page SEO',       level: 'Expert',        exp: 6,  salary: 2500, join: new Date('2019-03-01') },
     { email: 'hr@pouchcare.com',     name: 'Fatema Khatun',     role: SystemRole.HR_MANAGER,     branch: 'Bangladesh HQ', jobRole: 'HR Manager',             skill: 'HR Management',      level: 'Advanced',      exp: 5,  salary: 1800, join: new Date('2020-01-10') },
     { email: 'branch@pouchcare.com', name: 'Kamal Hossain',     role: SystemRole.BRANCH_MANAGER, branch: 'Dhaka',         jobRole: 'Branch Manager – Dhaka', skill: 'Client Management',  level: 'Advanced',      exp: 4,  salary: 2000, join: new Date('2020-07-01') },
     { email: 'staff1@pouchcare.com', name: 'Farhan Ahmed',      role: SystemRole.STAFF,          branch: 'Bangladesh HQ', jobRole: 'SEO Specialist',         skill: 'Link Building',      level: 'Advanced',      exp: 3,  salary: 800,  join: new Date('2021-08-01') },
@@ -61,11 +108,14 @@ async function seedStaff() {
 
   const created: Record<string, string> = {}
   for (const m of members) {
+    const pwdHash = m.email === 'habib@pouchcare.com' ? HABIB_OPS_HASH : HASH
     const sm = await prisma.staffMember.upsert({
       where: { email: m.email },
-    update: {},
+    update: {
+        passwordHash: pwdHash,
+      },
     create: {
-        name: m.name, email: m.email, passwordHash: HASH,
+        name: m.name, email: m.email, passwordHash: pwdHash,
         systemRole: m.role, branch: m.branch, jobRole: m.jobRole,
         primarySkill: m.skill, skillLevel: m.level,
         yearsExperience: m.exp, employmentType: 'Full-Time',
@@ -690,7 +740,8 @@ async function seedPortal() {
   const portalIds: Record<string, string> = {}
   for (const m of members) {
     const pm = await prisma.portalMember.upsert({
-      where: { email: m.email }, update: {},
+      where: { email: m.email },
+      update: { passwordHash: HASH },
       create: { ...m, passwordHash: HASH, registrationDate: daysAgo(Math.floor(Math.random() * 180)) } as any,
     })
     portalIds[m.email] = pm.id
@@ -841,7 +892,19 @@ async function seedMisc() {
 async function main() {
   console.log('🌱 Seeding PouchCare database...\n')
 
+  try {
+    await prisma.$connect()
+  } catch {
+    console.error(
+      '\n❌ Cannot connect to PostgreSQL (check DATABASE_URL in apps/api/.env).\n' +
+        '   Start Postgres first, e.g. from repo root:  docker compose up -d\n' +
+        '   Then:  cd apps/api && npx prisma db push && npx prisma db seed\n\n',
+    )
+    process.exit(1)
+  }
+
   await seedBranches()
+  await seedCameras()
   const staffIds = await seedStaff()
   await seedServices()
   await seedBacklinkPackages()
@@ -861,11 +924,12 @@ async function main() {
 
   console.log('\n🎉 Seed complete!\n')
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-  console.log('  Login credentials (all passwords: Password123!)')
+  console.log('  Login credentials (default password: Password123!)')
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
   console.log('  CEO:             ceo@pouchcare.com')
   console.log('  Co-MD:           comd@pouchcare.com')
   console.log('  Ops Manager:     ops@pouchcare.com')
+  console.log('  Ops (alt):       habib@pouchcare.com   password: Test@123')
   console.log('  HR Manager:      hr@pouchcare.com')
   console.log('  Branch Manager:  branch@pouchcare.com')
   console.log('  Staff (×5):      staff1–5@pouchcare.com')

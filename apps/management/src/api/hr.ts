@@ -118,6 +118,14 @@ export function useUpdatePosition() {
   });
 }
 
+export function useDeletePosition() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.delete(`/hr/positions/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['positions'] }),
+  });
+}
+
 export function useApplications(params?: QueryParams) {
   return useQuery<PaginatedResponse<JobApplication>>({
     queryKey: ['applications', params],
@@ -144,6 +152,21 @@ export function useUpdateApplication() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, ...body }: Record<string, unknown> & { id: string }) => api.put(`/hr/applications/${id}`, body),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['applications'] }),
+    onSuccess: (_d, variables) => {
+      qc.invalidateQueries({ queryKey: ['applications'] });
+      qc.invalidateQueries({ queryKey: ['application', variables.id] });
+    },
+  });
+}
+
+export function useApplication(id: string | undefined) {
+  return useQuery<JobApplication | null>({
+    queryKey: ['application', id],
+    queryFn: async () => {
+      if (!id) return null;
+      const { data } = await api.get<RawApplication>(`/hr/applications/${id}`);
+      return mapApplication(data);
+    },
+    enabled: !!id,
   });
 }
