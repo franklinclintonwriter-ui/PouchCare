@@ -20,6 +20,9 @@ export interface CameraDevice {
   hasAudio: boolean;
   hasMotionDetect: boolean;
   nvrDevice?: string | null;
+  /** manual | vigi */
+  source?: string | null;
+  vigiChannel?: number | null;
   lastPingAt?: string | null;
   lastMotionAt?: string | null;
   notes?: string | null;
@@ -123,6 +126,7 @@ export function useCamerasByBranch(branchId: string | undefined) {
 function invalidateCameraQueries(qc: ReturnType<typeof useQueryClient>) {
   qc.invalidateQueries({ queryKey: ['cameras'] });
   qc.invalidateQueries({ queryKey: ['monitor-summary'] });
+  qc.invalidateQueries({ queryKey: ['camera-stream-urls'] });
 }
 
 export function useCreateCamera() {
@@ -164,6 +168,78 @@ export function useUpdateCameraStatus() {
     onSuccess: (_, v) => {
       invalidateCameraQueries(qc);
       qc.invalidateQueries({ queryKey: ['camera', v.id] });
+    },
+  });
+}
+
+// ── VIGI / NVR stream URLs (RTSP templates + optional HLS on camera) ──
+
+export type CameraStreamUrlsVigi = {
+  mode: 'vigi';
+  branchId: string;
+  channel: number;
+  nvrHost: string;
+  openApiPort: number;
+  /** https://host:port/ — NVR web UI (same TLS as OpenAPI; often self-signed on LAN) */
+  nvrHttpsUrl: string;
+  rtspPort: number;
+  liveMain: string;
+  liveSub: string;
+  nvrWebUiHint: string;
+  storedRtspUrl: string | null;
+  storedStreamUrl: string | null;
+  playbackNote: string;
+};
+
+export type CameraStreamUrlsManual = {
+  mode: 'manual';
+  branchId: string;
+  liveRtsp: string | null;
+  streamUrl: string | null;
+  hint: string;
+};
+
+export type CameraStreamUrls = CameraStreamUrlsVigi | CameraStreamUrlsManual;
+
+export function useCameraStreamUrls(cameraId: string | undefined) {
+  return useQuery<CameraStreamUrls>({
+    queryKey: ['camera-stream-urls', cameraId],
+    queryFn: async () => {
+      const { data } = await api.get<CameraStreamUrls>(`/assets/cameras/${cameraId}/stream-urls`);
+      return data as CameraStreamUrls;
+    },
+    enabled: !!cameraId,
+    refetchInterval: 12_000,
+    staleTime: 8_000,
+    retry: 2,
+  });
+}
+
+export type CameraExportWindowResult = {
+  replayRtsp: string;
+  channel: number;
+  nvrHost: string;
+  start: string;
+  end: string;
+  durationMinutes: number;
+  stream: 1 | 2;
+  filenameSuggestion: string;
+  exportHint: string;
+};
+
+export function useCameraExportWindow() {
+  return useMutation({
+    mutationFn: async (p: {
+      cameraId: string;
+      start: string;
+      end: string;
+      stream?: 1 | 2;
+    }) => {
+      const { data } = await api.post<CameraExportWindowResult>(
+        `/assets/cameras/${p.cameraId}/export-window`,
+        { start: p.start, end: p.end, stream: p.stream ?? 1 },
+      );
+      return data;
     },
   });
 }

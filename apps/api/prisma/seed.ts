@@ -47,6 +47,7 @@ async function seedBranches() {
 }
 
 async function seedCameras() {
+  await prisma.vigiNvrIntegration.deleteMany({})
   await prisma.cameraDevice.deleteMany({})
 
   const branches = await prisma.branch.findMany({ orderBy: { name: 'asc' } })

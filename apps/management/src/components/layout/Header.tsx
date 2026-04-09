@@ -12,7 +12,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 function Header() {
   const { actions } = useHeaderStore();
   const { openMobile } = useSidebarStore();
-  const { unreadCount, togglePanel } = useNotificationStore();
+  const { unreadCount, togglePanel, closePanel, isOpen: notificationsOpen } = useNotificationStore();
   const [scrolled, setScrolled] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   // Which filter is expanded inline (by index), or null
@@ -36,13 +36,21 @@ function Header() {
   }, [actions?.length]);
 
   const toggleFilter = (idx: number) => {
+    closePanel();
     setSearchOpen(false);
     setActiveFilter((prev) => (prev === idx ? null : idx));
   };
 
   const openSearch = () => {
+    closePanel();
     setActiveFilter(null);
     setSearchOpen((prev) => !prev);
+  };
+
+  const openNotifications = () => {
+    setSearchOpen(false);
+    setActiveFilter(null);
+    togglePanel();
   };
 
   // The currently expanded filter (if any)
@@ -122,11 +130,14 @@ function Header() {
 
           {/* Notifications */}
           <button
-            onClick={togglePanel}
+            type="button"
+            data-notification-bell
+            onClick={openNotifications}
             aria-label="Notifications"
-            className="relative rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-300"
+            aria-expanded={notificationsOpen}
+            className="relative flex min-h-[40px] min-w-[40px] touch-manipulation items-center justify-center rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 active:bg-gray-200 dark:hover:bg-gray-800 dark:hover:text-gray-300 dark:active:bg-gray-700"
           >
-            <Bell className="h-4 w-4" />
+            <Bell className="h-5 w-5 sm:h-4 sm:w-4" />
             {unreadCount > 0 && (
               <span className="absolute right-1 top-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white">
                 {unreadCount > 99 ? '99+' : unreadCount}

@@ -462,6 +462,7 @@ model Branch {
   notes            String?
   createdAt        DateTime      @default(now()) @map("created_at")
   cameraDevices    CameraDevice[]
+  vigiNvrIntegration VigiNvrIntegration?
   @@map("branches")
 }
 
@@ -1017,31 +1018,60 @@ model PluginActivation {
 }
 
 // ── CCTV / Camera Monitoring ─────────────────────────────────────────────────
+// TP-Link VIGI NVR OpenAPI (local HTTPS, default port 20443). One NVR per branch.
+
+model VigiNvrIntegration {
+  id                   String         @id @default(uuid())
+  branchId             String         @unique @map("branch_id")
+  host                 String
+  port                 Int            @default(20443)
+  username             String         @default("admin")
+  passwordEncrypted    String         @map("password_encrypted")
+  tlsAllowInsecure     Boolean        @default(false) @map("tls_allow_insecure")
+  enabled              Boolean        @default(true)
+  lastSyncAt           DateTime?      @map("last_sync_at")
+  lastError            String?        @map("last_error")
+  createdAt            DateTime       @default(now()) @map("created_at")
+  updatedAt            DateTime       @updatedAt @map("updated_at")
+
+  branch               Branch         @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  cameras              CameraDevice[]
+
+  @@map("vigi_nvr_integrations")
+}
 
 model CameraDevice {
-  id               String        @id @default(uuid())
-  branchId         String        @map("branch_id")
-  branchName       String?       @map("branch_name")
-  label            String
-  location         String?
-  ipAddress        String?       @map("ip_address")
-  streamUrl        String?       @map("stream_url")
-  rtspUrl          String?       @map("rtsp_url")
-  status           String        @default("online") // online | offline | recording
-  resolution       String?       @default("1080p")
-  fps              Int?          @default(25)
-  angle            String?
-  hasAudio         Boolean       @default(false) @map("has_audio")
-  hasMotionDetect  Boolean       @default(true) @map("has_motion_detect")
-  nvrDevice        String?       @map("nvr_device")
-  lastPingAt       DateTime?     @map("last_ping_at")
-  lastMotionAt     DateTime?     @map("last_motion_at")
-  notes            String?
-  createdAt        DateTime      @default(now()) @map("created_at")
-  updatedAt        DateTime      @updatedAt @map("updated_at")
+  id                  String               @id @default(uuid())
+  branchId            String               @map("branch_id")
+  branchName          String?              @map("branch_name")
+  label               String
+  location            String?
+  ipAddress           String?              @map("ip_address")
+  streamUrl           String?              @map("stream_url")
+  rtspUrl             String?              @map("rtsp_url")
+  status              String               @default("online") // online | offline | recording
+  resolution          String?              @default("1080p")
+  fps                 Int?                 @default(25)
+  angle               String?
+  hasAudio            Boolean              @default(false) @map("has_audio")
+  hasMotionDetect     Boolean              @default(true) @map("has_motion_detect")
+  nvrDevice           String?              @map("nvr_device")
+  // manual | vigi (VIGI OpenAPI sync)
+  source              String               @default("manual") @map("source")
+  vigiIntegrationId   String?              @map("vigi_integration_id")
+  vigiChannel         Int?                 @map("vigi_channel")
+  // Stable upsert key: integrationId:channel
+  vigiSyncKey         String?              @unique @map("vigi_sync_key")
+  lastPingAt          DateTime?            @map("last_ping_at")
+  lastMotionAt        DateTime?            @map("last_motion_at")
+  notes               String?
+  createdAt           DateTime             @default(now()) @map("created_at")
+  updatedAt           DateTime             @updatedAt @map("updated_at")
 
-  branch           Branch        @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  branch              Branch               @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  vigiIntegration     VigiNvrIntegration?  @relation(fields: [vigiIntegrationId], references: [id], onDelete: SetNull)
 
   @@index([branchId])
+  @@index([vigiIntegrationId])
   @@map("camera_devices")
 }

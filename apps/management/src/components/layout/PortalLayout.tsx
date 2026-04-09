@@ -3,6 +3,7 @@ import { cn } from '@/utils/cn';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useIsMobile } from '@/hooks/useMediaQuery';
 import { Header } from './Header';
+import { NotificationBridge } from './NotificationBridge';
 import { Sidebar } from './Sidebar';
 import { MobileNav } from './MobileNav';
 
@@ -21,6 +22,7 @@ function PortalLayout() {
         )}
       >
         <Header />
+        <NotificationBridge />
 
         <main className="px-4 pb-20 pt-4 lg:px-6 lg:pb-6 lg:pt-5">
           <div className="content-shell max-w-5xl space-y-4 lg:space-y-6">

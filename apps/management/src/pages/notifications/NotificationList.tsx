@@ -15,6 +15,7 @@ import { Card } from '@/components/ui/Card';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { Skeleton } from '@/components/ui/Skeleton';
 import type { AppNotification } from '@/types/models';
+import { formatNotificationTime } from '@/lib/format';
 
 const typeIcons: Record<string, React.ReactNode> = {
   task: <CheckCircle2 className="h-4 w-4 text-blue-500" />,
@@ -24,18 +25,6 @@ const typeIcons: Record<string, React.ReactNode> = {
   system: <AlertCircle className="h-4 w-4 text-red-500" />,
   order: <ShoppingCart className="h-4 w-4 text-cyan-500" />,
 };
-
-function relativeTime(date: string): string {
-  const diff = Date.now() - new Date(date).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'Just now';
-  if (mins < 60) return `${mins}m ago`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}d ago`;
-  return new Date(date).toLocaleDateString();
-}
 
 function groupByDate(notifications: AppNotification[]): Record<string, AppNotification[]> {
   const groups: Record<string, AppNotification[]> = {};
@@ -62,7 +51,8 @@ function groupByDate(notifications: AppNotification[]): Record<string, AppNotifi
 
 export default function NotificationList() {
   const navigate = useNavigate();
-  const { data: notifications, isLoading } = useNotifications();
+  const { data, isLoading } = useNotifications();
+  const notifications = data?.notifications ?? [];
 
   const headerConfig = useMemo(() => ({
     title: 'Notifications',
@@ -122,7 +112,7 @@ export default function NotificationList() {
                     {notif.title}
                   </p>
                   <p className="text-[11px] text-gray-400 dark:text-gray-500">
-                    {relativeTime(notif.timestamp)}
+                    {formatNotificationTime(notif.timestamp)}
                   </p>
                 </div>
                 {!notif.read && (

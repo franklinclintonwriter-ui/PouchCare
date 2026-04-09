@@ -14,6 +14,19 @@ import { Button } from '@/components/ui/Button';
 import { LiveViewerModal } from '@/components/monitor/LiveViewerModal';
 import { useCamerasByBranch, type CameraDevice } from '@/api/monitor';
 import { useBranchDetail } from '@/api/admin-resources';
+import { usePermission } from '@/hooks/usePermission';
+import { VigiIntegrationCard } from '@/components/monitor/VigiIntegrationCard';
+
+function formatMotionAge(iso: string): string {
+  const t = Date.now() - new Date(iso).getTime();
+  if (t < 0) return new Date(iso).toLocaleString();
+  const m = Math.floor(t / 60_000);
+  if (m < 1) return 'just now';
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 48) return `${h}h ago`;
+  return new Date(iso).toLocaleDateString();
+}
 
 // ── Status helpers ──────────────────────────────────────────
 
@@ -171,6 +184,9 @@ function CameraGridTile({
             <div className="min-w-0">
               <p className="truncate text-xs font-bold text-white">{camera.label}</p>
               <p className="truncate text-[10px] text-gray-400">{camera.location}</p>
+              {camera.lastMotionAt && camera.hasMotionDetect && (
+                <p className="truncate text-[9px] text-blue-300/90">Motion {formatMotionAge(camera.lastMotionAt)}</p>
+              )}
             </div>
             <div className="shrink-0 text-right">
               <p className="text-[10px] font-medium text-gray-400">{camera.resolution ?? '—'}</p>
@@ -346,6 +362,8 @@ export default function BranchCameras() {
   const { branchId } = useParams<{ branchId: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { hasRole } = usePermission();
+  const canVigiManage = hasRole(['CEO', 'CO_MD', 'OP_MANAGER']);
 
   const {
     data: branchPayload,
@@ -500,6 +518,10 @@ export default function BranchCameras() {
 
       {/* Stats bar */}
       <BranchStatsBar nvrLabel={cameras[0]?.nvrDevice ?? '—'} cameras={cameras} />
+
+      {branchId && (
+        <VigiIntegrationCard branchId={branchId} canManage={canVigiManage} />
+      )}
 
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-2">

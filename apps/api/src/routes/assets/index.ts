@@ -10,9 +10,14 @@ import {
   cameraUpdateSchema,
   cameraStatusPatchSchema,
 } from '@/routes/assets/cameraSchemas'
+import vigiRoutes from '@/routes/assets/vigiRoutes'
+import cameraStreamRoutes from '@/routes/assets/cameraStreamRoutes'
 
 const router = Router()
 router.use(authenticate)
+
+router.use(cameraStreamRoutes)
+router.use('/vigi', vigiRoutes)
 
 // ── DOMAINS ──
 router.get('/domains', requireStaff, async (req, res) => {
