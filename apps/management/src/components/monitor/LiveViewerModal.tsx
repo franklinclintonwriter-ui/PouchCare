@@ -493,11 +493,11 @@ export function LiveViewerModal({
             transition={{ type: 'spring', damping: 32, stiffness: 320 }}
             onMouseMove={resetControlsTimer}
             onTouchStart={resetControlsTimer}
-            className="fixed inset-4 z-50 flex overflow-hidden rounded-2xl bg-gray-950 shadow-2xl ring-1 ring-white/[0.08] md:inset-8"
+            className="fixed inset-0 z-50 flex overflow-hidden rounded-none bg-gray-950 shadow-2xl ring-1 ring-white/[0.08] sm:inset-4 sm:rounded-2xl md:inset-8"
             onClick={(e) => e.stopPropagation()}
           >
             {/* ── Main content area ── */}
-            <div className="relative flex flex-1 flex-col overflow-hidden">
+            <div className="relative z-0 flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
 
               {/* Multiview grid overlay (2×2) */}
               <AnimatePresence>
@@ -598,12 +598,12 @@ export function LiveViewerModal({
                   <>
                     <LiveFeedPlaceholder camera={camera!} isMuted={isMuted} />
                     {streamUrlsFetching && !streamUrls && !streamUrlsError && (
-                      <div className="absolute bottom-24 left-3 right-3 z-20 rounded-lg border border-white/10 bg-black/70 px-3 py-2 text-[11px] text-gray-300 backdrop-blur-sm">
+                      <div className="absolute bottom-28 left-2 right-2 z-20 rounded-lg border border-white/10 bg-black/70 px-3 py-2 text-[11px] text-gray-300 backdrop-blur-sm sm:bottom-24 sm:left-3 sm:right-3">
                         Loading NVR stream URLs…
                       </div>
                     )}
                     {streamUrlsError && (
-                      <div className="absolute bottom-24 left-3 right-3 z-20 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-500/35 bg-amber-950/80 px-3 py-2.5 text-[11px] text-amber-100 backdrop-blur-md">
+                      <div className="absolute bottom-28 left-2 right-2 z-20 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-500/35 bg-amber-950/80 px-3 py-2.5 text-[11px] text-amber-100 backdrop-blur-md sm:bottom-24 sm:left-3 sm:right-3">
                         <span>Could not load stream URLs from the server.</span>
                         <button
                           type="button"
@@ -615,7 +615,7 @@ export function LiveViewerModal({
                       </div>
                     )}
                     {streamUrls?.mode === 'vigi' && (
-                      <div className="absolute bottom-24 left-3 right-3 z-20 flex flex-col gap-2 rounded-xl border border-white/10 bg-black/75 p-3 text-[11px] text-gray-200 backdrop-blur-md sm:flex-row sm:items-start sm:justify-between">
+                      <div className="absolute bottom-28 left-2 right-2 z-20 flex max-h-[42vh] flex-col gap-2 overflow-y-auto rounded-xl border border-white/10 bg-black/75 p-2.5 text-[10px] text-gray-200 backdrop-blur-md sm:bottom-24 sm:left-3 sm:right-3 sm:max-h-none sm:flex-row sm:items-start sm:justify-between sm:p-3 sm:text-[11px]">
                         <div className="flex items-start gap-2 min-w-0">
                           <Link2 className="mt-0.5 h-4 w-4 shrink-0 text-blue-400" />
                           <div className="min-w-0">
@@ -676,7 +676,7 @@ export function LiveViewerModal({
                       </div>
                     )}
                     {streamUrls?.mode === 'manual' && (camera.rtspUrl || camera.streamUrl) && (
-                      <div className="absolute bottom-24 left-3 right-3 z-20 rounded-lg border border-white/10 bg-black/70 px-3 py-2 text-[10px] text-gray-300 backdrop-blur-sm">
+                      <div className="absolute bottom-28 left-2 right-2 z-20 rounded-lg border border-white/10 bg-black/70 px-3 py-2 text-[10px] text-gray-300 backdrop-blur-sm sm:bottom-24 sm:left-3 sm:right-3">
                         Set an HLS (.m3u8) stream URL on the camera for in-browser video; RTSP: copy from camera record
                         for VLC.
                       </div>
@@ -702,8 +702,8 @@ export function LiveViewerModal({
                 )}
 
                 {/* ── Top HUD — always visible ── */}
-                <div className="absolute left-0 right-0 top-0 bg-gradient-to-b from-black/80 via-black/30 to-transparent p-4 pb-8">
-                  <div className="flex items-start justify-between gap-3">
+                <div className="absolute left-0 right-0 top-0 bg-gradient-to-b from-black/80 via-black/30 to-transparent p-3 pb-6 pt-[max(0.75rem,env(safe-area-inset-top))] sm:p-4 sm:pb-8">
+                  <div className="flex items-start justify-between gap-2 sm:gap-3">
                     {/* Left: camera identity */}
                     <div className="flex flex-col gap-1">
                       <div className="flex items-center gap-2">
@@ -731,33 +731,33 @@ export function LiveViewerModal({
                     </div>
 
                     {/* Right: controls */}
-                    <div className="flex items-center gap-1">
+                    <div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
                       <button
                         type="button"
                         onClick={() => setShowShortcuts(true)}
                         title="Keyboard shortcuts (?)"
-                        className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-white/10 hover:text-white"
+                        className="rounded-lg p-2.5 text-gray-400 transition-colors hover:bg-white/10 hover:text-white sm:p-2"
                       >
                         <Keyboard className="h-4 w-4" />
                       </button>
                       <button
                         onClick={() => setShowMultiview((v) => !v)}
                         title="Multi-view (4 cameras)"
-                        className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-white/10 hover:text-white"
+                        className="rounded-lg p-2.5 text-gray-400 transition-colors hover:bg-white/10 hover:text-white sm:p-2"
                       >
                         <LayoutGrid className="h-4 w-4" />
                       </button>
                       <button
                         onClick={() => setShowSidebar((s) => !s)}
                         title="Toggle camera list"
-                        className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-white/10 hover:text-white"
+                        className="rounded-lg p-2.5 text-gray-400 transition-colors hover:bg-white/10 hover:text-white sm:p-2"
                       >
                         <Camera className="h-4 w-4" />
                       </button>
                       <button
                         onClick={onClose}
                         title="Close (Esc)"
-                        className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-white/10 hover:text-white"
+                        className="rounded-lg p-2.5 text-gray-400 transition-colors hover:bg-white/10 hover:text-white sm:p-2"
                       >
                         <X className="h-5 w-5" />
                       </button>
@@ -769,7 +769,7 @@ export function LiveViewerModal({
                 <motion.div
                   animate={{ opacity: showControls ? 1 : 0, y: showControls ? 0 : 8 }}
                   transition={{ duration: 0.25 }}
-                  className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent p-4 pt-10"
+                  className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent p-3 pb-[max(1rem,env(safe-area-inset-bottom))] pt-8 sm:p-4 sm:pt-10"
                 >
                   {/* Info row */}
                   <div className="mb-2.5 flex flex-wrap items-center gap-3 text-xs text-gray-400">
@@ -879,6 +879,15 @@ export function LiveViewerModal({
               </div>
             </div>
 
+            {showSidebar && (
+              <button
+                type="button"
+                aria-label="Close camera list"
+                className="absolute inset-0 z-[54] bg-black/55 md:hidden"
+                onClick={() => setShowSidebar(false)}
+              />
+            )}
+
             {/* ── Camera list sidebar ── */}
             <AnimatePresence initial={false}>
               {showSidebar && (
@@ -888,6 +897,7 @@ export function LiveViewerModal({
                   animate={{ width: 224, opacity: 1 }}
                   exit={{ width: 0, opacity: 0 }}
                   transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+                  className="relative z-[56] max-md:absolute max-md:right-0 max-md:top-0 max-md:h-full max-md:shadow-2xl md:relative md:z-auto"
                   style={{ overflow: 'hidden', flexShrink: 0 }}
                 >
                   <div className="flex h-full w-56 flex-col border-l border-white/[0.08] bg-gray-900/90 backdrop-blur-md">
@@ -923,7 +933,7 @@ export function LiveViewerModal({
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 p-4"
+                  className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 p-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:p-4"
                   onClick={() => {
                     setShowExport(false);
                     setExportResult(null);
@@ -933,12 +943,12 @@ export function LiveViewerModal({
                     initial={{ scale: 0.96, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     exit={{ scale: 0.96, opacity: 0 }}
-                    className="w-full max-w-lg rounded-2xl border border-gray-600 bg-gray-950 p-5 shadow-2xl"
+                    className="max-h-[min(90vh,720px)] w-full max-w-lg overflow-y-auto overscroll-contain rounded-2xl border border-gray-600 bg-gray-950 p-4 shadow-2xl sm:p-5"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <div className="mb-4 flex items-center justify-between gap-2">
                       <h3 className="flex items-center gap-2 text-sm font-semibold text-white">
-                        <Film className="h-4 w-4 text-blue-400" />
+                        <Film className="h-4 w-4 shrink-0 text-blue-400" />
                         Export footage (replay RTSP)
                       </h3>
                       <button
@@ -1141,14 +1151,14 @@ export function LiveViewerModal({
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="fixed inset-0 z-[75] flex items-center justify-center bg-black/75 p-4"
+                  className="fixed inset-0 z-[75] flex items-center justify-center bg-black/75 p-3 pt-[max(1rem,env(safe-area-inset-top))] sm:p-4"
                   onClick={() => setShowShortcuts(false)}
                 >
                   <motion.div
                     initial={{ scale: 0.96, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     exit={{ scale: 0.96, opacity: 0 }}
-                    className="w-full max-w-md rounded-2xl border border-gray-600 bg-gray-950 p-5 shadow-2xl"
+                    className="max-h-[85vh] w-full max-w-md overflow-y-auto overscroll-contain rounded-2xl border border-gray-600 bg-gray-950 p-4 shadow-2xl sm:p-5"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <div className="mb-4 flex items-center justify-between gap-2">

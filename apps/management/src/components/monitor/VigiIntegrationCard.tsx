@@ -125,7 +125,7 @@ export function VigiIntegrationCard({ branchId, canManage }: Props) {
   }
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-900/60">
+    <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm dark:border-gray-700 dark:bg-gray-900/60 sm:p-4">
       <div className="mb-3 flex items-center gap-2">
         <Link2 className="h-4 w-4 text-primary-500" />
         <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">TP-Link VIGI NVR</h2>
@@ -223,13 +223,20 @@ export function VigiIntegrationCard({ branchId, canManage }: Props) {
         </p>
       )}
 
-      <div className="mt-4 flex flex-wrap gap-2">
-        <Button size="sm" variant="primary" onClick={onSave} disabled={upsert.isPending || !host.trim()}>
+      <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+        <Button
+          size="sm"
+          variant="primary"
+          className="min-h-[44px] w-full justify-center sm:min-h-0 sm:w-auto"
+          onClick={onSave}
+          disabled={upsert.isPending || !host.trim()}
+        >
           {upsert.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Save integration'}
         </Button>
         <Button
           size="sm"
           variant="outline"
+          className="min-h-[44px] w-full justify-center sm:min-h-0 sm:w-auto"
           onClick={onTest}
           disabled={test.isPending || testSaved.isPending}
         >
@@ -242,13 +249,20 @@ export function VigiIntegrationCard({ branchId, canManage }: Props) {
         <Button
           size="sm"
           variant="outline"
+          className="min-h-[44px] w-full justify-center sm:min-h-0 sm:w-auto"
           onClick={onSync}
           disabled={sync.isPending || !integration}
         >
           {sync.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Sync cameras'}
         </Button>
         {integration && (
-          <Button size="sm" variant="ghost" className="text-red-600" onClick={onRemove} disabled={del.isPending}>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="min-h-[44px] w-full justify-center text-red-600 sm:min-h-0 sm:w-auto"
+            onClick={onRemove}
+            disabled={del.isPending}
+          >
             <Trash2 className="mr-1 h-3.5 w-3.5" /> Remove
           </Button>
         )}

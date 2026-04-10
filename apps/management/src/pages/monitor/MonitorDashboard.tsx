@@ -46,7 +46,7 @@ function MonitorKPIs({
   const healthChange = onlinePct - 100;
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
       <KPICard
         title="Total Cameras"
         value={s.totalCameras}
@@ -92,7 +92,7 @@ function SystemHealthBar({ totals }: { totals: MonitorSummaryPayload['totals'] }
     pct >= 90 ? 'All systems healthy' : pct >= 60 ? 'Partial outages detected' : 'Critical — multiple cameras offline';
 
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-gray-200/80 bg-white px-4 py-3 shadow-soft dark:border-gray-700/60 dark:bg-gray-800/80">
+    <div className="flex flex-col gap-3 rounded-xl border border-gray-200/80 bg-white px-3 py-3 shadow-soft sm:flex-row sm:items-center sm:gap-3 sm:px-4 dark:border-gray-700/60 dark:bg-gray-800/80">
       <div
         className={cn(
           'flex h-8 w-8 shrink-0 items-center justify-center rounded-full',
@@ -130,7 +130,7 @@ function SystemHealthBar({ totals }: { totals: MonitorSummaryPayload['totals'] }
           />
         </div>
       </div>
-      <div className="flex shrink-0 items-center gap-1 text-xs text-gray-400">
+      <div className="flex shrink-0 items-center justify-end gap-1 border-t border-gray-100 pt-2 text-xs text-gray-400 sm:border-0 sm:pt-0 dark:border-gray-700/60">
         <Activity className="h-3 w-3" />
         <span>
           {s.onlineBranches}/{s.totalBranches} branches
@@ -429,7 +429,7 @@ export default function MonitorDashboard() {
   }
 
   return (
-    <PageTransition className="space-y-5">
+    <PageTransition className="space-y-5 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
       <MonitorKPIs totals={totals} loading={loading} />
 
       <SystemHealthBar totals={totals} />

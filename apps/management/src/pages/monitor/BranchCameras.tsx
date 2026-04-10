@@ -223,21 +223,21 @@ function CameraListRow({
       transition={{ duration: 0.14 }}
       onClick={onClick}
       className={cn(
-        'flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left transition-all duration-150',
+        'flex w-full flex-col gap-3 rounded-xl border px-3 py-3 text-left transition-all duration-150 sm:flex-row sm:items-center sm:gap-3 sm:px-4',
         'border-gray-200/70 bg-white hover:border-blue-300 hover:bg-blue-50/40',
         'dark:border-gray-700/50 dark:bg-gray-900/60 dark:hover:border-blue-500/50 dark:hover:bg-gray-900',
-        'focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500',
+        'focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 active:scale-[0.99]',
         camera.status === 'offline' && 'opacity-60',
       )}
     >
       {/* Thumbnail */}
-      <div className="relative h-12 w-20 shrink-0 overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700/60">
+      <div className="relative h-14 w-full shrink-0 overflow-hidden rounded-lg border border-gray-200 sm:h-12 sm:w-20 dark:border-gray-700/60">
         <LiveFeedThumbnail camera={camera} />
       </div>
 
       {/* Info */}
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
           <StatusDot status={camera.status} />
           <span className="font-semibold text-gray-900 dark:text-white">{camera.label}</span>
           <span className="truncate text-sm text-gray-500">{camera.location}</span>
@@ -262,7 +262,7 @@ function CameraListRow({
       </div>
 
       {/* Last motion + status badge */}
-      <div className="flex shrink-0 flex-col items-end gap-1.5">
+      <div className="flex shrink-0 flex-row items-center justify-between gap-2 sm:flex-col sm:items-end sm:justify-start sm:gap-1.5">
         {camera.status === 'recording' && (
           <Badge variant="danger" size="sm" className="flex items-center gap-1">
             <Radio className="h-2.5 w-2.5" /> REC
@@ -292,31 +292,33 @@ function BranchStatsBar({ nvrLabel, cameras }: { nvrLabel: string; cameras: Came
   const pct = cameras.length > 0 ? Math.round((online / cameras.length) * 100) : 0;
 
   return (
-    <div className="rounded-xl border border-gray-800/60 bg-gray-900/70 px-4 py-3 dark:bg-gray-900/70">
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="flex items-center gap-2 text-sm">
-          <span className="relative flex h-2.5 w-2.5">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
-          </span>
-          <span className="font-semibold text-white">{online}</span>
-          <span className="text-gray-400">online</span>
-        </div>
-        <div className="h-4 w-px bg-gray-700" />
-        <div className="flex items-center gap-2 text-sm">
-          <Radio className="h-3.5 w-3.5 text-red-500" />
-          <span className="font-semibold text-white">{recording}</span>
-          <span className="text-gray-400">recording</span>
-        </div>
-        <div className="h-4 w-px bg-gray-700" />
-        <div className="flex items-center gap-2 text-sm">
-          <WifiOff className="h-3.5 w-3.5 text-gray-600" />
-          <span className="font-semibold text-white">{offline}</span>
-          <span className="text-gray-400">offline</span>
+    <div className="rounded-xl border border-gray-800/60 bg-gray-900/70 px-3 py-3 sm:px-4 dark:bg-gray-900/70">
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
+          <div className="flex items-center gap-2">
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
+            </span>
+            <span className="font-semibold text-white">{online}</span>
+            <span className="text-gray-400">online</span>
+          </div>
+          <div className="hidden h-4 w-px bg-gray-700 sm:block" />
+          <div className="flex items-center gap-2">
+            <Radio className="h-3.5 w-3.5 text-red-500" />
+            <span className="font-semibold text-white">{recording}</span>
+            <span className="text-gray-400">recording</span>
+          </div>
+          <div className="hidden h-4 w-px bg-gray-700 sm:block" />
+          <div className="flex items-center gap-2">
+            <WifiOff className="h-3.5 w-3.5 text-gray-600" />
+            <span className="font-semibold text-white">{offline}</span>
+            <span className="text-gray-400">offline</span>
+          </div>
         </div>
 
-        <div className="ml-auto flex items-center gap-3 text-xs">
-          <span className="text-gray-400">
+        <div className="flex flex-wrap items-center gap-2 border-t border-gray-800 pt-3 text-xs sm:ml-auto sm:border-0 sm:pt-0">
+          <span className="min-w-0 truncate text-gray-400">
             NVR: <span className="text-gray-300">{nvrLabel}</span>
           </span>
           <span
@@ -493,26 +495,28 @@ export default function BranchCameras() {
   const showEmpty = filteredCameras.length === 0;
 
   return (
-    <PageTransition className="space-y-4">
+    <PageTransition className="space-y-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
       {/* Back + branch header */}
-      <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={() => navigate('/monitor')}
-          className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          All Branches
-        </button>
-        <div className="h-4 w-px bg-gray-200 dark:bg-gray-700" />
-        <div>
-          <h1 className="text-base font-bold text-gray-900 dark:text-gray-100">
-            {displayBranch!.name}
-          </h1>
-          <p className="text-xs text-gray-500">
-            {[displayBranch!.city, displayBranch!.country].filter(Boolean).join(', ') || '—'}
-            {displayBranch!.address ? ` — ${displayBranch!.address}` : ''}
-          </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-3">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+          <button
+            type="button"
+            onClick={() => navigate('/monitor')}
+            className="flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-lg px-2 py-2 text-sm text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 active:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200 dark:active:bg-gray-700"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            All Branches
+          </button>
+          <div className="hidden h-4 w-px bg-gray-200 sm:block dark:bg-gray-700" />
+          <div className="min-w-0 flex-1">
+            <h1 className="truncate text-base font-bold text-gray-900 dark:text-gray-100">
+              {displayBranch!.name}
+            </h1>
+            <p className="line-clamp-2 text-xs text-gray-500">
+              {[displayBranch!.city, displayBranch!.country].filter(Boolean).join(', ') || '—'}
+              {displayBranch!.address ? ` — ${displayBranch!.address}` : ''}
+            </p>
+          </div>
         </div>
       </div>
 
@@ -523,100 +527,103 @@ export default function BranchCameras() {
         <VigiIntegrationCard branchId={branchId} canManage={canVigiManage} />
       )}
 
-      {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-2">
-        {/* Search */}
-        <div className="relative">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search cameras…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className={cn(
-              'h-8 rounded-lg border border-gray-200 bg-gray-50 pl-8 pr-8 text-xs text-gray-700',
-              'placeholder:text-gray-400 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400',
-              'dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200',
-              'w-40 sm:w-52',
+      {/* Toolbar — stacked on narrow screens for touch-friendly layout */}
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-wrap items-stretch gap-2 sm:items-center">
+          <div className="relative min-w-0 flex-1 sm:max-w-xs">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <input
+              type="search"
+              enterKeyHint="search"
+              placeholder="Search cameras…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className={cn(
+                'min-h-[44px] w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pl-10 pr-10 text-sm text-gray-700',
+                'placeholder:text-gray-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/30',
+                'dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200',
+              )}
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch('')}
+                className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-md text-gray-400 hover:bg-gray-200 hover:text-gray-700 dark:hover:bg-gray-700 dark:hover:text-gray-200"
+              >
+                <X className="h-4 w-4" />
+              </button>
             )}
-          />
-          {search && (
-            <button
-              onClick={() => setSearch('')}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
-            >
-              <X className="h-3 w-3" />
-            </button>
-          )}
+          </div>
+          <button
+            type="button"
+            onClick={handleRefresh}
+            className="flex min-h-[44px] shrink-0 items-center justify-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-4 text-sm text-gray-600 transition-colors hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700/80"
+          >
+            <RefreshCw className={cn('h-4 w-4', isRefreshing && 'animate-spin')} />
+            <span className="sm:inline">Refresh</span>
+          </button>
         </div>
 
-        {/* Status filter */}
-        <div className="flex items-center gap-0.5 rounded-lg border border-gray-200 bg-gray-50 p-0.5 dark:border-gray-700 dark:bg-gray-800">
-          {(['all', 'online', 'recording', 'offline'] as FilterStatus[]).map((f) => (
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="-mx-1 flex gap-0.5 overflow-x-auto overflow-y-hidden rounded-lg border border-gray-200 bg-gray-50 p-1 scrollbar-thin dark:border-gray-700 dark:bg-gray-800 sm:mx-0">
+            {(['all', 'online', 'recording', 'offline'] as FilterStatus[]).map((f) => (
+              <button
+                key={f}
+                type="button"
+                onClick={() => setFilterStatus(f)}
+                className={cn(
+                  'shrink-0 rounded-md px-4 py-2.5 text-sm font-medium capitalize transition-colors sm:py-2 sm:text-xs',
+                  filterStatus === f
+                    ? 'bg-white text-gray-900 shadow-sm dark:bg-gray-700 dark:text-white'
+                    : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300',
+                )}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex shrink-0 items-center justify-end overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
             <button
-              key={f}
-              onClick={() => setFilterStatus(f)}
+              type="button"
+              onClick={() => setViewMode('grid')}
+              title="Grid view"
               className={cn(
-                'rounded-md px-3 py-1 text-xs font-medium capitalize transition-colors',
-                filterStatus === f
-                  ? 'bg-white text-gray-900 shadow-sm dark:bg-gray-700 dark:text-white'
-                  : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300',
+                'flex min-h-[44px] min-w-[44px] items-center justify-center p-2.5 transition-colors sm:min-h-0 sm:p-2',
+                viewMode === 'grid'
+                  ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400'
+                  : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300',
               )}
             >
-              {f}
+              <LayoutGrid className="h-5 w-5 sm:h-4 sm:w-4" />
             </button>
-          ))}
-        </div>
-
-        <div className="flex-1" />
-
-        {/* Refresh */}
-        <button
-          onClick={handleRefresh}
-          className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs text-gray-500 transition-colors hover:text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:hover:text-gray-300"
-        >
-          <RefreshCw className={cn('h-3.5 w-3.5', isRefreshing && 'animate-spin')} />
-          Refresh
-        </button>
-
-        {/* View mode toggle */}
-        <div className="flex items-center overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
-          <button
-            onClick={() => setViewMode('grid')}
-            title="Grid view"
-            className={cn(
-              'p-2 transition-colors',
-              viewMode === 'grid'
-                ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400'
-                : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300',
-            )}
-          >
-            <LayoutGrid className="h-4 w-4" />
-          </button>
-          <button
-            onClick={() => setViewMode('multiview')}
-            title="Multiview (2×2)"
-            className={cn(
-              'border-x border-gray-200 p-2 transition-colors dark:border-gray-700',
-              viewMode === 'multiview'
-                ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400'
-                : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300',
-            )}
-          >
-            <LayoutDashboard className="h-4 w-4" />
-          </button>
-          <button
-            onClick={() => setViewMode('list')}
-            title="List view"
-            className={cn(
-              'p-2 transition-colors',
-              viewMode === 'list'
-                ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400'
-                : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300',
-            )}
-          >
-            <List className="h-4 w-4" />
-          </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('multiview')}
+              title="Multiview (2×2)"
+              className={cn(
+                'flex min-h-[44px] min-w-[44px] items-center justify-center border-x border-gray-200 p-2.5 transition-colors dark:border-gray-700 sm:min-h-0 sm:p-2',
+                viewMode === 'multiview'
+                  ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400'
+                  : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300',
+              )}
+            >
+              <LayoutDashboard className="h-5 w-5 sm:h-4 sm:w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('list')}
+              title="List view"
+              className={cn(
+                'flex min-h-[44px] min-w-[44px] items-center justify-center p-2.5 transition-colors sm:min-h-0 sm:p-2',
+                viewMode === 'list'
+                  ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400'
+                  : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300',
+              )}
+            >
+              <List className="h-5 w-5 sm:h-4 sm:w-4" />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -638,7 +645,7 @@ export default function BranchCameras() {
 
       {/* ── Grid view ── */}
       {viewMode === 'grid' && (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
           <AnimatePresence mode="popLayout">
             {filteredCameras.map((cam) => (
               <CameraGridTile
@@ -669,7 +676,7 @@ export default function BranchCameras() {
           key="multiview-grid"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="overflow-hidden rounded-xl border border-gray-800/60 bg-black"
+          className="max-h-[70vh] overflow-hidden rounded-xl border border-gray-800/60 bg-black sm:max-h-none"
           style={{ aspectRatio: '16/9' }}
         >
           <div className="grid h-full grid-cols-2 grid-rows-2 gap-0.5 bg-gray-950 p-0.5">
