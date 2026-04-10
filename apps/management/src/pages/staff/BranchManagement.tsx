@@ -3,16 +3,21 @@ import { useNavigate } from 'react-router-dom';
 import { Building2, Plus, Trash2 } from 'lucide-react';
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
 import { useDebounce } from '@/hooks/useDebounce';
-import { useBranches, useCreateBranch, useDeleteBranch } from '@/api/admin-resources';
+import { useBranches, useCreateBranch, useDeleteBranch, useStaffForManager } from '@/api/admin-resources';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
 import { Badge } from '@/components/ui/Badge';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { toast } from 'sonner';
 import type { Branch } from '@/api/admin-resources';
+
+function formatRoleLabel(role: string) {
+  return role.replace(/_/g, ' ');
+}
 
 export default function BranchManagement() {
   const navigate = useNavigate();
@@ -37,6 +42,20 @@ export default function BranchManagement() {
   });
   const createBranch = useCreateBranch();
   const deleteBranch = useDeleteBranch();
+
+  const { data: staffCandidates, isLoading: staffLoading } = useStaffForManager();
+
+  const managerOptions = useMemo(() => {
+    const opts = [{ label: '— No manager —', value: '' }];
+    if (staffCandidates) {
+      for (const s of staffCandidates) {
+        const hint = s.branch ? ` (${s.branch})` : '';
+        const role = s.jobRole || formatRoleLabel(s.systemRole);
+        opts.push({ label: `${s.name} — ${role}${hint}`, value: s.name });
+      }
+    }
+    return opts;
+  }, [staffCandidates]);
 
   const onSearchChange = useCallback((v: string) => setSearch(v), []);
 
@@ -134,10 +153,23 @@ export default function BranchManagement() {
         )}
       >
         <div className="space-y-3">
-          <Input label="Branch Name" value={name} onChange={(e) => setName(e.target.value)} />
-          <Input label="Country" value={country} onChange={(e) => setCountry(e.target.value)} />
-          <Input label="City" value={city} onChange={(e) => setCity(e.target.value)} />
-          <Input label="Branch Manager" value={manager} onChange={(e) => setManager(e.target.value)} />
+          <Input label="Branch Name" value={name} onChange={(e) => setName(e.target.value)} required />
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Input label="Country" value={country} onChange={(e) => setCountry(e.target.value)} />
+            <Input label="City" value={city} onChange={(e) => setCity(e.target.value)} />
+          </div>
+          <Select
+            label="Branch Manager"
+            value={manager}
+            onChange={(e) => setManager(e.target.value)}
+            options={managerOptions}
+            disabled={staffLoading}
+          />
+          {manager && (
+            <p className="text-xs text-gray-500">
+              Selected manager: <span className="font-medium">{manager}</span>
+            </p>
+          )}
         </div>
       </Modal>
 

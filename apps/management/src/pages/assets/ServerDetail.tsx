@@ -8,10 +8,11 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { Badge } from '@/components/ui/Badge';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { formatCurrency } from '@/lib/format';
+import { useCurrency } from '@/hooks/useCurrency';
 
 export default function ServerDetail() {
   const { id } = useParams<{ id: string }>();
+  const { formatCurrency } = useCurrency();
   const { data: s, isLoading } = useServer(id);
 
   useHeaderConfig({

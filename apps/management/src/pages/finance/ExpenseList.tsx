@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { formatCurrency } from '@/lib/format';
+import { useCurrency } from '@/hooks/useCurrency';
 import { Receipt, CheckCircle, Clock, Tag, Plus } from 'lucide-react';
 import type { Expense } from '@/types/models';
 import { toast } from 'sonner';
@@ -25,6 +25,7 @@ const categoryVariants: Record<string, 'primary' | 'success' | 'warning' | 'dang
 
 export default function ExpenseList() {
   const navigate = useNavigate();
+  const { formatCurrency } = useCurrency();
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
   const [page, setPage] = useState(1);

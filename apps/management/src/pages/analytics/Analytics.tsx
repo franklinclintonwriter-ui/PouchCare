@@ -12,10 +12,12 @@ import { DataTable, type Column } from '@/components/ui/DataTable';
 import { StatsRow } from '@/components/shared/StatsRow';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { formatCurrency, formatCompact } from '@/lib/format';
+import { useCurrency } from '@/hooks/useCurrency';
+import { formatCompact } from '@/lib/format';
 import type { MonthlyRevenue } from '@/types/models';
 
 export default function Analytics() {
+  const { formatCurrency } = useCurrency();
   const { data: revenueData, isLoading } = useRevenue();
   const health = useHealthScore();
   const staffStats = useStaffStats();

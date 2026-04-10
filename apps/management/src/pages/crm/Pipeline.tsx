@@ -4,7 +4,7 @@ import { useLeadsByStage } from '@/api/crm';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { Badge } from '@/components/ui/Badge';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { formatCurrency } from '@/lib/format';
+import { useCurrency } from '@/hooks/useCurrency';
 import type { Lead } from '@/types/models';
 import type { LeadStage } from '@/types/enums';
 
@@ -28,6 +28,7 @@ const STAGE_BADGE_VARIANT: Record<string, 'default' | 'primary' | 'info' | 'warn
 
 export default function Pipeline() {
   const navigate = useNavigate();
+  const { formatCurrency } = useCurrency();
   const { data: grouped, isLoading } = useLeadsByStage();
 
   useHeaderConfig({
@@ -85,6 +86,7 @@ export default function Pipeline() {
 }
 
 function LeadCard({ lead, onClick }: { lead: Lead; onClick: () => void }) {
+  const { formatCurrency } = useCurrency();
   return (
     <button
       type="button"

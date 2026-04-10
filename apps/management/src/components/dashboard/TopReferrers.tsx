@@ -2,7 +2,7 @@ import { Share2 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Avatar } from '@/components/ui/Avatar';
 import { SkeletonRow } from '@/components/ui/Skeleton';
-import { formatCurrency } from '@/utils/format';
+import { useCurrency } from '@/hooks/useCurrency';
 import type { Leaderboard } from '@/types/analytics';
 
 interface TopReferrersProps {
@@ -11,6 +11,7 @@ interface TopReferrersProps {
 }
 
 export function TopReferrers({ leaderboard, loading = false }: TopReferrersProps) {
+  const { formatCurrency } = useCurrency();
   const referrers = leaderboard?.referrers ?? [];
 
   return (

@@ -19,7 +19,7 @@ import { DataTable, type Column } from '@/components/ui/DataTable';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { formatCurrency } from '@/lib/format';
+import { useCurrency } from '@/hooks/useCurrency';
 import { useAuthStore } from '@/store/authStore';
 import type { StaffUser } from '@/types/auth';
 import type { Service } from '@/types/models';
@@ -47,6 +47,7 @@ const TABS = [
 const emptyServiceForm = { name: '', category: 'SEO', shortDescription: '', basePriceUsd: '', status: 'Active' };
 
 function ServiceCatalogTab({ canManage, triggerAdd, onAddTriggered }: { canManage: boolean; triggerAdd?: boolean; onAddTriggered?: () => void }) {
+  const { formatCurrency } = useCurrency();
   const { data: services, isLoading } = useServices();
   const createService = useCreateService();
   const updateService = useUpdateService();
@@ -227,6 +228,7 @@ const emptyBlForm = {
 };
 
 function BacklinkPackagesTab({ canManage, triggerAdd, onAddTriggered }: { canManage: boolean; triggerAdd?: boolean; onAddTriggered?: () => void }) {
+  const { formatCurrency } = useCurrency();
   const { data: packages, isLoading } = useBacklinkPackageRecords();
   const createPackage = useCreateBacklinkPackage();
   const updatePackage = useUpdateBacklinkPackage();

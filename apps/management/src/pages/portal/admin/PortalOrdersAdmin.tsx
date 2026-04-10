@@ -7,11 +7,12 @@ import { DataTable, type Column } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { StatsRow } from '@/components/shared/StatsRow';
 import { Button } from '@/components/ui/Button';
-import { formatCurrency } from '@/lib/format';
+import { useCurrency } from '@/hooks/useCurrency';
 import type { PortalOrder } from '@/types/models';
 import { toast } from 'sonner';
 
 export default function PortalOrdersAdmin() {
+  const { formatCurrency } = useCurrency();
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const [page, setPage] = useState(1);

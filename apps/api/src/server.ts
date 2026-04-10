@@ -3,6 +3,7 @@ import express from 'express'
 import cors from 'cors'
 import helmet from 'helmet'
 import compression from 'compression'
+import path from 'path'
 import { createServer } from 'http'
 import { env } from '@/config/env'
 import { errorHandler } from '@/middleware/errorHandler'
@@ -40,6 +41,7 @@ import adminRolePermissionsRouter from '@/routes/admin/role-permissions'
 import adminResourcesRouter from '@/routes/admin/resources'
 import pluginsRouter from '@/routes/plugins/index'
 import apiKeysRouter from '@/routes/api-keys/index'
+import toolsRouter from '@/routes/tools/index'
 import { setupWebSocket } from '@/lib/websocket'
 import { startJobs } from '@/jobs/index'
 import prisma from '@/lib/prisma'
@@ -64,6 +66,9 @@ app.use(compression())
 
 // ── Rate limiting ─────────────────────────────────────
 app.use(generalRateLimit)
+
+// ── Static files (uploads) ────────────────────────────
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')))
 
 // ── Health check ──────────────────────────────────────
 app.get('/health', (_, res) => {
@@ -130,6 +135,7 @@ app.use(`${v1}/admin`, adminResourcesRouter)
 // Plugin Platform
 app.use(`${v1}/plugins`, pluginsRouter)
 app.use(`${v1}/api-keys`, apiKeysRouter)
+app.use(`${v1}/tools`, toolsRouter)
 
 // ── Error handler ────────────────────────────────────
 app.use(errorHandler)

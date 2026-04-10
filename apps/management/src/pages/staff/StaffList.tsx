@@ -1,17 +1,21 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, UserCheck, UserX, Building, Shield, Plus } from 'lucide-react';
+import { Users, UserCheck, UserX, Building, Shield, Plus, Edit, UserMinus, RotateCcw } from 'lucide-react';
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
-import { useCreateStaff, useStaffList } from '@/api/staff';
+import { useCreateStaff, useStaffList, useDeactivateStaff, useRestoreStaff } from '@/api/staff';
+import { useBranches } from '@/api/admin-resources';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
 import { StatsRow } from '@/components/shared/StatsRow';
 import { Modal } from '@/components/ui/Modal';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
+import { Dropdown, type DropdownItem } from '@/components/ui/Dropdown';
+import { usePermission } from '@/hooks/usePermission';
 import type { StaffMember } from '@/types/models';
 import { toast } from 'sonner';
 
@@ -37,24 +41,34 @@ const roleLabel: Record<string, string> = {
 
 export default function StaffList() {
   const navigate = useNavigate();
+  const perm = usePermission();
   const [search, setSearch] = useState('');
   const [role, setRole] = useState('');
   const [page, setPage] = useState(1);
-  const [sortField, setSortField] = useState('');
+  const [sortField, setSortField] = useState('name');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   const [openCreate, setOpenCreate] = useState(false);
+  const [confirmDeactivate, setConfirmDeactivate] = useState<StaffMember | null>(null);
+  const [confirmRestore, setConfirmRestore] = useState<StaffMember | null>(null);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [systemRole, setSystemRole] = useState('STAFF');
   const [branchName, setBranchName] = useState('');
   const createStaff = useCreateStaff();
+  const deactivateStaff = useDeactivateStaff();
+  const restoreStaff = useRestoreStaff();
+  const { data: branches } = useBranches({ limit: 100 });
+
+  const canManageStaff = perm.isCEO || perm.can('staff.manage_profiles');
 
   const { data, isLoading } = useStaffList({
     q: search || undefined,
     role: role || undefined,
     page,
     limit: 20,
+    sortBy: sortField || undefined,
+    sortDir: sortField ? sortDir : undefined,
   });
 
   const { data: allData } = useStaffList({ limit: 500 });
@@ -171,6 +185,20 @@ export default function StaffList() {
         </span>
       ),
     },
+    ...(canManageStaff ? [{
+      key: 'actions' as const,
+      label: '',
+      width: '50px',
+      render: (row: StaffMember) => {
+        const items: DropdownItem[] = [
+          { label: 'View / Edit', icon: <Edit className="h-4 w-4" />, onClick: () => navigate(`/staff/${row.id}`) },
+          row.isActive
+            ? { label: 'Deactivate', icon: <UserMinus className="h-4 w-4" />, onClick: () => setConfirmDeactivate(row), variant: 'danger' as const }
+            : { label: 'Restore', icon: <RotateCcw className="h-4 w-4" />, onClick: () => setConfirmRestore(row) },
+        ];
+        return <Dropdown items={items} />;
+      },
+    }] : []),
   ];
 
   return (
@@ -246,9 +274,57 @@ export default function StaffList() {
                 { label: 'Intern', value: 'INTERN' },
               ]}
             />
-            <Input label="Branch" value={branchName} onChange={(e) => setBranchName(e.target.value)} />
+            <Select
+              label="Branch"
+              value={branchName}
+              onChange={(e) => setBranchName(e.target.value)}
+              options={[
+                { label: 'No Branch', value: '' },
+                ...(branches?.data ?? []).map((b) => ({ label: b.name, value: b.name })),
+              ]}
+            />
           </div>
         </Modal>
+
+        <ConfirmDialog
+          isOpen={!!confirmDeactivate}
+          onClose={() => setConfirmDeactivate(null)}
+          title="Deactivate Staff Member"
+          message={`Are you sure you want to deactivate ${confirmDeactivate?.name}? They will no longer be able to access the system.`}
+          confirmLabel="Deactivate"
+          variant="danger"
+          isLoading={deactivateStaff.isPending}
+          onConfirm={async () => {
+            if (!confirmDeactivate) return;
+            try {
+              await deactivateStaff.mutateAsync(confirmDeactivate.id);
+              toast.success(`${confirmDeactivate.name} has been deactivated`);
+              setConfirmDeactivate(null);
+            } catch (err) {
+              toast.error(err instanceof Error ? err.message : 'Failed to deactivate staff');
+            }
+          }}
+        />
+
+        <ConfirmDialog
+          isOpen={!!confirmRestore}
+          onClose={() => setConfirmRestore(null)}
+          title="Restore Staff Member"
+          message={`Are you sure you want to restore ${confirmRestore?.name}? They will regain access to the system.`}
+          confirmLabel="Restore"
+          variant="info"
+          isLoading={restoreStaff.isPending}
+          onConfirm={async () => {
+            if (!confirmRestore) return;
+            try {
+              await restoreStaff.mutateAsync(confirmRestore.id);
+              toast.success(`${confirmRestore.name} has been restored`);
+              setConfirmRestore(null);
+            } catch (err) {
+              toast.error(err instanceof Error ? err.message : 'Failed to restore staff');
+            }
+          }}
+        />
       </div>
     </PageTransition>
   );

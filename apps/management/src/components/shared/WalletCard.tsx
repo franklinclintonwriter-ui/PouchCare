@@ -1,6 +1,7 @@
 import { cn } from '@/utils/cn';
 import { Wallet, ArrowDownLeft, ArrowUpRight } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { useCurrency } from '@/hooks/useCurrency';
 
 interface WalletCardProps {
   balance: number;
@@ -13,6 +14,8 @@ interface WalletCardProps {
 }
 
 function WalletCard({ balance, pendingCommissions, totalEarned, onDeposit, onWithdraw, compact = false, className }: WalletCardProps) {
+  const { formatCurrency } = useCurrency();
+
   return (
     <div
       className={cn(
@@ -31,7 +34,7 @@ function WalletCard({ balance, pendingCommissions, totalEarned, onDeposit, onWit
           <span className={cn(compact ? 'text-xs' : 'text-sm', 'font-medium text-white/70')}>Balance</span>
         </div>
         <p className={cn(compact ? 'mt-1 text-2xl' : 'mt-2 text-3xl sm:text-4xl', 'font-bold tracking-tight')}>
-          ${balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+          {formatCurrency(balance)}
         </p>
 
         {!compact && (pendingCommissions !== undefined || totalEarned !== undefined) && (
@@ -39,13 +42,13 @@ function WalletCard({ balance, pendingCommissions, totalEarned, onDeposit, onWit
             {pendingCommissions !== undefined && (
               <div>
                 <span className="text-[10px] uppercase tracking-wider text-white/50">Pending</span>
-                <p className="text-sm font-semibold">${pendingCommissions.toLocaleString()}</p>
+                <p className="text-sm font-semibold">{formatCurrency(pendingCommissions)}</p>
               </div>
             )}
             {totalEarned !== undefined && (
               <div>
                 <span className="text-[10px] uppercase tracking-wider text-white/50">Earned</span>
-                <p className="text-sm font-semibold">${totalEarned.toLocaleString()}</p>
+                <p className="text-sm font-semibold">{formatCurrency(totalEarned)}</p>
               </div>
             )}
           </div>

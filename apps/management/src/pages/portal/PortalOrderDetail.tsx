@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
 import { usePortalOrder, usePortalOrderMessages, useSendPortalOrderMessage } from '@/api/portal';
-import { formatCurrency } from '@/lib/format';
+import { useCurrency } from '@/hooks/useCurrency';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Tabs } from '@/components/ui/Tabs';
@@ -17,6 +17,7 @@ import { toast } from 'sonner';
 
 export default function PortalOrderDetail() {
   const { id } = useParams<{ id: string }>();
+  const { formatCurrency } = useCurrency();
   const { data: order, isLoading } = usePortalOrder(id!);
   const { data: messages = [], isLoading: messagesLoading } = usePortalOrderMessages(id!);
   const sendMessage = useSendPortalOrderMessage();

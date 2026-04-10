@@ -1,9 +1,10 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useDeferredValue, useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useParams, useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import {
   Cctv, ArrowLeft, Radio, Wifi, WifiOff, Activity, RefreshCw,
-  LayoutGrid, List, Filter, Search, X, LayoutDashboard, Clock,
+  LayoutGrid, List, Filter, Search, X, LayoutDashboard, Clock, Signal, Download,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/utils/cn';
@@ -12,7 +13,13 @@ import { PageTransition } from '@/components/ui/PageTransition';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { LiveViewerModal } from '@/components/monitor/LiveViewerModal';
-import { useCamerasByBranch, type CameraDevice } from '@/api/monitor';
+import {
+  useCamerasByBranch,
+  useCameraPing,
+  downloadCamerasExport,
+  type CameraDevice,
+  type CamerasByBranchParams,
+} from '@/api/monitor';
 import { useBranchDetail } from '@/api/admin-resources';
 import { usePermission } from '@/hooks/usePermission';
 import { VigiIntegrationCard } from '@/components/monitor/VigiIntegrationCard';
@@ -112,12 +119,33 @@ function LiveFeedThumbnail({ camera }: { camera: CameraDevice }) {
 
 // ── Camera tile (grid view) ─────────────────────────────────
 
+function SourceBadge({ source }: { source: string | null | undefined }) {
+  const s = source ?? 'manual';
+  const isVigi = s === 'vigi';
+  return (
+    <span
+      className={cn(
+        'rounded px-1 py-0.5 text-[9px] font-bold uppercase tracking-wide',
+        isVigi
+          ? 'bg-violet-600/85 text-violet-100'
+          : 'bg-gray-700/85 text-gray-300',
+      )}
+    >
+      {isVigi ? 'VIGI' : 'Manual'}
+    </span>
+  );
+}
+
 function CameraGridTile({
   camera,
   onClick,
+  onPing,
+  pingPending,
 }: {
   camera: CameraDevice;
   onClick: () => void;
+  onPing?: (e: React.MouseEvent) => void;
+  pingPending?: boolean;
 }) {
   return (
     <motion.div
@@ -159,6 +187,11 @@ function CameraGridTile({
           <StatusDot status={camera.status} />
         </div>
 
+        {/* Source — below status dot */}
+        <div className="absolute left-2 top-8">
+          <SourceBadge source={camera.source} />
+        </div>
+
         {/* Status badge — top right */}
         <div className="absolute right-2 top-2">
           {camera.status === 'recording' && (
@@ -188,10 +221,21 @@ function CameraGridTile({
                 <p className="truncate text-[9px] text-blue-300/90">Motion {formatMotionAge(camera.lastMotionAt)}</p>
               )}
             </div>
-            <div className="shrink-0 text-right">
+            <div className="flex shrink-0 flex-col items-end gap-1 text-right">
               <p className="text-[10px] font-medium text-gray-400">{camera.resolution ?? '—'}</p>
               {camera.status !== 'offline' && (
                 <p className="text-[10px] text-gray-500">{camera.fps ?? '—'} fps</p>
+              )}
+              {onPing && (
+                <button
+                  type="button"
+                  onClick={(e) => onPing(e)}
+                  disabled={pingPending}
+                  title="Record feed check (updates last ping)"
+                  className="rounded bg-black/50 px-1.5 py-0.5 text-[9px] font-semibold text-blue-300 backdrop-blur-sm hover:bg-black/70 disabled:opacity-50"
+                >
+                  {pingPending ? '…' : 'Ping'}
+                </button>
               )}
             </div>
           </div>
@@ -206,9 +250,13 @@ function CameraGridTile({
 function CameraListRow({
   camera,
   onClick,
+  onPing,
+  pingPending,
 }: {
   camera: CameraDevice;
   onClick: () => void;
+  onPing?: (e: React.MouseEvent) => void;
+  pingPending?: boolean;
 }) {
   const lastMotionStr = camera.lastMotionAt
     ? new Date(camera.lastMotionAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -239,6 +287,7 @@ function CameraListRow({
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
           <StatusDot status={camera.status} />
+          <SourceBadge source={camera.source} />
           <span className="font-semibold text-gray-900 dark:text-white">{camera.label}</span>
           <span className="truncate text-sm text-gray-500">{camera.location}</span>
         </div>
@@ -263,17 +312,33 @@ function CameraListRow({
 
       {/* Last motion + status badge */}
       <div className="flex shrink-0 flex-row items-center justify-between gap-2 sm:flex-col sm:items-end sm:justify-start sm:gap-1.5">
-        {camera.status === 'recording' && (
-          <Badge variant="danger" size="sm" className="flex items-center gap-1">
-            <Radio className="h-2.5 w-2.5" /> REC
-          </Badge>
-        )}
-        {camera.status === 'online' && (
-          <Badge variant="success" size="sm">LIVE</Badge>
-        )}
-        {camera.status === 'offline' && (
-          <Badge variant="default" size="sm">OFFLINE</Badge>
-        )}
+        <div className="flex flex-wrap items-center justify-end gap-1.5">
+          {camera.status === 'recording' && (
+            <Badge variant="danger" size="sm" className="flex items-center gap-1">
+              <Radio className="h-2.5 w-2.5" /> REC
+            </Badge>
+          )}
+          {camera.status === 'online' && (
+            <Badge variant="success" size="sm">LIVE</Badge>
+          )}
+          {camera.status === 'offline' && (
+            <Badge variant="default" size="sm">OFFLINE</Badge>
+          )}
+          {onPing && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onPing(e);
+              }}
+              disabled={pingPending}
+              title="Record feed check"
+              className="flex min-h-[32px] min-w-[32px] items-center justify-center rounded-lg border border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100 disabled:opacity-50 dark:border-gray-600 dark:bg-gray-800 dark:hover:bg-gray-700"
+            >
+              <Signal className={cn('h-3.5 w-3.5', pingPending && 'animate-pulse')} />
+            </button>
+          )}
+        </div>
         <span className="flex items-center gap-1 text-[10px] text-gray-400 dark:text-gray-600">
           <Clock className="h-3 w-3" />
           {lastMotionStr}
@@ -367,6 +432,26 @@ export default function BranchCameras() {
   const { hasRole } = usePermission();
   const canVigiManage = hasRole(['CEO', 'CO_MD', 'OP_MANAGER']);
 
+  const [search, setSearch] = useState('');
+  const deferredSearch = useDeferredValue(search);
+  const [sourceFilter, setSourceFilter] = useState<'all' | 'manual' | 'vigi'>('all');
+  const [sortKey, setSortKey] = useState<NonNullable<CamerasByBranchParams['sort']>>('label_asc');
+  const [filterStatus, setFilterStatus] = useState<FilterStatus>('all');
+
+  const listParams = useMemo((): CamerasByBranchParams => {
+    const q = deferredSearch.trim();
+    const p: CamerasByBranchParams = {
+      limit: 500,
+      ...(q ? { q } : {}),
+      ...(sourceFilter !== 'all' ? { source: sourceFilter } : {}),
+      sort: sortKey,
+    };
+    if (filterStatus === 'online') p.excludeOffline = true;
+    else if (filterStatus === 'recording') p.status = 'recording';
+    else if (filterStatus === 'offline') p.status = 'offline';
+    return p;
+  }, [deferredSearch, sourceFilter, sortKey, filterStatus]);
+
   const {
     data: branchPayload,
     isLoading: branchLoading,
@@ -379,7 +464,24 @@ export default function BranchCameras() {
     isError: camerasError,
     error: camerasErr,
     refetch: refetchCameras,
-  } = useCamerasByBranch(branchId);
+  } = useCamerasByBranch(branchId, listParams);
+
+  const pingMutation = useCameraPing();
+  const [pingingId, setPingingId] = useState<string | null>(null);
+
+  const handleCameraPing = useCallback(
+    (cameraId: string, e: React.MouseEvent) => {
+      e.stopPropagation();
+      setPingingId(cameraId);
+      pingMutation.mutate(cameraId, {
+        onSuccess: () => toast.success('Feed check recorded'),
+        onError: (err) =>
+          toast.error(err instanceof Error ? err.message : 'Could not record feed check'),
+        onSettled: () => setPingingId(null),
+      });
+    },
+    [pingMutation],
+  );
 
   const cameras = cameraPage?.data ?? [];
   const branchMeta = branchPayload?.branch;
@@ -399,9 +501,8 @@ export default function BranchCameras() {
 
   const [selectedCamera, setSelectedCamera] = useState<CameraDevice | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
-  const [filterStatus, setFilterStatus] = useState<FilterStatus>('all');
-  const [search, setSearch] = useState('');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
@@ -413,24 +514,25 @@ export default function BranchCameras() {
     setIsRefreshing(false);
   }, [refetchCameras, refetchBranch, branchId, queryClient]);
 
-  const filteredCameras = useMemo(() => {
-    let list = cameras;
-    if (filterStatus !== 'all') {
-      list = list.filter((c) =>
-        filterStatus === 'online' ? c.status !== 'offline' : c.status === filterStatus,
-      );
+  const handleExportCsv = useCallback(async () => {
+    if (!branchId) return;
+    setExporting(true);
+    try {
+      await downloadCamerasExport({
+        branchId,
+        q: listParams.q,
+        source: listParams.source,
+        sort: listParams.sort,
+        excludeOffline: listParams.excludeOffline,
+        status: listParams.status,
+      });
+      toast.success('Camera list downloaded');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Export failed');
+    } finally {
+      setExporting(false);
     }
-    const q = search.toLowerCase().trim();
-    if (q) {
-      list = list.filter(
-        (c) =>
-          c.label.toLowerCase().includes(q) ||
-          (c.location ?? '').toLowerCase().includes(q) ||
-          (c.angle ?? '').toLowerCase().includes(q),
-      );
-    }
-    return list;
-  }, [cameras, filterStatus, search]);
+  }, [branchId, listParams]);
 
   useHeaderConfig(
     useMemo(
@@ -492,7 +594,8 @@ export default function BranchCameras() {
     );
   }
 
-  const showEmpty = filteredCameras.length === 0;
+  const showEmpty = cameras.length === 0;
+  const totalMatching = cameraPage?.meta?.total ?? cameras.length;
 
   return (
     <PageTransition className="space-y-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
@@ -562,6 +665,55 @@ export default function BranchCameras() {
             <RefreshCw className={cn('h-4 w-4', isRefreshing && 'animate-spin')} />
             <span className="sm:inline">Refresh</span>
           </button>
+          <button
+            type="button"
+            onClick={handleExportCsv}
+            disabled={exporting || !branchId || cameras.length === 0}
+            title="Download CSV with current filters (same as list API)"
+            className="flex min-h-[44px] shrink-0 items-center justify-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-4 text-sm text-gray-600 transition-colors hover:bg-gray-100 disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700/80"
+          >
+            <Download className={cn('h-4 w-4', exporting && 'animate-pulse')} />
+            <span className="hidden sm:inline">CSV</span>
+          </button>
+        </div>
+
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:min-w-0 sm:flex-row sm:items-center sm:gap-2">
+            <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-500">Source</span>
+            <div className="-mx-1 flex gap-0.5 overflow-x-auto overflow-y-hidden rounded-lg border border-gray-200 bg-gray-50 p-1 dark:border-gray-700 dark:bg-gray-800 sm:mx-0">
+              {(['all', 'manual', 'vigi'] as const).map((f) => (
+                <button
+                  key={f}
+                  type="button"
+                  onClick={() => setSourceFilter(f)}
+                  className={cn(
+                    'shrink-0 rounded-md px-3 py-2.5 text-sm font-medium capitalize transition-colors sm:py-2 sm:text-xs',
+                    sourceFilter === f
+                      ? 'bg-white text-gray-900 shadow-sm dark:bg-gray-700 dark:text-white'
+                      : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300',
+                  )}
+                >
+                  {f}
+                </button>
+              ))}
+            </div>
+            <label className="flex min-w-0 items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+              <span className="shrink-0">Sort</span>
+              <select
+                value={sortKey}
+                onChange={(e) =>
+                  setSortKey(e.target.value as NonNullable<CamerasByBranchParams['sort']>)
+                }
+                className="min-h-[40px] min-w-0 flex-1 rounded-md border border-gray-200 bg-white px-2 py-1.5 text-sm text-gray-800 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 sm:max-w-[200px]"
+              >
+                <option value="label_asc">Name A–Z</option>
+                <option value="label_desc">Name Z–A</option>
+                <option value="status">Status</option>
+                <option value="updated_desc">Updated (newest)</option>
+                <option value="updated_asc">Updated (oldest)</option>
+              </select>
+            </label>
+          </div>
         </div>
 
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -628,16 +780,24 @@ export default function BranchCameras() {
       </div>
 
       {/* Filter info row */}
-      {(filterStatus !== 'all' || search) && (
-        <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-          <Filter className="h-3.5 w-3.5" />
-          Showing {filteredCameras.length} of {cameras.length} cameras
-          {filterStatus !== 'all' && (
+      {(filterStatus !== 'all' || search || sourceFilter !== 'all') && (
+        <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+          <Filter className="h-3.5 w-3.5 shrink-0" />
+          <span>
+            Showing {cameras.length} of {totalMatching} cameras
+            {search.trim() && ` matching “${search.trim()}”`}
+            {sourceFilter !== 'all' && ` · source ${sourceFilter}`}
+          </span>
+          {(filterStatus !== 'all' || sourceFilter !== 'all') && (
             <button
-              onClick={() => setFilterStatus('all')}
-              className="ml-1 text-primary-600 hover:underline dark:text-primary-400"
+              type="button"
+              onClick={() => {
+                setFilterStatus('all');
+                setSourceFilter('all');
+              }}
+              className="text-primary-600 hover:underline dark:text-primary-400"
             >
-              Clear filter
+              Clear filters
             </button>
           )}
         </div>
@@ -647,11 +807,13 @@ export default function BranchCameras() {
       {viewMode === 'grid' && (
         <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
           <AnimatePresence mode="popLayout">
-            {filteredCameras.map((cam) => (
+            {cameras.map((cam) => (
               <CameraGridTile
                 key={cam.id}
                 camera={cam}
                 onClick={() => setSelectedCamera(cam)}
+                onPing={(e) => handleCameraPing(cam.id, e)}
+                pingPending={pingingId === cam.id}
               />
             ))}
           </AnimatePresence>
@@ -680,7 +842,7 @@ export default function BranchCameras() {
           style={{ aspectRatio: '16/9' }}
         >
           <div className="grid h-full grid-cols-2 grid-rows-2 gap-0.5 bg-gray-950 p-0.5">
-            {filteredCameras.slice(0, 4).map((cam, i) => (
+            {cameras.slice(0, 4).map((cam, i) => (
               <button
                 key={cam.id}
                 onClick={() => setSelectedCamera(cam)}
@@ -728,7 +890,7 @@ export default function BranchCameras() {
             ))}
 
             {/* Filler cells if < 4 */}
-            {Array.from({ length: Math.max(0, 4 - filteredCameras.length) }).map((_, i) => (
+            {Array.from({ length: Math.max(0, 4 - cameras.length) }).map((_, i) => (
               <div
                 key={`empty-${i}`}
                 className="flex items-center justify-center bg-gray-950/80"
@@ -744,11 +906,13 @@ export default function BranchCameras() {
       {viewMode === 'list' && (
         <div className="flex flex-col gap-2">
           <AnimatePresence mode="popLayout">
-            {filteredCameras.map((cam) => (
+            {cameras.map((cam) => (
               <CameraListRow
                 key={cam.id}
                 camera={cam}
                 onClick={() => setSelectedCamera(cam)}
+                onPing={(e) => handleCameraPing(cam.id, e)}
+                pingPending={pingingId === cam.id}
               />
             ))}
           </AnimatePresence>

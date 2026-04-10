@@ -12,7 +12,7 @@ import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { formatCurrency } from '@/lib/format';
+import { useCurrency } from '@/hooks/useCurrency';
 import { usePermission } from '@/hooks/usePermission';
 import { toast } from 'sonner';
 
@@ -37,6 +37,7 @@ export default function ExpenseDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const perm = usePermission();
+  const { formatCurrency } = useCurrency();
   const { data: expense, isLoading } = useExpense(id ?? '');
   const updateExpense = useUpdateExpense();
   const deleteExpense = useDeleteExpense();

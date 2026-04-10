@@ -2,7 +2,7 @@ import { Globe } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Avatar } from '@/components/ui/Avatar';
 import { SkeletonRow } from '@/components/ui/Skeleton';
-import { formatCurrency } from '@/utils/format';
+import { useCurrency } from '@/hooks/useCurrency';
 import type { ClientStats } from '@/types/analytics';
 
 interface TopClientsProps {
@@ -11,6 +11,7 @@ interface TopClientsProps {
 }
 
 export function TopClients({ clients, loading = false }: TopClientsProps) {
+  const { formatCurrency } = useCurrency();
   const spenders = clients?.topSpenders ?? [];
 
   return (

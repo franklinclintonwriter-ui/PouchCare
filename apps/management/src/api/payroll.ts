@@ -81,12 +81,21 @@ function mapPayrollEntry(raw: RawPayrollEntry): PayrollEntry {
   };
 }
 
-export function usePayroll(month?: number, year?: number, page = 1, limit = 20) {
+interface PayrollFilters {
+  month?: number;
+  year?: number;
+  staffMemberId?: string;
+  page?: number;
+  limit?: number;
+}
+
+export function usePayroll(filters: PayrollFilters = {}) {
+  const { month, year, staffMemberId, page = 1, limit = 20 } = filters;
   return useQuery<PaginatedResponse<PayrollEntry>>({
-    queryKey: ['payroll', month, year, page, limit],
+    queryKey: ['payroll', month, year, staffMemberId, page, limit],
     queryFn: async () => {
       const monthName = typeof month === 'number' && month >= 1 && month <= 12 ? MONTH_NUM_TO_NAME[month - 1] : undefined;
-      const { data } = await api.get('/payroll', { params: { month: monthName, year, page, limit } });
+      const { data } = await api.get('/payroll', { params: { month: monthName, year, staffMemberId, page, limit } });
       const rows = Array.isArray(data?.data) ? data.data : [];
       return {
         ...data,
@@ -96,10 +105,49 @@ export function usePayroll(month?: number, year?: number, page = 1, limit = 20) 
   });
 }
 
+interface CreatePayrollInput {
+  staffMemberId: string;
+  month: string;
+  year: number;
+  baseSalary: number;
+  bonus?: number;
+  deductions?: number;
+  paymentMethod?: string;
+  notes?: string;
+}
+
 export function useCreatePayroll() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: Record<string, unknown>) => api.post('/payroll', body),
+    mutationFn: (body: CreatePayrollInput) => api.post('/payroll', body),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['payroll'] }),
+  });
+}
+
+interface UpdatePayrollInput {
+  baseSalary?: number;
+  bonus?: number;
+  deductions?: number;
+  paymentMethod?: string;
+  notes?: string;
+}
+
+export function useUpdatePayroll() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...body }: UpdatePayrollInput & { id: string }) =>
+      api.put(`/payroll/${id}`, body),
+    onSuccess: (_data, variables) => {
+      qc.invalidateQueries({ queryKey: ['payroll'] });
+      qc.invalidateQueries({ queryKey: ['payroll-entry', variables.id] });
+    },
+  });
+}
+
+export function useDeletePayroll() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.delete(`/payroll/${id}`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['payroll'] }),
   });
 }
@@ -118,7 +166,11 @@ export function usePayrollEntry(id: string) {
 export function useMarkPayrollPaid() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => api.put(`/payroll/${id}/mark-paid`),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['payroll'] }),
+    mutationFn: ({ id, paymentMethod }: { id: string; paymentMethod?: string }) =>
+      api.put(`/payroll/${id}/mark-paid`, { paymentMethod }),
+    onSuccess: (_data, variables) => {
+      qc.invalidateQueries({ queryKey: ['payroll'] });
+      qc.invalidateQueries({ queryKey: ['payroll-entry', variables.id] });
+    },
   });
 }

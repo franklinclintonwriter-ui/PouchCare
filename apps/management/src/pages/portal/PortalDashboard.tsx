@@ -4,7 +4,7 @@ import { ShoppingBag, Wallet, UserPlus } from 'lucide-react';
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
 import { useAuthStore } from '@/store/authStore';
 import { usePortalOrders } from '@/api/portal';
-import { formatCurrency } from '@/lib/format';
+import { useCurrency } from '@/hooks/useCurrency';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -18,6 +18,7 @@ import type { PortalOrder } from '@/types/models';
 export default function PortalDashboard() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
+  const { formatCurrency } = useCurrency();
   const portalUser = user as PortalUser;
 
   useHeaderConfig({ title: 'Dashboard', breadcrumbs: [{ label: 'Dashboard' }] });

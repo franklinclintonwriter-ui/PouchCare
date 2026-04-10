@@ -114,6 +114,22 @@
   .animate-in {
     animation: fadeIn 0.2s ease-out, slideUp 0.25s ease-out;
   }
+
+  /* Hide scrollbar but allow scrolling */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Responsive breakpoint for extra small screens */
+  .xs\:inline {
+    @media (min-width: 480px) {
+      display: inline;
+    }
+  }
 }
 
 /* Focus ring utility */

@@ -14,7 +14,7 @@ import { Select } from '@/components/ui/Select';
 import { Textarea } from '@/components/ui/Textarea';
 import { Button } from '@/components/ui/Button';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { formatCurrency } from '@/lib/format';
+import { useCurrency } from '@/hooks/useCurrency';
 import { usePermission } from '@/hooks/usePermission';
 import { Pencil, Trash2, Mail, Phone, Building2, Globe, Calendar, User, DollarSign, Tag } from 'lucide-react';
 import { toast } from 'sonner';
@@ -56,6 +56,7 @@ export default function LeadDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const perm = usePermission();
+  const { formatCurrency } = useCurrency();
   const { data: lead, isLoading } = useLead(id!);
   const updateLead = useUpdateLead();
   const deleteLead = useDeleteLead();

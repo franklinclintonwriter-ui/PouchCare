@@ -178,3 +178,27 @@ export function useStaffLeaderboard() {
     },
   });
 }
+
+export function useDeactivateStaff() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.delete(`/staff/members/${id}`),
+    onSuccess: (_, id) => {
+      qc.invalidateQueries({ queryKey: ['staff-list'] });
+      qc.invalidateQueries({ queryKey: ['staff-member', id] });
+      qc.invalidateQueries({ queryKey: ['staff-leaderboard'] });
+    },
+  });
+}
+
+export function useRestoreStaff() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.put(`/staff/members/${id}`, { status: 'Active', terminationDate: null }),
+    onSuccess: (_, id) => {
+      qc.invalidateQueries({ queryKey: ['staff-list'] });
+      qc.invalidateQueries({ queryKey: ['staff-member', id] });
+      qc.invalidateQueries({ queryKey: ['staff-leaderboard'] });
+    },
+  });
+}

@@ -12,9 +12,11 @@ import { ProgressBar } from '@/components/ui/ProgressBar';
 import { Tabs } from '@/components/ui/Tabs';
 import { StatsRow } from '@/components/shared/StatsRow';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { useCurrency } from '@/hooks/useCurrency';
 
 export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>();
+  const { formatCurrency } = useCurrency();
   const { data: project, isLoading } = useProject(id!);
   const { data: relatedTasks } = useTasks({ q: project?.name, limit: 10 });
   const [tab, setTab] = useState('overview');
@@ -58,8 +60,8 @@ export default function ProjectDetail() {
   }
 
   const overviewStats = [
-    { title: 'Budget', value: `$${project.budget.toLocaleString()}`, icon: <DollarSign />, iconBg: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400' },
-    { title: 'Spent', value: `$${project.spent.toLocaleString()}`, icon: <BarChart3 />, iconBg: 'bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400' },
+    { title: 'Budget', value: formatCurrency(project.budget), icon: <DollarSign />, iconBg: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400' },
+    { title: 'Spent', value: formatCurrency(project.spent), icon: <BarChart3 />, iconBg: 'bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400' },
     { title: 'Team Size', value: project.teamMembers.length, icon: <Users />, iconBg: 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' },
     { title: 'Progress', value: `${project.progress}%`, icon: <BarChart3 />, iconBg: 'bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400' },
   ];

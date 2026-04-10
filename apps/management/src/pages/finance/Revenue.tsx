@@ -5,12 +5,13 @@ import { PageTransition } from '@/components/ui/PageTransition';
 import { StatsRow } from '@/components/shared/StatsRow';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
-import { formatCurrency } from '@/lib/format';
+import { useCurrency } from '@/hooks/useCurrency';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { TrendingUp, TrendingDown, DollarSign, Percent } from 'lucide-react';
 import type { MonthlyRevenue } from '@/types/models';
 
 export default function Revenue() {
+  const { formatCurrency, symbol, convert } = useCurrency();
   const { data: months, isLoading } = useRevenue();
   const revenueData = months ?? [];
 
@@ -72,7 +73,10 @@ export default function Revenue() {
                 <BarChart data={revenueData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200 dark:stroke-gray-700" />
                   <XAxis dataKey="month" tick={{ fontSize: 12 }} className="text-gray-500" />
-                  <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} className="text-gray-500" />
+                  <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => {
+                    const converted = convert(v) ?? v;
+                    return `${symbol}${(converted / 1000).toFixed(0)}k`;
+                  }} className="text-gray-500" />
                   <Tooltip
                     formatter={(value: number) => formatCurrency(value)}
                     contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb', fontSize: '13px' }}

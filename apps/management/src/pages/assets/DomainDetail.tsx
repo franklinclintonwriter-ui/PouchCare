@@ -6,10 +6,11 @@ import { PageTransition } from '@/components/ui/PageTransition';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { formatCurrency } from '@/lib/format';
+import { useCurrency } from '@/hooks/useCurrency';
 
 export default function DomainDetail() {
   const { id } = useParams<{ id: string }>();
+  const { formatCurrency } = useCurrency();
   const { data: d, isLoading } = useDomain(id);
 
   useHeaderConfig({

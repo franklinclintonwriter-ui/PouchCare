@@ -15,6 +15,7 @@ import { useDebounce } from '@/hooks/useDebounce';
 import {
   useBranchDetail,
   useBranchMembers,
+  useBranchManagerCandidates,
   useUpdateBranch,
   useDeleteBranch,
   type BranchMemberRow,
@@ -40,6 +41,10 @@ const STATUS_OPTIONS = [
 
 function formatRole(role: string) {
   return role.replace(/_/g, ' ');
+}
+
+function formatRoleLabel(role: string, jobRole?: string | null) {
+  return jobRole || role.replace(/_/g, ' ');
 }
 
 export default function BranchDetail() {
@@ -69,6 +74,18 @@ export default function BranchDetail() {
     limit: 15,
     ...(debouncedMemberQ.trim() ? { q: debouncedMemberQ.trim() } : {}),
   });
+  const { data: managerCandidates, isLoading: candidatesLoading } = useBranchManagerCandidates(branchId);
+
+  const managerOptions = useMemo(() => {
+    const opts = [{ label: '— No manager selected —', value: '' }];
+    if (managerCandidates) {
+      for (const c of managerCandidates) {
+        const role = formatRoleLabel(c.systemRole, c.jobRole);
+        opts.push({ label: `${c.name} — ${role}`, value: c.name });
+      }
+    }
+    return opts;
+  }, [managerCandidates]);
 
   useEffect(() => {
     setPage(1);
@@ -392,12 +409,18 @@ export default function BranchDetail() {
             onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}
             options={STATUS_OPTIONS}
           />
-          <Input
-            label="Branch manager (display name)"
+          <Select
+            label="Branch Manager"
             value={form.branchManager}
             onChange={(e) => setForm((f) => ({ ...f, branchManager: e.target.value }))}
-            placeholder="Must match a staff member name at this branch"
+            options={managerOptions}
+            disabled={candidatesLoading}
           />
+          {managerCandidates?.length === 0 && !candidatesLoading && (
+            <p className="text-xs text-amber-600 dark:text-amber-400">
+              No active staff at this branch yet. Add staff first or assign them to this branch.
+            </p>
+          )}
           <div className="grid gap-3 sm:grid-cols-2">
             <Input label="Email" type="email" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} />
             <Input label="Phone" value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} />

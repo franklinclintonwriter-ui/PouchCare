@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
 import { useCommissions } from '@/api/portal';
-import { formatCurrency } from '@/lib/format';
+import { useCurrency } from '@/hooks/useCurrency';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { StatsRow } from '@/components/shared/StatsRow';
 import { DataTable, type Column } from '@/components/ui/DataTable';
@@ -18,6 +18,7 @@ const STATUS_OPTIONS = [
 ];
 
 export default function Commissions() {
+  const { formatCurrency } = useCurrency();
   const [statusFilter, setStatusFilter] = useState('');
   const [page, setPage] = useState(1);
 

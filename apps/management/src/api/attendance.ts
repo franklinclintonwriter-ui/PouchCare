@@ -104,6 +104,42 @@ export function useCheckOut() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body?: Record<string, unknown>) => api.post('/attendance/checkout', body),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['attendance'] }); qc.invalidateQueries({ queryKey: ['my-attendance'] }); qc.invalidateQueries({ queryKey: ['attendance-today'] }); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['attendance'] }); qc.invalidateQueries({ queryKey: ['my-attendance'] }); qc.invalidateQueries({ queryKey: ['attendance-today'] }); qc.invalidateQueries({ queryKey: ['team-attendance'] }); },
+  });
+}
+
+export function useStaffAttendance(staffId: string, params?: { page?: number; limit?: number; startDate?: string; endDate?: string }) {
+  return useQuery<PaginatedResponse<AttendanceRecord>>({
+    queryKey: ['staff-attendance', staffId, params],
+    queryFn: async () => {
+      const { data } = await api.get(`/attendance/${staffId}`, { params });
+      const rows = Array.isArray(data?.data) ? data.data : [];
+      return { ...data, data: rows.map((item: RawAttendance) => mapAttendance(item)) };
+    },
+    enabled: !!staffId,
+  });
+}
+
+interface UpdateAttendanceInput {
+  status?: string;
+  workType?: string;
+  checkInTime?: string;
+  checkOutTime?: string;
+  hoursWorked?: number;
+  overtimeHours?: number;
+  notes?: string;
+}
+
+export function useUpdateAttendance() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...body }: UpdateAttendanceInput & { id: string }) =>
+      api.put(`/attendance/${id}`, body),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['attendance'] });
+      qc.invalidateQueries({ queryKey: ['my-attendance'] });
+      qc.invalidateQueries({ queryKey: ['team-attendance'] });
+      qc.invalidateQueries({ queryKey: ['staff-attendance'] });
+    },
   });
 }

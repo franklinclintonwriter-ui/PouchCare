@@ -15,7 +15,7 @@ import {
   MonitorSmartphone, Megaphone, HeadphonesIcon, BellRing, UserPlus,
   Receipt, CreditCard, Building2, ChevronDown, X, LogOut, Wallet,
   Users2, Star, ShoppingCart, Package, ChevronsLeft, ChevronsRight,
-  Settings, Puzzle, Cctv,
+  Settings, Puzzle, Cctv, Wrench,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -126,6 +126,10 @@ function Sidebar() {
       items: [
         { label: 'Analytics', icon: BarChart3, href: '/analytics', permission: () => perm.can('analytics.access') },
       ],
+    },
+    {
+      label: 'Marketing',
+      items: [{ label: 'Tools', icon: Wrench, href: '/tools' }],
     },
     {
       label: 'Admin',

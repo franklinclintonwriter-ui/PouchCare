@@ -15,6 +15,8 @@ export interface StaffUser {
   twoFactorPending?: boolean;
   /** Effective RBAC flags from GET /staff/me (merged defaults + DB overrides). */
   permissions?: Record<string, boolean>;
+  /** User's preferred display currency: 'USD' or 'BDT' */
+  preferredCurrency?: 'USD' | 'BDT';
 }
 
 export interface PortalUser {

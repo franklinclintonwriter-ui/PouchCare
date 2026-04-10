@@ -1,12 +1,14 @@
-import { useMemo } from 'react';
-import { useParams } from 'react-router-dom';
-import { Star, FileText } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Star, FileText, Edit, Trash2, Save, X } from 'lucide-react';
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
-import { useApplication, useUpdateApplication } from '@/api/hr';
+import { useApplication, useUpdateApplication, useDeleteApplication } from '@/api/hr';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/Button';
+import { Textarea } from '@/components/ui/Textarea';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { usePermission } from '@/hooks/usePermission';
 import { toast } from 'sonner';
 import type { JobApplication } from '@/types/models';
@@ -42,10 +44,19 @@ function StarRating({ rating }: { rating: number }) {
 
 export default function ApplicationDetail() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const perm = usePermission();
   const updateApplication = useUpdateApplication();
+  const deleteApplication = useDeleteApplication();
+
+  const [editingNotes, setEditingNotes] = useState(false);
+  const [notes, setNotes] = useState('');
+  const [interviewerNotes, setInterviewerNotes] = useState('');
+  const [showDelete, setShowDelete] = useState(false);
 
   const { data: app, isLoading } = useApplication(id);
+
+  const canManage = perm.can('hr.recruitment');
 
   const headerConfig = useMemo(() => ({
     title: app?.applicantName ?? 'Application',
@@ -54,8 +65,10 @@ export default function ApplicationDetail() {
       { label: 'Applications', href: '/hr/applications' },
       { label: app?.applicantName ?? '...' },
     ],
-    actions: [],
-  }), [app]);
+    actions: canManage ? [
+      { type: 'button' as const, label: 'Delete', icon: Trash2, variant: 'danger' as const, onClick: () => setShowDelete(true) },
+    ] : [],
+  }), [app, canManage]);
 
   useHeaderConfig(headerConfig);
 
@@ -67,6 +80,34 @@ export default function ApplicationDetail() {
     } catch {
       toast.error('Failed to update stage');
     }
+  };
+
+  const handleSaveNotes = async () => {
+    if (!id) return;
+    try {
+      await updateApplication.mutateAsync({ id, notes, interviewerNotes });
+      toast.success('Notes saved');
+      setEditingNotes(false);
+    } catch {
+      toast.error('Failed to save notes');
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!id) return;
+    try {
+      await deleteApplication.mutateAsync(id);
+      toast.success('Application deleted');
+      navigate('/hr/applications');
+    } catch {
+      toast.error('Failed to delete application');
+    }
+  };
+
+  const startEditing = () => {
+    setNotes(app?.notes || '');
+    setInterviewerNotes('');
+    setEditingNotes(true);
   };
 
   if (isLoading) {
@@ -140,17 +181,54 @@ export default function ApplicationDetail() {
               <span className="text-sm text-gray-500">Current Stage</span>
               <StatusBadge status={app.stage} />
             </div>
-            {app.notes && (
-              <div className="pt-2">
-                <span className="text-sm text-gray-500">Notes</span>
-                <p className="mt-1 text-sm text-gray-700 dark:text-gray-300">{app.notes}</p>
-              </div>
-            )}
           </CardContent>
         </Card>
       </div>
 
-      {perm.can('hr.recruitment') && transitions.length > 0 && (
+      <Card>
+        <CardHeader className="flex-row items-center justify-between">
+          <CardTitle>Notes</CardTitle>
+          {canManage && !editingNotes && (
+            <Button variant="ghost" size="sm" icon={<Edit className="h-4 w-4" />} onClick={startEditing}>
+              Edit
+            </Button>
+          )}
+        </CardHeader>
+        <CardContent>
+          {editingNotes ? (
+            <div className="space-y-4">
+              <Textarea
+                label="General Notes"
+                rows={3}
+                value={notes}
+                onChange={e => setNotes(e.target.value)}
+                placeholder="Add notes about this application..."
+              />
+              <Textarea
+                label="Interviewer Notes"
+                rows={3}
+                value={interviewerNotes}
+                onChange={e => setInterviewerNotes(e.target.value)}
+                placeholder="Add interviewer feedback..."
+              />
+              <div className="flex gap-2">
+                <Button size="sm" icon={<Save className="h-4 w-4" />} onClick={handleSaveNotes} isLoading={updateApplication.isPending}>
+                  Save
+                </Button>
+                <Button size="sm" variant="ghost" icon={<X className="h-4 w-4" />} onClick={() => setEditingNotes(false)}>
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+              {app.notes || <span className="text-gray-400 italic">No notes yet</span>}
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
+      {canManage && transitions.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle>Move to Stage</CardTitle>
@@ -160,7 +238,7 @@ export default function ApplicationDetail() {
               {transitions.map(nextStage => (
                 <Button
                   key={nextStage}
-                  variant={nextStage === 'rejected' ? 'ghost' : 'outline'}
+                  variant={nextStage === 'rejected' ? 'danger' : nextStage === 'hired' ? 'primary' : 'outline'}
                   isLoading={updateApplication.isPending}
                   onClick={() => handleStageChange(nextStage)}
                 >
@@ -171,6 +249,17 @@ export default function ApplicationDetail() {
           </CardContent>
         </Card>
       )}
+
+      <ConfirmDialog
+        isOpen={showDelete}
+        onClose={() => setShowDelete(false)}
+        title="Delete Application"
+        message={`Are you sure you want to delete the application from ${app?.applicantName}? This action cannot be undone.`}
+        confirmLabel="Delete"
+        variant="danger"
+        isLoading={deleteApplication.isPending}
+        onConfirm={handleDelete}
+      />
     </PageTransition>
   );
 }

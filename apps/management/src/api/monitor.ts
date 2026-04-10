@@ -43,6 +43,27 @@ export interface MonitorBranchRow {
   status: 'online' | 'partial' | 'offline';
 }
 
+export interface MonitorSummaryInsights {
+  manualCameras: number;
+  vigiCameras: number;
+  vigiNvrIntegrations: number;
+  motionEventsLast24h: number;
+  lastMotionAt: string | null;
+  lastPingAt: string | null;
+  /** Non-offline cameras with no ping or ping older than 7 days */
+  onlineButStalePing: number;
+}
+
+export interface MonitorSummaryAlerts {
+  branchesNeedingAttention: Array<{
+    branchId: string;
+    name: string;
+    offlineCount: number;
+    totalCameras: number;
+  }>;
+  alertCount: number;
+}
+
 export interface MonitorSummaryPayload {
   totals: {
     totalCameras: number;
@@ -53,6 +74,8 @@ export interface MonitorSummaryPayload {
     onlineBranches: number;
   };
   branches: MonitorBranchRow[];
+  insights?: MonitorSummaryInsights;
+  alerts?: MonitorSummaryAlerts;
 }
 
 export type CreateCameraPayload = {
@@ -75,13 +98,15 @@ export type CreateCameraPayload = {
 
 // ── Query hooks ────────────────────────────────────────────
 
-export function useMonitorSummary() {
+export function useMonitorSummary(options?: { refetchInterval?: number | false }) {
   return useQuery<MonitorSummaryPayload>({
     queryKey: ['monitor-summary'],
     queryFn: async () => {
       const res = await api.get<MonitorSummaryPayload>('/assets/cameras/summary');
       return res.data as MonitorSummaryPayload;
     },
+    refetchInterval: options?.refetchInterval ?? false,
+    staleTime: options?.refetchInterval ? 20_000 : 60_000,
   });
 }
 
@@ -108,13 +133,39 @@ export function useCamera(id: string | undefined) {
   });
 }
 
-export function useCamerasByBranch(branchId: string | undefined) {
+export type CamerasByBranchParams = {
+  q?: string;
+  source?: 'manual' | 'vigi';
+  sort?: 'label_asc' | 'label_desc' | 'status' | 'updated_desc' | 'updated_asc';
+  /** Exact status match (ignored if excludeOffline is true). */
+  status?: 'online' | 'recording' | 'offline';
+  /** When true, returns only cameras that are not offline (online + recording). */
+  excludeOffline?: boolean;
+  limit?: number;
+};
+
+export function useCamerasByBranch(
+  branchId: string | undefined,
+  params?: CamerasByBranchParams,
+) {
   return useQuery<PaginatedResponse<CameraDevice>>({
-    queryKey: ['cameras', { branchId }],
+    queryKey: ['cameras', { branchId, ...params }],
     queryFn: async () => {
-      const { data } = await api.get('/assets/cameras', { params: { branchId, limit: 100 } });
+      const lim = params?.limit ?? 500;
+      const { data } = await api.get('/assets/cameras', {
+        params: {
+          branchId,
+          limit: lim,
+          page: 1,
+          ...(params?.q?.trim() ? { q: params.q.trim() } : {}),
+          ...(params?.source ? { source: params.source } : {}),
+          ...(params?.sort ? { sort: params.sort } : {}),
+          ...(params?.excludeOffline ? { excludeOffline: 'true' } : {}),
+          ...(params?.status && !params?.excludeOffline ? { status: params.status } : {}),
+        },
+      });
       const rows = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
-      const meta = data?.meta ?? { total: rows.length, page: 1, limit: 100, totalPages: 1 };
+      const meta = data?.meta ?? { total: rows.length, page: 1, limit: lim, totalPages: 1 };
       return { data: rows as CameraDevice[], meta };
     },
     enabled: !!branchId,
@@ -170,6 +221,43 @@ export function useUpdateCameraStatus() {
       qc.invalidateQueries({ queryKey: ['camera', v.id] });
     },
   });
+}
+
+/** Updates `lastPingAt` — use after verifying a feed is reachable. */
+export function useCameraPing() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.patch(`/assets/cameras/${id}/ping`),
+    onSuccess: (_, id) => {
+      invalidateCameraQueries(qc);
+      qc.invalidateQueries({ queryKey: ['camera', id] });
+    },
+  });
+}
+
+/** Download CSV using the same filters as the camera list (server-side, up to API cap). */
+export async function downloadCamerasExport(
+  params: { branchId: string } & Omit<CamerasByBranchParams, 'limit'>,
+) {
+  const sp = new URLSearchParams({ branchId: params.branchId });
+  if (params.q?.trim()) sp.set('q', params.q.trim());
+  if (params.source) sp.set('source', params.source);
+  if (params.sort) sp.set('sort', params.sort);
+  if (params.excludeOffline) sp.set('excludeOffline', 'true');
+  if (params.status && !params.excludeOffline) sp.set('status', params.status);
+  const res = await api.get(`/assets/cameras/export?${sp.toString()}`, {
+    responseType: 'blob',
+  });
+  const blob = res.data as Blob;
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `cameras-${params.branchId.slice(0, 8)}.csv`;
+  a.rel = 'noopener';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }
 
 // ── VIGI / NVR stream URLs (RTSP templates + optional HLS on camera) ──

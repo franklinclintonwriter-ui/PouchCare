@@ -10,13 +10,14 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Modal } from '@/components/ui/Modal';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { formatCurrency } from '@/lib/format';
+import { useCurrency } from '@/hooks/useCurrency';
 import { Users, Target, DollarSign, GitBranch, Plus } from 'lucide-react';
 import type { Lead } from '@/types/models';
 import { toast } from 'sonner';
 
 export default function LeadList() {
   const navigate = useNavigate();
+  const { formatCurrency } = useCurrency();
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const [page, setPage] = useState(1);

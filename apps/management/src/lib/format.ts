@@ -1,11 +1,31 @@
 /** Shared number formatting for tables, KPIs, and portal views. */
 
-export function formatCurrency(n: number) {
-  return new Intl.NumberFormat('en-US', {
+export type CurrencyCode = 'USD' | 'BDT';
+
+/**
+ * Format a number as currency.
+ * @param n - The amount to format
+ * @param currency - Currency code ('USD' or 'BDT'). Defaults to 'USD'.
+ */
+export function formatCurrency(n: number | null | undefined, currency: CurrencyCode = 'USD') {
+  if (n == null) return '—';
+  const locale = currency === 'BDT' ? 'en-BD' : 'en-US';
+  return new Intl.NumberFormat(locale, {
     style: 'currency',
-    currency: 'USD',
+    currency,
     minimumFractionDigits: 0,
+    maximumFractionDigits: currency === 'BDT' ? 0 : 2,
   }).format(n);
+}
+
+/** Format as USD specifically */
+export function formatUSD(n: number | null | undefined) {
+  return formatCurrency(n, 'USD');
+}
+
+/** Format as BDT specifically */
+export function formatBDT(n: number | null | undefined) {
+  return formatCurrency(n, 'BDT');
 }
 
 export function formatCompact(n: number) {

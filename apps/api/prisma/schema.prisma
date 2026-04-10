@@ -201,6 +201,7 @@ model StaffMember {
   refreshToken     String?       @map("refresh_token")
   lastLoginAt      DateTime?     @map("last_login_at")
   lastLoginIp      String?       @map("last_login_ip")
+  preferredCurrency String       @default("USD") @map("preferred_currency") // USD | BDT
   createdAt        DateTime      @default(now()) @map("created_at")
   updatedAt        DateTime      @updatedAt @map("updated_at")
 
@@ -213,8 +214,38 @@ model StaffMember {
   payroll          Payroll[]
   performanceRatings PerformanceRating[]
   devices          Device[]
+  toolRuns         ToolRun[]
+  documents        StaffDocument[]
 
   @@map("staff_members")
+}
+
+model StaffDocument {
+  id            String      @id @default(uuid())
+  staffMemberId String      @map("staff_member_id")
+  category      String      // identity | education | employment | medical | other
+  documentType  String      @map("document_type") // passport | nid | driving_license | degree | certificate | cv | contract | etc
+  title         String
+  description   String?
+  fileName      String      @map("file_name")
+  fileSize      Int         @map("file_size")
+  mimeType      String      @map("mime_type")
+  fileUrl       String      @map("file_url")
+  thumbnailUrl  String?     @map("thumbnail_url")
+  issueDate     DateTime?   @map("issue_date")
+  expiryDate    DateTime?   @map("expiry_date")
+  isVerified    Boolean     @default(false) @map("is_verified")
+  verifiedBy    String?     @map("verified_by")
+  verifiedAt    DateTime?   @map("verified_at")
+  uploadedBy    String      @map("uploaded_by")
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+
+  staffMember   StaffMember @relation(fields: [staffMemberId], references: [id], onDelete: Cascade)
+
+  @@index([staffMemberId])
+  @@index([category])
+  @@map("staff_documents")
 }
 
 /// Per-role overrides for management UI / API feature flags. Defaults are code-defined; rows here replace defaults.
@@ -1074,4 +1105,27 @@ model CameraDevice {
   @@index([branchId])
   @@index([vigiIntegrationId])
   @@map("camera_devices")
+}
+
+// ── SEO / Web Tools audit log (management app) ───────────────────────────────
+
+enum ToolRunType {
+  SERP_TOP_100
+  DOMAIN_METRICS
+  BACKLINKS
+  KEYWORDS
+  FAVICON_ZIP
+}
+
+model ToolRun {
+  id         String      @id @default(uuid())
+  staffId    String      @map("staff_id")
+  staff      StaffMember @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  toolType   ToolRunType @map("tool_type")
+  queryLabel String      @map("query_label") @db.VarChar(2000)
+  meta       Json?
+  createdAt  DateTime    @default(now()) @map("created_at")
+
+  @@index([staffId, createdAt(sort: Desc)])
+  @@map("tool_runs")
 }

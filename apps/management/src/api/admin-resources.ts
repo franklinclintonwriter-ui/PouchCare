@@ -318,6 +318,45 @@ export function useDeleteBranch() {
   });
 }
 
+/** Staff member eligible to be a branch manager (for Select dropdowns). */
+export interface ManagerCandidate {
+  id: string;
+  name: string;
+  systemRole: string;
+  jobRole: string | null;
+  branch: string | null;
+  email: string;
+}
+
+/**
+ * Fetch all active staff members (for selecting a manager when creating a new branch).
+ * Optional `branch` param filters to staff already at that branch.
+ */
+export function useStaffForManager(branchName?: string) {
+  return useQuery<ManagerCandidate[]>({
+    queryKey: ['staff-for-manager', branchName],
+    queryFn: async () => {
+      const params = branchName ? { branch: branchName } : {};
+      const { data } = await api.get('/admin/staff-for-manager', { params });
+      return (Array.isArray(data) ? data : []) as ManagerCandidate[];
+    },
+  });
+}
+
+/**
+ * Fetch staff at a specific branch who can be set as manager (for editing an existing branch).
+ */
+export function useBranchManagerCandidates(branchId: string | undefined) {
+  return useQuery<ManagerCandidate[]>({
+    queryKey: ['branch-manager-candidates', branchId],
+    queryFn: async () => {
+      const { data } = await api.get(`/admin/branches/${branchId}/manager-candidates`);
+      return (Array.isArray(data) ? data : []) as ManagerCandidate[];
+    },
+    enabled: !!branchId,
+  });
+}
+
 export function useDevices(params?: QueryParams) {
   return useQuery<PaginatedResponse<Device>>({
     queryKey: ['admin-devices', params],

@@ -8,7 +8,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { formatCurrency } from '@/lib/format';
+import { useCurrency } from '@/hooks/useCurrency';
 import { useAuthStore } from '@/store/authStore';
 import type { StaffUser } from '@/types/auth';
 import { ShoppingCart, Calendar, User, Building2, FileText, Link2, Trash2, CheckCircle2 } from 'lucide-react';
@@ -28,6 +28,7 @@ function fmtDate(iso: string | null | undefined) {
 export default function SalesOrderDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { formatCurrency } = useCurrency();
   const { data: order, isLoading } = useSalesOrderRecord(id);
   const updateOrder = useUpdateSalesOrder();
   const deleteOrder = useDeleteSalesOrder();

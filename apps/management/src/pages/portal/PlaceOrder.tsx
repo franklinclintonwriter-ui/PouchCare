@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
 import { useServices } from '@/api/services';
 import { usePlaceOrder } from '@/api/portal';
-import { formatCurrency } from '@/lib/format';
+import { useCurrency } from '@/hooks/useCurrency';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -17,6 +17,7 @@ import { toast } from 'sonner';
 
 export default function PlaceOrder() {
   const navigate = useNavigate();
+  const { formatCurrency } = useCurrency();
   const [currentStep, setCurrentStep] = useState(0);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [url, setUrl] = useState('');

@@ -170,3 +170,26 @@ export function useApplication(id: string | undefined) {
     enabled: !!id,
   });
 }
+
+export function usePosition(id: string | undefined) {
+  return useQuery<Position | null>({
+    queryKey: ['position', id],
+    queryFn: async () => {
+      if (!id) return null;
+      const { data } = await api.get<RawPosition>(`/hr/positions/${id}`);
+      return mapPosition(data);
+    },
+    enabled: !!id,
+  });
+}
+
+export function useDeleteApplication() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.delete(`/hr/applications/${id}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['applications'] });
+      qc.invalidateQueries({ queryKey: ['positions'] });
+    },
+  });
+}

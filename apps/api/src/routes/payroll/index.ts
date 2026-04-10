@@ -11,7 +11,7 @@ const router = Router()
 router.use(authenticate, requirePermission('payroll.access'))
 
 const schema = z.object({
-  memberId:      z.string(),
+  staffMemberId: z.string().uuid(),
   month:         z.string(),
   year:          z.number().int(),
   baseSalary:    z.number(),
@@ -25,9 +25,11 @@ const schema = z.object({
 router.get('/', async (req: AuthRequest, res) => {
   try {
     const { page, limit, skip } = getPagination(req)
-    const { memberId, month, year } = req.query as Record<string, string>
+    const { staffMemberId, memberId, month, year } = req.query as Record<string, string>
     const where: any = {}
-    if (memberId) where.memberId = memberId
+    // Support both staffMemberId and memberId (legacy) for filtering
+    if (staffMemberId) where.staffMemberId = staffMemberId
+    else if (memberId) where.staffMemberId = memberId
     if (month)    where.month = month
     if (year)     where.year = parseInt(year)
 
@@ -42,13 +44,26 @@ router.get('/', async (req: AuthRequest, res) => {
 // POST /payroll — process payroll
 router.post('/', validate(schema), async (req: AuthRequest, res) => {
   try {
-    const member = await prisma.staffMember.findUnique({ where: { id: req.body.memberId } })
+    const member = await prisma.staffMember.findUnique({ where: { id: req.body.staffMemberId } })
     if (!member) return notFound(res, 'Member')
-    const { bonus = 0, deductions = 0 } = req.body
+    const { bonus = 0, deductions = 0, staffMemberId } = req.body
     const netSalary = req.body.baseSalary + bonus - deductions
 
     const payroll = await prisma.payroll.create({
-      data: { ...req.body, staffName: member.name, systemRole: member.systemRole, branch: member.branch || '', netSalary },
+      data: {
+        staffMemberId,
+        month: req.body.month,
+        year: req.body.year,
+        baseSalary: req.body.baseSalary,
+        bonus,
+        deductions,
+        netSalary,
+        paymentMethod: req.body.paymentMethod,
+        notes: req.body.notes,
+        staffName: member.name,
+        systemRole: member.systemRole,
+        branch: member.branch || '',
+      },
     })
     return created(res, payroll)
   } catch (e) { console.error(e); return serverError(res) }

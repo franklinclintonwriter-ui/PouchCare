@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { Mail, Phone, Building, Calendar, Briefcase, DollarSign, Clock, Shield, KeyRound } from 'lucide-react';
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
 import { usePermission } from '@/hooks/usePermission';
+import { useAuth } from '@/hooks/useAuth';
 import { useAttendance } from '@/api/attendance';
 import { useStaffMember } from '@/api/staff';
 import { useTasks } from '@/api/tasks';
@@ -16,16 +17,22 @@ import { StaffProfileStats } from '@/components/staff/StaffProfileStats';
 import { StaffRolePermissionsPanel } from '@/components/staff/StaffRolePermissionsPanel';
 import { StaffProfileAdminForm } from '@/components/staff/StaffProfileAdminForm';
 import { StaffCeoRatingPanel } from '@/components/staff/StaffCeoRatingPanel';
+import { DocumentManager } from '@/components/staff/DocumentManager';
+import { useCurrency } from '@/hooks/useCurrency';
 import type { Task, AttendanceRecord } from '@/types/models';
 import { ROLE_LABELS } from '@/utils/permissions';
 
 export default function StaffDetail() {
   const { id } = useParams<{ id: string }>();
   const perm = usePermission();
+  const { user } = useAuth();
+  const { formatCurrency } = useCurrency();
   const { data: member, isLoading } = useStaffMember(id!);
   const { data: memberTasks } = useTasks({ assignedTo: id, limit: 10 });
   const { data: attendance } = useAttendance({ memberId: id, limit: 10 });
   const [tab, setTab] = useState('overview');
+
+  const isOwnProfile = user?.id === id;
 
   useEffect(() => {
     if (tab === 'admin' && member && !member.profileAdmin) setTab('overview');
@@ -84,11 +91,12 @@ export default function StaffDetail() {
       label: 'Joined',
       value: new Date(member.joinDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
     },
-    { icon: DollarSign, label: 'Salary', value: `$${member.salary.toLocaleString()}` },
+    { icon: DollarSign, label: 'Salary', value: formatCurrency(member.salary) },
   ];
 
   const tabDefs = [
     { label: 'Overview', value: 'overview' },
+    { label: 'Documents', value: 'documents' },
     ...(member.profileAdmin ? [{ label: 'Admin', value: 'admin' }] : []),
     { label: 'Tasks', value: 'tasks' },
     { label: 'Attendance', value: 'attendance' },
@@ -158,6 +166,14 @@ export default function StaffDetail() {
               </CardContent>
             </Card>
           </div>
+        )}
+
+        {tab === 'documents' && (
+          <DocumentManager
+            staffId={member.id}
+            staffName={member.name}
+            isOwnProfile={isOwnProfile}
+          />
         )}
 
         {tab === 'admin' && member.profileAdmin ? (

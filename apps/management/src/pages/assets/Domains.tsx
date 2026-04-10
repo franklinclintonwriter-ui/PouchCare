@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { PageTransition } from '@/components/ui/PageTransition';
-import { formatCurrency } from '@/lib/format';
+import { useCurrency } from '@/hooks/useCurrency';
 import { useAuthStore } from '@/store/authStore';
 import type { StaffUser } from '@/types/auth';
 import type { Domain } from '@/types/models';
@@ -23,6 +23,7 @@ const emptyForm = { domainName: '', registrar: '', expiryDate: '', dnsProvider: 
 
 export default function Domains() {
   const navigate = useNavigate();
+  const { formatCurrency } = useCurrency();
   const { data, isLoading } = useDomains();
   const domains = data?.data ?? [];
   const createDomain = useCreateDomain();

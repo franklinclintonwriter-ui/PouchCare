@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Medal } from 'lucide-react';
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
 import { useReferralLeaderboard } from '@/api/portal';
-import { formatCurrency } from '@/lib/format';
+import { useCurrency } from '@/hooks/useCurrency';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { Badge } from '@/components/ui/Badge';
@@ -16,6 +16,7 @@ type Row = {
 };
 
 export default function ReferralLeaderboard() {
+  const { formatCurrency } = useCurrency();
   const { data = [], isLoading } = useReferralLeaderboard();
 
   const headerConfig = useMemo(() => ({

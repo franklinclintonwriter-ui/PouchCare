@@ -144,13 +144,71 @@ router.delete('/websites/:id', requireRoles(...SENIOR_ROLES as any), async (req,
 })
 
 // ── CAMERA DEVICES (CCTV) ──
-// Register `/cameras/summary` before `/cameras/:id` so `summary` is not parsed as an id.
+// Register `/cameras/summary` and `/cameras/export` before `/cameras/:id` so those segments are not parsed as ids.
+
+const CAMERA_EXPORT_MAX = 2500
+
+function cameraListOrderBy(sort: string | undefined) {
+  const sortKey = sort ?? 'label_asc'
+  if (sortKey === 'label_desc') return { label: 'desc' as const }
+  if (sortKey === 'status') return [{ status: 'asc' as const }, { label: 'asc' as const }]
+  if (sortKey === 'updated_desc') return { updatedAt: 'desc' as const }
+  if (sortKey === 'updated_asc') return { updatedAt: 'asc' as const }
+  return { label: 'asc' as const }
+}
+
+/** Shared list filters for GET /cameras and GET /cameras/export. `excludeOffline` wins over `status`. */
+function buildCameraListWhereAndOrder(query: Record<string, string | undefined>) {
+  const { branchId, status, q, source, sort, excludeOffline } = query
+  const where: Record<string, unknown> = {}
+  if (branchId) where.branchId = branchId
+  const excl = excludeOffline === 'true' || excludeOffline === '1'
+  if (excl) {
+    where.status = { not: 'offline' }
+  } else if (status) {
+    where.status = status
+  }
+  if (source && (source === 'manual' || source === 'vigi')) where.source = source
+  const qTrim = q?.trim()
+  if (qTrim) {
+    where.OR = [
+      { label: { contains: qTrim, mode: 'insensitive' } },
+      { location: { contains: qTrim, mode: 'insensitive' } },
+      { notes: { contains: qTrim, mode: 'insensitive' } },
+    ]
+  }
+  const orderBy = cameraListOrderBy(sort)
+  return { where, orderBy }
+}
+
+function csvEscapeCell(value: unknown): string {
+  if (value == null) return ''
+  const s = value instanceof Date ? value.toISOString() : String(value)
+  if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`
+  return s
+}
 
 router.get('/cameras/summary', requirePermission('monitor.view'), async (_req, res) => {
   try {
-    const [statusGroups, branches] = await Promise.all([
+    const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
+    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+
+    const [
+      statusGroups,
+      sourceGroups,
+      branches,
+      vigiIntegrationCount,
+      aggMotion,
+      aggPing,
+      motion24h,
+      stalePingCount,
+    ] = await Promise.all([
       prisma.cameraDevice.groupBy({
         by: ['status'],
+        _count: { _all: true },
+      }),
+      prisma.cameraDevice.groupBy({
+        by: ['source'],
         _count: { _all: true },
       }),
       prisma.branch.findMany({
@@ -159,15 +217,32 @@ router.get('/cameras/summary', requirePermission('monitor.view'), async (_req, r
           cameraDevices: { select: { status: true } },
         },
       }),
+      prisma.vigiNvrIntegration.count(),
+      prisma.cameraDevice.aggregate({ _max: { lastMotionAt: true } }),
+      prisma.cameraDevice.aggregate({ _max: { lastPingAt: true } }),
+      prisma.cameraDevice.count({
+        where: { lastMotionAt: { gte: dayAgo } },
+      }),
+      prisma.cameraDevice.count({
+        where: {
+          status: { not: 'offline' },
+          OR: [{ lastPingAt: null }, { lastPingAt: { lt: weekAgo } }],
+        },
+      }),
     ])
 
     const countFor = (s: string) =>
       statusGroups.find((g) => g.status === s)?._count._all ?? 0
 
+    const countSource = (src: string) =>
+      sourceGroups.find((g) => g.source === src)?._count._all ?? 0
+
     const totalCameras = statusGroups.reduce((acc, g) => acc + g._count._all, 0)
     const offlineCameras = countFor('offline')
     const recordingCameras = countFor('recording')
     const onlineCameras = totalCameras - offlineCameras
+    const manualCameras = countSource('manual')
+    const vigiCameras = countSource('vigi')
 
     const branchRows = branches.map((b) => {
       const cams = b.cameraDevices
@@ -196,6 +271,17 @@ router.get('/cameras/summary', requirePermission('monitor.view'), async (_req, r
     const totalBranches = branches.length
     const onlineBranches = branchRows.filter((r) => r.status === 'online').length
 
+    const branchesNeedingAttention = [...branchRows]
+      .filter((r) => r.offlineCameras > 0)
+      .sort((a, b) => b.offlineCameras - a.offlineCameras)
+      .slice(0, 8)
+      .map((r) => ({
+        branchId: r.id,
+        name: r.name,
+        offlineCount: r.offlineCameras,
+        totalCameras: r.totalCameras,
+      }))
+
     return ok(res, {
       totals: {
         totalCameras,
@@ -206,6 +292,19 @@ router.get('/cameras/summary', requirePermission('monitor.view'), async (_req, r
         onlineBranches,
       },
       branches: branchRows,
+      insights: {
+        manualCameras,
+        vigiCameras,
+        vigiNvrIntegrations: vigiIntegrationCount,
+        motionEventsLast24h: motion24h,
+        lastMotionAt: aggMotion._max.lastMotionAt?.toISOString() ?? null,
+        lastPingAt: aggPing._max.lastPingAt?.toISOString() ?? null,
+        onlineButStalePing: stalePingCount,
+      },
+      alerts: {
+        branchesNeedingAttention,
+        alertCount: branchesNeedingAttention.length,
+      },
     })
   } catch (err) {
     return serverError(res, err)
@@ -214,21 +313,78 @@ router.get('/cameras/summary', requirePermission('monitor.view'), async (_req, r
 
 router.get('/cameras', requirePermission('monitor.view'), async (req, res) => {
   try {
-    const { branchId, status } = req.query as Record<string, string>
     const { page, limit, skip } = getPagination(req)
-    const where: Record<string, unknown> = {}
-    if (branchId) where.branchId = branchId
-    if (status) where.status = status
+    const { where, orderBy } = buildCameraListWhereAndOrder(req.query as Record<string, string | undefined>)
+
     const [cameras, total] = await Promise.all([
       prisma.cameraDevice.findMany({
         where: where as any,
         skip,
         take: limit,
-        orderBy: { label: 'asc' },
+        orderBy: orderBy as any,
       }),
       prisma.cameraDevice.count({ where: where as any }),
     ])
     return ok(res, cameras, buildMeta(total, page, limit))
+  } catch (err) {
+    return serverError(res, err)
+  }
+})
+
+/** CSV export — same filters as GET /cameras (up to CAMERA_EXPORT_MAX rows). */
+router.get('/cameras/export', requirePermission('monitor.view'), async (req, res) => {
+  try {
+    const { where, orderBy } = buildCameraListWhereAndOrder(req.query as Record<string, string | undefined>)
+    const rows = await prisma.cameraDevice.findMany({
+      where: where as any,
+      orderBy: orderBy as any,
+      take: CAMERA_EXPORT_MAX,
+    })
+
+    const header = [
+      'id',
+      'branchId',
+      'branchName',
+      'label',
+      'location',
+      'status',
+      'source',
+      'vigiChannel',
+      'resolution',
+      'fps',
+      'ipAddress',
+      'lastPingAt',
+      'lastMotionAt',
+      'updatedAt',
+      'notes',
+    ]
+    const lines = [header.join(',')]
+    for (const r of rows) {
+      lines.push(
+        [
+          csvEscapeCell(r.id),
+          csvEscapeCell(r.branchId),
+          csvEscapeCell(r.branchName),
+          csvEscapeCell(r.label),
+          csvEscapeCell(r.location),
+          csvEscapeCell(r.status),
+          csvEscapeCell(r.source),
+          csvEscapeCell(r.vigiChannel),
+          csvEscapeCell(r.resolution),
+          csvEscapeCell(r.fps),
+          csvEscapeCell(r.ipAddress),
+          csvEscapeCell(r.lastPingAt),
+          csvEscapeCell(r.lastMotionAt),
+          csvEscapeCell(r.updatedAt),
+          csvEscapeCell(r.notes),
+        ].join(','),
+      )
+    }
+    const branchBit = (req.query.branchId as string | undefined)?.slice(0, 8) ?? 'all'
+    const filename = `cameras-${branchBit}-${new Date().toISOString().slice(0, 10)}.csv`
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8')
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`)
+    res.send('\uFEFF' + lines.join('\n') + '\n')
   } catch (err) {
     return serverError(res, err)
   }
@@ -255,6 +411,20 @@ router.post(
     }
   },
 )
+
+/** PATCH /cameras/:id/ping — mark camera as seen (updates lastPingAt). Any operator can heartbeat a feed check. */
+router.patch('/cameras/:id/ping', requirePermission('monitor.view'), async (req, res) => {
+  try {
+    const camera = await prisma.cameraDevice.update({
+      where: { id: req.params.id },
+      data: { lastPingAt: new Date() },
+    })
+    return ok(res, camera)
+  } catch (err: any) {
+    if (err?.code === 'P2025') return notFound(res, 'Camera')
+    return serverError(res, err)
+  }
+})
 
 router.get('/cameras/:id', requirePermission('monitor.view'), async (req, res) => {
   try {

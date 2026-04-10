@@ -9,7 +9,7 @@ import {
 } from 'recharts';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { formatCurrency } from '@/utils/format';
+import { useCurrency } from '@/hooks/useCurrency';
 import type { ForecastData } from '@/types/analytics';
 
 interface ForecastChartProps {
@@ -18,6 +18,8 @@ interface ForecastChartProps {
 }
 
 export function ForecastChart({ forecast, loading = false }: ForecastChartProps) {
+  const { formatCurrency, symbol, convert } = useCurrency();
+
   const chartData = forecast?.forecast.map((f) => ({
     name: `${f.month} ${f.year}`,
     projected: f.projected,
@@ -64,7 +66,10 @@ export function ForecastChart({ forecast, loading = false }: ForecastChartProps)
                   tick={{ fontSize: 12 }}
                   tickLine={false}
                   axisLine={false}
-                  tickFormatter={(v) => `$${v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`}
+                  tickFormatter={(v) => {
+                    const converted = convert(v) ?? v;
+                    return `${symbol}${converted >= 1000 ? `${(converted / 1000).toFixed(0)}k` : converted}`;
+                  }}
                   className="text-gray-500 dark:text-gray-400"
                 />
                 <Tooltip

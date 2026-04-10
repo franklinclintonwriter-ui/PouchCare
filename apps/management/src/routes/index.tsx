@@ -107,6 +107,12 @@ const PluginDetail = lazy(() => import('@/pages/plugins/PluginDetail'));
 const ApiKeys = lazy(() => import('@/pages/settings/ApiKeys'));
 const MonitorDashboard = lazy(() => import('@/pages/monitor/MonitorDashboard'));
 const BranchCameras = lazy(() => import('@/pages/monitor/BranchCameras'));
+const ToolsHub = lazy(() => import('@/pages/tools/ToolsHub'));
+const FaviconToolPage = lazy(() => import('@/pages/tools/FaviconToolPage'));
+const BacklinksToolPage = lazy(() => import('@/pages/tools/BacklinksToolPage'));
+const DaPaToolPage = lazy(() => import('@/pages/tools/DaPaToolPage'));
+const KeywordsToolPage = lazy(() => import('@/pages/tools/KeywordsToolPage'));
+const SerpTop100ToolPage = lazy(() => import('@/pages/tools/SerpTop100ToolPage'));
 
 export const routes: RouteObject[] = [
   // Auth routes (guest only)
@@ -317,6 +323,12 @@ export const routes: RouteObject[] = [
           </PermissionGuard>
         ),
       },
+      { path: 'tools', element: <LazyPage element={<ToolsHub />} /> },
+      { path: 'tools/favicon', element: <LazyPage element={<FaviconToolPage />} /> },
+      { path: 'tools/backlinks', element: <LazyPage element={<BacklinksToolPage />} /> },
+      { path: 'tools/da-pa', element: <LazyPage element={<DaPaToolPage />} /> },
+      { path: 'tools/keywords', element: <LazyPage element={<KeywordsToolPage />} /> },
+      { path: 'tools/serp-top-100', element: <LazyPage element={<SerpTop100ToolPage />} /> },
       { path: 'notifications', element: <NotificationList /> },
       { path: 'settings/profile', element: <LazyPage element={<Profile />} /> },
       { path: 'settings/security', element: <LazyPage element={<Security />} /> },

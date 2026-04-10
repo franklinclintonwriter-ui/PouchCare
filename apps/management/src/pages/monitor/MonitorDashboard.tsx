@@ -3,14 +3,19 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   Cctv, MapPin, Radio, Wifi, WifiOff, AlertTriangle, ChevronRight,
-  Building2, Search, Shield, Activity,
+  Building2, Search, Shield, Activity, Cpu, Satellite, Zap, Clock3,
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { KPICard } from '@/components/ui/KPICard';
 import { Button } from '@/components/ui/Button';
-import { useMonitorSummary, type MonitorBranchRow, type MonitorSummaryPayload } from '@/api/monitor';
+import {
+  useMonitorSummary,
+  type MonitorBranchRow,
+  type MonitorSummaryPayload,
+  type MonitorSummaryInsights,
+} from '@/api/monitor';
 
 const BRANCH_GRADIENTS = [
   { gradientFrom: '#1d4ed8', gradientTo: '#3b82f6' },
@@ -344,6 +349,140 @@ function BranchCard({
   );
 }
 
+// ── Fleet insights (VIGI vs manual, motion, freshness) ───────
+
+function formatShortIso(iso: string | null | undefined) {
+  if (!iso) return '—';
+  try {
+    return new Date(iso).toLocaleString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  } catch {
+    return '—';
+  }
+}
+
+function FleetInsightsPanel({
+  insights,
+  loading,
+}: {
+  insights: MonitorSummaryInsights | undefined;
+  loading: boolean;
+}) {
+  if (loading && !insights) {
+    return (
+      <div className="rounded-xl border border-gray-200/80 bg-white px-4 py-4 shadow-soft dark:border-gray-700/60 dark:bg-gray-800/80">
+        <div className="h-20 animate-pulse rounded-lg bg-gray-100 dark:bg-gray-700/60" />
+      </div>
+    );
+  }
+  if (!insights) return null;
+
+  const totalSrc = insights.manualCameras + insights.vigiCameras;
+  const vigiPct = totalSrc > 0 ? Math.round((insights.vigiCameras / totalSrc) * 100) : 0;
+
+  return (
+    <div className="rounded-xl border border-gray-200/80 bg-white px-4 py-4 shadow-soft dark:border-gray-700/60 dark:bg-gray-800/80">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <h2 className="text-sm font-semibold text-gray-800 dark:text-gray-200">Fleet insights</h2>
+        <span className="text-[10px] font-medium uppercase tracking-wide text-gray-400">
+          Last 24h motion · NVR coverage
+        </span>
+      </div>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="rounded-lg border border-gray-100 bg-gray-50/80 px-3 py-2.5 dark:border-gray-700/50 dark:bg-gray-900/40">
+          <div className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide text-gray-500">
+            <Cpu className="h-3 w-3" /> Manual
+          </div>
+          <p className="mt-1 text-xl font-bold tabular-nums text-gray-900 dark:text-gray-100">
+            {insights.manualCameras}
+          </p>
+        </div>
+        <div className="rounded-lg border border-gray-100 bg-gray-50/80 px-3 py-2.5 dark:border-gray-700/50 dark:bg-gray-900/40">
+          <div className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide text-gray-500">
+            <Satellite className="h-3 w-3" /> VIGI
+          </div>
+          <p className="mt-1 text-xl font-bold tabular-nums text-gray-900 dark:text-gray-100">
+            {insights.vigiCameras}
+            <span className="ml-1.5 text-xs font-normal text-gray-400">({vigiPct}%)</span>
+          </p>
+        </div>
+        <div className="rounded-lg border border-gray-100 bg-gray-50/80 px-3 py-2.5 dark:border-gray-700/50 dark:bg-gray-900/40">
+          <div className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide text-gray-500">
+            <Zap className="h-3 w-3 text-amber-500" /> Motion 24h
+          </div>
+          <p className="mt-1 text-xl font-bold tabular-nums text-gray-900 dark:text-gray-100">
+            {insights.motionEventsLast24h}
+          </p>
+        </div>
+        <div className="rounded-lg border border-amber-200/60 bg-amber-50/50 px-3 py-2.5 dark:border-amber-800/40 dark:bg-amber-950/20">
+          <div className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide text-amber-800 dark:text-amber-400">
+            <Clock3 className="h-3 w-3" /> Stale ping
+          </div>
+          <p className="mt-1 text-xl font-bold tabular-nums text-amber-900 dark:text-amber-200">
+            {insights.onlineButStalePing}
+          </p>
+          <p className="text-[10px] text-amber-700/90 dark:text-amber-500/90">
+            Online but no ping in 7d
+          </p>
+        </div>
+      </div>
+      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 border-t border-gray-100 pt-3 text-xs text-gray-500 dark:border-gray-700/50 dark:text-gray-400">
+        <span>
+          NVR integrations:{' '}
+          <strong className="text-gray-800 dark:text-gray-200">{insights.vigiNvrIntegrations}</strong>
+        </span>
+        <span>
+          Last motion:{' '}
+          <strong className="text-gray-800 dark:text-gray-200">{formatShortIso(insights.lastMotionAt)}</strong>
+        </span>
+        <span>
+          Last ping:{' '}
+          <strong className="text-gray-800 dark:text-gray-200">{formatShortIso(insights.lastPingAt)}</strong>
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function AttentionTable({
+  rows,
+  onBranch,
+}: {
+  rows: NonNullable<MonitorSummaryPayload['alerts']>['branchesNeedingAttention'];
+  onBranch: (id: string) => void;
+}) {
+  if (rows.length === 0) return null;
+  return (
+    <div className="overflow-hidden rounded-xl border border-red-200/70 bg-red-50/40 dark:border-red-900/40 dark:bg-red-950/20">
+      <div className="flex items-center gap-2 border-b border-red-200/60 px-4 py-2.5 dark:border-red-900/40">
+        <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />
+        <h2 className="text-sm font-semibold text-red-900 dark:text-red-200">Branches needing attention</h2>
+      </div>
+      <ul className="divide-y divide-red-100 dark:divide-red-900/30">
+        {rows.map((r) => (
+          <li key={r.branchId}>
+            <button
+              type="button"
+              onClick={() => onBranch(r.branchId)}
+              className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-red-100/50 dark:hover:bg-red-950/40"
+            >
+              <span className="min-w-0 truncate font-medium text-gray-900 dark:text-gray-100">{r.name}</span>
+              <span className="shrink-0 text-sm tabular-nums text-red-700 dark:text-red-400">
+                {r.offlineCount} offline / {r.totalCameras}
+              </span>
+              <ChevronRight className="h-4 w-4 shrink-0 text-gray-400" />
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 // ── Offline alert banner ────────────────────────────────────
 
 function OfflineAlert({ branches }: { branches: MonitorBranchRow[] }) {
@@ -370,8 +509,11 @@ function OfflineAlert({ branches }: { branches: MonitorBranchRow[] }) {
 export default function MonitorDashboard() {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
+  const [liveUpdates, setLiveUpdates] = useState(true);
 
-  const { data, isLoading, isError, error, refetch } = useMonitorSummary();
+  const { data, isLoading, isError, error, refetch } = useMonitorSummary({
+    refetchInterval: liveUpdates ? 45_000 : false,
+  });
 
   const totals = data?.totals ?? emptyTotals;
   const allBranches = data?.branches ?? [];
@@ -433,6 +575,27 @@ export default function MonitorDashboard() {
       <MonitorKPIs totals={totals} loading={loading} />
 
       <SystemHealthBar totals={totals} />
+
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        <label className="flex cursor-pointer select-none items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-medium text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
+          <input
+            type="checkbox"
+            className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+            checked={liveUpdates}
+            onChange={(e) => setLiveUpdates(e.target.checked)}
+          />
+          Auto-refresh summary every 45s
+        </label>
+      </div>
+
+      <FleetInsightsPanel insights={data?.insights} loading={loading} />
+
+      {data?.alerts?.branchesNeedingAttention && (
+        <AttentionTable
+          rows={data.alerts.branchesNeedingAttention}
+          onBranch={(id) => navigate(`/monitor/${id}`)}
+        />
+      )}
 
       <OfflineAlert branches={allBranches} />
 

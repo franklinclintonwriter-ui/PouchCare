@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { formatCurrency } from '@/lib/format';
+import { useCurrency } from '@/hooks/useCurrency';
 import { toast } from 'sonner';
 import type { ClientAccount } from '@/api/admin-resources';
 import { useAuthStore } from '@/store/authStore';
@@ -19,6 +19,7 @@ const SENIOR_ROLES = ['CEO', 'CO_MD', 'OP_MANAGER'];
 const emptyForm = { clientName: '', email: '', country: '' };
 
 export default function ClientAccounts() {
+  const { formatCurrency } = useCurrency();
   const [page, setPage] = useState(1);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);

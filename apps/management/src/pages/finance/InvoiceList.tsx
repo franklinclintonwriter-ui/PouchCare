@@ -9,13 +9,14 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Modal } from '@/components/ui/Modal';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { formatCurrency } from '@/lib/format';
+import { useCurrency } from '@/hooks/useCurrency';
 import { DollarSign, FileText, CheckCircle, AlertTriangle, CircleDot, Plus } from 'lucide-react';
 import type { Invoice } from '@/types/models';
 import { toast } from 'sonner';
 
 export default function InvoiceList() {
   const navigate = useNavigate();
+  const { formatCurrency } = useCurrency();
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const [page, setPage] = useState(1);

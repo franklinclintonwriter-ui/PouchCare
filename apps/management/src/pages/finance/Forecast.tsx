@@ -4,11 +4,12 @@ import { useRevenue, useForecast } from '@/api/finance';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { StatsRow } from '@/components/shared/StatsRow';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
-import { formatCurrency } from '@/lib/format';
+import { useCurrency } from '@/hooks/useCurrency';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { TrendingUp, Target, Calendar, Zap } from 'lucide-react';
 
 export default function Forecast() {
+  const { formatCurrency, symbol, convert } = useCurrency();
   const { data: months, isLoading: revenueLoading } = useRevenue();
   const { data: forecastResult, isLoading: forecastLoading } = useForecast();
   const isLoading = revenueLoading || forecastLoading;
@@ -84,7 +85,10 @@ export default function Forecast() {
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-gray-200 dark:stroke-gray-700" />
                   <XAxis dataKey="month" tick={{ fontSize: 12 }} className="text-gray-500" />
-                  <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} className="text-gray-500" />
+                  <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => {
+                    const converted = convert(v) ?? v;
+                    return `${symbol}${(converted / 1000).toFixed(0)}k`;
+                  }} className="text-gray-500" />
                   <Tooltip
                     formatter={(value: number, name: string) => [formatCurrency(value), name === 'actual' ? 'Actual' : 'Projected']}
                     contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb', fontSize: '13px' }}

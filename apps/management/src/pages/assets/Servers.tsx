@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { PageTransition } from '@/components/ui/PageTransition';
-import { formatCurrency } from '@/lib/format';
+import { useCurrency } from '@/hooks/useCurrency';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useAuthStore } from '@/store/authStore';
 import type { StaffUser } from '@/types/auth';
@@ -23,6 +23,7 @@ const SENIOR_ROLES = ['CEO', 'CO_MD', 'OP_MANAGER'];
 const emptyForm = { name: '', provider: '', ipAddress: '', type: '', ramGb: '', storageGb: '', monthlyCostUsd: '', status: 'online' };
 
 export default function Servers() {
+  const { formatCurrency } = useCurrency();
   const navigate = useNavigate();
   const { data: servers, isLoading } = useServers();
   const createServer = useCreateServer();

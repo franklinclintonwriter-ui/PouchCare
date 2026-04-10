@@ -10,7 +10,7 @@ import {
 } from 'recharts';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { formatCurrency } from '@/utils/format';
+import { useCurrency } from '@/hooks/useCurrency';
 import type { MonthlyRevenue } from '@/types/analytics';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -21,6 +21,8 @@ interface RevenueChartProps {
 }
 
 export function RevenueChart({ data, loading = false }: RevenueChartProps) {
+  const { formatCurrency, symbol, convert } = useCurrency();
+
   const chartData = data?.map((d) => ({
     name: MONTHS[d.month - 1],
     revenue: d.totalRevenueUsd,
@@ -57,7 +59,10 @@ export function RevenueChart({ data, loading = false }: RevenueChartProps) {
                   tick={{ fontSize: 12 }}
                   tickLine={false}
                   axisLine={false}
-                  tickFormatter={(v) => `$${v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`}
+                  tickFormatter={(v) => {
+                    const converted = convert(v) ?? v;
+                    return `${symbol}${converted >= 1000 ? `${(converted / 1000).toFixed(0)}k` : converted}`;
+                  }}
                   className="text-gray-500 dark:text-gray-400"
                 />
                 <Tooltip

@@ -211,6 +211,66 @@ router.delete('/branches/:id', requirePermission('staff.branches'), async (req, 
   } catch (err) { return serverError(res, err) }
 })
 
+/**
+ * GET /branches/:id/manager-candidates
+ * Returns staff members at this branch who could be set as the branch manager.
+ * Includes: name, id, systemRole, jobRole, status.
+ */
+router.get('/branches/:id/manager-candidates', requirePermission('staff.branches'), async (req, res) => {
+  try {
+    const { id } = req.params
+    const branch = await prisma.branch.findUnique({ where: { id } })
+    if (!branch) return notFound(res, 'Branch')
+
+    const candidates = await prisma.staffMember.findMany({
+      where: {
+        branch: branch.name,
+        status: { in: ['Active', 'active', 'ACTIVE'] },
+      },
+      orderBy: [{ systemRole: 'asc' }, { name: 'asc' }],
+      select: {
+        id: true,
+        name: true,
+        systemRole: true,
+        jobRole: true,
+        status: true,
+        email: true,
+      },
+    })
+    return ok(res, candidates)
+  } catch (err) { return serverError(res, err) }
+})
+
+/**
+ * GET /staff-for-manager
+ * Returns all active staff for selecting a manager when creating a new branch.
+ * Optional: ?branch=<branchName> to filter by existing branch assignment.
+ */
+router.get('/staff-for-manager', requirePermission('staff.branches'), async (req, res) => {
+  try {
+    const branchName = String(req.query.branch ?? '').trim()
+    const where: Record<string, unknown> = {
+      status: { in: ['Active', 'active', 'ACTIVE'] },
+    }
+    if (branchName) {
+      where.branch = branchName
+    }
+    const staff = await prisma.staffMember.findMany({
+      where: where as any,
+      orderBy: [{ branch: 'asc' }, { name: 'asc' }],
+      select: {
+        id: true,
+        name: true,
+        systemRole: true,
+        jobRole: true,
+        branch: true,
+        email: true,
+      },
+    })
+    return ok(res, staff)
+  } catch (err) { return serverError(res, err) }
+})
+
 // Devices
 router.get('/devices', requirePermission('assets.devices'), async (req, res) => {
   try {
@@ -316,6 +376,21 @@ router.delete('/client-accounts/:id', requirePermission('crm.client_accounts'), 
 })
 
 // Exchange Rates
+
+/** GET /admin/exchange-rates/latest — returns the most recent exchange rate (no permission required for staff) */
+router.get('/exchange-rates/latest', async (_req, res) => {
+  try {
+    const latest = await prisma.exchangeRate.findFirst({
+      orderBy: { effectiveDate: 'desc' },
+    })
+    if (!latest) {
+      // Return sensible default if no rates exist
+      return ok(res, { usdToBdt: 125, usdToAed: 3.67, bdtToAed: null, effectiveDate: new Date().toISOString() })
+    }
+    return ok(res, latest)
+  } catch (err) { return serverError(res, err) }
+})
+
 router.get('/exchange-rates', requirePermission('finance.exchange_rates'), async (req, res) => {
   try {
     const { page, limit, skip } = getPaginationParams(req.query as any)

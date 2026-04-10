@@ -9,7 +9,7 @@ import { StatsRow } from '@/components/shared/StatsRow';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/Button';
-import { formatCurrency } from '@/lib/format';
+import { useCurrency } from '@/hooks/useCurrency';
 import { useAuthStore } from '@/store/authStore';
 import type { StaffUser } from '@/types/auth';
 import { ShoppingCart, DollarSign, CheckCircle, Clock, CircleDot } from 'lucide-react';
@@ -20,6 +20,7 @@ const SENIOR_ROLES = ['CEO', 'CO_MD', 'OP_MANAGER'];
 
 export default function SalesOrders() {
   const navigate = useNavigate();
+  const { formatCurrency } = useCurrency();
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const [page, setPage] = useState(1);

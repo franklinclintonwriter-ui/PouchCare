@@ -1,12 +1,16 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { UserCheck, Star } from 'lucide-react';
+import { UserCheck, Star, Plus } from 'lucide-react';
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
-import { useApplications, useUpdateApplication } from '@/api/hr';
+import { useApplications, useUpdateApplication, useCreateApplication, usePositions } from '@/api/hr';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Tabs } from '@/components/ui/Tabs';
 import { Button } from '@/components/ui/Button';
+import { Modal } from '@/components/ui/Modal';
+import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
+import { Textarea } from '@/components/ui/Textarea';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { usePermission } from '@/hooks/usePermission';
 import type { JobApplication } from '@/types/models';
@@ -61,8 +65,24 @@ export default function Applications() {
   const navigate = useNavigate();
   const [stage, setStage] = useState('all');
   const [page, setPage] = useState(1);
+  const [showCreate, setShowCreate] = useState(false);
   const perm = usePermission();
   const updateApplication = useUpdateApplication();
+  const createApplication = useCreateApplication();
+  const { data: positions } = usePositions();
+
+  const [form, setForm] = useState({
+    positionId: '',
+    applicantName: '',
+    email: '',
+    phone: '',
+    cvUrl: '',
+    portfolioUrl: '',
+    experienceYears: '',
+    expectedSalary: '',
+    source: '',
+    notes: '',
+  });
 
   const params = useMemo(() => ({
     status: stage === 'all' ? undefined : stage,
@@ -73,15 +93,49 @@ export default function Applications() {
   const { data, isLoading } = useApplications(params);
   const applications = data?.data ?? [];
 
+  const openPositions = useMemo(() =>
+    (positions ?? []).filter(p => p.status === 'open'),
+  [positions]);
+
+  const canCreate = perm.can('hr.recruitment');
+
   const headerConfig = useMemo(() => ({
     title: 'Applications',
     breadcrumbs: [
       { label: 'HR', href: '/hr' },
       { label: 'Applications', icon: UserCheck },
     ],
-    actions: [],
-  }), []);
+    actions: canCreate ? [
+      { type: 'button' as const, label: 'Add Application', icon: Plus, onClick: () => setShowCreate(true) },
+    ] : [],
+  }), [canCreate]);
   useHeaderConfig(headerConfig);
+
+  const handleCreate = async () => {
+    if (!form.positionId || !form.applicantName || !form.email) {
+      toast.error('Position, name, and email are required');
+      return;
+    }
+    try {
+      await createApplication.mutateAsync({
+        positionId: form.positionId,
+        applicantName: form.applicantName,
+        email: form.email,
+        phone: form.phone || undefined,
+        cvUrl: form.cvUrl || undefined,
+        portfolioUrl: form.portfolioUrl || undefined,
+        experienceYears: form.experienceYears ? Number(form.experienceYears) : undefined,
+        expectedSalary: form.expectedSalary ? Number(form.expectedSalary) : undefined,
+        source: form.source || undefined,
+        notes: form.notes || undefined,
+      });
+      toast.success('Application added');
+      setShowCreate(false);
+      setForm({ positionId: '', applicantName: '', email: '', phone: '', cvUrl: '', portfolioUrl: '', experienceYears: '', expectedSalary: '', source: '', notes: '' });
+    } catch {
+      toast.error('Failed to add application');
+    }
+  };
 
   const handleStageChange = async (row: JobApplication, newStage: JobApplication['stage'], e: React.MouseEvent) => {
     e.stopPropagation();
@@ -167,6 +221,96 @@ export default function Applications() {
         onRowClick={(row) => navigate(`/hr/applications/${row.id}`)}
         emptyTitle="No applications found"
       />
+
+      <Modal
+        isOpen={showCreate}
+        onClose={() => setShowCreate(false)}
+        title="Add Application"
+        description="Add a new job application to the pipeline"
+        size="lg"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setShowCreate(false)}>Cancel</Button>
+            <Button isLoading={createApplication.isPending} onClick={handleCreate}>Add Application</Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <Select
+            label="Position *"
+            value={form.positionId}
+            onChange={e => setForm(f => ({ ...f, positionId: e.target.value }))}
+            options={[
+              { label: 'Select position...', value: '' },
+              ...openPositions.map(p => ({ label: p.title, value: p.id })),
+            ]}
+          />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Input
+              label="Applicant Name *"
+              value={form.applicantName}
+              onChange={e => setForm(f => ({ ...f, applicantName: e.target.value }))}
+            />
+            <Input
+              label="Email *"
+              type="email"
+              value={form.email}
+              onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+            />
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Input
+              label="Phone"
+              value={form.phone}
+              onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
+            />
+            <Input
+              label="Source"
+              placeholder="e.g. LinkedIn, Referral"
+              value={form.source}
+              onChange={e => setForm(f => ({ ...f, source: e.target.value }))}
+            />
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Input
+              label="CV URL"
+              type="url"
+              placeholder="https://..."
+              value={form.cvUrl}
+              onChange={e => setForm(f => ({ ...f, cvUrl: e.target.value }))}
+            />
+            <Input
+              label="Portfolio URL"
+              type="url"
+              placeholder="https://..."
+              value={form.portfolioUrl}
+              onChange={e => setForm(f => ({ ...f, portfolioUrl: e.target.value }))}
+            />
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Input
+              label="Years of Experience"
+              type="number"
+              min="0"
+              value={form.experienceYears}
+              onChange={e => setForm(f => ({ ...f, experienceYears: e.target.value }))}
+            />
+            <Input
+              label="Expected Salary (USD)"
+              type="number"
+              min="0"
+              value={form.expectedSalary}
+              onChange={e => setForm(f => ({ ...f, expectedSalary: e.target.value }))}
+            />
+          </div>
+          <Textarea
+            label="Notes"
+            rows={2}
+            value={form.notes}
+            onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
+          />
+        </div>
+      </Modal>
     </PageTransition>
   );
 }

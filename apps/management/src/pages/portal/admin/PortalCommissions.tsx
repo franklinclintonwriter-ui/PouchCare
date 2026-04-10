@@ -6,10 +6,11 @@ import { PageTransition } from '@/components/ui/PageTransition';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { StatsRow } from '@/components/shared/StatsRow';
-import { formatCurrency } from '@/lib/format';
+import { useCurrency } from '@/hooks/useCurrency';
 import type { CommissionRecord } from '@/types/models';
 
 export default function PortalCommissions() {
+  const { formatCurrency } = useCurrency();
   const [status, setStatus] = useState('');
   const [page, setPage] = useState(1);
 

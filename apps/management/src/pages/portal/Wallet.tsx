@@ -1,7 +1,7 @@
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
 import { useAuthStore } from '@/store/authStore';
 import { useCommissionSummary, useDeposit, useWalletTransactions } from '@/api/portal';
-import { formatCurrency } from '@/lib/format';
+import { useCurrency } from '@/hooks/useCurrency';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { Badge } from '@/components/ui/Badge';
 import { DataTable, type Column } from '@/components/ui/DataTable';
@@ -26,6 +26,7 @@ const TX_BADGE_VARIANT: Record<string, 'success' | 'danger' | 'primary' | 'warni
 
 export default function Wallet() {
   const { user } = useAuthStore();
+  const { formatCurrency } = useCurrency();
   const portalUser = user as PortalUser;
   const [openDeposit, setOpenDeposit] = useState(false);
   const [amountUsd, setAmountUsd] = useState('50');

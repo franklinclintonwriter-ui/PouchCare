@@ -7,10 +7,11 @@ import { DataTable, type Column } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { StatsRow } from '@/components/shared/StatsRow';
 import { Button } from '@/components/ui/Button';
-import { formatCurrency } from '@/lib/format';
+import { useCurrency } from '@/hooks/useCurrency';
 import { toast } from 'sonner';
 
 export default function PortalDeposits() {
+  const { formatCurrency } = useCurrency();
   const [status, setStatus] = useState('Pending');
   const approveDeposit = useApproveDeposit();
   const rejectDeposit = useRejectDeposit();

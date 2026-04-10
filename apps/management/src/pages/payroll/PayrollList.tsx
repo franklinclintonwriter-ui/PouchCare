@@ -1,7 +1,8 @@
 import { useMemo, useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
-import { usePayroll, useCreatePayroll, useMarkPayrollPaid } from '@/api/payroll';
+import { usePayroll, useCreatePayroll, useMarkPayrollPaid, useUpdatePayroll, useDeletePayroll } from '@/api/payroll';
+import { useStaffList } from '@/api/staff';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { StatsRow } from '@/components/shared/StatsRow';
 import { DataTable, type Column } from '@/components/ui/DataTable';
@@ -9,11 +10,13 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Textarea } from '@/components/ui/Textarea';
-import { formatCurrency } from '@/lib/format';
-import { Wallet, Users, Gift, TrendingUp, Plus, CalendarRange, RotateCcw } from 'lucide-react';
+import { Dropdown, type DropdownItem } from '@/components/ui/Dropdown';
+import { useCurrency } from '@/hooks/useCurrency';
+import { Wallet, Users, Gift, TrendingUp, Plus, CalendarRange, RotateCcw, Edit, Trash2 } from 'lucide-react';
 import { usePermission } from '@/hooks/usePermission';
 import type { PayrollEntry } from '@/types/models';
 import { toast } from 'sonner';
@@ -35,6 +38,7 @@ const MONTHS = [
 
 export default function PayrollList() {
   const navigate = useNavigate();
+  const { formatCurrency } = useCurrency();
   const now = new Date();
   const [page, setPage] = useState(1);
   const [filterMonth, setFilterMonth] = useState(now.getMonth() + 1);
@@ -46,15 +50,20 @@ export default function PayrollList() {
     setPage(1);
   }, [filterMonth, filterYear]);
 
-  const { data, isLoading, isError, error } = usePayroll(filterMonth, filterYear, page, 20);
+  const { data, isLoading, isError, error } = usePayroll({ month: filterMonth, year: filterYear, page, limit: 20 });
   const entries = data?.data ?? [];
   const meta = data?.meta;
 
   const createPayroll = useCreatePayroll();
   const markPaid = useMarkPayrollPaid();
+  const updatePayroll = useUpdatePayroll();
+  const deletePayroll = useDeletePayroll();
+
+  const { data: staffData } = useStaffList({ limit: 500, status: 'Active' });
+  const staffList = staffData?.data ?? [];
 
   const [form, setForm] = useState({
-    memberId: '',
+    staffMemberId: '',
     month: MONTHS[now.getMonth()],
     year: now.getFullYear(),
     baseSalary: '',
@@ -63,6 +72,9 @@ export default function PayrollList() {
     paymentMethod: '',
     notes: '',
   });
+
+  const [editEntry, setEditEntry] = useState<PayrollEntry | null>(null);
+  const [deleteEntry, setDeleteEntry] = useState<PayrollEntry | null>(null);
 
   const stats = useMemo(() => {
     const totalPayroll = entries.reduce((s, e) => s + e.netPay, 0);
@@ -99,13 +111,13 @@ export default function PayrollList() {
   }), [monthOptions, yearOptions, filterMonth, filterYear, onMonthChange, onYearChange, onThisMonth, perm]));
 
   const handleCreate = async () => {
-    if (!form.memberId || !form.baseSalary) {
-      toast.error('Staff ID and base salary are required');
+    if (!form.staffMemberId || !form.baseSalary) {
+      toast.error('Staff member and base salary are required');
       return;
     }
     try {
       await createPayroll.mutateAsync({
-        memberId: form.memberId,
+        staffMemberId: form.staffMemberId,
         month: form.month,
         year: Number(form.year),
         baseSalary: Number(form.baseSalary),
@@ -116,16 +128,43 @@ export default function PayrollList() {
       });
       toast.success('Payroll record created');
       setShowCreate(false);
-      setForm({ memberId: '', month: MONTHS[now.getMonth()], year: now.getFullYear(), baseSalary: '', bonus: '0', deductions: '0', paymentMethod: '', notes: '' });
+      setForm({ staffMemberId: '', month: MONTHS[now.getMonth()], year: now.getFullYear(), baseSalary: '', bonus: '0', deductions: '0', paymentMethod: '', notes: '' });
     } catch {
       toast.error('Failed to create payroll record');
+    }
+  };
+
+  const handleUpdate = async () => {
+    if (!editEntry) return;
+    try {
+      await updatePayroll.mutateAsync({
+        id: editEntry.id,
+        baseSalary: editEntry.baseSalary,
+        bonus: editEntry.bonus,
+        deductions: editEntry.deductions,
+      });
+      toast.success('Payroll record updated');
+      setEditEntry(null);
+    } catch {
+      toast.error('Failed to update payroll record');
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteEntry) return;
+    try {
+      await deletePayroll.mutateAsync(deleteEntry.id);
+      toast.success('Payroll record deleted');
+      setDeleteEntry(null);
+    } catch {
+      toast.error('Failed to delete payroll record');
     }
   };
 
   const handleMarkPaid = async (row: PayrollEntry, e: React.MouseEvent) => {
     e.stopPropagation();
     try {
-      await markPaid.mutateAsync(row.id);
+      await markPaid.mutateAsync({ id: row.id });
       toast.success('Marked as paid');
     } catch {
       toast.error('Failed to mark as paid');
@@ -152,19 +191,31 @@ export default function PayrollList() {
       <span className="font-semibold text-gray-900 dark:text-gray-100">{formatCurrency(row.netPay)}</span>
     )},
     { key: 'status', label: 'Status', render: (row) => <StatusBadge status={row.status} /> },
-    ...(perm.isCEO ? [{
+    ...(perm.can('payroll.access') ? [{
       key: 'actions' as keyof PayrollEntry,
-      label: 'Actions',
-      render: (row: PayrollEntry) => row.status !== 'PAID' ? (
-        <Button
-          size="sm"
-          variant="outline"
-          isLoading={markPaid.isPending}
-          onClick={(e) => handleMarkPaid(row, e)}
-        >
-          Mark Paid
-        </Button>
-      ) : null,
+      label: '',
+      width: '100px',
+      render: (row: PayrollEntry) => {
+        const items: DropdownItem[] = [
+          { label: 'Edit', icon: <Edit className="h-4 w-4" />, onClick: () => setEditEntry(row) },
+          ...(perm.isCEO ? [{ label: 'Delete', icon: <Trash2 className="h-4 w-4" />, onClick: () => setDeleteEntry(row), variant: 'danger' as const }] : []),
+        ];
+        return (
+          <div className="flex items-center gap-1">
+            {perm.isCEO && row.status !== 'PAID' && (
+              <Button
+                size="sm"
+                variant="outline"
+                isLoading={markPaid.isPending}
+                onClick={(e) => handleMarkPaid(row, e)}
+              >
+                Mark Paid
+              </Button>
+            )}
+            <Dropdown items={items} />
+          </div>
+        );
+      },
     }] : []),
   ];
 
@@ -210,11 +261,14 @@ export default function PayrollList() {
         }
       >
         <div className="space-y-4">
-          <Input
-            label="Staff Member ID *"
-            placeholder="Staff UUID"
-            value={form.memberId}
-            onChange={e => setForm(f => ({ ...f, memberId: e.target.value }))}
+          <Select
+            label="Staff Member *"
+            value={form.staffMemberId}
+            onChange={e => setForm(f => ({ ...f, staffMemberId: e.target.value }))}
+            options={[
+              { label: 'Select staff member...', value: '' },
+              ...staffList.map(s => ({ label: `${s.name} (${s.email})`, value: s.id })),
+            ]}
           />
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Select
@@ -268,6 +322,66 @@ export default function PayrollList() {
           />
         </div>
       </Modal>
+
+      <Modal
+        isOpen={!!editEntry}
+        onClose={() => setEditEntry(null)}
+        title="Edit Payroll"
+        description={`Edit payroll for ${editEntry?.staffName}`}
+        size="md"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setEditEntry(null)}>Cancel</Button>
+            <Button isLoading={updatePayroll.isPending} onClick={handleUpdate}>Save Changes</Button>
+          </>
+        }
+      >
+        {editEntry && (
+          <div className="space-y-4">
+            <Input
+              label="Base Salary (USD)"
+              type="number"
+              min="0"
+              value={String(editEntry.baseSalary)}
+              onChange={e => setEditEntry(prev => prev ? { ...prev, baseSalary: Number(e.target.value) } : null)}
+            />
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <Input
+                label="Bonus (USD)"
+                type="number"
+                min="0"
+                value={String(editEntry.bonus)}
+                onChange={e => setEditEntry(prev => prev ? { ...prev, bonus: Number(e.target.value) } : null)}
+              />
+              <Input
+                label="Deductions (USD)"
+                type="number"
+                min="0"
+                value={String(editEntry.deductions)}
+                onChange={e => setEditEntry(prev => prev ? { ...prev, deductions: Number(e.target.value) } : null)}
+              />
+            </div>
+            <div className="pt-2 border-t">
+              <p className="text-sm text-gray-500">
+                Net Pay: <span className="font-semibold text-gray-900 dark:text-gray-100">
+                  {formatCurrency(editEntry.baseSalary + editEntry.bonus - editEntry.deductions)}
+                </span>
+              </p>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      <ConfirmDialog
+        isOpen={!!deleteEntry}
+        onClose={() => setDeleteEntry(null)}
+        title="Delete Payroll Record"
+        message={`Are you sure you want to delete the payroll record for ${deleteEntry?.staffName}? This action cannot be undone.`}
+        confirmLabel="Delete"
+        variant="danger"
+        isLoading={deletePayroll.isPending}
+        onConfirm={handleDelete}
+      />
     </PageTransition>
   );
 }

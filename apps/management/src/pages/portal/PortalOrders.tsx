@@ -2,7 +2,7 @@ import { useCallback, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
 import { usePortalOrders } from '@/api/portal';
-import { formatCurrency } from '@/lib/format';
+import { useCurrency } from '@/hooks/useCurrency';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { Tabs } from '@/components/ui/Tabs';
 import { DataTable, type Column } from '@/components/ui/DataTable';
@@ -20,6 +20,7 @@ const STATUS_OPTIONS = [
 
 export default function PortalOrders() {
   const navigate = useNavigate();
+  const { formatCurrency } = useCurrency();
   const [tab, setTab] = useState('all');
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');

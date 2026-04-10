@@ -6,7 +6,7 @@ import { PageTransition } from '@/components/ui/PageTransition';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Badge } from '@/components/ui/Badge';
-import { formatCurrency } from '@/lib/format';
+import { useCurrency } from '@/hooks/useCurrency';
 import { usePermission } from '@/hooks/usePermission';
 import { toast } from 'sonner';
 
@@ -15,6 +15,7 @@ const MONTH_NAMES = ['January','February','March','April','May','June','July','A
 export default function PayrollDetail() {
   const { id } = useParams<{ id: string }>();
   const perm = usePermission();
+  const { formatCurrency } = useCurrency();
   const { data: entry, isLoading } = usePayrollEntry(id ?? '');
   const markPaid = useMarkPayrollPaid();
 
@@ -31,7 +32,7 @@ export default function PayrollDetail() {
         onClick: async () => {
           if (!id) return;
           try {
-            await markPaid.mutateAsync(id);
+            await markPaid.mutateAsync({ id });
             toast.success('Marked as paid');
           } catch {
             toast.error('Failed to mark as paid');

@@ -10,9 +10,12 @@ import { env } from '@/config/env'
 import { getEffectivePermissions } from '@/lib/managementPermissions'
 import { canAccessStaffProfileAdmin, canAssignSystemRole } from '@/lib/staffProfileAdmin'
 import { staffAdminUpdateSchema } from '@/routes/staff/staffAdminUpdateSchema'
+import documentsRouter from '@/routes/staff/documents'
 
 const router = Router()
 router.use(authenticate)
+
+router.use('/members', documentsRouter)
 
 const createSchema = z.object({
   name:           z.string().min(2),
@@ -173,6 +176,7 @@ router.get('/me', requireStaff, async (req, res) => {
         ceoPerformanceRating: true, portfolioUrl: true,
         twoFactorEnabled: true,
         totpSecret: true,
+        preferredCurrency: true,
       },
     })
     if (!row) return notFound(res)
@@ -186,14 +190,19 @@ router.get('/me', requireStaff, async (req, res) => {
 // PUT /v1/staff/me
 router.put('/me', requireStaff, async (req, res) => {
   try {
-    const allowed = ['phone', 'whatsapp', 'address', 'country', 'portfolioUrl', 'linkedinUrl', 'githubUrl']
+    const allowed = ['phone', 'whatsapp', 'address', 'country', 'portfolioUrl', 'linkedinUrl', 'githubUrl', 'preferredCurrency']
     const data: Record<string, any> = {}
     allowed.forEach(k => { if (req.body[k] !== undefined) data[k] = req.body[k] })
+
+    // Validate currency if provided
+    if (data.preferredCurrency && !['USD', 'BDT'].includes(data.preferredCurrency)) {
+      return badRequest(res, 'preferredCurrency must be USD or BDT')
+    }
 
     const member = await prisma.staffMember.update({
       where: { id: req.user!.id },
       data,
-      select: { id: true, name: true, phone: true, whatsapp: true },
+      select: { id: true, name: true, phone: true, whatsapp: true, preferredCurrency: true },
     })
     return ok(res, member)
   } catch (err) { serverError(res, err) }

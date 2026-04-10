@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/Badge';
 import { StatsRow } from '@/components/shared/StatsRow';
 import { Button } from '@/components/ui/Button';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { formatCurrency } from '@/lib/format';
+import { useCurrency } from '@/hooks/useCurrency';
 import type { PayoutRecord } from '@/types/models';
 import { toast } from 'sonner';
 
@@ -30,6 +30,7 @@ const methodLabel: Record<string, string> = {
 };
 
 export default function PortalPayouts() {
+  const { formatCurrency } = useCurrency();
   const [status, setStatus] = useState('');
   const [page, setPage] = useState(1);
   const [actionTarget, setActionTarget] = useState<{ row: PayoutRecord; action: 'COMPLETED' | 'REJECTED' } | null>(null);

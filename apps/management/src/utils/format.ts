@@ -24,14 +24,32 @@ export function formatRelative(date: string | Date | null | undefined): string {
   return isValid(d) ? formatDistanceToNow(d, { addSuffix: true }) : '—';
 }
 
-export function formatCurrency(amount: number | null | undefined, currency = 'USD'): string {
+export type CurrencyCode = 'USD' | 'BDT';
+
+/**
+ * Format a number as currency with proper locale handling.
+ * @param amount - The amount to format
+ * @param currency - Currency code ('USD' or 'BDT'). Defaults to 'USD'.
+ */
+export function formatCurrency(amount: number | null | undefined, currency: CurrencyCode = 'USD'): string {
   if (amount == null) return '—';
-  return new Intl.NumberFormat('en-US', {
+  const locale = currency === 'BDT' ? 'en-BD' : 'en-US';
+  return new Intl.NumberFormat(locale, {
     style: 'currency',
     currency,
     minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
+    maximumFractionDigits: currency === 'BDT' ? 0 : 2,
   }).format(amount);
+}
+
+/** Format as USD specifically */
+export function formatUSD(amount: number | null | undefined): string {
+  return formatCurrency(amount, 'USD');
+}
+
+/** Format as BDT specifically */
+export function formatBDT(amount: number | null | undefined): string {
+  return formatCurrency(amount, 'BDT');
 }
 
 export function formatNumber(value: number | null | undefined): string {

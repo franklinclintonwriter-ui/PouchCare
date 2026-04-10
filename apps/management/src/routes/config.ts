@@ -128,6 +128,14 @@ export const ROUTES = {
   // Settings - API Keys
   SETTINGS_API_KEYS: '/settings/api-keys',
 
+  // Tools (SEO / web utilities — mock data in v1)
+  TOOLS: '/tools',
+  TOOLS_FAVICON: '/tools/favicon',
+  TOOLS_BACKLINKS: '/tools/backlinks',
+  TOOLS_DA_PA: '/tools/da-pa',
+  TOOLS_KEYWORDS: '/tools/keywords',
+  TOOLS_SERP_TOP_100: '/tools/serp-top-100',
+
   // Monitor (CCTV)
   MONITOR: '/monitor',
   MONITOR_BRANCH: '/monitor/:branchId',

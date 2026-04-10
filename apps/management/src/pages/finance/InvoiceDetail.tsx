@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { formatCurrency } from '@/lib/format';
+import { useCurrency } from '@/hooks/useCurrency';
 import { usePermission } from '@/hooks/usePermission';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { toast } from 'sonner';
@@ -28,6 +28,7 @@ export default function InvoiceDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const perm = usePermission();
+  const { formatCurrency } = useCurrency();
   const { data: invoice, isLoading } = useInvoice(id ?? '');
   const updateInvoice = useUpdateInvoice();
   const deleteInvoice = useDeleteInvoice();

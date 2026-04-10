@@ -1,16 +1,22 @@
-import { useMemo } from 'react';
-import { Users, CheckCircle2, Clock, XCircle, CircleDot, Laptop, type LucideIcon } from 'lucide-react';
+import { useMemo, useState, useCallback } from 'react';
+import { Users, CheckCircle2, Clock, XCircle, CircleDot, Laptop, Calendar, ChevronLeft, ChevronRight, RotateCcw, type LucideIcon } from 'lucide-react';
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
-import { useTeamAttendance } from '@/api/attendance';
+import { useTeamAttendance, useUpdateAttendance } from '@/api/attendance';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { Card } from '@/components/ui/Card';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
+import { Modal } from '@/components/ui/Modal';
+import { Select } from '@/components/ui/Select';
+import { Input } from '@/components/ui/Input';
 import { StatsRow } from '@/components/shared/StatsRow';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { usePermission } from '@/hooks/usePermission';
 import { cn } from '@/utils/cn';
+import { toast } from 'sonner';
 import type { AttendanceRecord } from '@/types/models';
 
 const statusConfig: Record<string, { icon: LucideIcon; color: string }> = {
@@ -21,9 +27,27 @@ const statusConfig: Record<string, { icon: LucideIcon; color: string }> = {
   REMOTE: { icon: Laptop, color: 'text-blue-500' },
 };
 
+function formatDateDisplay(dateStr: string) {
+  return new Date(dateStr).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+}
+
 export default function TeamAttendance() {
   const today = new Date().toISOString().split('T')[0];
-  const { data: records = [], isLoading } = useTeamAttendance(today);
+  const [selectedDate, setSelectedDate] = useState(today);
+  const [editRecord, setEditRecord] = useState<AttendanceRecord | null>(null);
+  const perm = usePermission();
+  const canEdit = perm.isCEO || perm.isManager;
+
+  const { data: records = [], isLoading } = useTeamAttendance(selectedDate);
+  const updateAttendance = useUpdateAttendance();
+
+  const goToDate = useCallback((offset: number) => {
+    const d = new Date(selectedDate);
+    d.setDate(d.getDate() + offset);
+    setSelectedDate(d.toISOString().split('T')[0]);
+  }, [selectedDate]);
+
+  const goToToday = useCallback(() => setSelectedDate(today), [today]);
 
   const stats = useMemo(() => {
     const total = records.length;
@@ -41,10 +65,31 @@ export default function TeamAttendance() {
   const headerConfig = useMemo(() => ({
     title: 'Team Attendance',
     breadcrumbs: [{ label: 'Home', href: '/' }, { label: 'Attendance' }, { label: 'Team' }],
-    actions: [],
-  }), []);
+    actions: [
+      { type: 'button' as const, label: '', icon: ChevronLeft, variant: 'outline' as const, onClick: () => goToDate(-1) },
+      { type: 'button' as const, label: formatDateDisplay(selectedDate), icon: Calendar, variant: 'outline' as const, onClick: () => {} },
+      { type: 'button' as const, label: '', icon: ChevronRight, variant: 'outline' as const, onClick: () => goToDate(1), disabled: selectedDate === today },
+      ...(selectedDate !== today ? [{ type: 'button' as const, label: 'Today', icon: RotateCcw, variant: 'outline' as const, onClick: goToToday }] : []),
+    ],
+  }), [selectedDate, today, goToDate, goToToday]);
 
   useHeaderConfig(headerConfig);
+
+  const handleUpdateRecord = async () => {
+    if (!editRecord) return;
+    try {
+      await updateAttendance.mutateAsync({
+        id: editRecord.id,
+        status: editRecord.status,
+        workType: editRecord.workType,
+        hoursWorked: editRecord.hours,
+      });
+      toast.success('Attendance updated');
+      setEditRecord(null);
+    } catch {
+      toast.error('Failed to update attendance');
+    }
+  };
 
   const columns: Column<AttendanceRecord>[] = [
     {
@@ -94,6 +139,16 @@ export default function TeamAttendance() {
         <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">{row.hours}h</span>
       ),
     },
+    ...(canEdit ? [{
+      key: 'actions' as const,
+      label: '',
+      width: '60px',
+      render: (row: AttendanceRecord) => (
+        <Button variant="ghost" size="sm" onClick={() => setEditRecord(row)}>
+          Edit
+        </Button>
+      ),
+    }] : []),
   ];
 
   return (
@@ -138,8 +193,58 @@ export default function TeamAttendance() {
           data={records}
           isLoading={isLoading}
           emptyTitle="No attendance data"
-          emptyDescription="No team attendance records for today"
+          emptyDescription={`No team attendance records for ${formatDateDisplay(selectedDate)}`}
         />
+
+        <Modal
+          isOpen={!!editRecord}
+          onClose={() => setEditRecord(null)}
+          title="Edit Attendance"
+          description={`Update attendance for ${editRecord?.staffName}`}
+          size="sm"
+          footer={
+            <>
+              <Button variant="ghost" onClick={() => setEditRecord(null)}>Cancel</Button>
+              <Button isLoading={updateAttendance.isPending} onClick={handleUpdateRecord}>Save</Button>
+            </>
+          }
+        >
+          {editRecord && (
+            <div className="space-y-4">
+              <Select
+                label="Status"
+                value={editRecord.status}
+                onChange={e => setEditRecord(prev => prev ? { ...prev, status: e.target.value as AttendanceRecord['status'] } : null)}
+                options={[
+                  { label: 'Present', value: 'PRESENT' },
+                  { label: 'Absent', value: 'ABSENT' },
+                  { label: 'Late', value: 'LATE' },
+                  { label: 'Half Day', value: 'HALF_DAY' },
+                  { label: 'On Leave', value: 'ON_LEAVE' },
+                ]}
+              />
+              <Select
+                label="Work Type"
+                value={editRecord.workType}
+                onChange={e => setEditRecord(prev => prev ? { ...prev, workType: e.target.value as AttendanceRecord['workType'] } : null)}
+                options={[
+                  { label: 'Office', value: 'OFFICE' },
+                  { label: 'Remote', value: 'REMOTE' },
+                  { label: 'Field', value: 'FIELD' },
+                ]}
+              />
+              <Input
+                label="Hours Worked"
+                type="number"
+                min="0"
+                max="24"
+                step="0.5"
+                value={String(editRecord.hours)}
+                onChange={e => setEditRecord(prev => prev ? { ...prev, hours: Number(e.target.value) } : null)}
+              />
+            </div>
+          )}
+        </Modal>
       </div>
     </PageTransition>
   );
