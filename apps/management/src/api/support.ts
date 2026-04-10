@@ -116,3 +116,11 @@ export function useUpdateTicket() {
     onSuccess: (_, v) => { qc.invalidateQueries({ queryKey: ['tickets'] }); qc.invalidateQueries({ queryKey: ['ticket', v.id] }); },
   });
 }
+
+export function useDeleteTicket() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.delete(`/support/tickets/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['tickets'] }),
+  });
+}

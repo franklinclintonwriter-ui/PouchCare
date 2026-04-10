@@ -27,12 +27,15 @@ export const ROUTES = {
   // Attendance
   ATTENDANCE: '/attendance',
   TEAM_ATTENDANCE: '/attendance/team',
+  ATTENDANCE_CHECK: '/attendance/check',
 
   // Leave
   LEAVE: '/leave',
+  LEAVE_REQUEST: '/leave/request',
 
   // Reports
   REPORTS: '/reports',
+  REPORT_SUBMIT: '/reports/submit',
 
   // Payroll
   PAYROLL: '/payroll',
@@ -99,6 +102,7 @@ export const ROUTES = {
 
   // Staff Branches
   BRANCHES: '/staff/branches',
+  BRANCH_DETAIL: '/staff/branches/:branchId',
 
   // Finance detail pages
   INVOICE_DETAIL: '/finance/invoices/:id',
@@ -112,14 +116,24 @@ export const ROUTES = {
   DOMAIN_DETAIL: '/assets/domains/:id',
   SERVER_DETAIL: '/assets/servers/:id',
   WEBSITE_DETAIL: '/assets/websites/:id',
+  DEVICES: '/assets/devices',
+  DEVICE_DETAIL: '/assets/devices/:id',
 
   // HR hub (redirects to /hr/positions)
   HR: '/hr',
   // HR detail
   APPLICATION_DETAIL: '/hr/applications/:id',
+  POSITION_DETAIL: '/hr/positions/:id',
 
   // CRM Clients
   CRM_CLIENTS: '/crm/clients',
+  CRM_CLIENT_DETAIL: '/crm/clients/:id',
+
+  // Leave detail
+  LEAVE_DETAIL: '/leave/:id',
+
+  // Broadcast detail
+  BROADCAST_DETAIL: '/broadcast/:id',
 
   // Plugins
   PLUGINS: '/plugins',

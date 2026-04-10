@@ -143,3 +143,16 @@ export function useUpdateAttendance() {
     },
   });
 }
+
+export function useDeleteAttendance() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.delete(`/attendance/${id}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['attendance'] });
+      qc.invalidateQueries({ queryKey: ['my-attendance'] });
+      qc.invalidateQueries({ queryKey: ['team-attendance'] });
+      qc.invalidateQueries({ queryKey: ['staff-attendance'] });
+    },
+  });
+}

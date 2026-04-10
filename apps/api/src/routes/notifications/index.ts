@@ -42,6 +42,33 @@ router.post('/mark-read', requireAuth, async (req, res) => {
   } catch (err) { serverError(res, err) }
 })
 
+// DELETE /notifications/:id — Delete a single notification
+router.delete('/:id', requireAuth, async (req, res) => {
+  try {
+    const notification = await prisma.notification.findUnique({ where: { id: req.params.id } })
+    if (!notification) return ok(res, { message: 'Notification not found' })
+    if (notification.recipientId !== req.user!.id || notification.recipientType !== req.user!.type) {
+      return ok(res, { message: 'Unauthorized' })
+    }
+    await prisma.notification.delete({ where: { id: req.params.id } })
+    return ok(res, { message: 'Notification deleted' })
+  } catch (err) { serverError(res, err) }
+})
+
+// DELETE /notifications — Delete all read notifications for user
+router.delete('/', requireAuth, async (req, res) => {
+  try {
+    const result = await prisma.notification.deleteMany({
+      where: {
+        recipientId: req.user!.id,
+        recipientType: req.user!.type,
+        read: true,
+      },
+    })
+    return ok(res, { message: `${result.count} notifications deleted` })
+  } catch (err) { serverError(res, err) }
+})
+
 // Helper to create notifications (used internally)
 export async function createNotification(
   recipientId: string,

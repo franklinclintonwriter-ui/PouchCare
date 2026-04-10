@@ -75,3 +75,15 @@ export function useCancelLeave() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['leave'] }),
   });
 }
+
+export function useLeaveRequest(id: string | undefined) {
+  return useQuery<LeaveRequest | null>({
+    queryKey: ['leave-request', id],
+    queryFn: async () => {
+      if (!id) return null;
+      const { data } = await api.get(`/leave/${id}`);
+      return mapLeave(data as RawLeave);
+    },
+    enabled: !!id,
+  });
+}

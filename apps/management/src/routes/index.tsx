@@ -50,6 +50,7 @@ const MyAttendance = lazy(() => import('@/pages/attendance/MyAttendance'));
 const TeamAttendance = lazy(() => import('@/pages/attendance/TeamAttendance'));
 const CheckinCheckout = lazy(() => import('@/pages/attendance/CheckinCheckout'));
 const LeaveList = lazy(() => import('@/pages/leave/LeaveList'));
+const LeaveDetail = lazy(() => import('@/pages/leave/LeaveDetail'));
 const LeaveRequestForm = lazy(() => import('@/pages/leave/LeaveRequestForm'));
 const DailyReports = lazy(() => import('@/pages/reports/DailyReports'));
 const ReportSubmit = lazy(() => import('@/pages/reports/ReportSubmit'));
@@ -66,7 +67,9 @@ const Pipeline = lazy(() => import('@/pages/crm/Pipeline'));
 const SalesOrders = lazy(() => import('@/pages/crm/SalesOrders'));
 const SalesOrderDetail = lazy(() => import('@/pages/crm/SalesOrderDetail'));
 const ClientAccounts = lazy(() => import('@/pages/crm/ClientAccounts'));
+const ClientDetail = lazy(() => import('@/pages/crm/ClientDetail'));
 const Positions = lazy(() => import('@/pages/hr/Positions'));
+const PositionDetail = lazy(() => import('@/pages/hr/PositionDetail'));
 const Applications = lazy(() => import('@/pages/hr/Applications'));
 const Domains = lazy(() => import('@/pages/assets/Domains'));
 const DomainDetail = lazy(() => import('@/pages/assets/DomainDetail'));
@@ -75,10 +78,12 @@ const ServerDetail = lazy(() => import('@/pages/assets/ServerDetail'));
 const Websites = lazy(() => import('@/pages/assets/Websites'));
 const WebsiteDetail = lazy(() => import('@/pages/assets/WebsiteDetail'));
 const Devices = lazy(() => import('@/pages/assets/Devices'));
+const DeviceDetail = lazy(() => import('@/pages/assets/DeviceDetail'));
 const ServiceList = lazy(() => import('@/pages/services/ServiceList'));
 const TicketList = lazy(() => import('@/pages/support/TicketList'));
 const TicketDetail = lazy(() => import('@/pages/support/TicketDetail'));
 const BroadcastList = lazy(() => import('@/pages/broadcast/BroadcastList'));
+const BroadcastDetail = lazy(() => import('@/pages/broadcast/BroadcastDetail'));
 const Analytics = lazy(() => import('@/pages/analytics/Analytics'));
 const Profile = lazy(() => import('@/pages/settings/Profile'));
 const Security = lazy(() => import('@/pages/settings/Security'));
@@ -174,6 +179,7 @@ export const routes: RouteObject[] = [
       { path: 'attendance/team', element: <LazyPage element={<TeamAttendance />} /> },
       { path: 'attendance/check', element: <LazyPage element={<CheckinCheckout />} /> },
       { path: 'leave', element: <LazyPage element={<LeaveList />} /> },
+      { path: 'leave/:id', element: <LazyPage element={<LeaveDetail />} /> },
       { path: 'leave/request', element: <LazyPage element={<LeaveRequestForm />} /> },
       { path: 'reports', element: <LazyPage element={<DailyReports />} /> },
       { path: 'reports/submit', element: <LazyPage element={<ReportSubmit />} /> },
@@ -193,7 +199,14 @@ export const routes: RouteObject[] = [
           </PermissionGuard>
         ),
       },
-      { path: 'performance', element: <LazyPage element={<Performance />} /> },
+      {
+        path: 'performance',
+        element: (
+          <PermissionGuard permission="hr.performance">
+            <LazyPage element={<Performance />} />
+          </PermissionGuard>
+        ),
+      },
       {
         path: 'finance/invoices',
         element: (
@@ -263,12 +276,28 @@ export const routes: RouteObject[] = [
           </PermissionGuard>
         ),
       },
+      {
+        path: 'crm/clients/:id',
+        element: (
+          <PermissionGuard permission="crm.client_accounts">
+            <LazyPage element={<ClientDetail />} />
+          </PermissionGuard>
+        ),
+      },
       { path: 'hr', element: <Navigate to="/hr/positions" replace /> },
       {
         path: 'hr/positions',
         element: (
           <PermissionGuard permission="hr.recruitment">
             <LazyPage element={<Positions />} />
+          </PermissionGuard>
+        ),
+      },
+      {
+        path: 'hr/positions/:id',
+        element: (
+          <PermissionGuard permission="hr.recruitment">
+            <LazyPage element={<PositionDetail />} />
           </PermissionGuard>
         ),
       },
@@ -303,6 +332,14 @@ export const routes: RouteObject[] = [
           </PermissionGuard>
         ),
       },
+      {
+        path: 'assets/devices/:id',
+        element: (
+          <PermissionGuard permission="assets.devices">
+            <LazyPage element={<DeviceDetail />} />
+          </PermissionGuard>
+        ),
+      },
       { path: 'services', element: <LazyPage element={<ServiceList />} /> },
       { path: 'services/backlinks', element: <Navigate to="/services" replace /> },
       { path: 'support', element: <LazyPage element={<TicketList />} /> },
@@ -312,6 +349,14 @@ export const routes: RouteObject[] = [
         element: (
           <PermissionGuard permission="broadcast.access">
             <LazyPage element={<BroadcastList />} />
+          </PermissionGuard>
+        ),
+      },
+      {
+        path: 'broadcast/:id',
+        element: (
+          <PermissionGuard permission="broadcast.access">
+            <LazyPage element={<BroadcastDetail />} />
           </PermissionGuard>
         ),
       },

@@ -7,7 +7,26 @@ import type {
   ClientStats,
   Leaderboard,
   ForecastData,
+  TaskStats,
+  ActivitiesData,
+  DashboardSummary,
 } from '@/types/analytics';
+
+// ── Dashboard Summary (Consolidated - Single Request) ───────────────────────
+
+export function useDashboardSummary() {
+  return useQuery({
+    queryKey: ['analytics', 'summary'],
+    queryFn: async () => {
+      const res = await api.get<DashboardSummary>('/analytics/summary');
+      return res.data;
+    },
+    staleTime: 2 * 60 * 1000,
+    refetchInterval: 5 * 60 * 1000,
+  });
+}
+
+// ── Individual Endpoints (for granular fetching) ────────────────────────────
 
 export function useHealthScore() {
   return useQuery({
@@ -74,5 +93,29 @@ export function useForecast() {
       return res.data;
     },
     staleTime: 30 * 60 * 1000,
+  });
+}
+
+export function useTaskStats() {
+  return useQuery({
+    queryKey: ['analytics', 'tasks'],
+    queryFn: async () => {
+      const res = await api.get<TaskStats>('/analytics/tasks');
+      return res.data;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useActivities(limit?: number) {
+  return useQuery({
+    queryKey: ['analytics', 'activities', limit],
+    queryFn: async () => {
+      const params = limit ? { limit } : {};
+      const res = await api.get<ActivitiesData>('/analytics/activities', { params });
+      return res.data;
+    },
+    staleTime: 1 * 60 * 1000,
+    refetchInterval: 2 * 60 * 1000,
   });
 }

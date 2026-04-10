@@ -1,66 +1,288 @@
-import { Activity, DollarSign, Users, UserCheck, Globe } from 'lucide-react';
-import { KPICard } from '@/components/ui/KPICard';
-import { formatCurrency, formatNumber } from '@/utils/format';
-import type { HealthScore, StaffStats, ClientStats, RevenueData } from '@/types/analytics';
+import {
+  DollarSign,
+  UserCheck,
+  Globe,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  Target,
+} from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/Card';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { useCurrency } from '@/hooks/useCurrency';
+import { cn } from '@/utils/cn';
+import type { DashboardSummary, Trend } from '@/types/analytics';
 
 interface KPIRowProps {
-  health?: HealthScore;
-  staff?: StaffStats;
-  clients?: ClientStats;
-  revenue?: RevenueData;
+  data?: DashboardSummary;
   loading?: boolean;
 }
 
-export function KPIRow({ health, staff, clients, revenue, loading = false }: KPIRowProps) {
+interface KPICardProps {
+  title: string;
+  value: string | number;
+  subtitle?: string;
+  trend?: Trend;
+  trendLabel?: string;
+  icon: React.ReactNode;
+  iconBg: string;
+  loading?: boolean;
+  highlight?: boolean;
+}
+
+function TrendIndicator({ trend, label }: { trend: Trend; label?: string }) {
+  const Icon = trend.direction === 'up' ? TrendingUp : trend.direction === 'down' ? TrendingDown : Minus;
+  const colorClass =
+    trend.direction === 'up'
+      ? 'text-emerald-600 dark:text-emerald-400'
+      : trend.direction === 'down'
+      ? 'text-red-500 dark:text-red-400'
+      : 'text-gray-400';
+
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6">
-      <KPICard
-        title="Health Score"
-        value={health ? `${Math.round(health.total)}%` : '—'}
-        icon={<Activity />}
-        iconBg="bg-primary-50 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400"
-        loading={loading}
-      />
+    <span className={cn('inline-flex items-center gap-1 text-xs font-medium', colorClass)}>
+      <Icon className="h-3.5 w-3.5" />
+      {trend.change > 0 && <span>{trend.change}%</span>}
+      {label && <span className="text-gray-400 dark:text-gray-500 ml-0.5 hidden lg:inline">{label}</span>}
+    </span>
+  );
+}
+
+function KPICard({ title, value, subtitle, trend, trendLabel, icon, iconBg, loading, highlight }: KPICardProps) {
+  if (loading) {
+    return (
+      <Card className="h-full">
+        <CardContent className="p-5">
+          <div className="flex items-start justify-between">
+            <div className="space-y-2.5 flex-1">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-8 w-28" />
+              <Skeleton className="h-4 w-20" />
+            </div>
+            <Skeleton className="h-12 w-12 rounded-xl" />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className={cn(
+      'h-full transition-all hover:shadow-lg hover:-translate-y-0.5',
+      highlight && 'ring-2 ring-primary-500/20 dark:ring-primary-400/20'
+    )}>
+      <CardContent className="p-5">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{title}</p>
+            <p className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-gray-100 mt-1.5 truncate">
+              {value}
+            </p>
+            <div className="flex items-center gap-2 mt-2 flex-wrap">
+              {trend && <TrendIndicator trend={trend} label={trendLabel} />}
+              {subtitle && (
+                <span className={cn(
+                  'text-xs',
+                  trend ? 'text-gray-400 dark:text-gray-500' : 'text-gray-500 dark:text-gray-400'
+                )}>
+                  {trend ? '\u00B7 ' + subtitle : subtitle}
+                </span>
+              )}
+            </div>
+          </div>
+          <div className={cn('p-3 rounded-xl flex-shrink-0', iconBg)}>
+            {icon}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+export function KPIRow({ data, loading = false }: KPIRowProps) {
+  const { formatCurrency } = useCurrency();
+
+  const kpis = data?.kpis;
+
+  return (
+    <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+      {/* Revenue YTD */}
       <KPICard
         title="Revenue (YTD)"
-        value={revenue ? formatCurrency(revenue.summary.totalRevenue) : '—'}
-        icon={<DollarSign />}
-        iconBg="bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400"
+        value={kpis ? formatCurrency(kpis.revenue.value) : '-'}
+        trend={kpis?.revenue.trend}
+        trendLabel="vs last year"
+        icon={<DollarSign className="h-5 w-5 sm:h-6 sm:w-6" />}
+        iconBg="bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-lg shadow-emerald-500/25"
         loading={loading}
+        highlight
       />
+
+      {/* Net Profit */}
       <KPICard
         title="Net Profit"
-        value={revenue ? formatCurrency(revenue.summary.netProfit) : '—'}
-        icon={<DollarSign />}
-        iconBg={revenue && revenue.summary.netProfit >= 0
-          ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400'
-          : 'bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400'}
+        value={kpis ? formatCurrency(kpis.profit.value) : '-'}
+        subtitle={kpis ? `${formatCurrency(kpis.profit.expenses)} expenses` : undefined}
+        icon={<Target className="h-5 w-5 sm:h-6 sm:w-6" />}
+        iconBg={
+          kpis && kpis.profit.value >= 0
+            ? 'bg-gradient-to-br from-teal-500 to-teal-600 text-white shadow-lg shadow-teal-500/25'
+            : 'bg-gradient-to-br from-red-500 to-red-600 text-white shadow-lg shadow-red-500/25'
+        }
         loading={loading}
       />
-      <KPICard
-        title="Staff"
-        value={staff ? formatNumber(staff.total) : '—'}
-        changeLabel={staff ? `${staff.active} active` : undefined}
-        icon={<Users />}
-        iconBg="bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400"
-        loading={loading}
-      />
+
+      {/* Present Today */}
       <KPICard
         title="Present Today"
-        value={health ? formatNumber(health.meta.presentToday) : '—'}
-        changeLabel={health ? `of ${health.meta.staffTotal}` : undefined}
-        icon={<UserCheck />}
-        iconBg="bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400"
+        value={kpis ? kpis.attendance.presentToday.toLocaleString() : '-'}
+        trend={kpis?.attendance.trend}
+        subtitle={kpis ? `${kpis.attendance.percentage}% rate` : undefined}
+        icon={<UserCheck className="h-5 w-5 sm:h-6 sm:w-6" />}
+        iconBg="bg-gradient-to-br from-amber-500 to-amber-600 text-white shadow-lg shadow-amber-500/25"
         loading={loading}
       />
+
+      {/* Active Clients */}
       <KPICard
         title="Active Clients"
-        value={clients ? formatNumber(clients.active) : '—'}
-        changeLabel={clients ? `${clients.newThisMonth} new` : undefined}
-        icon={<Globe />}
-        iconBg="bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400"
+        value={kpis ? kpis.clients.active.toLocaleString() : '-'}
+        trend={kpis?.clients.trend}
+        subtitle={kpis ? `${kpis.clients.newThisMonth} new` : undefined}
+        icon={<Globe className="h-5 w-5 sm:h-6 sm:w-6" />}
+        iconBg="bg-gradient-to-br from-purple-500 to-purple-600 text-white shadow-lg shadow-purple-500/25"
         loading={loading}
       />
     </div>
+  );
+}
+
+interface TaskProgressProps {
+  data?: DashboardSummary;
+  loading?: boolean;
+}
+
+export function TaskProgressCard({ data, loading }: TaskProgressProps) {
+  const tasks = data?.kpis?.tasks;
+
+  if (loading) {
+    return (
+      <Card className="h-full">
+        <CardContent className="p-5">
+          <Skeleton className="h-4 w-32 mb-4" />
+          <Skeleton className="h-3 w-full rounded-full mb-4" />
+          <div className="grid grid-cols-4 gap-2">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="text-center">
+                <Skeleton className="h-6 w-8 mx-auto mb-1" />
+                <Skeleton className="h-3 w-12 mx-auto" />
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!tasks) {
+    return (
+      <Card className="h-full">
+        <CardContent className="p-5 flex flex-col items-center justify-center min-h-[180px] text-center">
+          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Task Completion</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">No task metrics available yet.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="h-full">
+      <CardContent className="p-5">
+        <div className="flex items-center justify-between mb-4">
+          <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Task Completion</h4>
+          <span className="text-sm font-bold text-primary-600 dark:text-primary-400">
+            {tasks.completionRate}%
+          </span>
+        </div>
+        <div className="h-2.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden mb-4">
+          <div
+            className="h-full bg-gradient-to-r from-primary-500 to-primary-400 rounded-full transition-all duration-700 ease-out"
+            style={{ width: `${tasks.completionRate}%` }}
+          />
+        </div>
+        <div className="grid grid-cols-4 gap-2">
+          <div className="text-center">
+            <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">{tasks.done}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Done</p>
+          </div>
+          <div className="text-center">
+            <p className="text-lg font-bold text-blue-600 dark:text-blue-400">{tasks.inProgress}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">In Progress</p>
+          </div>
+          <div className="text-center">
+            <p className="text-lg font-bold text-amber-600 dark:text-amber-400">{tasks.pending}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Pending</p>
+          </div>
+          <div className="text-center">
+            <p className="text-lg font-bold text-gray-600 dark:text-gray-400">{tasks.total}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Total</p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+export function PipelineCard({ data, loading }: TaskProgressProps) {
+  const pipeline = data?.kpis?.pipeline;
+
+  if (loading) {
+    return (
+      <Card className="h-full">
+        <CardContent className="p-5">
+          <Skeleton className="h-4 w-28 mb-4" />
+          <Skeleton className="h-10 w-24 mb-2" />
+          <Skeleton className="h-3 w-36" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!pipeline) {
+    return (
+      <Card className="h-full">
+        <CardContent className="p-5 flex flex-col items-center justify-center min-h-[180px] text-center">
+          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Pipeline Win Rate</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">No pipeline data available yet.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const winRateColor = pipeline.winRate >= 50 
+    ? 'text-emerald-600 dark:text-emerald-400' 
+    : pipeline.winRate >= 25 
+    ? 'text-amber-600 dark:text-amber-400' 
+    : 'text-red-500 dark:text-red-400';
+
+  return (
+    <Card className="h-full">
+      <CardContent className="p-5">
+        <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">Pipeline Win Rate</h4>
+        <div className="flex items-baseline gap-2">
+          <span className={cn('text-4xl font-bold', winRateColor)}>{pipeline.winRate}%</span>
+          <span className="text-sm text-gray-500 dark:text-gray-400">conversion</span>
+        </div>
+        <div className="mt-3 flex items-center gap-4 text-sm">
+          <span className="text-emerald-600 dark:text-emerald-400 font-medium">
+            {pipeline.won} won
+          </span>
+          <span className="text-gray-400">of</span>
+          <span className="text-gray-600 dark:text-gray-400 font-medium">
+            {pipeline.total} leads
+          </span>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

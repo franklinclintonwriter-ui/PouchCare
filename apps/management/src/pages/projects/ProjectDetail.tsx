@@ -1,9 +1,9 @@
 import { useState, useMemo } from 'react';
-import { useParams } from 'react-router-dom';
-import { Calendar, DollarSign, Users, BarChart3, Clock } from 'lucide-react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Calendar, DollarSign, Users, BarChart3, Clock, Pencil, Trash2 } from 'lucide-react';
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
 import { useTasks } from '@/api/tasks';
-import { useProject } from '@/api/projects';
+import { useProject, useUpdateProject, useDeleteProject } from '@/api/projects';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { Card, CardContent } from '@/components/ui/Card';
 import { StatusBadge } from '@/components/ui/StatusBadge';
@@ -12,14 +12,92 @@ import { ProgressBar } from '@/components/ui/ProgressBar';
 import { Tabs } from '@/components/ui/Tabs';
 import { StatsRow } from '@/components/shared/StatsRow';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { Button } from '@/components/ui/Button';
+import { Modal } from '@/components/ui/Modal';
+import { Input } from '@/components/ui/Input';
+import { Textarea } from '@/components/ui/Textarea';
+import { Select } from '@/components/ui/Select';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useCurrency } from '@/hooks/useCurrency';
+import { usePermission } from '@/hooks/usePermission';
+import { toast } from 'sonner';
+
+const STATUS_OPTIONS = [
+  { label: 'Pending', value: 'PENDING' },
+  { label: 'In Progress', value: 'IN_PROGRESS' },
+  { label: 'On Hold', value: 'ON_HOLD' },
+  { label: 'Completed', value: 'COMPLETED' },
+  { label: 'Cancelled', value: 'CANCELLED' },
+];
 
 export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { formatCurrency } = useCurrency();
+  const perm = usePermission();
   const { data: project, isLoading } = useProject(id!);
   const { data: relatedTasks } = useTasks({ q: project?.name, limit: 10 });
+  const updateProject = useUpdateProject();
+  const deleteProject = useDeleteProject();
+
   const [tab, setTab] = useState('overview');
+  const [showEdit, setShowEdit] = useState(false);
+  const [showDelete, setShowDelete] = useState(false);
+  const [form, setForm] = useState({
+    name: '',
+    clientName: '',
+    notes: '',
+    status: 'PENDING',
+    progress: '0',
+    price: '0',
+  });
+
+  const openEdit = () => {
+    if (project) {
+      setForm({
+        name: project.name,
+        clientName: project.clientName,
+        notes: project.description,
+        status: project.status,
+        progress: String(project.progress),
+        price: String(project.budget),
+      });
+      setShowEdit(true);
+    }
+  };
+
+  const handleUpdate = async () => {
+    if (!id || !form.name.trim()) {
+      toast.error('Project name is required');
+      return;
+    }
+    try {
+      await updateProject.mutateAsync({
+        id,
+        name: form.name.trim(),
+        clientName: form.clientName.trim(),
+        notes: form.notes.trim(),
+        status: form.status,
+        progress: Number(form.progress) || 0,
+        price: Number(form.price) || 0,
+      });
+      toast.success('Project updated');
+      setShowEdit(false);
+    } catch {
+      toast.error('Failed to update project');
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!id) return;
+    try {
+      await deleteProject.mutateAsync(id);
+      toast.success('Project deleted');
+      navigate('/projects');
+    } catch {
+      toast.error('Failed to delete project');
+    }
+  };
 
   const headerConfig = useMemo(() => ({
     title: project?.name ?? 'Project',
@@ -28,8 +106,10 @@ export default function ProjectDetail() {
       { label: 'Projects', href: '/projects' },
       { label: project?.name ?? '...' },
     ],
-    actions: [],
-  }), [project?.name]);
+    actions: perm.isManager ? [
+      { type: 'button' as const, label: 'Edit', icon: Pencil, variant: 'outline' as const, onClick: openEdit },
+    ] : [],
+  }), [project?.name, perm.isManager]);
 
   useHeaderConfig(headerConfig);
 
@@ -177,6 +257,89 @@ export default function ProjectDetail() {
             ))}
           </div>
         )}
+
+        {/* Delete Button */}
+        {perm.isManager && (
+          <div className="pt-6 border-t dark:border-gray-700">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-red-500 hover:text-red-600"
+              onClick={() => setShowDelete(true)}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete Project
+            </Button>
+          </div>
+        )}
+
+        {/* Edit Modal */}
+        <Modal
+          isOpen={showEdit}
+          onClose={() => setShowEdit(false)}
+          title="Edit Project"
+          size="md"
+          footer={
+            <>
+              <Button variant="ghost" onClick={() => setShowEdit(false)}>Cancel</Button>
+              <Button isLoading={updateProject.isPending} onClick={handleUpdate}>Save Changes</Button>
+            </>
+          }
+        >
+          <div className="space-y-4">
+            <Input
+              label="Project Name *"
+              value={form.name}
+              onChange={(e) => setForm(f => ({ ...f, name: e.target.value }))}
+            />
+            <Input
+              label="Client Name"
+              value={form.clientName}
+              onChange={(e) => setForm(f => ({ ...f, clientName: e.target.value }))}
+            />
+            <Textarea
+              label="Description"
+              rows={3}
+              value={form.notes}
+              onChange={(e) => setForm(f => ({ ...f, notes: e.target.value }))}
+            />
+            <div className="grid grid-cols-2 gap-3">
+              <Select
+                label="Status"
+                options={STATUS_OPTIONS}
+                value={form.status}
+                onChange={(e) => setForm(f => ({ ...f, status: e.target.value }))}
+              />
+              <Input
+                label="Progress (%)"
+                type="number"
+                min="0"
+                max="100"
+                value={form.progress}
+                onChange={(e) => setForm(f => ({ ...f, progress: e.target.value }))}
+              />
+            </div>
+            <Input
+              label="Budget (USD)"
+              type="number"
+              min="0"
+              value={form.price}
+              onChange={(e) => setForm(f => ({ ...f, price: e.target.value }))}
+            />
+          </div>
+        </Modal>
+
+        {/* Delete Confirm */}
+        <ConfirmDialog
+          isOpen={showDelete}
+          onClose={() => setShowDelete(false)}
+          title="Delete Project"
+          message={`Delete "${project.name}"? This cannot be undone.`}
+          confirmLabel="Delete"
+          variant="danger"
+          isLoading={deleteProject.isPending}
+          onConfirm={handleDelete}
+        />
       </div>
     </PageTransition>
   );

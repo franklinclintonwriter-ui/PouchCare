@@ -67,3 +67,28 @@ export function useDeleteBroadcast() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['broadcasts'] }),
   });
 }
+
+export function useBroadcast(id: string) {
+  return useQuery<Broadcast>({
+    queryKey: ['broadcast', id],
+    queryFn: async () => {
+      const { data } = await api.get(`/broadcast/${id}`);
+      return data as Broadcast;
+    },
+    enabled: !!id,
+  });
+}
+
+export function useUpdateBroadcast() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...body }: { id: string; title?: string; message?: string; isUrgent?: boolean }) => {
+      const { data } = await api.put(`/broadcast/${id}`, body);
+      return data as Broadcast;
+    },
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: ['broadcasts'] });
+      qc.invalidateQueries({ queryKey: ['broadcast', vars.id] });
+    },
+  });
+}

@@ -1,8 +1,8 @@
 import { useState, useMemo, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
-import { Calendar, FolderOpen, User, Clock, Send, CheckCircle2, XCircle, ShieldCheck, Star } from 'lucide-react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Calendar, FolderOpen, User, Clock, Send, CheckCircle2, XCircle, ShieldCheck, Star, Trash2 } from 'lucide-react';
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
-import { useAddTaskComment, useTask, useSubmitTask, useApproveTask, useRejectTask, useVerifyTask, useRateTask } from '@/api/tasks';
+import { useAddTaskComment, useTask, useSubmitTask, useApproveTask, useRejectTask, useVerifyTask, useRateTask, useDeleteTask } from '@/api/tasks';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { Card, CardContent } from '@/components/ui/Card';
 import { StatusBadge } from '@/components/ui/StatusBadge';
@@ -22,6 +22,7 @@ type TaskComment = { id: string; authorName: string; content: string; createdAt:
 
 export default function TaskDetail() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { data: task, isLoading } = useTask(id!);
   const perm = usePermission();
   const addComment = useAddTaskComment();
@@ -30,6 +31,7 @@ export default function TaskDetail() {
   const rejectTask = useRejectTask();
   const verifyTask = useVerifyTask();
   const rateTask = useRateTask();
+  const deleteTask = useDeleteTask();
 
   const [tab, setTab] = useState('details');
   const [comment, setComment] = useState('');
@@ -39,6 +41,7 @@ export default function TaskDetail() {
   const [rating, setRating] = useState(3);
   const [rateNote, setRateNote] = useState('');
   const [verifyConfirm, setVerifyConfirm] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
 
   const isManager = perm.isCEO || perm.isOps || perm.isManager;
   const taskId = id!;
@@ -84,6 +87,16 @@ export default function TaskDetail() {
       toast.error(err instanceof Error ? err.message : 'Failed');
     }
   }, [taskId, rating, rateNote, rateTask]);
+
+  const handleDelete = useCallback(async () => {
+    try {
+      await deleteTask.mutateAsync(taskId);
+      toast.success('Task deleted');
+      navigate('/tasks');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to delete');
+    }
+  }, [taskId, deleteTask, navigate]);
 
   const headerActions = useMemo(() => {
     if (!task) return [];
@@ -369,6 +382,33 @@ export default function TaskDetail() {
           />
         </div>
       </Modal>
+
+      {/* Delete Confirm */}
+      <ConfirmDialog
+        isOpen={deleteConfirm}
+        onClose={() => setDeleteConfirm(false)}
+        title="Delete Task"
+        message={`Delete "${task?.title}"? This cannot be undone.`}
+        confirmLabel="Delete"
+        variant="danger"
+        isLoading={deleteTask.isPending}
+        onConfirm={handleDelete}
+      />
+
+      {/* Delete button in page (for managers) */}
+      {isManager && task && (
+        <div className="pt-6 border-t dark:border-gray-700">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-red-500 hover:text-red-600"
+            onClick={() => setDeleteConfirm(true)}
+          >
+            <Trash2 className="mr-2 h-4 w-4" />
+            Delete Task
+          </Button>
+        </div>
+      )}
     </PageTransition>
   );
 }

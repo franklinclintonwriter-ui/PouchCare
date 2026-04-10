@@ -72,11 +72,12 @@ function Sidebar() {
       label: 'HR',
       items: [
         { label: 'Staff', icon: Users, href: '/staff' },
+        { label: 'Leaderboard', icon: Star, href: '/staff/leaderboard' },
         { label: 'Branches', icon: Building2, href: '/staff/branches', permission: () => perm.can('staff.branches') },
         { label: 'Attendance', icon: Clock, href: '/attendance' },
         { label: 'Leave', icon: CalendarOff, href: '/leave' },
         { label: 'Payroll', icon: DollarSign, href: '/payroll', permission: () => perm.can('payroll.access') },
-        { label: 'Performance', icon: Star, href: '/performance' },
+        { label: 'Performance', icon: Star, href: '/performance', permission: () => perm.can('hr.performance') },
         { label: 'Recruitment', icon: UserPlus, children: [
           { label: 'Positions', href: '/hr/positions' },
           { label: 'Applications', href: '/hr/applications' },

@@ -10,9 +10,15 @@ export function useHeaderConfig(config: HeaderConfig) {
   // We serialize actions by their surface properties (type+value+label) so that
   // callback identity changes (which happen every render) don't trigger re-sets,
   // but actual value changes (search text, filter selection) DO propagate.
-  const actionKey = config.actions
-    ?.map((a) => `${a.type}${'value' in a ? (a as { value: unknown }).value : ''}`)
-    .join('|') ?? '';
+  const actionKey =
+    config.actions
+      ?.map((a) => {
+        if (a.type === 'button') {
+          return `${a.type}${a.isLoading ? ':loading' : ''}${a.disabled ? ':disabled' : ''}`;
+        }
+        return `${a.type}${'value' in a ? (a as { value: unknown }).value : ''}`;
+      })
+      .join('|') ?? '';
 
   useEffect(() => {
     setHeader(config);

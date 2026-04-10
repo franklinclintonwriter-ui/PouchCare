@@ -256,6 +256,8 @@ function HeaderActionRenderer({ action }: { action: HeaderAction }) {
           size="sm"
           icon={action.icon && <action.icon />}
           onClick={action.onClick}
+          disabled={action.disabled}
+          isLoading={action.isLoading}
           className={cn(
             action.hideOnMobile && 'hidden sm:inline-flex',
             'h-8 shrink-0 rounded-md px-2.5 text-[11px] [&>span>svg]:h-3.5 [&>span>svg]:w-3.5',

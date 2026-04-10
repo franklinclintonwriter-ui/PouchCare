@@ -126,4 +126,23 @@ router.put('/tickets/:id', requireStaff, async (req, res) => {
   } catch (err) { serverError(res, err) }
 })
 
+// DELETE /tickets/:id — Staff only, delete ticket and all replies
+router.delete('/tickets/:id', requireStaff, async (req, res) => {
+  try {
+    const ticket = await prisma.supportTicket.findUnique({
+      where: { id: req.params.id },
+      select: { id: true, status: true },
+    })
+    if (!ticket) return notFound(res, 'Ticket not found')
+
+    // Delete all replies first (cascade), then the ticket
+    await prisma.$transaction([
+      prisma.ticketReply.deleteMany({ where: { ticketId: req.params.id } }),
+      prisma.supportTicket.delete({ where: { id: req.params.id } }),
+    ])
+
+    return ok(res, { message: 'Ticket deleted successfully' })
+  } catch (err) { serverError(res, err) }
+})
+
 export default router

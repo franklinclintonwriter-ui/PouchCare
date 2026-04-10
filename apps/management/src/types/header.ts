@@ -3,6 +3,7 @@ import type { LucideIcon } from 'lucide-react';
 export interface Breadcrumb {
   label: string;
   href?: string;
+  icon?: LucideIcon;
 }
 
 export type HeaderAction =
@@ -42,6 +43,8 @@ export interface ButtonAction {
   onClick: () => void;
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
   hideOnMobile?: boolean;
+  disabled?: boolean;
+  isLoading?: boolean;
 }
 
 export interface DateRangeAction {

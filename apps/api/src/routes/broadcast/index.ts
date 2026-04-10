@@ -66,6 +66,32 @@ router.delete('/:id', bc, async (req, res) => {
   } catch (err) { serverError(res, err) }
 })
 
+// PUT /:id — Update broadcast (title, message, isUrgent only - audience/channel cannot be changed after creation)
+const updateSchema = z.object({
+  title:    z.string().min(1).optional(),
+  message:  z.string().min(1).optional(),
+  isUrgent: z.boolean().optional(),
+})
+
+router.put('/:id', bc, validate(updateSchema), async (req, res) => {
+  try {
+    const existing = await prisma.broadcast.findUnique({ where: { id: req.params.id } })
+    if (!existing) return notFound(res)
+
+    const { title, message, isUrgent } = req.body
+    const updateData: Prisma.BroadcastUpdateInput = {}
+    if (title !== undefined) updateData.title = title
+    if (message !== undefined) updateData.message = message
+    if (isUrgent !== undefined) updateData.isUrgent = isUrgent
+
+    const broadcast = await prisma.broadcast.update({
+      where: { id: req.params.id },
+      data: updateData,
+    })
+    return ok(res, broadcast)
+  } catch (err) { serverError(res, err) }
+})
+
 router.post('/', bc, validate(schema), async (req, res) => {
   try {
     const { title, message, audience, channel, isUrgent } = req.body

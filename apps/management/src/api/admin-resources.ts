@@ -429,3 +429,49 @@ export function useCreateExchangeRate() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-exchange-rates'] }),
   });
 }
+
+export function useDevice(id: string | undefined) {
+  return useQuery<Device | null>({
+    queryKey: ['admin-device', id],
+    queryFn: async () => {
+      if (!id) return null;
+      const { data } = await api.get(`/admin/devices/${id}`);
+      return mapDevice(data as RawDevice);
+    },
+    enabled: !!id,
+  });
+}
+
+export function useUpdateDevice() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...body }: Partial<Device> & { id: string }) => api.put(`/admin/devices/${id}`, body),
+    onSuccess: (_, v) => {
+      qc.invalidateQueries({ queryKey: ['admin-devices'] });
+      qc.invalidateQueries({ queryKey: ['admin-device', v.id] });
+    },
+  });
+}
+
+export function useDeleteDevice() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.delete(`/admin/devices/${id}`),
+    onSuccess: (_, id) => {
+      qc.invalidateQueries({ queryKey: ['admin-devices'] });
+      qc.removeQueries({ queryKey: ['admin-device', id] });
+    },
+  });
+}
+
+export function useClientAccount(id: string | undefined) {
+  return useQuery<ClientAccount | null>({
+    queryKey: ['admin-client-account', id],
+    queryFn: async () => {
+      if (!id) return null;
+      const { data } = await api.get(`/admin/client-accounts/${id}`);
+      return mapClientAccount(data as RawClientAccount);
+    },
+    enabled: !!id,
+  });
+}
