@@ -1,4 +1,7 @@
 {
+  // Auto-run dev servers on folder open
+  "task.allowAutomaticTasks": "on",
+
   "editor.formatOnSave": true,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "editor.tabSize": 2,

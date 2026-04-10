@@ -2,6 +2,22 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "🚀 Dev: Auto Start",
+      "type": "shell",
+      "command": "powershell -ExecutionPolicy Bypass -File scripts/dev-start.ps1",
+      "isBackground": true,
+      "runOptions": {
+        "runOn": "folderOpen"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": false,
+        "clear": true
+      },
+      "problemMatcher": []
+    },
+    {
       "label": "build-api",
       "type": "shell",
       "command": "cd apps/api; npx tsc",
@@ -17,7 +33,7 @@
     {
       "label": "dev: API (port 7000)",
       "type": "shell",
-      "command": "cd apps/api; npm run dev",
+      "command": "cd apps/api && npm run dev",
       "isBackground": true,
       "presentation": {
         "reveal": "always",
@@ -27,9 +43,9 @@
       "problemMatcher": []
     },
     {
-      "label": "dev: Management (port 5174)",
+      "label": "dev: Management (port 3000)",
       "type": "shell",
-      "command": "cd apps/management; npm run dev",
+      "command": "cd apps/management && npm run dev",
       "isBackground": true,
       "presentation": {
         "reveal": "always",
@@ -41,7 +57,7 @@
     {
       "label": "dev: Staff Office (port 5175)",
       "type": "shell",
-      "command": "cd apps/office; npm run dev",
+      "command": "cd apps/office && npm run dev",
       "isBackground": true,
       "presentation": {
         "reveal": "always",
@@ -53,7 +69,7 @@
     {
       "label": "dev: Client Portal (port 5176)",
       "type": "shell",
-      "command": "cd apps/client-portal; npm run dev",
+      "command": "cd apps/client-portal && npm run dev",
       "isBackground": true,
       "presentation": {
         "reveal": "always",
@@ -66,7 +82,7 @@
       "label": "🚀 Start ALL (API + 3 portals)",
       "dependsOn": [
         "dev: API (port 7000)",
-        "dev: Management (port 5174)",
+        "dev: Management (port 3000)",
         "dev: Staff Office (port 5175)",
         "dev: Client Portal (port 5176)"
       ],
@@ -82,7 +98,7 @@
     {
       "label": "prisma: generate",
       "type": "shell",
-      "command": "cd apps/api; npx prisma generate",
+      "command": "cd apps/api && npx prisma generate",
       "presentation": {
         "reveal": "always",
         "panel": "shared"
@@ -96,6 +112,17 @@
         "reveal": "always",
         "panel": "shared"
       }
+    },
+    {
+      "label": "prisma: studio",
+      "type": "shell",
+      "command": "cd apps/api && npx prisma studio",
+      "isBackground": true,
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "problemMatcher": []
     },
     {
       "label": "prisma: seed",
@@ -118,6 +145,16 @@
       "problemMatcher": [
         "$tsc"
       ]
+    },
+    {
+      "label": "Stop All Dev Servers",
+      "type": "shell",
+      "command": "taskkill /F /IM node.exe 2>$null; Write-Host '✅ All Node processes stopped'",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": []
     }
   ]
 }

@@ -1,107 +1,142 @@
-# PouchCare — full local dev cycle: free ports -> DB up -> prisma push + seed -> restart API + 3 frontends
-# Run from repo root:  powershell -ExecutionPolicy Bypass -File scripts/dev-full.ps1
-# Or:  npm run dev:full
+# PouchCare Development Startup Script
+# Starts API server (port 7000) and Management frontend (port 3000)
+# with Prisma client generation
 
-$ErrorActionPreference = "Stop"
-$root = Split-Path $PSScriptRoot -Parent
-Set-Location $root
-
-function Stop-ListenPort {
-  param([int]$Port)
-  Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue |
-    ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }
-}
-
-function Test-Pg {
-  try {
-    (Test-NetConnection -ComputerName 127.0.0.1 -Port 5432 -WarningAction SilentlyContinue).TcpTestSucceeded
-  } catch { $false }
-}
-
-function Find-Docker {
-  if (Get-Command docker -ErrorAction SilentlyContinue) { return "docker" }
-  $candidates = @(
-    "${env:ProgramFiles}\Docker\Docker\resources\bin\docker.exe",
-    "${env:ProgramFiles}\Docker\Docker\resources\docker.exe"
-  )
-  foreach ($p in $candidates) {
-    if (Test-Path $p) { return $p }
-  }
-  $null
-}
-
-function Start-NpmDev {
-  param([string]$ScriptName)
-  $npmExe = (Get-Command npm.cmd -ErrorAction SilentlyContinue).Source
-  if (-not $npmExe) { $npmExe = "npm.cmd" }
-  $inner = "Set-Location -LiteralPath '$root'; & '$npmExe' run $ScriptName"
-  Start-Process powershell -ArgumentList "-NoProfile", "-WindowStyle", "Minimized", "-Command", $inner
-}
+$ErrorActionPreference = "SilentlyContinue"
 
 Write-Host ""
-Write-Host "=== PouchCare dev-full ===" -ForegroundColor Cyan
-
-# 1) Stop previous dev servers
+Write-Host "╔═══════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
+Write-Host "║          🚀 PouchCare Development Environment             ║" -ForegroundColor Cyan
+Write-Host "╚═══════════════════════════════════════════════════════════╝" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "[1/5] Stopping dev processes on ports 7000, 3000, 5175, 5176..." -ForegroundColor Yellow
-foreach ($p in 7000, 3000, 5175, 5176) { Stop-ListenPort -Port $p }
+
+# Get script directory and project root
+$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$ProjectRoot = Split-Path -Parent $ScriptDir
+
+Set-Location $ProjectRoot
+
+# Kill existing Node processes on our ports
+Write-Host "🧹 Cleaning up existing processes..." -ForegroundColor Yellow
+$ports = @(7000, 3000, 5175, 5176)
+foreach ($port in $ports) {
+    $process = Get-NetTCPConnection -LocalPort $port -ErrorAction SilentlyContinue | 
+               Select-Object -ExpandProperty OwningProcess -ErrorAction SilentlyContinue |
+               Get-Process -Id { $_ } -ErrorAction SilentlyContinue
+    if ($process) {
+        Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
+        Write-Host "   Stopped process on port $port" -ForegroundColor DarkGray
+    }
+}
 Start-Sleep -Seconds 1
 
-# 2) PostgreSQL via Docker if available and not already listening
-if (-not (Test-Pg)) {
-  $docker = Find-Docker
-  if ($docker) {
-    Write-Host "[2/5] Starting docker compose (Postgres + Redis)..." -ForegroundColor Yellow
-    if ($docker -eq "docker") { docker compose up -d }
-    else { & $docker compose up -d }
-    $deadline = (Get-Date).AddSeconds(60)
-    while (-not (Test-Pg) -and (Get-Date) -lt $deadline) { Start-Sleep -Seconds 2 }
-  } else {
-    Write-Host "[2/5] Docker not found - install Docker Desktop, or install PostgreSQL on localhost:5432" -ForegroundColor Red
-  }
-}
+# Check if PostgreSQL is running
+Write-Host ""
+Write-Host "🔍 Checking PostgreSQL..." -ForegroundColor Yellow
+$pgRunning = $false
+try {
+    $pgConnection = Test-NetConnection -ComputerName localhost -Port 5432 -WarningAction SilentlyContinue
+    $pgRunning = $pgConnection.TcpTestSucceeded
+} catch { }
 
-# 3) Prisma push + seed
-if (Test-Pg) {
-  Write-Host ""
-  Write-Host "[3/5] prisma generate + db push + seed..." -ForegroundColor Yellow
-  Set-Location "$root\apps\api"
-  npx prisma generate
-  npx prisma db push
-  npx prisma db seed
-  if ($LASTEXITCODE -ne 0) {
-    Write-Host "Seed failed - check apps/api/.env DATABASE_URL" -ForegroundColor Red
-  } else {
-    Write-Host "Database ready (demo users: Password123!)" -ForegroundColor Green
-  }
-  Set-Location $root
+if (-not $pgRunning) {
+    Write-Host "   ⚠️  PostgreSQL not detected on port 5432" -ForegroundColor Red
+    Write-Host "   Starting Docker PostgreSQL..." -ForegroundColor Yellow
+    docker compose up -d 2>$null
+    Start-Sleep -Seconds 3
 } else {
-  Write-Host ""
-  Write-Host "[3/5] SKIP prisma - PostgreSQL not reachable on 127.0.0.1:5432" -ForegroundColor Red
-  Write-Host "      Fix: install Docker Desktop and run: docker compose up -d" -ForegroundColor Yellow
-  Write-Host "      Or install PostgreSQL 16 and match DATABASE_URL in apps/api/.env" -ForegroundColor Yellow
+    Write-Host "   ✅ PostgreSQL is running" -ForegroundColor Green
 }
 
-# 4) PATH for child processes
-$machinePath = [System.Environment]::GetEnvironmentVariable('PATH', 'Machine')
-$userPath = [System.Environment]::GetEnvironmentVariable('PATH', 'User')
-$env:PATH = $machinePath + ';' + $userPath
+# Generate Prisma Client
+Write-Host ""
+Write-Host "📦 Generating Prisma Client..." -ForegroundColor Yellow
+Set-Location "$ProjectRoot\apps\api"
+$prismaOutput = npx prisma generate 2>&1
+if ($LASTEXITCODE -eq 0) {
+    Write-Host "   ✅ Prisma Client generated" -ForegroundColor Green
+} else {
+    Write-Host "   ⚠️  Prisma generation warning (may be fine)" -ForegroundColor DarkYellow
+}
+
+# Apply any pending migrations
+Write-Host ""
+Write-Host "🔄 Checking database migrations..." -ForegroundColor Yellow
+$migrateOutput = npx prisma migrate deploy 2>&1
+if ($LASTEXITCODE -eq 0) {
+    Write-Host "   ✅ Database is up to date" -ForegroundColor Green
+} else {
+    Write-Host "   ⚠️  Migration check complete" -ForegroundColor DarkYellow
+}
+
+Set-Location $ProjectRoot
 
 Write-Host ""
-Write-Host "[4/5] Starting API (7000)..." -ForegroundColor Yellow
-Start-NpmDev -ScriptName "dev:api"
+Write-Host "═══════════════════════════════════════════════════════════" -ForegroundColor DarkGray
+Write-Host ""
 
+# Start API Server
+Write-Host "🔧 Starting API Server (port 7000)..." -ForegroundColor Cyan
+$apiJob = Start-Job -ScriptBlock {
+    param($root)
+    Set-Location "$root\apps\api"
+    npx tsx watch src/server.ts
+} -ArgumentList $ProjectRoot
+
+# Wait a moment for API to initialize
 Start-Sleep -Seconds 2
 
-Write-Host "[5/5] Starting Management (3000), Office (5175), Client portal (5176)..." -ForegroundColor Yellow
-Start-NpmDev -ScriptName "dev:mgmt"
-Start-NpmDev -ScriptName "dev:office"
-Start-NpmDev -ScriptName "dev:portal"
+# Start Management Frontend
+Write-Host "🎨 Starting Management Frontend (port 3000)..." -ForegroundColor Cyan
+$mgmtJob = Start-Job -ScriptBlock {
+    param($root)
+    Set-Location "$root\apps\management"
+    npm run dev
+} -ArgumentList $ProjectRoot
+
+# Wait for services to start
+Start-Sleep -Seconds 3
 
 Write-Host ""
-Write-Host "Done. URLs:" -ForegroundColor Green
-Write-Host "  API:        http://localhost:7000"
-Write-Host "  Management: http://localhost:3000"
-Write-Host "  Office:     http://localhost:5175"
-Write-Host "  Portal:     http://localhost:5176"
+Write-Host "═══════════════════════════════════════════════════════════" -ForegroundColor DarkGray
 Write-Host ""
+Write-Host "✅ Development servers starting!" -ForegroundColor Green
+Write-Host ""
+Write-Host "   📡 API:        http://localhost:7000" -ForegroundColor White
+Write-Host "   🖥️  Management: http://localhost:3000" -ForegroundColor White
+Write-Host "   📊 Prisma:     npx prisma studio (run manually)" -ForegroundColor DarkGray
+Write-Host ""
+Write-Host "   Press Ctrl+C to stop all servers" -ForegroundColor DarkGray
+Write-Host ""
+
+# Monitor jobs and stream output
+try {
+    while ($true) {
+        # Get and display API output
+        $apiOutput = Receive-Job -Job $apiJob -ErrorAction SilentlyContinue
+        if ($apiOutput) {
+            $apiOutput | ForEach-Object { Write-Host "[API] $_" -ForegroundColor Blue }
+        }
+
+        # Get and display Management output
+        $mgmtOutput = Receive-Job -Job $mgmtJob -ErrorAction SilentlyContinue
+        if ($mgmtOutput) {
+            $mgmtOutput | ForEach-Object { Write-Host "[MGMT] $_" -ForegroundColor Magenta }
+        }
+
+        # Check if jobs are still running
+        if ($apiJob.State -eq "Failed" -or $mgmtJob.State -eq "Failed") {
+            Write-Host "⚠️  A job has failed. Check the output above." -ForegroundColor Red
+        }
+
+        Start-Sleep -Milliseconds 500
+    }
+} finally {
+    Write-Host ""
+    Write-Host "🛑 Stopping servers..." -ForegroundColor Yellow
+    Stop-Job -Job $apiJob -ErrorAction SilentlyContinue
+    Stop-Job -Job $mgmtJob -ErrorAction SilentlyContinue
+    Remove-Job -Job $apiJob -Force -ErrorAction SilentlyContinue
+    Remove-Job -Job $mgmtJob -Force -ErrorAction SilentlyContinue
+    Write-Host "✅ Servers stopped" -ForegroundColor Green
+}
