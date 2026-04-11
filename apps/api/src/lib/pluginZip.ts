@@ -1,5 +1,5 @@
-import archiver from 'archiver';
-import { PassThrough } from 'stream';
+import archiver from "archiver";
+import { PassThrough } from "stream";
 
 export interface PluginZipOptions {
   slug: string;
@@ -20,9 +20,9 @@ export function buildPluginZip(opts: PluginZipOptions): PassThrough {
   const { slug, name, version, description, phpFileContent, changelog } = opts;
 
   const passThrough = new PassThrough();
-  const archive = archiver('zip', { zlib: { level: 6 } });
+  const archive = archiver("zip", { zlib: { level: 6 } });
 
-  archive.on('error', (err) => passThrough.destroy(err));
+  archive.on("error", (err: Error) => passThrough.destroy(err));
   archive.pipe(passThrough);
 
   archive.append(phpFileContent, { name: `${slug}/${slug}.php` });
@@ -61,6 +61,6 @@ ${opts.description}
 
 == Changelog ==
 = ${opts.version} =
-${opts.changelog ?? 'Initial release.'}
+${opts.changelog ?? "Initial release."}
 `;
 }

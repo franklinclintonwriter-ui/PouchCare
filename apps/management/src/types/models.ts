@@ -1,9 +1,22 @@
 import type {
-  SystemRole, TaskStatus, ApprovalStatus, Priority, AttendanceStatus, WorkType,
-  LeaveType, LeaveStatus, ProjectStatus, PaymentStatus, LeadStage,
-  PortalMemberStatus, OrderStatus, WalletTxType, CommissionStatus,
-  PayoutStatus, PaymentMethod,
-} from './enums';
+  SystemRole,
+  TaskStatus,
+  ApprovalStatus,
+  Priority,
+  AttendanceStatus,
+  WorkType,
+  LeaveType,
+  LeaveStatus,
+  ProjectStatus,
+  PaymentStatus,
+  LeadStage,
+  PortalMemberStatus,
+  OrderStatus,
+  WalletTxType,
+  CommissionStatus,
+  PayoutStatus,
+  PaymentMethod,
+} from "./enums";
 
 // ── Staff & HR ──────────────────────────────────────────────
 export interface StaffMember {
@@ -160,7 +173,7 @@ export interface DailyReport {
   tasksCompleted: number;
   hoursWorked: number;
   notes: string;
-  mood: 'great' | 'good' | 'okay' | 'bad';
+  mood: "great" | "good" | "okay" | "bad";
   status: ApprovalStatus;
 }
 
@@ -200,10 +213,13 @@ export interface Expense {
 }
 
 export interface MonthlyRevenue {
+  id?: string;
   month: string;
+  year?: number;
   revenue: number;
   expenses: number;
   profit: number;
+  notes?: string;
 }
 
 // ── CRM ─────────────────────────────────────────────────────
@@ -242,7 +258,7 @@ export interface Domain {
   registrar: string;
   expiryDate: string;
   autoRenew: boolean;
-  status: 'active' | 'expired' | 'transferred';
+  status: "active" | "expired" | "transferred";
   dnsProvider: string;
   annualCost: number;
 }
@@ -254,7 +270,7 @@ export interface ServerAsset {
   ip: string;
   specs: { cpu: string; ram: string; disk: string };
   usage: { cpu: number; ram: number; disk: number };
-  status: 'online' | 'offline' | 'maintenance';
+  status: "online" | "offline" | "maintenance";
   uptime: number;
   monthlyCost: number;
   websiteCount: number;
@@ -268,7 +284,7 @@ export interface WebsiteAsset {
   serverName: string;
   domainId: string;
   domainName: string;
-  status: 'live' | 'staging' | 'down' | 'maintenance';
+  status: "live" | "staging" | "down" | "maintenance";
   monthlyTraffic: number;
   lastDeploy: string;
 }
@@ -287,7 +303,7 @@ export interface Service {
 export interface BacklinkPackage {
   id: string;
   name: string;
-  tier: 'basic' | 'standard' | 'premium' | 'enterprise';
+  tier: "basic" | "standard" | "premium" | "enterprise";
   daRange: string;
   linkType: string;
   quantity: number;
@@ -313,7 +329,7 @@ export interface Ticket {
   clientName: string;
   clientEmail: string;
   priority: Priority;
-  status: 'open' | 'in_progress' | 'waiting' | 'resolved' | 'closed';
+  status: "open" | "in_progress" | "waiting" | "resolved" | "closed";
   assigneeId?: string;
   assigneeName?: string;
   category: string;
@@ -329,14 +345,14 @@ export interface Broadcast {
   message: string;
   sentBy: string;
   audience: string;
-  channel: 'in_app' | 'email';
+  channel: "in_app" | "email";
   isUrgent: boolean;
   createdAt: string;
 }
 
 export interface AppNotification {
   id: string;
-  type: 'task' | 'leave' | 'ticket' | 'payment' | 'system' | 'order';
+  type: "task" | "leave" | "ticket" | "payment" | "system" | "order";
   title: string;
   description: string;
   timestamp: string;
@@ -350,10 +366,10 @@ export interface Position {
   title: string;
   department: string;
   location: string;
-  type: 'full_time' | 'part_time' | 'contract' | 'internship';
+  type: "full_time" | "part_time" | "contract" | "internship";
   salaryRange: { min: number; max: number };
   applicationsCount: number;
-  status: 'open' | 'closed' | 'paused';
+  status: "open" | "closed" | "paused";
   postedDate: string;
 }
 
@@ -363,7 +379,7 @@ export interface JobApplication {
   applicantEmail: string;
   positionId: string;
   positionTitle: string;
-  stage: 'new' | 'screening' | 'interview' | 'offer' | 'hired' | 'rejected';
+  stage: "new" | "screening" | "interview" | "offer" | "hired" | "rejected";
   resumeUrl?: string;
   rating: number;
   appliedDate: string;

@@ -1,18 +1,18 @@
 {
   // Auto-run dev servers on folder open
   "task.allowAutomaticTasks": "on",
-
   "editor.formatOnSave": true,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "editor.tabSize": 2,
-  "editor.rulers": [100],
+  "editor.rulers": [
+    100
+  ],
   "editor.bracketPairColorization.enabled": true,
   "editor.guides.bracketPairs": "active",
   "editor.inlineSuggest.enabled": true,
   "editor.quickSuggestions": {
     "strings": true
   },
-
   // TypeScript
   "typescript.tsdk": "node_modules/typescript/lib",
   "typescript.enablePromptUseWorkspaceTsdk": true,
@@ -20,19 +20,22 @@
   "typescript.preferences.quoteStyle": "single",
   "typescript.inlayHints.parameterNames.enabled": "literals",
   "typescript.inlayHints.variableTypes.enabled": false,
-
   // Tailwind
   "tailwindCSS.experimental.classRegex": [
-    ["clsx\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"],
-    ["cn\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"]
+    [
+      "clsx\\(([^)]*)\\)",
+      "(?:'|\"|`)([^']*)(?:'|\"|`)"
+    ],
+    [
+      "cn\\(([^)]*)\\)",
+      "(?:'|\"|`)([^']*)(?:'|\"|`)"
+    ]
   ],
   "editor.quickSuggestionsDelay": 0,
-
   // Path aliases — resolve @ to src/
   "typescript.preferences.pathMapping": {
     "@/*": "./src/*"
   },
-
   // File nesting
   "explorer.fileNesting.enabled": true,
   "explorer.fileNesting.patterns": {
@@ -43,23 +46,19 @@
     "vite.config.*": "vitest.config.*",
     ".env.example": ".env, .env.*"
   },
-
   // Git
   "git.autofetch": true,
   "git.confirmSync": false,
   "gitlens.hovers.currentLine.over": "line",
-
   // Terminal
   "terminal.integrated.defaultProfile.linux": "bash",
   "terminal.integrated.fontSize": 13,
-
   // Search
   "search.exclude": {
     "**/node_modules": true,
     "**/dist": true,
     "**/.git": true
   },
-
   // Files
   "files.associations": {
     "*.css": "tailwindcss"
@@ -68,25 +67,32 @@
     "**/.DS_Store": true,
     "**/node_modules": true
   },
-
   // Emmet
   "emmet.includeLanguages": {
     "typescript": "html",
     "typescriptreact": "html"
   },
-
   // ESLint
-  "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
-  "eslint.workingDirectories": [
-    { "pattern": "apps/*/" },
-    { "pattern": "packages/*/" }
+  "eslint.validate": [
+    "javascript",
+    "javascriptreact",
+    "typescript",
+    "typescriptreact"
   ],
-
+  "eslint.workingDirectories": [
+    {
+      "pattern": "apps/*/"
+    },
+    {
+      "pattern": "packages/*/"
+    }
+  ],
   // Prisma
   "[prisma]": {
     "editor.defaultFormatter": "Prisma.prisma"
   },
   "[jsonc]": {
     "editor.defaultFormatter": "vscode.json-language-features"
-  }
+  },
+  "prisma.pinToPrisma6": true
 }

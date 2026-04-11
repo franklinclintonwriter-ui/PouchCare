@@ -33,7 +33,7 @@
     {
       "label": "dev: API (port 7000)",
       "type": "shell",
-      "command": "cd apps/api && npm run dev",
+      "command": "cd apps/api; npm run dev",
       "isBackground": true,
       "presentation": {
         "reveal": "always",
@@ -45,7 +45,7 @@
     {
       "label": "dev: Management (port 3000)",
       "type": "shell",
-      "command": "cd apps/management && npm run dev",
+      "command": "cd apps/management; npm run dev",
       "isBackground": true,
       "presentation": {
         "reveal": "always",
@@ -57,7 +57,7 @@
     {
       "label": "dev: Staff Office (port 5175)",
       "type": "shell",
-      "command": "cd apps/office && npm run dev",
+      "command": "cd apps/office; npm run dev",
       "isBackground": true,
       "presentation": {
         "reveal": "always",
@@ -69,7 +69,7 @@
     {
       "label": "dev: Client Portal (port 5176)",
       "type": "shell",
-      "command": "cd apps/client-portal && npm run dev",
+      "command": "cd apps/client-portal; npm run dev",
       "isBackground": true,
       "presentation": {
         "reveal": "always",
@@ -98,7 +98,7 @@
     {
       "label": "prisma: generate",
       "type": "shell",
-      "command": "cd apps/api && npx prisma generate",
+      "command": "cd apps/api; npx prisma generate",
       "presentation": {
         "reveal": "always",
         "panel": "shared"
@@ -107,7 +107,7 @@
     {
       "label": "prisma: migrate dev",
       "type": "shell",
-      "command": "cd apps/api && npx prisma migrate dev",
+      "command": "cd apps/api; npx prisma migrate dev",
       "presentation": {
         "reveal": "always",
         "panel": "shared"
@@ -116,7 +116,7 @@
     {
       "label": "prisma: studio",
       "type": "shell",
-      "command": "cd apps/api && npx prisma studio",
+      "command": "cd apps/api; npx prisma studio",
       "isBackground": true,
       "presentation": {
         "reveal": "always",
@@ -127,7 +127,7 @@
     {
       "label": "prisma: seed",
       "type": "shell",
-      "command": "cd apps/api && npm run db:seed",
+      "command": "cd apps/api; npm run db:seed",
       "presentation": {
         "reveal": "always",
         "panel": "shared"
@@ -136,7 +136,7 @@
     {
       "label": "type-check: all",
       "type": "shell",
-      "command": "cd apps/api && npx tsc --noEmit && echo '✅ API OK' && cd ../management && npx tsc --noEmit && echo '✅ Management OK' && cd ../office && npx tsc --noEmit && echo '✅ Office OK' && cd ../client-portal && npx tsc --noEmit && echo '✅ Client Portal OK'",
+      "command": "cd apps/api; npx tsc --noEmit; if ($LASTEXITCODE -eq 0) { Write-Host '✅ API OK' } else { exit $LASTEXITCODE }; cd ../management; npx tsc --noEmit; if ($LASTEXITCODE -eq 0) { Write-Host '✅ Management OK' } else { exit $LASTEXITCODE }; cd ../office; npx tsc --noEmit; if ($LASTEXITCODE -eq 0) { Write-Host '✅ Office OK' } else { exit $LASTEXITCODE }; cd ../client-portal; npx tsc --noEmit; if ($LASTEXITCODE -eq 0) { Write-Host '✅ Client Portal OK' } else { exit $LASTEXITCODE }",
       "group": "test",
       "presentation": {
         "reveal": "always",

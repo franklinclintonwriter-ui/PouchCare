@@ -1,6 +1,6 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import api from './client';
-import type { PaginatedResponse, QueryParams } from '@/types/api';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import api from "./client";
+import type { PaginatedResponse, QueryParams } from "@/types/api";
 
 type RawBranch = {
   id: string;
@@ -155,16 +155,22 @@ export interface ExchangeRate {
 }
 
 function normalizeStatus(status?: string | null): string {
-  const value = (status ?? '').trim().toLowerCase();
-  if (!value) return 'Active';
-  if (value === 'active') return 'Active';
-  if (value === 'inactive') return 'Inactive';
-  if (value === 'suspended') return 'Suspended';
-  if (value === 'pending') return 'Pending';
-  return status ?? 'Active';
+  const value = (status ?? "").trim().toLowerCase();
+  if (!value) return "Active";
+  if (value === "active") return "Active";
+  if (value === "inactive") return "Inactive";
+  if (value === "suspended") return "Suspended";
+  if (value === "pending") return "Pending";
+  return status ?? "Active";
 }
 
-function mapBranch(raw: RawBranch & { address?: string | null; notes?: string | null; establishedDate?: string | null }): Branch {
+function mapBranch(
+  raw: RawBranch & {
+    address?: string | null;
+    notes?: string | null;
+    establishedDate?: string | null;
+  },
+): Branch {
   return {
     id: raw.id,
     name: raw.name,
@@ -199,8 +205,8 @@ function mapDevice(raw: RawDevice): Device {
 function mapClientAccount(raw: RawClientAccount): ClientAccount {
   return {
     id: raw.id,
-    clientName: raw.clientName ?? 'Client',
-    email: raw.email ?? '-',
+    clientName: raw.clientName ?? "Client",
+    email: raw.email ?? "-",
     country: raw.country ?? undefined,
     status: normalizeStatus(raw.status),
     totalSpentUsd: raw.totalSpentUsd ?? 0,
@@ -222,9 +228,9 @@ function mapExchangeRate(raw: RawExchangeRate): ExchangeRate {
 
 export function useBranches(params?: QueryParams) {
   return useQuery<PaginatedResponse<Branch>>({
-    queryKey: ['admin-branches', params],
+    queryKey: ["admin-branches", params],
     queryFn: async () => {
-      const { data } = await api.get('/admin/branches', { params });
+      const { data } = await api.get("/admin/branches", { params });
       const rows = Array.isArray(data?.data) ? data.data : [];
       return { ...data, data: rows.map((item: RawBranch) => mapBranch(item)) };
     },
@@ -233,7 +239,7 @@ export function useBranches(params?: QueryParams) {
 
 export function useBranchDetail(id: string | undefined) {
   return useQuery<BranchDetailPayload>({
-    queryKey: ['admin-branch', id],
+    queryKey: ["admin-branch", id],
     queryFn: async () => {
       const { data } = await api.get(`/admin/branches/${id}`);
       const emptyRefs: BranchReferenceBreakdown = {
@@ -252,7 +258,11 @@ export function useBranchDetail(id: string | undefined) {
         jobPositions: 0,
       };
       const payload = data as {
-        branch: RawBranch & { address?: string | null; notes?: string | null; establishedDate?: string | null };
+        branch: RawBranch & {
+          address?: string | null;
+          notes?: string | null;
+          establishedDate?: string | null;
+        };
         stats: BranchStats;
         managerMember: BranchManagerMember | null;
         references?: BranchReferenceBreakdown;
@@ -268,11 +278,16 @@ export function useBranchDetail(id: string | undefined) {
   });
 }
 
-export function useBranchMembers(branchId: string | undefined, params?: QueryParams) {
+export function useBranchMembers(
+  branchId: string | undefined,
+  params?: QueryParams,
+) {
   return useQuery<PaginatedResponse<BranchMemberRow>>({
-    queryKey: ['admin-branch-members', branchId, params],
+    queryKey: ["admin-branch-members", branchId, params],
     queryFn: async () => {
-      const { data } = await api.get(`/admin/branches/${branchId}/members`, { params });
+      const { data } = await api.get(`/admin/branches/${branchId}/members`, {
+        params,
+      });
       const rows = Array.isArray(data?.data) ? data.data : [];
       return { ...data, data: rows as BranchMemberRow[] };
     },
@@ -283,10 +298,10 @@ export function useBranchMembers(branchId: string | undefined, params?: QueryPar
 export function useCreateBranch() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: Partial<Branch>) => api.post('/admin/branches', body),
+    mutationFn: (body: Partial<Branch>) => api.post("/admin/branches", body),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['admin-branches'] });
-      qc.invalidateQueries({ queryKey: ['staff-list'] });
+      qc.invalidateQueries({ queryKey: ["admin-branches"] });
+      qc.invalidateQueries({ queryKey: ["staff-list"] });
     },
   });
 }
@@ -294,13 +309,14 @@ export function useCreateBranch() {
 export function useUpdateBranch() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...body }: Partial<Branch> & { id: string }) => api.put(`/admin/branches/${id}`, body),
+    mutationFn: ({ id, ...body }: Partial<Branch> & { id: string }) =>
+      api.put(`/admin/branches/${id}`, body),
     onSuccess: (_, v) => {
-      qc.invalidateQueries({ queryKey: ['admin-branches'] });
-      qc.invalidateQueries({ queryKey: ['admin-branch', v.id] });
-      qc.invalidateQueries({ queryKey: ['admin-branch-members', v.id] });
-      qc.invalidateQueries({ queryKey: ['staff-list'] });
-      qc.invalidateQueries({ queryKey: ['staff-leaderboard'] });
+      qc.invalidateQueries({ queryKey: ["admin-branches"] });
+      qc.invalidateQueries({ queryKey: ["admin-branch", v.id] });
+      qc.invalidateQueries({ queryKey: ["admin-branch-members", v.id] });
+      qc.invalidateQueries({ queryKey: ["staff-list"] });
+      qc.invalidateQueries({ queryKey: ["staff-leaderboard"] });
     },
   });
 }
@@ -310,10 +326,10 @@ export function useDeleteBranch() {
   return useMutation({
     mutationFn: (id: string) => api.delete(`/admin/branches/${id}`),
     onSuccess: (_, id) => {
-      qc.invalidateQueries({ queryKey: ['admin-branches'] });
-      qc.invalidateQueries({ queryKey: ['staff-list'] });
-      qc.removeQueries({ queryKey: ['admin-branch', id] });
-      qc.removeQueries({ queryKey: ['admin-branch-members', id] });
+      qc.invalidateQueries({ queryKey: ["admin-branches"] });
+      qc.invalidateQueries({ queryKey: ["staff-list"] });
+      qc.removeQueries({ queryKey: ["admin-branch", id] });
+      qc.removeQueries({ queryKey: ["admin-branch-members", id] });
     },
   });
 }
@@ -334,10 +350,10 @@ export interface ManagerCandidate {
  */
 export function useStaffForManager(branchName?: string) {
   return useQuery<ManagerCandidate[]>({
-    queryKey: ['staff-for-manager', branchName],
+    queryKey: ["staff-for-manager", branchName],
     queryFn: async () => {
       const params = branchName ? { branch: branchName } : {};
-      const { data } = await api.get('/admin/staff-for-manager', { params });
+      const { data } = await api.get("/admin/staff-for-manager", { params });
       return (Array.isArray(data) ? data : []) as ManagerCandidate[];
     },
   });
@@ -348,9 +364,11 @@ export function useStaffForManager(branchName?: string) {
  */
 export function useBranchManagerCandidates(branchId: string | undefined) {
   return useQuery<ManagerCandidate[]>({
-    queryKey: ['branch-manager-candidates', branchId],
+    queryKey: ["branch-manager-candidates", branchId],
     queryFn: async () => {
-      const { data } = await api.get(`/admin/branches/${branchId}/manager-candidates`);
+      const { data } = await api.get(
+        `/admin/branches/${branchId}/manager-candidates`,
+      );
       return (Array.isArray(data) ? data : []) as ManagerCandidate[];
     },
     enabled: !!branchId,
@@ -359,9 +377,9 @@ export function useBranchManagerCandidates(branchId: string | undefined) {
 
 export function useDevices(params?: QueryParams) {
   return useQuery<PaginatedResponse<Device>>({
-    queryKey: ['admin-devices', params],
+    queryKey: ["admin-devices", params],
     queryFn: async () => {
-      const { data } = await api.get('/admin/devices', { params });
+      const { data } = await api.get("/admin/devices", { params });
       const rows = Array.isArray(data?.data) ? data.data : [];
       return { ...data, data: rows.map((item: RawDevice) => mapDevice(item)) };
     },
@@ -371,18 +389,21 @@ export function useDevices(params?: QueryParams) {
 export function useCreateDevice() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: Partial<Device>) => api.post('/admin/devices', body),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-devices'] }),
+    mutationFn: (body: Partial<Device>) => api.post("/admin/devices", body),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-devices"] }),
   });
 }
 
 export function useClientAccounts(params?: QueryParams) {
   return useQuery<PaginatedResponse<ClientAccount>>({
-    queryKey: ['admin-client-accounts', params],
+    queryKey: ["admin-client-accounts", params],
     queryFn: async () => {
-      const { data } = await api.get('/admin/client-accounts', { params });
+      const { data } = await api.get("/admin/client-accounts", { params });
       const rows = Array.isArray(data?.data) ? data.data : [];
-      return { ...data, data: rows.map((item: RawClientAccount) => mapClientAccount(item)) };
+      return {
+        ...data,
+        data: rows.map((item: RawClientAccount) => mapClientAccount(item)),
+      };
     },
   });
 }
@@ -390,16 +411,20 @@ export function useClientAccounts(params?: QueryParams) {
 export function useCreateClientAccount() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: Partial<ClientAccount>) => api.post('/admin/client-accounts', body),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-client-accounts'] }),
+    mutationFn: (body: Partial<ClientAccount>) =>
+      api.post("/admin/client-accounts", body),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["admin-client-accounts"] }),
   });
 }
 
 export function useUpdateClientAccount() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...body }: Partial<ClientAccount> & { id: string }) => api.put(`/admin/client-accounts/${id}`, body),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-client-accounts'] }),
+    mutationFn: ({ id, ...body }: Partial<ClientAccount> & { id: string }) =>
+      api.put(`/admin/client-accounts/${id}`, body),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["admin-client-accounts"] }),
   });
 }
 
@@ -407,17 +432,21 @@ export function useDeleteClientAccount() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => api.delete(`/admin/client-accounts/${id}`),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-client-accounts'] }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["admin-client-accounts"] }),
   });
 }
 
 export function useExchangeRates(params?: QueryParams) {
   return useQuery<PaginatedResponse<ExchangeRate>>({
-    queryKey: ['admin-exchange-rates', params],
+    queryKey: ["admin-exchange-rates", params],
     queryFn: async () => {
-      const { data } = await api.get('/admin/exchange-rates', { params });
+      const { data } = await api.get("/admin/exchange-rates", { params });
       const rows = Array.isArray(data?.data) ? data.data : [];
-      return { ...data, data: rows.map((item: RawExchangeRate) => mapExchangeRate(item)) };
+      return {
+        ...data,
+        data: rows.map((item: RawExchangeRate) => mapExchangeRate(item)),
+      };
     },
   });
 }
@@ -425,14 +454,35 @@ export function useExchangeRates(params?: QueryParams) {
 export function useCreateExchangeRate() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: Partial<ExchangeRate>) => api.post('/admin/exchange-rates', body),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['admin-exchange-rates'] }),
+    mutationFn: (body: Partial<ExchangeRate>) =>
+      api.post("/admin/exchange-rates", body),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["admin-exchange-rates"] }),
+  });
+}
+
+export function useUpdateExchangeRate() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...body }: Partial<ExchangeRate> & { id: string }) =>
+      api.put(`/admin/exchange-rates/${id}`, body),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["admin-exchange-rates"] }),
+  });
+}
+
+export function useDeleteExchangeRate() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.delete(`/admin/exchange-rates/${id}`),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["admin-exchange-rates"] }),
   });
 }
 
 export function useDevice(id: string | undefined) {
   return useQuery<Device | null>({
-    queryKey: ['admin-device', id],
+    queryKey: ["admin-device", id],
     queryFn: async () => {
       if (!id) return null;
       const { data } = await api.get(`/admin/devices/${id}`);
@@ -445,10 +495,11 @@ export function useDevice(id: string | undefined) {
 export function useUpdateDevice() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...body }: Partial<Device> & { id: string }) => api.put(`/admin/devices/${id}`, body),
+    mutationFn: ({ id, ...body }: Partial<Device> & { id: string }) =>
+      api.put(`/admin/devices/${id}`, body),
     onSuccess: (_, v) => {
-      qc.invalidateQueries({ queryKey: ['admin-devices'] });
-      qc.invalidateQueries({ queryKey: ['admin-device', v.id] });
+      qc.invalidateQueries({ queryKey: ["admin-devices"] });
+      qc.invalidateQueries({ queryKey: ["admin-device", v.id] });
     },
   });
 }
@@ -458,15 +509,15 @@ export function useDeleteDevice() {
   return useMutation({
     mutationFn: (id: string) => api.delete(`/admin/devices/${id}`),
     onSuccess: (_, id) => {
-      qc.invalidateQueries({ queryKey: ['admin-devices'] });
-      qc.removeQueries({ queryKey: ['admin-device', id] });
+      qc.invalidateQueries({ queryKey: ["admin-devices"] });
+      qc.removeQueries({ queryKey: ["admin-device", id] });
     },
   });
 }
 
 export function useClientAccount(id: string | undefined) {
   return useQuery<ClientAccount | null>({
-    queryKey: ['admin-client-account', id],
+    queryKey: ["admin-client-account", id],
     queryFn: async () => {
       if (!id) return null;
       const { data } = await api.get(`/admin/client-accounts/${id}`);
