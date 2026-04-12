@@ -97,7 +97,7 @@ export default function Wallet() {
           pendingCommissions={(commissionSummary?.pending ?? 0) + (commissionSummary?.available ?? 0)}
           totalEarned={commissionSummary?.total ?? 0}
           onDeposit={() => setOpenDeposit(true)}
-          onWithdraw={() => {}}
+          onWithdraw={() => setOpenDeposit(true)}
         />
 
         <DataTable

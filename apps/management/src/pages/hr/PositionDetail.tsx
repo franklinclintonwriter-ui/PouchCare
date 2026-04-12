@@ -314,6 +314,7 @@ export default function PositionDetail() {
                 data={applications}
                 onRowClick={(row) => navigate(`/hr/applications/${row.id}`)}
                 emptyTitle="No applications"
+                emptyDescription="No candidates have applied for this position yet."
               />
             </CardContent>
           </Card>

@@ -82,7 +82,7 @@ router.delete(
       await prisma.leaveRequest.delete({ where: { id: req.params.id } });
       return ok(res, { message: "Leave request deleted" });
     } catch (err) {
-      serverError(res, err);
+      return serverError(res, err);
     }
   },
 );
@@ -154,7 +154,7 @@ router.post(
       });
       return created(res, request);
     } catch (err) {
-      serverError(res, err);
+      return serverError(res, err);
     }
   },
 );
@@ -171,7 +171,7 @@ router.put(
       });
       return ok(res, updated);
     } catch (err) {
-      serverError(res, err);
+      return serverError(res, err);
     }
   },
 );
@@ -188,7 +188,7 @@ router.put(
       });
       return ok(res, updated);
     } catch (err) {
-      serverError(res, err);
+      return serverError(res, err);
     }
   },
 );

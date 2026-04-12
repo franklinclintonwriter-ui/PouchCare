@@ -1,7 +1,16 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  useInfiniteQuery,
+  useQuery,
+  useMutation,
+  useQueryClient,
+} from "@tanstack/react-query";
 import api from "./client";
 import type { QueryParams, PaginatedResponse } from "@/types/api";
 import type { AttendanceRecord } from "@/types/models";
+import {
+  attendanceKeys,
+  invalidateAllAttendanceQueries,
+} from "@/constants/queryKeys";
 
 type RawAttendance = {
   id: string;
@@ -31,7 +40,7 @@ function mapAttendance(raw: RawAttendance): AttendanceRecord {
     staffId: raw.staffMemberId,
     staffName: raw.name,
     date: raw.date,
-    checkIn: raw.checkInTime ?? "",
+    checkIn: raw.checkInTime ?? '',
     checkOut: raw.checkOutTime ?? undefined,
     status: (raw.status ?? "PRESENT") as AttendanceRecord["status"],
     workType: (raw.workType ?? "OFFICE") as AttendanceRecord["workType"],
@@ -39,31 +48,36 @@ function mapAttendance(raw: RawAttendance): AttendanceRecord {
   };
 }
 
+/** Normalize API payload to a row array (supports `{ data: [] }` or legacy raw arrays). */
+function rowsFromResponse<T>(data: unknown): T[] {
+  if (data && typeof data === "object" && Array.isArray((data as { data?: unknown }).data)) {
+    return (data as { data: T[] }).data;
+  }
+  if (Array.isArray(data)) return data as T[];
+  return [];
+}
+
 export function useAttendance(params?: QueryParams) {
   return useQuery<PaginatedResponse<AttendanceRecord>>({
-    queryKey: ["attendance", params],
+    queryKey: attendanceKeys.list(params),
     queryFn: async () => {
       const { data } = await api.get("/attendance", { params });
-      const rows = Array.isArray(data?.data) ? data.data : [];
+      const rows = rowsFromResponse<RawAttendance>(data);
+      const body = data as PaginatedResponse<RawAttendance> & Record<string, unknown>;
       return {
-        ...data,
-        data: rows.map((item: RawAttendance) => mapAttendance(item)),
-      };
+        ...body,
+        data: rows.map((item) => mapAttendance(item)),
+      } as PaginatedResponse<AttendanceRecord>;
     },
   });
 }
 
 export function useMyAttendance() {
   return useQuery<AttendanceRecord[]>({
-    queryKey: ["my-attendance"],
+    queryKey: attendanceKeys.my,
     queryFn: async () => {
       const { data } = await api.get("/attendance", { params: { limit: 60 } });
-      const rows = Array.isArray(data?.data)
-        ? data.data
-        : Array.isArray(data)
-          ? data
-          : [];
-      return rows.map((item: RawAttendance) => mapAttendance(item));
+      return rowsFromResponse<RawAttendance>(data).map((item) => mapAttendance(item));
     },
   });
 }
@@ -71,24 +85,58 @@ export function useMyAttendance() {
 export function useTeamAttendance(date?: string) {
   const d = date || new Date().toISOString().split("T")[0];
   return useQuery<AttendanceRecord[]>({
-    queryKey: ["team-attendance", d],
+    queryKey: attendanceKeys.team(d),
     queryFn: async () => {
       const { data } = await api.get("/attendance", {
         params: { date: d, limit: 100 },
       });
-      const rows = Array.isArray(data?.data)
-        ? data.data
-        : Array.isArray(data)
-          ? data
-          : [];
-      return rows.map((item: RawAttendance) => mapAttendance(item));
+      return rowsFromResponse<RawAttendance>(data).map((item) => mapAttendance(item));
+    },
+  });
+}
+
+const TEAM_ATTENDANCE_PAGE_SIZE = 40;
+
+export type TeamAttendancePage = {
+  data: AttendanceRecord[];
+  meta: { page: number; totalPages: number; total: number; limit: number };
+};
+
+/** Paginated team board for a calendar day — use “Load more” or `fetchNextPage`. */
+export function useTeamAttendanceInfinite(date?: string, pageSize = TEAM_ATTENDANCE_PAGE_SIZE) {
+  const d = date || new Date().toISOString().split("T")[0];
+  return useInfiniteQuery({
+    queryKey: [...attendanceKeys.team(d), "infinite", pageSize] as const,
+    queryFn: async ({ pageParam }): Promise<TeamAttendancePage> => {
+      const page = typeof pageParam === "number" ? pageParam : 1;
+      const { data } = await api.get("/attendance", {
+        params: { date: d, limit: pageSize, page },
+      });
+      const rows = rowsFromResponse<RawAttendance>(data);
+      const body = data as { meta?: TeamAttendancePage["meta"] };
+      const mapped = rows.map((item) => mapAttendance(item));
+      const meta =
+        body.meta ??
+        ({
+          page,
+          limit: pageSize,
+          total: mapped.length,
+          totalPages: 1,
+        } as TeamAttendancePage["meta"]);
+      return { data: mapped, meta };
+    },
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      const { page, totalPages } = lastPage.meta;
+      if (page < totalPages) return page + 1;
+      return undefined;
     },
   });
 }
 
 export function useTodayAttendance() {
   return useQuery<TodayAttendance | null>({
-    queryKey: ["attendance-today"],
+    queryKey: attendanceKeys.today,
     queryFn: async () => {
       const { data } = await api.get("/attendance/today");
       if (!data) return null;
@@ -110,10 +158,26 @@ export function useCheckIn() {
   return useMutation({
     mutationFn: (body?: Record<string, unknown>) =>
       api.post("/attendance/checkin", body),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["attendance"] });
-      qc.invalidateQueries({ queryKey: ["my-attendance"] });
-      qc.invalidateQueries({ queryKey: ["attendance-today"] });
+    onMutate: async (body) => {
+      await qc.cancelQueries({ queryKey: attendanceKeys.today });
+      const prevToday = qc.getQueryData<TodayAttendance | null>(attendanceKeys.today);
+      const wt = (body?.workType as TodayAttendance["workType"] | undefined) ?? "OFFICE";
+      if (prevToday) {
+        qc.setQueryData<TodayAttendance | null>(attendanceKeys.today, {
+          ...prevToday,
+          checkInTime: new Date().toISOString(),
+          workType: wt,
+        });
+      }
+      return { prevToday };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.prevToday !== undefined) {
+        qc.setQueryData(attendanceKeys.today, ctx.prevToday);
+      }
+    },
+    onSettled: () => {
+      void invalidateAllAttendanceQueries(qc);
     },
   });
 }
@@ -123,11 +187,28 @@ export function useCheckOut() {
   return useMutation({
     mutationFn: (body?: Record<string, unknown>) =>
       api.post("/attendance/checkout", body),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["attendance"] });
-      qc.invalidateQueries({ queryKey: ["my-attendance"] });
-      qc.invalidateQueries({ queryKey: ["attendance-today"] });
-      qc.invalidateQueries({ queryKey: ["team-attendance"] });
+    onMutate: async () => {
+      await qc.cancelQueries({ queryKey: attendanceKeys.today });
+      const prevToday = qc.getQueryData<TodayAttendance | null>(attendanceKeys.today);
+      if (prevToday?.checkInTime && !prevToday.checkOutTime) {
+        const now = new Date();
+        const checkIn = new Date(prevToday.checkInTime);
+        const hours = Math.min(12, Math.max(0, (now.getTime() - checkIn.getTime()) / 3600000));
+        qc.setQueryData<TodayAttendance | null>(attendanceKeys.today, {
+          ...prevToday,
+          checkOutTime: now.toISOString(),
+          hoursWorked: Math.round(hours * 100) / 100,
+        });
+      }
+      return { prevToday };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.prevToday !== undefined) {
+        qc.setQueryData(attendanceKeys.today, ctx.prevToday);
+      }
+    },
+    onSettled: () => {
+      void invalidateAllAttendanceQueries(qc);
     },
   });
 }
@@ -142,14 +223,15 @@ export function useStaffAttendance(
   },
 ) {
   return useQuery<PaginatedResponse<AttendanceRecord>>({
-    queryKey: ["staff-attendance", staffId, params],
+    queryKey: attendanceKeys.staff(staffId, params),
     queryFn: async () => {
-      const { data } = await api.get(`/attendance/${staffId}`, { params });
-      const rows = Array.isArray(data?.data) ? data.data : [];
+      const { data } = await api.get(`/attendance/staff/${staffId}`, { params });
+      const rows = rowsFromResponse<RawAttendance>(data);
+      const body = data as PaginatedResponse<RawAttendance> & Record<string, unknown>;
       return {
-        ...data,
-        data: rows.map((item: RawAttendance) => mapAttendance(item)),
-      };
+        ...body,
+        data: rows.map((item) => mapAttendance(item)),
+      } as PaginatedResponse<AttendanceRecord>;
     },
     enabled: !!staffId,
   });
@@ -170,11 +252,8 @@ export function useUpdateAttendance() {
   return useMutation({
     mutationFn: ({ id, ...body }: UpdateAttendanceInput & { id: string }) =>
       api.put(`/attendance/${id}`, body),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["attendance"] });
-      qc.invalidateQueries({ queryKey: ["my-attendance"] });
-      qc.invalidateQueries({ queryKey: ["team-attendance"] });
-      qc.invalidateQueries({ queryKey: ["staff-attendance"] });
+    onSettled: () => {
+      void invalidateAllAttendanceQueries(qc);
     },
   });
 }
@@ -183,11 +262,8 @@ export function useDeleteAttendance() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => api.delete(`/attendance/${id}`),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["attendance"] });
-      qc.invalidateQueries({ queryKey: ["my-attendance"] });
-      qc.invalidateQueries({ queryKey: ["team-attendance"] });
-      qc.invalidateQueries({ queryKey: ["staff-attendance"] });
+    onSettled: () => {
+      void invalidateAllAttendanceQueries(qc);
     },
   });
 }
@@ -207,10 +283,8 @@ export function useCreateAttendance() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: CreateAttendanceInput) => api.post("/attendance", body),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["attendance"] });
-      qc.invalidateQueries({ queryKey: ["team-attendance"] });
-      qc.invalidateQueries({ queryKey: ["staff-attendance"] });
+    onSettled: () => {
+      void invalidateAllAttendanceQueries(qc);
     },
   });
 }

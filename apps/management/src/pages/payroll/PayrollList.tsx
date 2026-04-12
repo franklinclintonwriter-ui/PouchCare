@@ -245,6 +245,8 @@ export default function PayrollList() {
         onPageChange={setPage}
         getRowId={(row) => row.id}
         onRowClick={(row) => navigate(`/payroll/${row.id}`)}
+        emptyTitle="No payroll records"
+        emptyDescription="Process payroll to create records for this period."
       />
 
       <Modal
@@ -277,11 +279,14 @@ export default function PayrollList() {
               onChange={e => setForm(f => ({ ...f, month: e.target.value }))}
               options={MONTHS.map(m => ({ label: m, value: m }))}
             />
-            <Input
+            <Select
               label="Year"
-              type="number"
               value={String(form.year)}
               onChange={e => setForm(f => ({ ...f, year: Number(e.target.value) }))}
+              options={Array.from({ length: 7 }, (_, i) => {
+                const y = new Date().getFullYear() - 3 + i;
+                return { label: String(y), value: String(y) };
+              })}
             />
           </div>
           <Input
@@ -308,11 +313,18 @@ export default function PayrollList() {
               onChange={e => setForm(f => ({ ...f, deductions: e.target.value }))}
             />
           </div>
-          <Input
+          <Select
             label="Payment Method"
-            placeholder="e.g. Bank Transfer"
             value={form.paymentMethod}
             onChange={e => setForm(f => ({ ...f, paymentMethod: e.target.value }))}
+            options={[
+              { label: '— Select —', value: '' },
+              { label: 'Bank Transfer', value: 'Bank Transfer' },
+              { label: 'Mobile Money', value: 'Mobile Money' },
+              { label: 'Cash', value: 'Cash' },
+              { label: 'Cheque', value: 'Cheque' },
+              { label: 'Other', value: 'Other' },
+            ]}
           />
           <Textarea
             label="Notes"

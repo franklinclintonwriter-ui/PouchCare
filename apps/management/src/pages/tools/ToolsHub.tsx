@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Input } from '@/components/ui/Input';
 import { TOOLS_REGISTRY, TOOL_CATEGORIES } from '@/features/tools/registry';
 import type { ToolCategory } from '@/features/tools/types';
+import { ArrowUpRight } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { useToolsStatus, useToolRuns } from '@/api/tools';
 
@@ -44,48 +45,83 @@ export default function ToolsHub() {
   return (
     <PageTransition>
       <div className="mx-auto max-w-6xl space-y-6 px-4 pb-10 pt-2 sm:px-6 lg:px-8">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-[var(--color-text-primary)] sm:text-3xl">
+        <div className="rounded-xl border border-gray-200/90 bg-gradient-to-br from-white via-gray-50/50 to-primary-50/15 px-4 py-5 shadow-sm dark:border-gray-700/60 dark:from-gray-800/90 dark:via-gray-800/60 dark:to-primary-950/20 sm:px-6 sm:py-6">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-primary-600 dark:text-primary-400">
+            Workspace
+          </p>
+          <h1 className="mt-1 text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-50 sm:text-3xl">
             SEO &amp; web tools
           </h1>
-          <p className="mt-2 max-w-2xl text-sm text-[var(--color-text-secondary)]">
-            Live integrations: SerpAPI (SERP), Open PageRank (domain rank), DataForSEO (backlinks &amp; keywords), and
-            server-side favicon ZIPs. Configure API keys in <code className="rounded bg-gray-100 px-1 dark:bg-gray-800">apps/api/.env</code>.
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-gray-600 dark:text-gray-300">
+            One place for SERP snapshots, domain metrics, backlinks, keyword ideas, and favicon packs. Connect providers on
+            the API, then run analyses here — results are live and exportable to CSV where supported.
+          </p>
+          <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+            Configure credentials in{' '}
+            <code className="rounded-md bg-gray-100 px-1.5 py-0.5 font-mono text-[11px] text-gray-800 dark:bg-gray-900 dark:text-gray-200">
+              apps/api/.env
+            </code>{' '}
+            (see <code className="font-mono text-[11px]">.env.example</code>).
           </p>
           {status && (
-            <div className="mt-3 flex flex-wrap gap-2 text-xs">
+            <div className="mt-4 flex flex-wrap gap-2 border-t border-gray-200/80 pt-4 dark:border-gray-700/60">
               <span
-                className={`rounded-full px-2 py-1 font-medium ${status.serpApi ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200' : 'bg-gray-100 text-gray-600 dark:bg-gray-800'}`}
+                className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${
+                  status.serpApi
+                    ? 'bg-emerald-100 text-emerald-900 dark:bg-emerald-900/40 dark:text-emerald-200'
+                    : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
+                }`}
               >
-                SerpAPI: {status.serpApi ? 'on' : 'off'}
+                <span className="h-1.5 w-1.5 rounded-full bg-current opacity-80" aria-hidden />
+                SerpAPI
               </span>
               <span
-                className={`rounded-full px-2 py-1 font-medium ${status.openPageRank ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200' : 'bg-gray-100 text-gray-600 dark:bg-gray-800'}`}
+                className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${
+                  status.openPageRank
+                    ? 'bg-emerald-100 text-emerald-900 dark:bg-emerald-900/40 dark:text-emerald-200'
+                    : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
+                }`}
               >
-                Open PageRank: {status.openPageRank ? 'on' : 'off'}
+                <span className="h-1.5 w-1.5 rounded-full bg-current opacity-80" aria-hidden />
+                Open PageRank
               </span>
               <span
-                className={`rounded-full px-2 py-1 font-medium ${status.dataForSeo ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200' : 'bg-gray-100 text-gray-600 dark:bg-gray-800'}`}
+                className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${
+                  status.dataForSeo
+                    ? 'bg-emerald-100 text-emerald-900 dark:bg-emerald-900/40 dark:text-emerald-200'
+                    : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
+                }`}
               >
-                DataForSEO: {status.dataForSeo ? 'on' : 'off'}
+                <span className="h-1.5 w-1.5 rounded-full bg-current opacity-80" aria-hidden />
+                DataForSEO
+              </span>
+              <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-400">
+                Favicon ZIP (API / Sharp)
               </span>
             </div>
           )}
         </div>
 
         {recentRuns && recentRuns.length > 0 && (
-          <div className="rounded-xl border border-gray-200/80 bg-white p-4 text-sm dark:border-gray-700/60 dark:bg-gray-800/80">
-            <p className="mb-2 font-medium text-[var(--color-text-primary)]">Recent runs</p>
-            <ul className="space-y-1.5 text-xs text-[var(--color-text-secondary)]">
-              {recentRuns.slice(0, 8).map((r) => (
-                <li key={r.id} className="flex flex-wrap gap-2">
-                  <span className="font-mono text-[10px] text-gray-400">{new Date(r.createdAt).toLocaleString()}</span>
-                  <span className="rounded bg-gray-100 px-1.5 dark:bg-gray-700">{r.toolType}</span>
-                  <span className="min-w-0 truncate">{r.queryLabel}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
+          <Card padding="none">
+            <CardContent className="mt-0 p-4 sm:p-5">
+              <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Recent activity</p>
+              <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Latest tool runs from this workspace.</p>
+              <ul className="mt-3 divide-y divide-gray-100 dark:divide-gray-700/60">
+                {recentRuns.slice(0, 8).map((r) => (
+                  <li key={r.id} className="flex flex-wrap items-baseline gap-x-2 gap-y-1 py-2 text-xs first:pt-0 last:pb-0">
+                    <span className="font-mono text-[10px] text-gray-400 tabular-nums">
+                      {new Date(r.createdAt).toLocaleString()}
+                    </span>
+                    <Badge variant="default" size="sm" className="uppercase">
+                      {r.toolType}
+                    </Badge>
+                    <span className="min-w-0 flex-1 truncate text-gray-700 dark:text-gray-300">{r.queryLabel}</span>
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
         )}
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -147,9 +183,15 @@ export default function ToolsHub() {
                       </h2>
                       <p className="mt-1 text-sm text-[var(--color-text-secondary)] line-clamp-3">{tool.description}</p>
                     </div>
-                    <span className="text-xs font-medium uppercase tracking-wide text-gray-400 dark:text-gray-500">
-                      {tool.category}
-                    </span>
+                    <div className="flex items-center justify-between gap-2 pt-1">
+                      <span className="text-xs font-medium uppercase tracking-wide text-gray-400 dark:text-gray-500">
+                        {tool.category}
+                      </span>
+                      <span className="inline-flex items-center gap-0.5 text-xs font-medium text-primary-600 opacity-0 transition-opacity group-hover:opacity-100 dark:text-primary-400">
+                        Open
+                        <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
+                      </span>
+                    </div>
                   </CardContent>
                 </Card>
               </Link>

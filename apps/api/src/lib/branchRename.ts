@@ -18,7 +18,7 @@ export type BranchReferenceBreakdown = {
 
 /**
  * Count every row that stores this exact branch name (denormalized strings).
- * Used to block branch deletion while any related data still references the name.
+ * Exposed on branch detail for visibility into linked records.
  */
 export async function countReferencesToBranchName(
   prisma: PrismaClient | Prisma.TransactionClient,
@@ -68,39 +68,6 @@ export async function countReferencesToBranchName(
   }
   const total = Object.values(breakdown).reduce((a, b) => a + b, 0)
   return { ...breakdown, total }
-}
-
-const KIND_LABELS: Record<Exclude<keyof BranchReferenceBreakdown, 'total'>, string> = {
-  staffMembers: 'staff',
-  tasks: 'tasks',
-  projects: 'projects',
-  attendance: 'attendance',
-  leaveRequests: 'leave requests',
-  dailyReports: 'daily reports',
-  performanceRatings: 'performance ratings',
-  payroll: 'payroll',
-  devices: 'devices',
-  expenses: 'expenses',
-  salesOrders: 'sales orders',
-  jobPositions: 'job postings',
-}
-
-/** User-facing sentence listing non-zero reference counts. */
-export function formatBranchDeleteConflictMessage(
-  branchName: string,
-  breakdown: BranchReferenceBreakdown,
-): string {
-  const parts = (Object.keys(KIND_LABELS) as (keyof typeof KIND_LABELS)[])
-    .map((key) => {
-      const n = breakdown[key]
-      if (n <= 0) return null
-      const label = KIND_LABELS[key]
-      return `${n} ${label}`
-    })
-    .filter(Boolean) as string[]
-
-  const summary = parts.length ? parts.join(', ') : `${breakdown.total} records`
-  return `Cannot delete branch "${branchName}": ${summary} still reference this name. Clear or reassign those records first.`
 }
 
 /**

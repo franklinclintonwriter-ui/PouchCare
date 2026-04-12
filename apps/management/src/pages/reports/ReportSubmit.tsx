@@ -6,6 +6,7 @@ import { PageTransition } from '@/components/ui/PageTransition';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Textarea } from '@/components/ui/Textarea';
 import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
 import { toast } from 'sonner';
 
@@ -51,7 +52,17 @@ export default function ReportSubmit() {
           <Textarea label="Blockers" value={blockers} onChange={(e) => setBlockers(e.target.value)} />
           <div className="grid gap-4 sm:grid-cols-2">
             <Input type="number" min={0} max={24} step="0.5" label="Hours Worked" value={hoursWorked} onChange={(e) => setHoursWorked(e.target.value)} />
-            <Input label="Mood (great/good/okay/bad)" value={mood} onChange={(e) => setMood(e.target.value)} />
+            <Select
+              label="Mood"
+              value={mood}
+              onChange={(e) => setMood(e.target.value)}
+              options={[
+                { label: 'Great', value: 'great' },
+                { label: 'Good', value: 'good' },
+                { label: 'Okay', value: 'okay' },
+                { label: 'Bad', value: 'bad' },
+              ]}
+            />
           </div>
           <div className="flex justify-end">
             <Button onClick={onSubmit} isLoading={submit.isPending}>Submit Report</Button>

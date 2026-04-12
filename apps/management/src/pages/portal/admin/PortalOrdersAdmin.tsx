@@ -44,7 +44,7 @@ export default function PortalOrdersAdmin() {
   const headerConfig = useMemo(() => ({
     title: 'Portal Orders',
     breadcrumbs: [
-      { label: 'Admin', href: '/admin' },
+      { label: 'Admin', href: '/admin/portal' },
       { label: 'Portal', href: '/admin/portal' },
       { label: 'Orders' },
     ],

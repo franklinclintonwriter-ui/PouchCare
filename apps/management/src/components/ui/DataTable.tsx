@@ -83,10 +83,10 @@ function DataTable<T>({
   return (
     <div className="w-full">
       {/* Desktop / tablet table */}
-      <div className="edge-fade hidden overflow-x-auto rounded-xl border border-gray-200/80 bg-white shadow-soft dark:border-gray-700/60 dark:bg-gray-800/80 sm:block">
-        <table className="w-full text-sm">
+      <div className="edge-fade hidden max-h-[72vh] overflow-auto rounded-xl border border-gray-200/80 bg-white shadow-soft dark:border-gray-700/60 dark:bg-gray-800/80 sm:block">
+        <table className="min-w-[760px] w-full text-sm">
           <thead>
-            <tr className="border-b border-gray-100 bg-gray-50/80 dark:border-gray-700/60 dark:bg-gray-800/50">
+            <tr className="border-b border-gray-100 bg-gray-50/95 backdrop-blur-sm dark:border-gray-700/60 dark:bg-gray-800/90">
               {selectable && (
                 <th className="w-10 px-3 py-3">
                   <input
@@ -103,11 +103,12 @@ function DataTable<T>({
                   key={col.key}
                   className={cn(
                     cellPadding,
+                    'sticky top-0 z-20 bg-gray-50/95 backdrop-blur-sm dark:bg-gray-800/90',
                     'text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400',
                     col.align === 'center' && 'text-center',
                     col.align === 'right' && 'text-right',
                     col.sortable && 'cursor-pointer select-none hover:text-gray-700 dark:hover:text-gray-200',
-                    col.sticky && 'sticky left-0 z-10 bg-gray-50/80 dark:bg-gray-800/50',
+                    col.sticky && 'left-0 z-30',
                   )}
                   style={col.width ? { width: col.width } : undefined}
                   onClick={() => col.sortable && onSort?.(col.key)}
@@ -212,16 +213,14 @@ function DataTable<T>({
       <div className="block space-y-3 sm:hidden">
         {isLoading
           ? Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="rounded-xl border border-gray-200/80 bg-white p-3 sm:p-4 shadow-soft dark:border-gray-700/60 dark:bg-gray-800/80">
-              <div className="mb-2 flex items-center justify-between">
-                <Skeleton className="h-4 w-32 rounded" />
-                <Skeleton className="h-4 w-14 rounded" />
-              </div>
-              <div className="space-y-2">
-                {columns.slice(0, 3).map((col) => (
-                  <div key={col.key} className="flex items-center justify-between gap-3">
+            <div key={i} className="rounded-2xl border border-gray-200/90 bg-white p-4 shadow-sm dark:border-gray-700/60 dark:bg-gray-800/90">
+              <Skeleton className="h-12 w-full max-w-xs rounded-lg" />
+              <Skeleton className="mt-3 h-4 w-24 rounded" />
+              <div className="mt-4 space-y-2 border-t border-gray-100 pt-4 dark:border-gray-700/60">
+                {columns.slice(0, 4).map((col) => (
+                  <div key={col.key} className="flex justify-between gap-3">
+                    <Skeleton className="h-3.5 w-16 rounded" />
                     <Skeleton className="h-3.5 w-20 rounded" />
-                    <Skeleton className="h-3.5 w-28 rounded" />
                   </div>
                 ))}
               </div>
@@ -232,56 +231,92 @@ function DataTable<T>({
           ) : (
             data.map((row, index) => {
               const rowId = getRowId?.(row) ?? index.toString();
+              const dataColumns = columns.filter((c) => c.key !== 'actions');
+              const actionsCol = columns.find((c) => c.key === 'actions');
+              const primaryCol = dataColumns[0];
+              const secondaryCol = dataColumns[1];
+              const restCols = dataColumns.slice(2);
+
               const cardClass = cn(
-                'w-full rounded-xl border border-gray-200/80 bg-white p-3 text-left shadow-soft transition-all duration-150 sm:p-4',
-                'dark:border-gray-700/60 dark:bg-gray-800/80',
+                'w-full rounded-2xl border border-gray-200/90 bg-white p-4 text-left shadow-sm transition-all duration-150',
+                'dark:border-gray-700/60 dark:bg-gray-800/90',
                 onRowClick
-                  ? 'hover:shadow-elevated hover:-translate-y-[1px] active:scale-[0.99]'
+                  ? 'cursor-pointer hover:border-gray-300 hover:shadow-md active:scale-[0.99] dark:hover:border-gray-600'
                   : 'cursor-default',
               );
+
+              const renderCell = (col: (typeof columns)[0]) =>
+                col.render
+                  ? col.render(row, index)
+                  : ((row as Record<string, unknown>)[col.key] as ReactNode ?? (
+                    <Minus className="h-3.5 w-3.5 text-gray-300" />
+                  ));
+
               const mobileInner = (
                 <>
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="space-y-1">
-                      <p className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100">
-                        {columns[0]?.render
-                          ? columns[0].render(row, index)
-                          : (row as Record<string, unknown>)[columns[0]?.key] as ReactNode}
-                      </p>
-                      {columns[1] && (
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          {columns[1].render
-                            ? columns[1].render(row, index)
-                            : (row as Record<string, unknown>)[columns[1].key] as ReactNode}
-                        </p>
-                      )}
+                  {primaryCol ? (
+                    <div className="min-w-0 [&_*]:max-w-full">{renderCell(primaryCol)}</div>
+                  ) : null}
+                  {secondaryCol ? (
+                    <div className="mt-2 text-sm text-gray-600 dark:text-gray-400 [&_*]:text-inherit">
+                      {renderCell(secondaryCol)}
                     </div>
-                    <div className="text-right text-xs uppercase tracking-wide text-gray-400 dark:text-gray-500">
-                      {columns[columns.length - 1]?.label}
-                    </div>
-                  </div>
-                  <div className="mt-3 grid grid-cols-1 gap-2 text-sm text-gray-700 dark:text-gray-300">
-                    {columns.slice(2).map((col) => (
-                      <div key={col.key} className="flex items-start justify-between gap-3">
-                        <span className="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
-                          {col.label}
-                        </span>
-                        <span className="text-right">
-                          {col.render
-                            ? col.render(row, index)
-                            : (row as Record<string, unknown>)[col.key] as ReactNode ?? <Minus className="h-3.5 w-3.5 text-gray-300" />}
-                        </span>
+                  ) : null}
+                  {restCols.length > 0 ? (
+                    <dl className="mt-4 space-y-2.5 border-t border-gray-100 pt-4 dark:border-gray-700/60">
+                      {restCols.map((col) => (
+                        <div
+                          key={col.key}
+                          className="flex items-start justify-between gap-3 text-sm"
+                        >
+                          <dt className="shrink-0 text-[13px] text-gray-500 dark:text-gray-400">
+                            {col.label}
+                          </dt>
+                          <dd className="min-w-0 text-right text-[13px] font-medium text-gray-900 dark:text-gray-100">
+                            {renderCell(col)}
+                          </dd>
+                        </div>
+                      ))}
+                    </dl>
+                  ) : null}
+                  {actionsCol ? (
+                    <div
+                      className="mt-4 border-t border-gray-100 pt-4 dark:border-gray-700/60"
+                      onClick={(e) => e.stopPropagation()}
+                      onKeyDown={(e) => e.stopPropagation()}
+                    >
+                      <div
+                        className={cn(
+                          'flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end sm:gap-2',
+                          '[&_button]:w-full sm:[&_button]:w-auto [&_button]:justify-center',
+                        )}
+                      >
+                        {actionsCol.render
+                          ? actionsCol.render(row, index)
+                          : ((row as Record<string, unknown>)[actionsCol.key] as ReactNode)}
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  ) : null}
                 </>
               );
-              return onRowClick ? (
-                <button key={rowId} type="button" onClick={() => onRowClick(row)} className={cardClass}>
-                  {mobileInner}
-                </button>
-              ) : (
-                <div key={rowId} className={cardClass}>
+
+              return (
+                <div
+                  key={rowId}
+                  className={cardClass}
+                  onClick={onRowClick ? () => onRowClick(row) : undefined}
+                  onKeyDown={
+                    onRowClick && !actionsCol
+                      ? (e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            onRowClick(row);
+                          }
+                        }
+                      : undefined
+                  }
+                  tabIndex={onRowClick && !actionsCol ? 0 : undefined}
+                >
                   {mobileInner}
                 </div>
               );

@@ -3,6 +3,7 @@ import { useHeaderConfig } from '@/hooks/useHeaderConfig';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { ToolDisclaimer } from '@/features/tools/components/ToolDisclaimer';
+import { ToolPageIntro } from '@/features/tools/components/ToolPageIntro';
 import { ToolRunPanel } from '@/features/tools/components/ToolRunPanel';
 import { useToolHistory } from '@/features/tools/useToolHistory';
 import { downloadFaviconZip, useToolsStatus } from '@/api/tools';
@@ -73,6 +74,17 @@ export default function FaviconToolPage() {
     <PageTransition>
       <div className="mx-auto max-w-5xl space-y-6 px-4 pb-10 pt-2 sm:px-6 lg:px-8">
         <ToolDisclaimer status={status ?? undefined} />
+
+        <ToolPageIntro
+          eyebrow="Assets"
+          title="Favicon & touch-icon package"
+          description="Upload a square logo; the API resizes it with Sharp into standard PNG sizes and returns a single ZIP you can drop into your site root or app bundle."
+          bullets={[
+            'Use a high-res square image (PNG, JPG, or WebP; max ~4 MB).',
+            'Includes 16–180px targets for favicon, shortcuts, and Apple touch icon.',
+            'Runs on your server — no third-party image hosting.',
+          ]}
+        />
 
         <ToolRunPanel
           onRun={run}

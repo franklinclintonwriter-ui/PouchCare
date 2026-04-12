@@ -2,7 +2,25 @@
   "permissions": {
     "allow": [
       "Bash(wc -l /w/PouchCare/PouchCare/apps/management/src/pages/**/*.tsx)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(find W:/PouchCare/PouchCare/apps/management/src/pages -name \"*.tsx\" -exec wc -l {} +)",
+      "Bash(grep -o \"export function use[A-Za-z]*\" /w/PouchCare/PouchCare/apps/management/src/api/*.ts)",
+      "Bash(xargs grep:*)",
+      "Bash(grep -E \"\\\\.\\(ts|tsx\\)$\")",
+      "Bash(grep -l \"setShowCreate\\\\|setShowEdit\\\\|setEditOpen\\\\|setCreateOpen\" W:PouchCarePouchCareappsmanagementsrcpages/**/*.tsx)",
+      "Bash(grep -r \"label.*notes\\\\|label.*Notes\\\\|label.*description\\\\|label.*Description\" W:/PouchCare/PouchCare/apps/management/src/pages --include=*.tsx)",
+      "Bash(grep -r \"emptyTitle\\\\|emptyDescription\" W:/PouchCare/PouchCare/apps/management/src/pages --include=*.tsx)",
+      "Bash(grep -r DataTable W:/PouchCare/PouchCare/apps/management/src/pages --include=*.tsx)",
+      "Bash(grep -c Textarea W:/PouchCare/PouchCare/apps/management/src/pages/**/*.tsx)",
+      "Bash(grep -v \":0$\")",
+      "Bash(grep -n 'as any' /w/PouchCare/PouchCare/apps/management/src/pages/**/*.tsx)",
+      "Bash(grep -r \"useCreate\\\\|useUpdate\\\\|useDelete\" /w/PouchCare/PouchCare/apps/management/src/api/*.ts)",
+      "Bash(grep -l \"useQuery\\\\|use.*List\\\\|use.*Data\" /w/PouchCare/PouchCare/apps/management/src/pages/**/*.tsx)",
+      "Bash(while read:*)",
+      "Bash(do if:*)",
+      "Bash(then echo:*)",
+      "Bash(fi)",
+      "Bash(done)"
     ]
   }
 }

@@ -101,6 +101,7 @@ export default function PortalOrders() {
           onPageChange={setPage}
           onRowClick={(r) => navigate(`/portal/orders/${r.id}`)}
           emptyTitle="No orders found"
+          emptyDescription="Place your first order to get started."
         />
       </div>
     </PageTransition>

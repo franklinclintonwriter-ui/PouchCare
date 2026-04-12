@@ -20,14 +20,14 @@ export function StaffLeaderboard({ leaderboard, loading = false }: StaffLeaderbo
   const staff = leaderboard?.staff ?? [];
 
   return (
-    <Card className="h-full">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base font-semibold flex items-center gap-2">
-          <Trophy className="h-4 w-4 text-amber-500" />
-          Top Performers
+    <Card padding="none">
+      <CardHeader className="border-b border-gray-100 px-4 pb-3 pt-4 dark:border-gray-800 sm:px-5 sm:pt-5">
+        <CardTitle className="flex min-w-0 items-center gap-2 text-base font-semibold leading-snug sm:text-[17px]">
+          <Trophy className="h-[18px] w-[18px] shrink-0 text-amber-500 sm:h-5 sm:w-5" aria-hidden />
+          <span className="truncate">Top Performers</span>
         </CardTitle>
       </CardHeader>
-      <CardContent className="pt-0">
+      <CardContent className="!mt-0 px-4 pb-4 pt-2 sm:px-5 sm:pb-5">
         {loading ? (
           <div className="space-y-3">
             {Array.from({ length: 5 }).map((_, i) => (
@@ -53,14 +53,14 @@ export function StaffLeaderboard({ leaderboard, loading = false }: StaffLeaderbo
             </p>
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-1.5 sm:space-y-2">
             {staff.slice(0, 5).map((member, index) => {
               const rankStyle = RANK_STYLES[index] ?? null;
               return (
                 <div 
                   key={member.id} 
                   className={cn(
-                    'flex items-center gap-3 p-2.5 rounded-xl transition-colors',
+                    'flex min-w-0 items-center gap-2 rounded-xl p-2 transition-colors sm:gap-3 sm:p-2.5',
                     index < 3 ? 'bg-gray-50 dark:bg-gray-800/50' : 'hover:bg-gray-50 dark:hover:bg-gray-800/30'
                   )}
                 >
@@ -76,13 +76,13 @@ export function StaffLeaderboard({ leaderboard, loading = false }: StaffLeaderbo
                     <p className="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
                       {member.name}
                     </p>
-                    <p className="truncate text-xs text-gray-500 dark:text-gray-400">
+                    <p className="truncate text-[11px] text-gray-500 dark:text-gray-400 sm:text-xs">
                       {member.branch ?? 'N/A'} · {member.tasksCompleted} tasks
                     </p>
                   </div>
-                  <div className="flex items-center gap-1 bg-amber-50 dark:bg-amber-900/20 px-2 py-1 rounded-lg">
-                    <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-                    <span className="text-sm font-bold text-amber-600 dark:text-amber-400">
+                  <div className="flex shrink-0 items-center gap-1 rounded-lg bg-amber-50 px-1.5 py-1 dark:bg-amber-900/20 sm:px-2">
+                    <Star className="h-3.5 w-3.5 shrink-0 fill-amber-400 text-amber-400" aria-hidden />
+                    <span className="text-xs font-bold tabular-nums text-amber-600 dark:text-amber-400 sm:text-sm">
                       {member.averageTaskRating?.toFixed(1) ?? '—'}
                     </span>
                   </div>

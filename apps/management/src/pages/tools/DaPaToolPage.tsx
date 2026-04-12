@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/Input';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { StatsRow } from '@/components/shared/StatsRow';
 import { ToolDisclaimer } from '@/features/tools/components/ToolDisclaimer';
+import { ToolPageIntro } from '@/features/tools/components/ToolPageIntro';
 import { ToolRunPanel } from '@/features/tools/components/ToolRunPanel';
 import { downloadCsv } from '@/features/tools/csv';
 import { useToolHistory } from '@/features/tools/useToolHistory';
@@ -104,6 +105,17 @@ export default function DaPaToolPage() {
       <div className="mx-auto max-w-6xl space-y-6 px-4 pb-10 pt-2 sm:px-6 lg:px-8">
         <ToolDisclaimer status={status} highlight="opr" />
 
+        <ToolPageIntro
+          eyebrow="SEO"
+          title="Domain rank (Open PageRank)"
+          description="Compare one or two domains using Open PageRank’s public 0–10 score and integer scale. This is an independent metric — not Moz DA/PA or Ahrefs DR — but useful for quick benchmarking."
+          bullets={[
+            'Enter bare domains (example.com); protocol is optional.',
+            'Add an optional second domain to compare side by side.',
+            'Export CSV when you need a record for stakeholders.',
+          ]}
+        />
+
         <ToolRunPanel
           onRun={run}
           onClear={() => {
@@ -144,10 +156,10 @@ export default function DaPaToolPage() {
         {rows.length > 0 && (
           <>
             <StatsRow items={stats} columns={stats.length >= 3 ? 'grid-cols-2 lg:grid-cols-3' : undefined} />
-            <DataTable columns={columns} data={rows} compact />
-            <p className="text-xs text-[var(--color-text-secondary)]">
-              Open PageRank is an independent 0–10 score — not Moz DA/PA. Historical trend charts require a premium metrics
-              provider.
+            <DataTable columns={columns} data={rows} compact emptyTitle="No results" emptyDescription="Enter domains above to check DA/PA scores." />
+            <p className="rounded-lg border border-gray-200/80 bg-gray-50/80 px-3 py-2 text-xs text-gray-600 dark:border-gray-700/60 dark:bg-gray-900/40 dark:text-gray-400">
+              Open PageRank is a third-party 0–10 score. For Moz/Ahrefs-style authority or historical trends, connect a
+              dedicated metrics provider in your stack.
             </p>
           </>
         )}

@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo } from "react";
 import {
   CheckCircle,
   Clock,
@@ -9,65 +9,71 @@ import {
   TrendingUp,
   AlertCircle,
   Activity,
-} from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/Badge';
-import { Skeleton } from '@/components/ui/Skeleton';
-import { cn } from '@/utils/cn';
-import type { Activity as ActivityType, DashboardSummary } from '@/types/analytics';
+} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
+import { Skeleton } from "@/components/ui/Skeleton";
+import { cn } from "@/utils/cn";
+import type {
+  Activity as ActivityType,
+  DashboardSummary,
+} from "@/types/analytics";
 
 interface RecentActivitiesProps {
   data?: DashboardSummary;
   loading?: boolean;
 }
 
-function getActivityIcon(type: ActivityType['type'], status: string) {
+function getActivityIcon(type: ActivityType["type"], status: string) {
   switch (type) {
-    case 'task':
-      return status === 'DONE' || status === 'VERIFIED' ? (
+    case "task":
+      return status === "DONE" || status === "VERIFIED" ? (
         <CheckCircle className="h-4 w-4 text-emerald-500" />
-      ) : status === 'IN_PROGRESS' ? (
+      ) : status === "IN_PROGRESS" ? (
         <Clock className="h-4 w-4 text-blue-500" />
       ) : (
         <AlertCircle className="h-4 w-4 text-amber-500" />
       );
-    case 'attendance':
+    case "attendance":
       return <UserCheck className="h-4 w-4 text-primary-500" />;
-    case 'lead':
-      return status === 'WON' ? (
+    case "lead":
+      return status === "WON" ? (
         <TrendingUp className="h-4 w-4 text-emerald-500" />
       ) : (
         <Target className="h-4 w-4 text-purple-500" />
       );
-    case 'order':
+    case "order":
       return <ShoppingCart className="h-4 w-4 text-blue-500" />;
     default:
       return <Briefcase className="h-4 w-4 text-gray-500" />;
   }
 }
 
-function getStatusVariant(type: ActivityType['type'], status: string): 'success' | 'warning' | 'info' | 'default' {
-  if (type === 'task') {
-    if (status === 'DONE' || status === 'VERIFIED') return 'success';
-    if (status === 'IN_PROGRESS') return 'info';
-    return 'warning';
+function getStatusVariant(
+  type: ActivityType["type"],
+  status: string,
+): "success" | "warning" | "info" | "default" {
+  if (type === "task") {
+    if (status === "DONE" || status === "VERIFIED") return "success";
+    if (status === "IN_PROGRESS") return "info";
+    return "warning";
   }
-  if (type === 'lead') {
-    if (status === 'WON') return 'success';
-    if (status === 'NEGOTIATION' || status === 'PROPOSAL') return 'info';
-    return 'default';
+  if (type === "lead") {
+    if (status === "WON") return "success";
+    if (status === "NEGOTIATION" || status === "PROPOSAL") return "info";
+    return "default";
   }
-  if (type === 'attendance') {
-    if (status === 'PRESENT') return 'success';
-    if (status === 'LATE') return 'warning';
-    return 'default';
+  if (type === "attendance") {
+    if (status === "PRESENT") return "success";
+    if (status === "LATE") return "warning";
+    return "default";
   }
-  if (type === 'order') {
-    if (status === 'COMPLETED' || status === 'DELIVERED') return 'success';
-    if (status === 'PROCESSING') return 'info';
-    return 'default';
+  if (type === "order") {
+    if (status === "COMPLETED" || status === "DELIVERED") return "success";
+    if (status === "PROCESSING") return "info";
+    return "default";
   }
-  return 'default';
+  return "default";
 }
 
 function formatTimeAgo(time: string): string {
@@ -78,41 +84,53 @@ function formatTimeAgo(time: string): string {
   const diffHours = Math.floor(diffMs / 3600000);
   const diffDays = Math.floor(diffMs / 86400000);
 
-  if (diffMins < 1) return 'Just now';
+  if (diffMins < 1) return "Just now";
   if (diffMins < 60) return `${diffMins}m ago`;
   if (diffHours < 24) return `${diffHours}h ago`;
-  if (diffDays === 1) return 'Yesterday';
+  if (diffDays === 1) return "Yesterday";
   if (diffDays < 7) return `${diffDays}d ago`;
   return then.toLocaleDateString();
 }
 
-function getTypeLabel(type: ActivityType['type']): string {
+function getTypeLabel(type: ActivityType["type"]): string {
   switch (type) {
-    case 'task': return 'Task';
-    case 'attendance': return 'Attendance';
-    case 'lead': return 'Lead';
-    case 'order': return 'Order';
-    default: return 'Activity';
+    case "task":
+      return "Task";
+    case "attendance":
+      return "Attendance";
+    case "lead":
+      return "Lead";
+    case "order":
+      return "Order";
+    default:
+      return "Activity";
   }
 }
 
-function getActivityBg(type: ActivityType['type']): string {
+function getActivityBg(type: ActivityType["type"]): string {
   switch (type) {
-    case 'task': return 'bg-purple-50 dark:bg-purple-900/20';
-    case 'attendance': return 'bg-primary-50 dark:bg-primary-900/20';
-    case 'lead': return 'bg-emerald-50 dark:bg-emerald-900/20';
-    case 'order': return 'bg-blue-50 dark:bg-blue-900/20';
-    default: return 'bg-gray-100 dark:bg-gray-800';
+    case "task":
+      return "bg-purple-50 dark:bg-purple-900/20";
+    case "attendance":
+      return "bg-primary-50 dark:bg-primary-900/20";
+    case "lead":
+      return "bg-emerald-50 dark:bg-emerald-900/20";
+    case "order":
+      return "bg-blue-50 dark:bg-blue-900/20";
+    default:
+      return "bg-gray-100 dark:bg-gray-800";
   }
 }
 
 function ActivityItem({ activity }: { activity: ActivityType }) {
   return (
     <div className="flex items-start gap-3 py-3 border-b border-gray-100 dark:border-gray-800 last:border-0 group hover:bg-gray-50/50 dark:hover:bg-gray-800/30 -mx-2 px-2 rounded-xl transition-all cursor-default">
-      <div className={cn(
-        'mt-0.5 p-2 rounded-xl transition-all group-hover:scale-105',
-        getActivityBg(activity.type)
-      )}>
+      <div
+        className={cn(
+          "mt-0.5 p-2 rounded-xl transition-all group-hover:scale-105",
+          getActivityBg(activity.type),
+        )}
+      >
         {getActivityIcon(activity.type, activity.status)}
       </div>
       <div className="flex-1 min-w-0">
@@ -134,8 +152,11 @@ function ActivityItem({ activity }: { activity: ActivityType }) {
             {getTypeLabel(activity.type)}
           </span>
           <span className="text-gray-300 dark:text-gray-600">·</span>
-          <Badge variant={getStatusVariant(activity.type, activity.status)} size="sm">
-            {activity.status.replace(/_/g, ' ')}
+          <Badge
+            variant={getStatusVariant(activity.type, activity.status)}
+            size="sm"
+          >
+            {activity.status.replace(/_/g, " ")}
           </Badge>
         </div>
       </div>
@@ -178,21 +199,21 @@ export function RecentActivities({ data, loading }: RecentActivitiesProps) {
   }, [data?.activities]);
 
   return (
-    <Card className="h-full flex flex-col overflow-hidden">
-      <CardHeader className="pb-3 flex-shrink-0 bg-gradient-to-r from-gray-50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-800/30 border-b border-gray-100 dark:border-gray-800">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-base font-semibold flex items-center gap-2">
-            <Activity className="h-4 w-4 text-primary-500" />
-            Recent Activity
+    <Card className="max-h-[520px] flex flex-col overflow-hidden" padding="none">
+      <CardHeader className="min-w-0 flex-shrink-0 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-gray-100/50 pb-3 pl-4 pr-4 pt-4 dark:border-gray-800 dark:from-gray-800/50 dark:to-gray-800/30 sm:pl-5 sm:pr-5 sm:pt-5">
+        <div className="flex min-w-0 items-center justify-between gap-2">
+          <CardTitle className="flex min-w-0 flex-1 items-center gap-2 text-base font-semibold leading-snug sm:text-[17px]">
+            <Activity className="h-[18px] w-[18px] shrink-0 text-primary-500 sm:h-5 sm:w-5" aria-hidden />
+            <span className="truncate">Recent Activity</span>
           </CardTitle>
           {activities.length > 0 && (
-            <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full">
+            <span className="shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300">
               {activities.length} items
             </span>
           )}
         </div>
       </CardHeader>
-      <CardContent className="pt-3 flex-1 overflow-hidden">
+      <CardContent className="!mt-0 flex flex-1 flex-col overflow-hidden px-4 pb-4 pt-2 sm:px-5 sm:pb-5">
         {loading ? (
           <div className="space-y-0">
             {[...Array(5)].map((_, i) => (
@@ -204,15 +225,20 @@ export function RecentActivities({ data, loading }: RecentActivitiesProps) {
             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-700 flex items-center justify-center mx-auto mb-3 shadow-sm">
               <Briefcase className="h-6 w-6 text-gray-400 dark:text-gray-500" />
             </div>
-            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">No recent activity</p>
+            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+              No recent activity
+            </p>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
               Activities will appear here as they happen
             </p>
           </div>
         ) : (
-          <div className="space-y-0 overflow-y-auto max-h-[420px] scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-gray-700 scrollbar-track-transparent pr-1">
+          <div className="flex-1 min-h-0 space-y-0 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-gray-700 scrollbar-track-transparent pr-1">
             {activities.map((activity) => (
-              <ActivityItem key={`${activity.type}-${activity.id}`} activity={activity} />
+              <ActivityItem
+                key={`${activity.type}-${activity.id}`}
+                activity={activity}
+              />
             ))}
           </div>
         )}

@@ -52,6 +52,10 @@ export function isHR(role: string | null | undefined): boolean {
   return HR_ROLES.includes(r);
 }
 
+export function isBranchManager(role: string | null | undefined): boolean {
+  return normalizeRole(role) === 'BRANCH_MANAGER';
+}
+
 export function hasPermission(role: string | null | undefined, required: SystemRole[]): boolean {
   const r = normalizeRole(role);
   if (!r) return false;

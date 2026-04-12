@@ -16,7 +16,7 @@ import {
 import { useHeaderConfig } from "@/hooks/useHeaderConfig";
 import {
   useCreateAttendance,
-  useTeamAttendance,
+  useTeamAttendanceInfinite,
   useUpdateAttendance,
 } from "@/api/attendance";
 import { useStaffList } from "@/api/staff";
@@ -32,6 +32,7 @@ import { Select } from "@/components/ui/Select";
 import { Input } from "@/components/ui/Input";
 import { StatsRow } from "@/components/shared/StatsRow";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { QueryErrorState } from "@/components/ui/QueryErrorState";
 import { usePermission } from "@/hooks/usePermission";
 import { cn } from "@/utils/cn";
 import { toast } from "sonner";
@@ -68,8 +69,23 @@ export default function TeamAttendance() {
   const perm = usePermission();
   const canEdit = perm.isCEO || perm.isManager;
 
-  const { data: records = [], isLoading } = useTeamAttendance(selectedDate);
-  const { data: staffRows } = useStaffList({ limit: 200 });
+  const {
+    data: teamPages,
+    isLoading,
+    isError,
+    refetch,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useTeamAttendanceInfinite(selectedDate);
+  const records = useMemo(
+    () => teamPages?.pages.flatMap((p) => p.data) ?? [],
+    [teamPages?.pages],
+  );
+  const { data: staffRows } = useStaffList(
+    { limit: 200 },
+    { enabled: canEdit && createOpen },
+  );
   const updateAttendance = useUpdateAttendance();
   const createAttendance = useCreateAttendance();
 
@@ -84,8 +100,10 @@ export default function TeamAttendance() {
 
   const goToToday = useCallback(() => setSelectedDate(today), [today]);
 
+  const totalForDay = teamPages?.pages[0]?.meta.total ?? records.length;
+
   const stats = useMemo(() => {
-    const total = records.length;
+    const total = totalForDay;
     const present = records.filter((r) => r.status === "PRESENT").length;
     const late = records.filter((r) => r.status === "LATE").length;
     const absent = records.filter((r) => r.status === "ABSENT").length;
@@ -118,7 +136,7 @@ export default function TeamAttendance() {
         iconBg: "bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400",
       },
     ];
-  }, [records]);
+  }, [records, totalForDay]);
 
   const headerConfig = useMemo(
     () => ({
@@ -132,6 +150,7 @@ export default function TeamAttendance() {
         {
           type: "button" as const,
           label: "",
+          ariaLabel: "Previous day",
           icon: ChevronLeft,
           variant: "outline" as const,
           onClick: () => goToDate(-1),
@@ -146,6 +165,7 @@ export default function TeamAttendance() {
         {
           type: "button" as const,
           label: "",
+          ariaLabel: "Next day",
           icon: ChevronRight,
           variant: "outline" as const,
           onClick: () => goToDate(1),
@@ -283,6 +303,13 @@ export default function TeamAttendance() {
   return (
     <PageTransition>
       <div className="space-y-6">
+        {isError ? (
+          <QueryErrorState
+            title="Could not load team attendance"
+            onRetry={() => void refetch()}
+          />
+        ) : (
+          <>
         <StatsRow items={stats} loading={isLoading} />
 
         {/* Staff status grid */}
@@ -327,6 +354,21 @@ export default function TeamAttendance() {
           emptyTitle="No attendance data"
           emptyDescription={`No team attendance records for ${formatDateDisplay(selectedDate)}`}
         />
+
+        {hasNextPage ? (
+          <div className="flex justify-center">
+            <Button
+              variant="outline"
+              onClick={() => void fetchNextPage()}
+              isLoading={isFetchingNextPage}
+              disabled={isFetchingNextPage}
+            >
+              Load more attendance
+            </Button>
+          </div>
+        ) : null}
+          </>
+        )}
 
         <Modal
           isOpen={!!editRecord}

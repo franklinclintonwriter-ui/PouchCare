@@ -106,7 +106,7 @@ export default function ApplicationDetail() {
 
   const startEditing = () => {
     setNotes(app?.notes || '');
-    setInterviewerNotes('');
+    setInterviewerNotes(app?.interviewerNotes || '');
     setEditingNotes(true);
   };
 

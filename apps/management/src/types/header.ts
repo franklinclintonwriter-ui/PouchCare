@@ -39,6 +39,8 @@ export interface ToggleAction {
 export interface ButtonAction {
   type: 'button';
   label: string;
+  /** Shown when `label` is empty or only the icon is visible (e.g. icon-only on small screens). */
+  ariaLabel?: string;
   icon?: LucideIcon;
   onClick: () => void;
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';

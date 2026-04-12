@@ -26,6 +26,7 @@ export default function LeaveRequestForm() {
 
   const onSubmit = async () => {
     if (!startDate || !endDate) return toast.error('Start and end date are required');
+    if (endDate < startDate) return toast.error('End date must be on or after start date');
     try {
       await apply.mutateAsync({ leaveType, startDate, endDate, reason: reason || undefined });
       toast.success('Leave request submitted');

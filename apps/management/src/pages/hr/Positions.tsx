@@ -92,13 +92,19 @@ export default function Positions() {
       toast.error('Position title is required');
       return;
     }
+    const salaryMin = Number(form.salaryMin) || 0;
+    const salaryMax = Number(form.salaryMax) || 0;
+    if (salaryMin > 0 && salaryMax > 0 && salaryMin > salaryMax) {
+      toast.error('Minimum salary cannot exceed maximum salary');
+      return;
+    }
     const payload = {
       title: form.title,
       department: form.department,
       branch: form.branch,
       employmentType: form.employmentType,
-      salaryMin: Number(form.salaryMin) || 0,
-      salaryMax: Number(form.salaryMax) || 0,
+      salaryMin,
+      salaryMax,
       status: form.status,
       postedDate: form.postedDate,
     };
@@ -208,6 +214,7 @@ export default function Positions() {
         isLoading={isLoading}
         getRowId={(row) => row.id}
         emptyTitle="No positions found"
+        emptyDescription="Create a position to start hiring."
       />
 
       <Modal

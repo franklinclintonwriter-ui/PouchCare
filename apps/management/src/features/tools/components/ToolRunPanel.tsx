@@ -38,14 +38,20 @@ export function ToolRunPanel({
               onClick={onExportCsv}
               disabled={exportDisabled}
               className="min-h-[44px] sm:min-h-0"
+              icon={<Download />}
             >
-              <Download className="h-4 w-4" />
               Export CSV
             </Button>
           )}
           {onClear && (
-            <Button type="button" variant="ghost" size="sm" onClick={onClear} className="min-h-[44px] sm:min-h-0">
-              <Trash2 className="h-4 w-4" />
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={onClear}
+              className="min-h-[44px] sm:min-h-0"
+              icon={<Trash2 />}
+            >
               Clear
             </Button>
           )}

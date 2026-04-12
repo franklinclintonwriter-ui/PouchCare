@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import {
   Puzzle, Download, Globe, Plus, Code2,
-  CheckCircle, XCircle,
+  CheckCircle, XCircle, Pencil, Upload, EyeOff,
 } from 'lucide-react';
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
 import {
@@ -21,6 +21,7 @@ import { PageTransition } from '@/components/ui/PageTransition';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { usePermission } from '@/hooks/usePermission';
+import { getApiOrigin } from '@/config/apiOrigin';
 import { toast } from 'sonner';
 
 const STATUS_COLORS: Record<string, 'success' | 'warning' | 'default'> = {
@@ -187,10 +188,11 @@ export default function PluginDetail() {
     ],
     actions: canManage
       ? [
-          { type: 'button', label: 'Edit', variant: 'secondary', onClick: openEdit },
+          { type: 'button', label: 'Edit', icon: Pencil, variant: 'secondary', onClick: openEdit },
           {
             type: 'button',
             label: plugin?.status === 'PUBLISHED' ? 'Unpublish' : 'Publish',
+            icon: plugin?.status === 'PUBLISHED' ? EyeOff : Upload,
             variant: plugin?.status === 'PUBLISHED' ? 'danger' : 'primary',
             onClick: () => setToggleConfirmOpen(true),
           },
@@ -355,7 +357,7 @@ export default function PluginDetail() {
     );
   }
 
-  const apiBase = (import.meta as { env?: { VITE_API_URL?: string } }).env?.VITE_API_URL ?? '';
+  const apiBase = getApiOrigin();
   const downloadUrl = `${apiBase}/v1/plugins/${plugin.slug}/download`;
 
   return (
@@ -399,7 +401,7 @@ export default function PluginDetail() {
           </div>
 
           {/* Stats Row */}
-          <div className="mt-4 grid grid-cols-3 gap-4 pt-4 border-t border-[var(--color-border)]">
+          <div className="mt-4 grid grid-cols-1 gap-3 border-t border-[var(--color-border)] pt-4 sm:grid-cols-3 sm:gap-4">
             <div className="text-center">
               <div className="text-xl font-bold text-[var(--color-text-primary)]">{plugin.versions.length}</div>
               <div className="text-xs text-[var(--color-text-secondary)]">Versions</div>

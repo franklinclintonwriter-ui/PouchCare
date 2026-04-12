@@ -1,7 +1,7 @@
-import { useMemo } from 'react';
-import { LayoutDashboard, Clock, Sparkles } from 'lucide-react';
-import { useHeaderConfig } from '@/hooks/useHeaderConfig';
-import { useDashboardSummary, useForecast } from '@/api/analytics';
+import { useMemo } from "react";
+import { LayoutDashboard, Clock, Sparkles } from "lucide-react";
+import { useHeaderConfig } from "@/hooks/useHeaderConfig";
+import { useDashboardSummary, useForecast } from "@/api/analytics";
 import {
   KPIRow,
   TaskProgressCard,
@@ -16,23 +16,23 @@ import {
   TopReferrers,
   RecentActivities,
   QuickActions,
-} from '@/components/dashboard';
-import { useAuthStore } from '@/store/authStore';
-import type { StaffUser } from '@/types/auth';
+} from "@/components/dashboard";
+import { useAuthStore } from "@/store/authStore";
+import type { StaffUser } from "@/types/auth";
 
 function getGreeting(): string {
   const hour = new Date().getHours();
-  if (hour < 12) return 'Good morning';
-  if (hour < 17) return 'Good afternoon';
-  return 'Good evening';
+  if (hour < 12) return "Good morning";
+  if (hour < 17) return "Good afternoon";
+  return "Good evening";
 }
 
 function formatDate(): string {
-  return new Date().toLocaleDateString('en-US', {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
+  return new Date().toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
   });
 }
 
@@ -41,15 +41,20 @@ export default function Dashboard() {
   const forecast = useForecast();
   const user = useAuthStore((s) => s.user) as StaffUser | null;
 
-  const errorMessage = isError && error instanceof Error ? error.message : isError ? 'Failed to load dashboard data' : null;
+  const errorMessage =
+    isError && error instanceof Error
+      ? error.message
+      : isError
+        ? "Failed to load dashboard data"
+        : null;
 
   const headerConfig = useMemo(
     () => ({
-      title: 'Dashboard',
-      breadcrumbs: [{ label: 'Dashboard', icon: LayoutDashboard }],
+      title: "Dashboard",
+      breadcrumbs: [{ label: "Dashboard", icon: LayoutDashboard }],
       actions: [],
     }),
-    []
+    [],
   );
 
   useHeaderConfig(headerConfig);
@@ -63,7 +68,7 @@ export default function Dashboard() {
         totalRevenueUsd: r.revenue,
         totalExpensesUsd: r.expenses,
       })),
-    [data?.revenue?.data]
+    [data?.revenue?.data],
   );
 
   const healthData = useMemo(
@@ -81,7 +86,7 @@ export default function Dashboard() {
             },
           }
         : undefined,
-    [data]
+    [data],
   );
 
   const staffData = useMemo(
@@ -94,7 +99,7 @@ export default function Dashboard() {
             newThisMonth: data.kpis.staff.newThisMonth,
           }
         : undefined,
-    [data]
+    [data],
   );
 
   const clientData = useMemo(
@@ -107,7 +112,7 @@ export default function Dashboard() {
             topSpenders: data.leaderboards.clients,
           }
         : undefined,
-    [data]
+    [data],
   );
 
   const leaderboardData = useMemo(
@@ -118,42 +123,57 @@ export default function Dashboard() {
             referrers: data.leaderboards.referrers,
           }
         : undefined,
-    [data]
+    [data],
   );
 
   return (
-    <div className="space-y-6">
-      {/* Welcome Header */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary-600 via-primary-700 to-primary-800 px-6 py-6 text-white shadow-xl">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxjaXJjbGUgY3g9IjIwIiBjeT0iMjAiIHI9IjEuNSIgZmlsbD0iI2ZmZiIgZmlsbC1vcGFjaXR5PSIwLjEiLz48L2c+PC9zdmc+')] opacity-40" />
-        <div className="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <Sparkles className="h-5 w-5 text-primary-200" />
-              <span className="text-primary-200 text-sm font-medium">{formatDate()}</span>
+    <div className="space-y-4">
+      {/* Welcome hero — stacks on narrow screens; health as full-width strip on mobile */}
+      <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-primary-600 via-primary-700 to-primary-900 text-white shadow-xl shadow-primary-900/25 ring-1 ring-white/5">
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.35]"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'%3E%3Ccircle cx='24' cy='24' r='1.2' fill='%23fff' fill-opacity='0.12'/%3E%3C/svg%3E")`,
+            backgroundSize: "48px 48px",
+          }}
+        />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-white/[0.07]" />
+
+        <div className="relative z-10 flex flex-col gap-4 px-4 py-5 sm:gap-5 sm:px-6 sm:py-6 lg:flex-row lg:items-stretch lg:justify-between lg:gap-8">
+          <div className="min-w-0 flex-1 space-y-3">
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[11px] font-medium text-primary-100 backdrop-blur-sm sm:text-xs">
+              <Sparkles className="h-3.5 w-3.5 shrink-0 text-primary-200 sm:h-4 sm:w-4" aria-hidden />
+              <span className="truncate">{formatDate()}</span>
             </div>
-            <h1 className="text-2xl font-bold">
-              {getGreeting()}, {user?.name?.split(' ')[0] || 'there'}!
-            </h1>
-            <p className="mt-1 text-primary-100 text-sm">
-              Here's what's happening with your business today.
-            </p>
+            <div className="space-y-1.5">
+              <h1 className="text-balance text-xl font-bold tracking-tight sm:text-2xl lg:text-3xl">
+                {getGreeting()}, {user?.name?.split(" ")[0] || "there"}!
+              </h1>
+              <p className="max-w-xl text-sm leading-relaxed text-primary-100/90 sm:text-[15px]">
+                Here&apos;s what&apos;s happening with your business today.
+              </p>
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-            {data?.health && (
-              <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-2">
-                <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-                  <span className="text-lg font-bold">{Math.round(data.health.total)}%</span>
+
+          {data?.health && (
+            <div className="shrink-0 lg:flex lg:items-center">
+              <div className="flex w-full items-center gap-3 rounded-2xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur-md sm:max-w-md sm:py-3.5 lg:max-w-[17rem] lg:self-center">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/15 ring-1 ring-white/20 sm:h-14 sm:w-14">
+                  <span className="text-lg font-bold tabular-nums sm:text-xl">
+                    {Math.round(data.health.total)}%
+                  </span>
                 </div>
-                <div>
-                  <p className="text-xs text-primary-200">Health Score</p>
-                  <p className="text-sm font-semibold">
+                <div className="min-w-0 flex-1">
+                  <p className="text-[11px] font-medium uppercase tracking-wider text-primary-200/90">
+                    Health score
+                  </p>
+                  <p className="mt-0.5 truncate text-sm font-semibold sm:text-base">
                     {getHealthStatusLabel(data.health.total)}
                   </p>
                 </div>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -171,9 +191,9 @@ export default function Dashboard() {
       )}
 
       {/* Main Content Grid - Desktop optimized 2-column layout */}
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
-        {/* Left Column - Main Content (8 cols on xl) */}
-        <div className="xl:col-span-8 space-y-6">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-12 lg:items-start">
+        {/* Left Column - Main Content (8 cols on lg) */}
+        <div className="space-y-4 lg:col-span-8">
           {/* KPI Cards */}
           <KPIRow data={data} loading={isLoading} />
 
@@ -181,33 +201,41 @@ export default function Dashboard() {
           <RevenueChart data={revenueChartData} loading={isLoading} />
 
           {/* Stats Row - Task Progress, Pipeline, Staff Overview */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
             <TaskProgressCard data={data} loading={isLoading} />
             <PipelineCard data={data} loading={isLoading} />
             <StaffOverview staff={staffData} loading={isLoading} />
           </div>
 
           {/* Forecast Chart */}
-          <ForecastChart forecast={forecast.data} loading={forecast.isLoading} />
+          <ForecastChart
+            forecast={forecast.data}
+            loading={forecast.isLoading}
+          />
 
           {/* Leaderboards - 3 column grid on desktop */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <StaffLeaderboard leaderboard={leaderboardData} loading={isLoading} />
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 2xl:grid-cols-3">
+            <StaffLeaderboard
+              leaderboard={leaderboardData}
+              loading={isLoading}
+            />
             <TopClients clients={clientData} loading={isLoading} />
             <TopReferrers leaderboard={leaderboardData} loading={isLoading} />
           </div>
         </div>
 
-        {/* Right Sidebar - (4 cols on xl) */}
-        <div className="xl:col-span-4 space-y-6">
+        {/* Right Sidebar - (4 cols on lg) */}
+        <div className="flex flex-col gap-3 lg:col-span-4 lg:self-start">
           {/* Quick Actions */}
           <QuickActions />
 
           {/* Health Breakdown */}
           <HealthBreakdown health={healthData} loading={isLoading} />
 
-          {/* Recent Activities */}
-          <RecentActivities data={data} loading={isLoading} />
+          {/* Recent Activities - grows to fill remaining sidebar height */}
+          <div>
+            <RecentActivities data={data} loading={isLoading} />
+          </div>
         </div>
       </div>
 
@@ -215,7 +243,9 @@ export default function Dashboard() {
       {data && (
         <div className="flex items-center justify-center gap-2 text-xs text-gray-400 dark:text-gray-500 pt-4 border-t border-gray-100 dark:border-gray-800">
           <Clock className="h-3 w-3" />
-          <span>Last updated: {new Date(data.generatedAt).toLocaleTimeString()}</span>
+          <span>
+            Last updated: {new Date(data.generatedAt).toLocaleTimeString()}
+          </span>
         </div>
       )}
     </div>

@@ -17,7 +17,7 @@
   }
 
   body {
-    @apply bg-[#080e1a] text-slate-100;
+    @apply bg-gradient-to-b from-gray-50 via-white to-gray-100 text-gray-900;
     overflow-x: hidden;
     /* Momentum scrolling on iOS */
     -webkit-overflow-scrolling: touch;
@@ -36,21 +36,27 @@
   }
 
   ::selection {
-    @apply bg-sky-500/30 text-sky-100;
+    @apply bg-primary-100 text-primary-900;
   }
 
   /* Thin, styled scrollbar */
-  ::-webkit-scrollbar { width: 4px; }
-  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar {
+    width: 4px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
   ::-webkit-scrollbar-thumb {
     background: #1e2a3d;
     border-radius: 999px;
   }
-  ::-webkit-scrollbar-thumb:hover { background: #0ea5e9; }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #0ea5e9;
+  }
 
   /* Focus ring — keyboard navigation */
   :focus-visible {
-    outline: 2px solid #0ea5e9;
+    outline: 2px solid #3b82f6;
     outline-offset: 3px;
   }
 }
@@ -66,33 +72,35 @@
   }
 
   .glass-card {
-    @apply bg-navy-700/50 border border-navy-600/60 rounded-2xl;
+    @apply bg-white/90 border border-gray-200/80 rounded-2xl shadow-soft;
     /* Remove backdrop-blur from glass-card — it causes scroll jank on many
        devices when dozens of cards are on screen at once */
   }
 
   .text-gradient {
-    background: linear-gradient(135deg, #38bdf8 0%, #818cf8 100%);
+    background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
 
   .glow-border {
-    @apply border border-sky-500/30 shadow-[0_0_30px_rgba(14,165,233,0.15)];
+    @apply border border-primary-500/30 shadow-[0_0_24px_rgba(37,99,235,0.12)];
   }
 
   .hero-grid {
-    background-image: linear-gradient(rgba(148,163,184,0.04) 1px, transparent 1px),
-                      linear-gradient(90deg, rgba(148,163,184,0.04) 1px, transparent 1px);
+    background-image:
+      linear-gradient(rgba(148, 163, 184, 0.1) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(148, 163, 184, 0.1) 1px, transparent 1px);
     background-size: 60px 60px;
   }
 
   /* Interactive card — uses only GPU-composited properties */
   .card-hover {
-    transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
-                box-shadow 0.25s cubic-bezier(0.22, 1, 0.36, 1),
-                border-color 0.2s ease;
+    transition:
+      transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+      border-color 0.2s ease;
   }
   .card-hover:hover {
     transform: translateY(-2px);
@@ -101,25 +109,37 @@
 
 /* ─── Utilities ─────────────────────────────────────────────────────────── */
 @layer utilities {
-  .animation-delay-100 { animation-delay: 100ms; }
-  .animation-delay-200 { animation-delay: 200ms; }
-  .animation-delay-300 { animation-delay: 300ms; }
-  .animation-delay-400 { animation-delay: 400ms; }
-  .animation-delay-500 { animation-delay: 500ms; }
+  .animation-delay-100 {
+    animation-delay: 100ms;
+  }
+  .animation-delay-200 {
+    animation-delay: 200ms;
+  }
+  .animation-delay-300 {
+    animation-delay: 300ms;
+  }
+  .animation-delay-400 {
+    animation-delay: 400ms;
+  }
+  .animation-delay-500 {
+    animation-delay: 500ms;
+  }
 
   /* Scrollbar-free but scrollable */
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
-  .scrollbar-hide::-webkit-scrollbar { display: none; }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
 
   /* Blog prose styles */
   .prose-custom p {
-    @apply text-slate-400 leading-relaxed text-base;
+    @apply text-gray-600 leading-relaxed text-base;
   }
   .prose-custom strong {
-    @apply text-slate-200 font-semibold;
+    @apply text-gray-900 font-semibold;
   }
 
   /* GPU layer promotion — use sparingly on key animated elements */
@@ -133,9 +153,15 @@
 
 /* Shimmer gradient text */
 @keyframes shimmer {
-  0%   { background-position: 0% 50%; }
-  50%  { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 /* Hero fade-up — runs once on mount */
@@ -156,22 +182,97 @@
   will-change: opacity, transform;
 }
 
+/* Management-style compatibility layer for existing landing classes */
+.landing-theme .text-slate-50,
+.landing-theme .text-slate-100,
+.landing-theme .text-slate-200 {
+  color: rgb(17 24 39) !important;
+}
+
+.landing-theme .text-slate-300 {
+  color: rgb(55 65 81) !important;
+}
+
+.landing-theme .text-slate-400,
+.landing-theme .text-slate-500,
+.landing-theme .text-slate-600 {
+  color: rgb(107 114 128) !important;
+}
+
+/* Darken bright accent colors for better readability on light surfaces */
+.landing-theme .text-sky-300,
+.landing-theme .text-sky-400 {
+  color: rgb(29 78 216) !important;
+}
+
+.landing-theme .text-sky-400\/70 {
+  color: rgb(59 130 246 / 0.92) !important;
+}
+
+.landing-theme .text-rose-400 {
+  color: rgb(190 24 93) !important;
+}
+
+.landing-theme .text-green-400 {
+  color: rgb(22 163 74) !important;
+}
+
+.landing-theme [class*="bg-navy-900"] {
+  background-color: rgb(249 250 251) !important;
+}
+
+.landing-theme [class*="bg-navy-800"] {
+  background-color: rgb(255 255 255) !important;
+}
+
+.landing-theme [class*="bg-navy-700"] {
+  background-color: rgb(249 250 251) !important;
+}
+
+.landing-theme [class*="bg-navy-600"] {
+  background-color: rgb(243 244 246) !important;
+}
+
+.landing-theme [class*="border-navy-"] {
+  border-color: rgb(229 231 235) !important;
+}
+
 /* Floating cards in hero — GPU only */
 @keyframes float {
-  0%,  100% { transform: translateY(0px)   translateX(0px);   }
-  33%        { transform: translateY(-18px) translateX(10px);  }
-  66%        { transform: translateY(8px)   translateX(-8px);  }
+  0%,
+  100% {
+    transform: translateY(0px) translateX(0px);
+  }
+  33% {
+    transform: translateY(-18px) translateX(10px);
+  }
+  66% {
+    transform: translateY(8px) translateX(-8px);
+  }
 }
 
 /* Pulse ring */
 @keyframes pingOnce {
-  0%   { transform: scale(1);   opacity: 0.8; }
-  80%  { transform: scale(1.8); opacity: 0; }
-  100% { transform: scale(1.8); opacity: 0; }
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  80% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
 }
 
 /* Smooth nav underline slide */
 @keyframes slideIn {
-  from { transform: scaleX(0); }
-  to   { transform: scaleX(1); }
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
 }

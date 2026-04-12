@@ -6,6 +6,7 @@ import { DataTable, type Column } from '@/components/ui/DataTable';
 import { Input } from '@/components/ui/Input';
 import { StatsRow } from '@/components/shared/StatsRow';
 import { ToolDisclaimer } from '@/features/tools/components/ToolDisclaimer';
+import { ToolPageIntro } from '@/features/tools/components/ToolPageIntro';
 import { ToolRunPanel } from '@/features/tools/components/ToolRunPanel';
 import { ExpandableRowDetail } from '@/features/tools/components/ExpandableRowDetail';
 import { downloadCsv } from '@/features/tools/csv';
@@ -137,6 +138,17 @@ export default function BacklinksToolPage() {
       <div className="mx-auto max-w-6xl space-y-6 px-4 pb-10 pt-2 sm:px-6 lg:px-8">
         <ToolDisclaimer status={status} highlight="dfs" />
 
+        <ToolPageIntro
+          eyebrow="SEO"
+          title="Backlink & referring-domain check"
+          description="See which domains point to your URL, with strength estimates (DR/UR-style), anchor text, and timelines. Powered by DataForSEO — ideal for audits and competitor snapshots."
+          bullets={[
+            'Enter a full URL or focus on a key landing page.',
+            'Expand a row for subdomain-level detail when available.',
+            'Export CSV for reports or CRM follow-up.',
+          ]}
+        />
+
         <ToolRunPanel
           onRun={run}
           onClear={() => {
@@ -167,8 +179,11 @@ export default function BacklinksToolPage() {
         {rows.length > 0 && (
           <>
             <StatsRow items={stats} />
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              DR/UR and counts are provider estimates; use exports for deeper review in your SEO workflow.
+            </p>
             <div className="overflow-hidden rounded-xl border border-gray-200/80 bg-white dark:border-gray-700/60 dark:bg-gray-800/80">
-              <DataTable columns={columns} data={rows} compact />
+              <DataTable columns={columns} data={rows} compact emptyTitle="No backlinks found" emptyDescription="Try a different domain to see results." />
               {expandedId ? (
                 <ExpandableRowDetail
                   expanded

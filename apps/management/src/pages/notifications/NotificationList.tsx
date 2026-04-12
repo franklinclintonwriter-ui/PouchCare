@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import {
   Bell,
   CheckCircle2,
+  CheckCheck,
   FileText,
   CreditCard,
   AlertCircle,
@@ -81,6 +82,8 @@ export default function NotificationList() {
         {
           type: "button" as const,
           label: "Mark all read",
+          icon: CheckCheck,
+          variant: "outline" as const,
           onClick: async () => {
             try {
               await markAll.mutateAsync();

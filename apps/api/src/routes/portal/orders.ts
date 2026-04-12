@@ -6,6 +6,7 @@ import { getPaginationParams, buildMeta } from '@/lib/pagination'
 import { OrderStatus, WalletTxType } from '@prisma/client'
 import { z } from 'zod'
 import { validate } from '@/middleware/validate'
+import { getSystemSetting } from '@/lib/systemConfig'
 
 const router = Router()
 router.use(authenticate, requirePortal)
@@ -73,11 +74,13 @@ router.post('/', async (req, res) => {
       })
       await tx.portalMember.update({ where: { id: member.id }, data: { walletBalance: { decrement: total }, totalOrders: { increment: 1 }, totalSpent: { increment: total } } })
 
-      // 20% commission if referred
+      // Dynamic commission if referred
       if (member.referredById) {
-        const commAmt = total * 0.20
-        const holdDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
-        await tx.commission.create({ data: { earnerId: member.referredById, orderId: o.id, referredMemberName: member.fullName, orderAmountUsd: total, commissionAmountUsd: commAmt, holdReleaseDate: holdDate } })
+        const commissionRatePercent = await getSystemSetting('commission_rate', 20)
+        const holdDays = await getSystemSetting('commission_hold_days', 14)
+        const commAmt = total * (commissionRatePercent / 100)
+        const holdDate = new Date(Date.now() + holdDays * 24 * 60 * 60 * 1000)
+        await tx.commission.create({ data: { earnerId: member.referredById, orderId: o.id, referredMemberName: member.fullName, orderAmountUsd: total, commissionAmountUsd: commAmt, commissionRate: commissionRatePercent / 100, holdReleaseDate: holdDate } })
         await tx.portalMember.update({ where: { id: member.referredById }, data: { totalCommissionEarned: { increment: commAmt } } })
       }
       return [o]

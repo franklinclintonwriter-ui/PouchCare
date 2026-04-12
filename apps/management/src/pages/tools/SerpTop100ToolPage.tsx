@@ -4,6 +4,7 @@ import { Select } from '@/components/ui/Select';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { Badge } from '@/components/ui/Badge';
 import { ToolDisclaimer } from '@/features/tools/components/ToolDisclaimer';
+import { ToolPageIntro } from '@/features/tools/components/ToolPageIntro';
 import { ToolRunPanel } from '@/features/tools/components/ToolRunPanel';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
@@ -154,16 +155,32 @@ export default function SerpTop100ToolPage() {
       <div className="mx-auto max-w-6xl space-y-6 px-4 pb-10 pt-2 sm:px-6 lg:px-8">
         <ToolDisclaimer status={status} highlight="serp" />
 
-        {running ? (
-          <div className="rounded-lg border border-primary-200 bg-primary-50/80 px-4 py-2 text-sm text-primary-900 dark:border-primary-800 dark:bg-primary-950/40 dark:text-primary-100">
-            Fetching Google organic results via SerpAPI…
+        <ToolPageIntro
+          eyebrow="SEO"
+          title="SERP Top 100 (organic)"
+          description="Fetch up to 100 Google organic listings for a keyword in a selected market (country + language). Use filters to focus on specific SERP feature tags, paginate large sets, and export for audits."
+          bullets={[
+            'Market maps to SerpAPI gl/hl (e.g. US English, UK English).',
+            'Feature chips filter rows when result metadata includes those tags.',
+            'Links open in a new tab; verify rankings in an incognito check when needed.',
+          ]}
+        />
+
+        {(running || (doneOnce && allRows.length > 0)) && (
+          <div
+            className={cn(
+              'rounded-lg border px-4 py-2.5 text-sm',
+              running
+                ? 'border-primary-200 bg-primary-50/90 text-primary-950 dark:border-primary-800 dark:bg-primary-950/40 dark:text-primary-100'
+                : 'border-emerald-200 bg-emerald-50/90 text-emerald-950 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-100',
+            )}
+            role="status"
+          >
+            {running
+              ? 'Fetching Google organic results via SerpAPI…'
+              : `${allRows.length} organic results loaded. Use filters and pagination below.`}
           </div>
-        ) : null}
-        {doneOnce && !running && allRows.length > 0 ? (
-          <div className="rounded-lg border border-emerald-200 bg-emerald-50/80 px-4 py-2 text-sm text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-100">
-            {allRows.length} results loaded
-          </div>
-        ) : null}
+        )}
 
         <ToolRunPanel
           onRun={run}
@@ -198,7 +215,9 @@ export default function SerpTop100ToolPage() {
 
         {allRows.length > 0 && (
           <>
-            <div className="flex flex-wrap gap-2">
+            <div>
+              <p className="mb-2 text-xs font-medium text-gray-700 dark:text-gray-300">Filter by SERP signal</p>
+              <div className="flex flex-wrap gap-2">
               {featureChips.map((f) => (
                 <button
                   key={String(f.id)}
@@ -217,6 +236,7 @@ export default function SerpTop100ToolPage() {
                   {f.label}
                 </button>
               ))}
+              </div>
             </div>
 
             <DataTable
@@ -225,6 +245,8 @@ export default function SerpTop100ToolPage() {
               compact
               pagination={pagination}
               onPageChange={setPage}
+              emptyTitle="No SERP results"
+              emptyDescription="Enter a keyword to see the top 100 results."
             />
           </>
         )}

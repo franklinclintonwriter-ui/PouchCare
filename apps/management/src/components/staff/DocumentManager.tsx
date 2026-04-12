@@ -4,7 +4,6 @@ import {
   Image,
   File,
   Upload,
-  Eye,
   Download,
   Trash2,
   CheckCircle2,
@@ -33,7 +32,6 @@ import { Select } from '@/components/ui/Select';
 import { Textarea } from '@/components/ui/Textarea';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { DocumentPreview } from './DocumentPreview';
 import {
   useStaffDocuments,
   useUploadDocument,
@@ -42,7 +40,6 @@ import {
   DOCUMENT_CATEGORIES,
   DOCUMENT_TYPES,
   formatFileSize,
-  isPreviewable,
   type StaffDocument,
   type DocumentCategory,
 } from '@/api/documents';
@@ -83,7 +80,6 @@ export function DocumentManager({ staffId, staffName, isOwnProfile }: DocumentMa
   const perm = usePermission();
   const [selectedCategory, setSelectedCategory] = useState<DocumentCategory | null>(null);
   const [showUpload, setShowUpload] = useState(false);
-  const [previewDoc, setPreviewDoc] = useState<StaffDocument | null>(null);
   const [deleteDoc, setDeleteDoc] = useState<StaffDocument | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showMobileActions, setShowMobileActions] = useState<string | null>(null);
@@ -138,13 +134,18 @@ export function DocumentManager({ staffId, staffName, isOwnProfile }: DocumentMa
 
   const totalDocs = documents.length;
 
+  const openDocumentViewer = useCallback((doc: StaffDocument) => {
+    const path = `/staff/${staffId}/documents/${doc.id}`;
+    window.open(path, '_blank', 'noopener,noreferrer');
+  }, [staffId]);
+
   if (isLoading) {
     return (
       <div className="space-y-4 sm:space-y-6">
         {/* Mobile: Horizontal scroll categories */}
-        <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-5 sm:gap-3 sm:overflow-visible scrollbar-hide">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
           {Array.from({ length: 5 }).map((_, i) => (
-            <Skeleton key={i} className="h-16 w-24 flex-shrink-0 sm:w-auto sm:h-20 rounded-xl" />
+            <Skeleton key={i} className="h-20 rounded-xl sm:h-24" />
           ))}
         </div>
         <div className="space-y-2 sm:space-y-3">
@@ -158,8 +159,8 @@ export function DocumentManager({ staffId, staffName, isOwnProfile }: DocumentMa
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      {/* Category Summary - Horizontal scroll on mobile, grid on desktop */}
-      <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-5 sm:gap-3 sm:overflow-visible scrollbar-hide">
+      {/* Category filters — responsive grid (no horizontal scroll) */}
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5 lg:gap-3">
         {categorySummary.map((cat) => {
           const isSelected = selectedCategory === cat.value;
           return (
@@ -167,9 +168,8 @@ export function DocumentManager({ staffId, staffName, isOwnProfile }: DocumentMa
               key={cat.value}
               onClick={() => setSelectedCategory(isSelected ? null : cat.value)}
               className={cn(
-                'relative flex flex-col items-center justify-center gap-1 rounded-xl border p-3 transition-all flex-shrink-0',
-                'w-20 sm:w-auto min-h-[72px] sm:min-h-[80px]',
-                'active:scale-95 touch-manipulation',
+                'relative flex min-h-[76px] flex-col items-center justify-center gap-1 rounded-xl border p-3 transition-all',
+                'w-full active:scale-[0.98] touch-manipulation sm:min-h-[84px]',
                 isSelected
                   ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 ring-2 ring-blue-500/50'
                   : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600'
@@ -297,7 +297,7 @@ export function DocumentManager({ staffId, staffName, isOwnProfile }: DocumentMa
               document={doc}
               canManage={canManage}
               canVerify={canVerify ?? false}
-              onPreview={() => setPreviewDoc(doc)}
+              onOpenViewer={() => openDocumentViewer(doc)}
               onDelete={() => setDeleteDoc(doc)}
               staffId={staffId}
               showMobileActions={showMobileActions === doc.id}
@@ -321,18 +321,6 @@ export function DocumentManager({ staffId, staffName, isOwnProfile }: DocumentMa
         <UploadModal staffId={staffId} staffName={staffName} onClose={() => setShowUpload(false)} />
       )}
 
-      {/* Preview Modal */}
-      {previewDoc && (
-        <DocumentPreview
-          isOpen={!!previewDoc}
-          onClose={() => setPreviewDoc(null)}
-          fileUrl={previewDoc.fileUrl}
-          fileName={previewDoc.fileName}
-          mimeType={previewDoc.mimeType}
-          title={previewDoc.title}
-        />
-      )}
-
       {/* Delete Confirmation */}
       <ConfirmDialog
         isOpen={!!deleteDoc}
@@ -352,7 +340,7 @@ interface DocumentCardProps {
   document: StaffDocument;
   canManage: boolean;
   canVerify: boolean;
-  onPreview: () => void;
+  onOpenViewer: () => void;
   onDelete: () => void;
   staffId: string;
   showMobileActions: boolean;
@@ -363,7 +351,7 @@ function DocumentCard({
   document: doc,
   canManage,
   canVerify,
-  onPreview,
+  onOpenViewer,
   onDelete,
   staffId,
   showMobileActions,
@@ -371,7 +359,6 @@ function DocumentCard({
 }: DocumentCardProps) {
   const Icon = getFileIcon(doc.mimeType);
   const verifyDocument = useVerifyDocument();
-  const previewable = isPreviewable(doc.mimeType);
   const CategoryIcon = CATEGORY_ICONS[doc.category as DocumentCategory] || FileQuestion;
   const categoryColors = CATEGORY_COLORS[doc.category as DocumentCategory] || CATEGORY_COLORS.other;
 
@@ -420,7 +407,8 @@ function DocumentCard({
       <div className="flex items-stretch">
         {/* Thumbnail - Clickable for preview */}
         <button
-          onClick={previewable ? onPreview : () => window.open(doc.fileUrl, '_blank')}
+          type="button"
+          onClick={onOpenViewer}
           className={cn(
             'relative flex-shrink-0 w-16 sm:w-20 flex items-center justify-center overflow-hidden',
             'border-r border-gray-100 dark:border-gray-700',
@@ -498,12 +486,10 @@ function DocumentCard({
 
           {/* Desktop Actions */}
           <div className="hidden sm:flex items-center gap-1.5 mt-3 pt-3 border-t border-gray-100 dark:border-gray-700/50">
-            {previewable && (
-              <Button variant="ghost" size="sm" onClick={onPreview} className="h-8 text-xs">
-                <Eye className="h-3.5 w-3.5 mr-1.5" />
-                Preview
-              </Button>
-            )}
+            <Button variant="ghost" size="sm" onClick={onOpenViewer} className="h-8 text-xs">
+              <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
+              Open
+            </Button>
             <Button
               variant="ghost"
               size="sm"
@@ -553,24 +539,24 @@ function DocumentCard({
       {showMobileActions && (
         <div className="sm:hidden border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 p-2 animate-in slide-in-from-top-2 duration-200">
           <div className="grid grid-cols-2 gap-2">
-            {previewable && (
-              <button
-                onClick={() => {
-                  onPreview();
-                  onToggleMobileActions();
-                }}
-                className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-700 dark:text-gray-300 active:scale-95"
-              >
-                <Eye className="h-4 w-4" />
-                Preview
-              </button>
-            )}
             <button
-              onClick={() => window.open(doc.fileUrl, '_blank')}
-              className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-700 dark:text-gray-300 active:scale-95"
+              type="button"
+              onClick={() => {
+                onOpenViewer();
+                onToggleMobileActions();
+              }}
+              className="flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-700 active:scale-95 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
             >
               <ExternalLink className="h-4 w-4" />
-              Open
+              Open page
+            </button>
+            <button
+              type="button"
+              onClick={() => window.open(doc.fileUrl, '_blank', 'noopener,noreferrer')}
+              className="flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-700 active:scale-95 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
+            >
+              <Download className="h-4 w-4" />
+              Raw file
             </button>
             {canVerify && !doc.isVerified && (
               <button

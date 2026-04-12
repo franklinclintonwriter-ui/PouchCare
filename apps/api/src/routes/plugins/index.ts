@@ -283,7 +283,7 @@ router.post('/activate', validate(activateSchema), async (req, res) => {
     });
 
     // Issue an activation token (long-lived, 10 years)
-    const token = signAccess({
+    const token = await signAccess({
       sub: activation.id,
       role: 'plugin_activation',
       type: userType as 'staff' | 'portal',

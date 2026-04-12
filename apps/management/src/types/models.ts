@@ -70,6 +70,8 @@ export interface StaffProfileDetail extends StaffMember {
   lastLoginIp?: string | null;
 }
 
+export type TaskAttachmentItem = { url: string; name: string; uploadedAt: string };
+
 export interface Task {
   id: string;
   title: string;
@@ -79,6 +81,9 @@ export interface Task {
   assigneeId: string;
   assigneeName: string;
   assigneeAvatar?: string;
+  assignedBranch?: string | null;
+  assignedManagerId?: string | null;
+  assignedManagerName?: string;
   status: TaskStatus;
   approvalStatus: ApprovalStatus;
   priority: Priority;
@@ -86,6 +91,16 @@ export interface Task {
   rating?: number;
   tags: string[];
   createdAt: string;
+  progress?: number;
+  progressUpdatedAt?: string | null;
+  actualHours?: number | null;
+  taskAttachments?: TaskAttachmentItem[];
+  /** Set when manager approves or rejects (API). */
+  managerApprovedDate?: string | null;
+  managerApprovalNote?: string | null;
+  /** Set when CEO verifies completion. */
+  ceoVerifiedDate?: string | null;
+  completedDate?: string | null;
 }
 
 export interface Project {
@@ -145,6 +160,8 @@ export interface PayrollEntry {
   deductions: number;
   netPay: number;
   status: PaymentStatus;
+  paymentMethod?: string;
+  notes?: string;
 }
 
 export interface PerformanceReview {
@@ -384,6 +401,7 @@ export interface JobApplication {
   rating: number;
   appliedDate: string;
   notes: string;
+  interviewerNotes?: string;
 }
 
 // ── Portal ──────────────────────────────────────────────────

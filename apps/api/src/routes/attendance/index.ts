@@ -16,6 +16,7 @@ import {
   notFound,
   serverError,
 } from "@/utils/response";
+import { broadcastAttendanceUpdate } from "@/lib/websocket";
 
 const router = Router();
 router.use(authenticate);
@@ -92,6 +93,31 @@ router.get("/today", requireStaff, async (req, res) => {
   }
 });
 
+// GET /v1/attendance/staff/:staffId — Managers: list a staff member's attendance (avoids /:id vs "today" ambiguity)
+router.get(
+  "/staff/:staffId",
+  requireRoles(...(MANAGER_ROLES as any)),
+  async (req, res) => {
+    try {
+      const { page, limit, skip } = getPagination(req);
+      const [records, total] = await Promise.all([
+        prisma.attendance.findMany({
+          where: { staffMemberId: req.params.staffId },
+          skip,
+          take: limit,
+          orderBy: { date: "desc" },
+        }),
+        prisma.attendance.count({
+          where: { staffMemberId: req.params.staffId },
+        }),
+      ]);
+      return ok(res, records, buildMeta(total, page, limit));
+    } catch (err) {
+      serverError(res, err);
+    }
+  },
+);
+
 // POST /v1/attendance — Managers create or upsert manual attendance records
 router.post(
   "/",
@@ -134,9 +160,13 @@ router.post(
       const record = existing
         ? await prisma.attendance.update({ where: { id: existing.id }, data })
         : await prisma.attendance.create({ data });
+      broadcastAttendanceUpdate({
+        staffMemberId: payload.staffMemberId,
+        date: payload.date,
+      });
       return created(res, record);
     } catch (err) {
-      serverError(res, err);
+      return serverError(res, err);
     }
   },
 );
@@ -183,6 +213,7 @@ router.post("/checkin", requireStaff, async (req, res) => {
             loginIp: req.ip,
           },
         });
+    broadcastAttendanceUpdate({ staffMemberId: record.staffMemberId });
     return ok(res, record);
   } catch (err) {
     serverError(res, err);
@@ -216,6 +247,7 @@ router.post("/checkout", requireStaff, async (req, res) => {
         overtimeHours: parseFloat(overtime.toFixed(2)),
       },
     });
+    broadcastAttendanceUpdate({ staffMemberId: updated.staffMemberId });
     return ok(res, updated);
   } catch (err) {
     serverError(res, err);
@@ -232,34 +264,10 @@ router.put(
         where: { id: req.params.id },
         data: { ...req.body, approvedBy: req.user!.id },
       });
+      broadcastAttendanceUpdate({ staffMemberId: record.staffMemberId });
       return ok(res, record);
     } catch (err) {
-      serverError(res, err);
-    }
-  },
-);
-
-// GET /v1/attendance/:staffId
-router.get(
-  "/:staffId",
-  requireRoles(...(MANAGER_ROLES as any)),
-  async (req, res) => {
-    try {
-      const { page, limit, skip } = getPagination(req);
-      const [records, total] = await Promise.all([
-        prisma.attendance.findMany({
-          where: { staffMemberId: req.params.staffId },
-          skip,
-          take: limit,
-          orderBy: { date: "desc" },
-        }),
-        prisma.attendance.count({
-          where: { staffMemberId: req.params.staffId },
-        }),
-      ]);
-      return ok(res, records, buildMeta(total, page, limit));
-    } catch (err) {
-      serverError(res, err);
+      return serverError(res, err);
     }
   },
 );
@@ -277,9 +285,10 @@ router.delete(
       if (!record) return notFound(res, "Attendance record not found");
 
       await prisma.attendance.delete({ where: { id: req.params.id } });
+      broadcastAttendanceUpdate({ staffMemberId: record.staffMemberId });
       return ok(res, { message: "Attendance record deleted successfully" });
     } catch (err) {
-      serverError(res, err);
+      return serverError(res, err);
     }
   },
 );
@@ -366,9 +375,12 @@ router.post(
         }
       }
 
+      if (results.created > 0 || results.updated > 0) {
+        broadcastAttendanceUpdate({ bulk: true });
+      }
       return ok(res, results);
     } catch (err) {
-      serverError(res, err);
+      return serverError(res, err);
     }
   },
 );

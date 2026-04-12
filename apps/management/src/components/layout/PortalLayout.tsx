@@ -24,7 +24,7 @@ function PortalLayout() {
         <Header />
         <NotificationBridge />
 
-        <main className="px-4 pb-20 pt-4 lg:px-6 lg:pb-6 lg:pt-5">
+        <main className="px-4 pb-[calc(env(safe-area-inset-bottom)+4.25rem)] pt-4 lg:px-6 lg:pb-6 lg:pt-5">
           <div className="content-shell max-w-5xl space-y-4 lg:space-y-6">
             <Outlet />
           </div>

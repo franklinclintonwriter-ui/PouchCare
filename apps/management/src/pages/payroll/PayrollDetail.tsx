@@ -1,6 +1,6 @@
 import { useMemo, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Trash2, CircleDollarSign, type LucideIcon } from 'lucide-react';
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
 import { usePayrollEntry, useMarkPayrollPaid, useUpdatePayroll, useDeletePayroll } from '@/api/payroll';
 import { PageTransition } from '@/components/ui/PageTransition';
@@ -9,6 +9,8 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
 import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
+import { Textarea } from '@/components/ui/Textarea';
 import { Button } from '@/components/ui/Button';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useCurrency } from '@/hooks/useCurrency';
@@ -45,8 +47,8 @@ export default function PayrollDetail() {
         baseSalary: String(entry.baseSalary),
         bonus: String(entry.bonus),
         deductions: String(entry.deductions),
-        paymentMethod: '',
-        notes: '',
+        paymentMethod: entry.paymentMethod || '',
+        notes: entry.notes || '',
       });
     }
     setEditOpen(true);
@@ -88,7 +90,7 @@ export default function PayrollDetail() {
     const actions: Array<{
       type: 'button';
       label: string;
-      icon?: typeof Pencil;
+      icon?: LucideIcon;
       variant?: 'outline' | 'danger' | 'primary';
       onClick: () => void;
     }> = [];
@@ -107,6 +109,7 @@ export default function PayrollDetail() {
       actions.push({
         type: 'button' as const,
         label: 'Mark as Paid',
+        icon: CircleDollarSign,
         variant: 'primary' as const,
         onClick: async () => {
           if (!id) return;
@@ -250,8 +253,20 @@ export default function PayrollDetail() {
           <Input label="Base Salary (USD)" type="number" min="0" step="0.01" value={form.baseSalary} onChange={set('baseSalary')} />
           <Input label="Bonus (USD)" type="number" min="0" step="0.01" value={form.bonus} onChange={set('bonus')} />
           <Input label="Deductions (USD)" type="number" min="0" step="0.01" value={form.deductions} onChange={set('deductions')} />
-          <Input label="Payment Method" placeholder="e.g. Bank Transfer, Cash" value={form.paymentMethod} onChange={set('paymentMethod')} />
-          <Input label="Notes" value={form.notes} onChange={set('notes')} />
+          <Select
+            label="Payment Method"
+            value={form.paymentMethod}
+            onChange={(e) => setForm(f => ({ ...f, paymentMethod: e.target.value }))}
+            options={[
+              { label: '— Select —', value: '' },
+              { label: 'Bank Transfer', value: 'Bank Transfer' },
+              { label: 'Mobile Money', value: 'Mobile Money' },
+              { label: 'Cash', value: 'Cash' },
+              { label: 'Cheque', value: 'Cheque' },
+              { label: 'Other', value: 'Other' },
+            ]}
+          />
+          <Textarea label="Notes" value={form.notes} onChange={(e) => setForm(f => ({ ...f, notes: e.target.value }))} rows={2} />
         </div>
       </Modal>
 

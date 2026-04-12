@@ -1,9 +1,10 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
 import { useAuthStore } from '@/store/authStore';
 import { getAccessToken, getRefreshToken, setAccessToken, clearAuth } from '@/utils/storage';
+import { getApiOrigin, getAxiosBaseURL } from '@/config/apiOrigin';
 
 const api = axios.create({
-  baseURL: '/v1',
+  baseURL: getAxiosBaseURL(),
   headers: { 'Content-Type': 'application/json' },
   timeout: 30000,
 });
@@ -37,13 +38,15 @@ function processQueue(error: unknown, token: string | null) {
 
 api.interceptors.response.use(
   (response) => {
-    // Unwrap the API envelope: { success: true, data: T, meta? }
-    if (response.data?.success !== undefined) {
-      const envelope = response.data;
-      if (envelope.meta) {
-        return { ...response, data: { data: envelope.data, meta: envelope.meta } };
+    // If the API returns { success, data, meta }, unwrap it
+    if (response.data && typeof response.data === 'object' && 'success' in response.data) {
+      if (response.data.meta) {
+        // Return unwrapped data and meta for paginated endpoints
+        response.data = { data: response.data.data, meta: response.data.meta };
+      } else {
+        // Return just the unwrapped data for standard endpoints
+        response.data = response.data.data;
       }
-      return { ...response, data: envelope.data };
     }
     return response;
   },
@@ -72,7 +75,9 @@ api.interceptors.response.use(
 
         const userType = useAuthStore.getState().userType;
         const endpoint = userType === 'portal' ? '/portal/refresh' : '/auth/refresh';
-        const { data } = await axios.post(`/v1${endpoint}`, { refresh_token: refreshToken });
+        const origin = getApiOrigin();
+        const refreshUrl = `${origin || ''}/v1${endpoint}`;
+        const { data } = await axios.post(refreshUrl, { refresh_token: refreshToken });
 
         const newToken = data.data?.access_token ?? data.access_token;
         setAccessToken(newToken);
@@ -89,6 +94,23 @@ api.interceptors.response.use(
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
+      }
+    }
+
+    // No HTTP response: offline, wrong API URL, CORS, or connection refused
+    if (!error.response) {
+      const code = (error as AxiosError & { code?: string }).code;
+      if (code === 'ERR_NETWORK' || error.message === 'Network Error') {
+        const origin = getApiOrigin();
+        const hint = origin
+          ? `Cannot reach the API at ${origin}. Is the server running?`
+          : 'Cannot reach the API (connection failed). If the UI is not behind a reverse proxy, set VITE_API_URL in .env to your API origin (e.g. http://127.0.0.1:7000).';
+        return Promise.reject(new Error(hint));
+      }
+      if (code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+        return Promise.reject(
+          new Error('Request timed out. Check your connection and that the API is responding.'),
+        );
       }
     }
 

@@ -1,23 +1,54 @@
-import { useState, useCallback } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '@/utils/cn';
-import { useSidebarStore } from '@/store/sidebarStore';
-import { useAuthStore } from '@/store/authStore';
-import { usePermission } from '@/hooks/usePermission';
-import { useIsMobile } from '@/hooks/useMediaQuery';
-import { Avatar } from '@/components/ui/Avatar';
-import api from '@/api/client';
-import type { StaffUser } from '@/types/auth';
+import { useState, useCallback } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "@/utils/cn";
+import { useSidebarStore } from "@/store/sidebarStore";
+import { useAuthStore } from "@/store/authStore";
+import { usePermission } from "@/hooks/usePermission";
+import { useIsMobile } from "@/hooks/useMediaQuery";
+import { Avatar } from "@/components/ui/Avatar";
+import api from "@/api/client";
+import type { StaffUser } from "@/types/auth";
 import {
-  LayoutDashboard, CheckSquare, ListChecks, FolderKanban, Users, Clock, CalendarOff,
-  FileText, DollarSign, BarChart3, Target, Globe, Server,
-  MonitorSmartphone, Megaphone, HeadphonesIcon, BellRing, UserPlus,
-  Receipt, CreditCard, Building2, ChevronDown, X, LogOut, Wallet,
-  Users2, Star, ShoppingCart, Package, ChevronsLeft, ChevronsRight,
-  Settings, Puzzle, Cctv, Wrench, Trophy, Cpu,
-} from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
+  LayoutDashboard,
+  CheckSquare,
+  ListChecks,
+  FolderKanban,
+  Users,
+  Clock,
+  CalendarOff,
+  FileText,
+  DollarSign,
+  BarChart3,
+  Target,
+  Globe,
+  Server,
+  MonitorSmartphone,
+  Megaphone,
+  HeadphonesIcon,
+  BellRing,
+  UserPlus,
+  Receipt,
+  CreditCard,
+  Building2,
+  ChevronDown,
+  X,
+  LogOut,
+  Wallet,
+  Users2,
+  Star,
+  ShoppingCart,
+  Package,
+  ChevronsLeft,
+  ChevronsRight,
+  Settings,
+  Puzzle,
+  Cctv,
+  Wrench,
+  Trophy,
+  Cpu,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 interface NavItem {
   label: string;
@@ -39,11 +70,12 @@ function Sidebar() {
   const perm = usePermission();
   const isMobile = useIsMobile();
 
-  const staffUser = userType === 'staff' ? (user as StaffUser) : null;
+  const staffUser = userType === "staff" ? (user as StaffUser) : null;
 
   const handleLogout = useCallback(async () => {
     try {
-      const endpoint = userType === 'portal' ? '/portal/logout' : '/auth/logout';
+      const endpoint =
+        userType === "portal" ? "/portal/logout" : "/auth/logout";
       await api.post(endpoint);
     } catch {
       // ignore server errors — still log out locally
@@ -54,140 +86,223 @@ function Sidebar() {
 
   const staffNav: NavGroup[] = [
     {
-      label: 'Overview',
+      label: "Overview",
+      items: [{ label: "Dashboard", icon: LayoutDashboard, href: "/" }],
+    },
+    {
+      label: "Work",
       items: [
-        { label: 'Dashboard', icon: LayoutDashboard, href: '/' },
+        { label: "Tasks", icon: CheckSquare, href: "/tasks" },
+        { label: "My Tasks", icon: ListChecks, href: "/tasks/mine" },
+        { label: "Projects", icon: FolderKanban, href: "/projects" },
+        { label: "Daily Reports", icon: FileText, href: "/reports" },
       ],
     },
     {
-      label: 'Work',
+      label: "HR",
       items: [
-        { label: 'Tasks', icon: CheckSquare, href: '/tasks' },
-        { label: 'My Tasks', icon: ListChecks, href: '/tasks/mine' },
-        { label: 'Projects', icon: FolderKanban, href: '/projects' },
-        { label: 'Daily Reports', icon: FileText, href: '/reports' },
+        { label: "Staff", icon: Users, href: "/staff" },
+        { label: "Leaderboard", icon: Trophy, href: "/staff/leaderboard" },
+        {
+          label: "Branches",
+          icon: Building2,
+          href: "/staff/branches",
+          permission: () => perm.can("staff.branches"),
+        },
+        { label: "Attendance", icon: Clock, href: "/attendance" },
+        { label: "Leave", icon: CalendarOff, href: "/leave" },
+        {
+          label: "Payroll",
+          icon: DollarSign,
+          href: "/payroll",
+          permission: () => perm.can("payroll.access"),
+        },
+        {
+          label: "Performance",
+          icon: Star,
+          href: "/performance",
+          permission: () => perm.can("hr.performance"),
+        },
+        {
+          label: "Recruitment",
+          icon: UserPlus,
+          children: [
+            { label: "Positions", href: "/hr/positions" },
+            { label: "Applications", href: "/hr/applications" },
+          ],
+          permission: () => perm.can("hr.recruitment"),
+        },
       ],
     },
     {
-      label: 'HR',
+      label: "Business",
       items: [
-        { label: 'Staff', icon: Users, href: '/staff' },
-        { label: 'Leaderboard', icon: Trophy, href: '/staff/leaderboard' },
-        { label: 'Branches', icon: Building2, href: '/staff/branches', permission: () => perm.can('staff.branches') },
-        { label: 'Attendance', icon: Clock, href: '/attendance' },
-        { label: 'Leave', icon: CalendarOff, href: '/leave' },
-        { label: 'Payroll', icon: DollarSign, href: '/payroll', permission: () => perm.can('payroll.access') },
-        { label: 'Performance', icon: Star, href: '/performance', permission: () => perm.can('hr.performance') },
-        { label: 'Recruitment', icon: UserPlus, children: [
-          { label: 'Positions', href: '/hr/positions' },
-          { label: 'Applications', href: '/hr/applications' },
-        ], permission: () => perm.can('hr.recruitment') },
+        {
+          label: "Finance",
+          icon: Receipt,
+          children: [
+            { label: "Invoices", href: "/finance/invoices" },
+            { label: "Expenses", href: "/finance/expenses" },
+            { label: "Revenue", href: "/finance/revenue" },
+            { label: "Forecast", href: "/finance/forecast" },
+            { label: "Exchange Rates", href: "/finance/exchange-rates" },
+          ],
+          permission: () => perm.can("finance.access"),
+        },
+        {
+          label: "CRM",
+          icon: Target,
+          children: [
+            { label: "Leads", href: "/crm/leads" },
+            { label: "Pipeline", href: "/crm/pipeline" },
+            { label: "Sales Orders", href: "/crm/orders" },
+            {
+              label: "Client Accounts",
+              href: "/crm/clients",
+              permission: () => perm.can("crm.client_accounts"),
+            },
+          ],
+        },
       ],
     },
     {
-      label: 'Business',
+      label: "Assets & Services",
       items: [
-        { label: 'Finance', icon: Receipt, children: [
-          { label: 'Invoices', href: '/finance/invoices' },
-          { label: 'Expenses', href: '/finance/expenses' },
-          { label: 'Revenue', href: '/finance/revenue' },
-          { label: 'Forecast', href: '/finance/forecast' },
-          { label: 'Exchange Rates', href: '/finance/exchange-rates' },
-        ], permission: () => perm.can('finance.access') },
-        { label: 'CRM', icon: Target, children: [
-          { label: 'Leads', href: '/crm/leads' },
-          { label: 'Pipeline', href: '/crm/pipeline' },
-          { label: 'Sales Orders', href: '/crm/orders' },
-          { label: 'Client Accounts', href: '/crm/clients', permission: () => perm.can('crm.client_accounts') },
-        ]},
+        { label: "Domains", icon: Globe, href: "/assets/domains" },
+        { label: "Servers", icon: Server, href: "/assets/servers" },
+        {
+          label: "Websites",
+          icon: MonitorSmartphone,
+          href: "/assets/websites",
+        },
+        {
+          label: "Monitor",
+          icon: Cctv,
+          href: "/monitor",
+          permission: () => perm.can("monitor.view"),
+        },
+        {
+          label: "Devices",
+          icon: Cpu,
+          href: "/assets/devices",
+          permission: () => perm.can("assets.devices"),
+        },
+        { label: "Services", icon: Package, href: "/services" },
+        { label: "Plugins", icon: Puzzle, href: "/plugins" },
       ],
     },
     {
-      label: 'Assets & Services',
+      label: "Communication",
       items: [
-        { label: 'Domains', icon: Globe, href: '/assets/domains' },
-        { label: 'Servers', icon: Server, href: '/assets/servers' },
-        { label: 'Websites', icon: MonitorSmartphone, href: '/assets/websites' },
-        { label: 'Monitor', icon: Cctv, href: '/monitor', permission: () => perm.can('monitor.view') },
-        { label: 'Devices', icon: Cpu, href: '/assets/devices', permission: () => perm.can('assets.devices') },
-        { label: 'Services', icon: Package, href: '/services' },
-        { label: 'Plugins', icon: Puzzle, href: '/plugins' },
+        { label: "Support", icon: HeadphonesIcon, href: "/support" },
+        {
+          label: "Broadcast",
+          icon: Megaphone,
+          href: "/broadcast",
+          permission: () => perm.can("broadcast.access"),
+        },
+        { label: "Notifications", icon: BellRing, href: "/notifications" },
       ],
     },
     {
-      label: 'Communication',
+      label: "Analytics",
       items: [
-        { label: 'Support', icon: HeadphonesIcon, href: '/support' },
-        { label: 'Broadcast', icon: Megaphone, href: '/broadcast', permission: () => perm.can('broadcast.access') },
-        { label: 'Notifications', icon: BellRing, href: '/notifications' },
+        {
+          label: "Analytics",
+          icon: BarChart3,
+          href: "/analytics",
+          permission: () => perm.can("analytics.access"),
+        },
       ],
     },
     {
-      label: 'Analytics',
+      label: "Marketing",
+      items: [{ label: "Tools", icon: Wrench, href: "/tools" }],
+    },
+    {
+      label: "Admin",
       items: [
-        { label: 'Analytics', icon: BarChart3, href: '/analytics', permission: () => perm.can('analytics.access') },
+        {
+          label: "Portal",
+          icon: Building2,
+          children: [
+            { label: "Members", href: "/admin/portal/members" },
+            { label: "Orders", href: "/admin/portal/orders" },
+            { label: "Commissions", href: "/admin/portal/commissions" },
+            { label: "Payouts", href: "/admin/portal/payouts" },
+            { label: "Deposits", href: "/admin/portal/deposits" },
+            { label: "Referral Fraud", href: "/admin/portal/referrals/fraud" },
+          ],
+          permission: () => perm.can("admin_portal.access"),
+        },
       ],
     },
     {
-      label: 'Marketing',
-      items: [{ label: 'Tools', icon: Wrench, href: '/tools' }],
-    },
-    {
-      label: 'Admin',
+      label: "Settings",
       items: [
-        { label: 'Portal', icon: Building2, children: [
-          { label: 'Members', href: '/admin/portal/members' },
-          { label: 'Orders', href: '/admin/portal/orders' },
-          { label: 'Commissions', href: '/admin/portal/commissions' },
-          { label: 'Payouts', href: '/admin/portal/payouts' },
-          { label: 'Deposits', href: '/admin/portal/deposits' },
-          { label: 'Referral Fraud', href: '/admin/portal/referrals/fraud' },
-        ], permission: () => perm.can('admin_portal.access') },
-      ],
-    },
-    {
-      label: 'Settings',
-      items: [
-        { label: 'Settings', icon: Settings, children: [
-          { label: 'Profile', href: '/settings/profile' },
-          { label: 'Security', href: '/settings/security' },
-          { label: 'Preferences', href: '/settings/preferences' },
-          { label: 'Role Permissions', href: '/settings/role-permissions', permission: () => perm.can('settings.role_permissions') },
-          { label: 'API Keys', href: '/settings/api-keys', permission: () => perm.isCEO },
-        ]},
+        {
+          label: "Settings",
+          icon: Settings,
+          children: [
+            { label: "Profile", href: "/settings/profile" },
+            { label: "Security", href: "/settings/security" },
+            { label: "Preferences", href: "/settings/preferences" },
+            {
+              label: "Role Permissions",
+              href: "/settings/role-permissions",
+              permission: () => perm.can("settings.role_permissions"),
+            },
+            {
+              label: "System Config",
+              href: "/settings/system",
+              permission: () => perm.isCEO,
+            },
+            {
+              label: "API Keys",
+              href: "/settings/api-keys",
+              permission: () => perm.isCEO,
+            },
+          ],
+        },
       ],
     },
   ];
 
   const portalNav: NavGroup[] = [
     {
-      label: 'Main',
+      label: "Main",
       items: [
-        { label: 'Dashboard', icon: LayoutDashboard, href: '/portal' },
-        { label: 'Services', icon: ShoppingCart, href: '/portal/order' },
-        { label: 'My Orders', icon: Package, href: '/portal/orders' },
-        { label: 'Wallet', icon: Wallet, href: '/portal/wallet' },
-        { label: 'Referrals', icon: Users2, href: '/portal/referrals' },
-        { label: 'Commissions', icon: CreditCard, href: '/portal/commissions' },
-        { label: 'Support', icon: HeadphonesIcon, href: '/portal/support' },
+        { label: "Dashboard", icon: LayoutDashboard, href: "/portal" },
+        { label: "Services", icon: ShoppingCart, href: "/portal/order" },
+        { label: "My Orders", icon: Package, href: "/portal/orders" },
+        { label: "Wallet", icon: Wallet, href: "/portal/wallet" },
+        { label: "Referrals", icon: Users2, href: "/portal/referrals" },
+        { label: "Commissions", icon: CreditCard, href: "/portal/commissions" },
+        { label: "Support", icon: HeadphonesIcon, href: "/portal/support" },
       ],
     },
   ];
 
-  const navGroups = userType === 'portal' ? portalNav : staffNav;
+  const navGroups = userType === "portal" ? portalNav : staffNav;
 
   const sidebarContent = (
     <div className="flex h-full flex-col">
       {/* Logo */}
-      <div className="flex h-16 items-center gap-3 border-b border-gray-200/80 px-4 dark:border-gray-700/60">
+      <div className="flex h-14 items-center gap-3 border-b border-gray-200/80 px-4 lg:h-16 dark:border-gray-700/60">
         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-600 text-sm font-bold text-white">
           P
         </div>
         {!isCollapsed && (
-          <span className="text-sm font-bold text-gray-900 dark:text-gray-100">PouchCare OS</span>
+          <span className="text-sm font-bold text-gray-900 dark:text-gray-100">
+            PouchCare OS
+          </span>
         )}
         {isMobile && (
-          <button onClick={closeMobile} aria-label="Close menu" className="ml-auto rounded-lg p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+          <button
+            onClick={closeMobile}
+            aria-label="Close menu"
+            className="ml-auto rounded-lg p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+          >
             <X className="h-5 w-5" />
           </button>
         )}
@@ -196,7 +311,9 @@ function Sidebar() {
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-3 py-3 scrollbar-thin">
         {navGroups.map((group) => {
-          const visibleItems = group.items.filter((item) => !item.permission || item.permission());
+          const visibleItems = group.items.filter(
+            (item) => !item.permission || item.permission(),
+          );
           if (visibleItems.length === 0) return null;
 
           return (
@@ -225,13 +342,26 @@ function Sidebar() {
       {/* User profile + collapse toggle */}
       <div className="border-t border-gray-100 dark:border-gray-700/60">
         {user && (
-          <div className={cn('flex items-center gap-2.5 p-3', isCollapsed && 'justify-center')}>
-            <Avatar name={staffUser?.name || (user as { fullName?: string }).fullName || ''} size="sm" />
+          <div
+            className={cn(
+              "flex items-center gap-2.5 p-3",
+              isCollapsed && "justify-center",
+            )}
+          >
+            <Avatar
+              name={
+                staffUser?.name ||
+                (user as { fullName?: string }).fullName ||
+                ""
+              }
+              size="sm"
+            />
             {!isCollapsed && (
               <>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
-                    {staffUser?.name || (user as { fullName?: string }).fullName}
+                    {staffUser?.name ||
+                      (user as { fullName?: string }).fullName}
                   </p>
                   <p className="truncate text-xs text-gray-400">{user.email}</p>
                 </div>
@@ -250,11 +380,15 @@ function Sidebar() {
           <button
             onClick={toggle}
             className={cn(
-              'flex w-full items-center gap-2 border-t border-gray-100 px-4 py-2.5 text-xs text-gray-400 transition-colors hover:bg-gray-50 hover:text-gray-600 dark:border-gray-700/40 dark:hover:bg-gray-800/60 dark:hover:text-gray-300',
-              isCollapsed && 'justify-center px-0',
+              "flex w-full items-center gap-2 border-t border-gray-100 px-4 py-2.5 text-xs text-gray-400 transition-colors hover:bg-gray-50 hover:text-gray-600 dark:border-gray-700/40 dark:hover:bg-gray-800/60 dark:hover:text-gray-300",
+              isCollapsed && "justify-center px-0",
             )}
           >
-            {isCollapsed ? <ChevronsRight className="h-4 w-4" /> : <ChevronsLeft className="h-4 w-4" />}
+            {isCollapsed ? (
+              <ChevronsRight className="h-4 w-4" />
+            ) : (
+              <ChevronsLeft className="h-4 w-4" />
+            )}
             {!isCollapsed && <span>Collapse</span>}
           </button>
         )}
@@ -272,15 +406,15 @@ function Sidebar() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-[45] bg-black/30 backdrop-blur-[2px]"
+              className="no-print fixed inset-0 z-[45] bg-black/30 backdrop-blur-[2px]"
               onClick={closeMobile}
             />
             <motion.aside
-              initial={{ x: '-100%' }}
+              initial={{ x: "-100%" }}
               animate={{ x: 0 }}
-              exit={{ x: '-100%' }}
-              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              className="fixed inset-y-0 left-0 z-50 w-[260px] bg-white shadow-2xl dark:bg-gray-900"
+              exit={{ x: "-100%" }}
+              transition={{ type: "spring", damping: 30, stiffness: 300 }}
+              className="no-print fixed inset-y-0 left-0 z-50 w-[260px] bg-white shadow-2xl dark:bg-gray-900"
             >
               {sidebarContent}
             </motion.aside>
@@ -294,9 +428,9 @@ function Sidebar() {
   return (
     <aside
       className={cn(
-        'fixed inset-y-0 left-0 z-30 hidden border-r border-gray-200/80 bg-white transition-all duration-200 lg:block',
-        'dark:border-gray-700/60 dark:bg-gray-900',
-        isCollapsed ? 'w-[72px]' : 'w-[260px]',
+        "no-print fixed inset-y-0 left-0 z-30 hidden border-r border-gray-200/80 bg-white transition-all duration-200 lg:block",
+        "dark:border-gray-700/60 dark:bg-gray-900",
+        isCollapsed ? "w-[72px]" : "w-[260px]",
       )}
     >
       {sidebarContent}
@@ -315,17 +449,21 @@ function NavItemComponent({
   currentPath: string;
   onNavigate?: () => void;
 }) {
-  const visibleChildren = item.children?.filter((child) => !child.permission || child.permission()) ?? [];
+  const visibleChildren =
+    item.children?.filter((child) => !child.permission || child.permission()) ??
+    [];
   const [isExpanded, setIsExpanded] = useState(
     visibleChildren.some((c) => currentPath.startsWith(c.href)),
   );
 
   const isActive = item.href
-    ? item.href === '/' || item.href === '/portal'
+    ? item.href === "/" || item.href === "/portal"
       ? currentPath === item.href
-      : currentPath === item.href || currentPath.startsWith(item.href + '/')
+      : currentPath === item.href || currentPath.startsWith(item.href + "/")
     : false;
-  const isChildActive = visibleChildren.some((c) => currentPath.startsWith(c.href));
+  const isChildActive = visibleChildren.some((c) =>
+    currentPath.startsWith(c.href),
+  );
   const Icon = item.icon;
 
   if (visibleChildren.length > 0) {
@@ -335,10 +473,10 @@ function NavItemComponent({
         <div className="group relative">
           <button
             className={cn(
-              'flex w-full items-center justify-center rounded-lg px-2.5 py-2.5 text-sm transition-colors',
+              "flex w-full items-center justify-center rounded-lg px-2.5 py-2.5 text-sm transition-colors",
               isChildActive
-                ? 'bg-primary-50/80 text-primary-700 dark:bg-primary-900/20 dark:text-primary-300'
-                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800/60 dark:hover:text-gray-200',
+                ? "bg-primary-50/80 text-primary-700 dark:bg-primary-900/20 dark:text-primary-300"
+                : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800/60 dark:hover:text-gray-200",
             )}
           >
             <Icon className="h-4 w-4 shrink-0" />
@@ -353,10 +491,10 @@ function NavItemComponent({
                 to={child.href}
                 onClick={onNavigate}
                 className={cn(
-                  'block px-3 py-2 text-xs font-medium transition-colors',
+                  "block px-3 py-2 text-xs font-medium transition-colors",
                   currentPath.startsWith(child.href)
-                    ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/20 dark:text-primary-300'
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-700/40',
+                    ? "bg-primary-50 text-primary-700 dark:bg-primary-900/20 dark:text-primary-300"
+                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-700/40",
                 )}
               >
                 {child.label}
@@ -373,18 +511,18 @@ function NavItemComponent({
         <button
           onClick={() => setIsExpanded(!isExpanded)}
           className={cn(
-            'flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2.5 text-sm transition-colors',
+            "flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2.5 text-sm transition-colors",
             isChildActive
-              ? 'bg-primary-50/80 text-primary-700 dark:bg-primary-900/20 dark:text-primary-300'
-              : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800/60 dark:hover:text-gray-200',
+              ? "bg-primary-50/80 text-primary-700 dark:bg-primary-900/20 dark:text-primary-300"
+              : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800/60 dark:hover:text-gray-200",
           )}
         >
           <Icon className="h-4 w-4 shrink-0" />
           <span className="flex-1 text-left">{item.label}</span>
           <ChevronDown
             className={cn(
-              'h-3.5 w-3.5 transition-transform duration-200',
-              isExpanded && 'rotate-180',
+              "h-3.5 w-3.5 transition-transform duration-200",
+              isExpanded && "rotate-180",
             )}
           />
         </button>
@@ -396,10 +534,10 @@ function NavItemComponent({
                 to={child.href}
                 onClick={onNavigate}
                 className={cn(
-                  'block rounded-md px-2.5 py-2 text-xs font-medium transition-colors',
+                  "block rounded-md px-2.5 py-2 text-xs font-medium transition-colors",
                   currentPath.startsWith(child.href)
-                    ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/20 dark:text-primary-300'
-                    : 'text-gray-500 hover:bg-gray-50 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-800/40',
+                    ? "bg-primary-50 text-primary-700 dark:bg-primary-900/20 dark:text-primary-300"
+                    : "text-gray-500 hover:bg-gray-50 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-800/40",
                 )}
               >
                 {child.label}
@@ -417,10 +555,10 @@ function NavItemComponent({
       onClick={onNavigate}
       title={isCollapsed ? item.label : undefined}
       className={cn(
-        'group relative flex items-center gap-2.5 rounded-lg px-2.5 py-2.5 text-sm transition-colors',
+        "group relative flex items-center gap-2.5 rounded-lg px-2.5 py-2.5 text-sm transition-colors",
         isActive
-          ? 'bg-primary-50/80 font-medium text-primary-700 dark:bg-primary-900/20 dark:text-primary-300'
-          : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800/60 dark:hover:text-gray-200',
+          ? "bg-primary-50/80 font-medium text-primary-700 dark:bg-primary-900/20 dark:text-primary-300"
+          : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800/60 dark:hover:text-gray-200",
       )}
     >
       <Icon className="h-4 w-4 shrink-0" />

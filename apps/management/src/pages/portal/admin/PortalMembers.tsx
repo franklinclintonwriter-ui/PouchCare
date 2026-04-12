@@ -47,7 +47,7 @@ export default function PortalMembers() {
   const headerConfig = useMemo(() => ({
     title: 'Portal Members',
     breadcrumbs: [
-      { label: 'Admin', href: '/admin' },
+      { label: 'Admin', href: '/admin/portal' },
       { label: 'Portal', href: '/admin/portal' },
       { label: 'Members' },
     ],

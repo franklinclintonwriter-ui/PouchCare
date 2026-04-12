@@ -56,3 +56,8 @@ export function broadcast(payload: object, type?: 'staff' | 'portal') {
     }
   })
 }
+
+/** Notify all connected staff clients to refresh attendance-related UI. */
+export function broadcastAttendanceUpdate(extra?: Record<string, unknown>) {
+  broadcast({ type: 'attendance:update', ts: Date.now(), ...extra }, 'staff')
+}

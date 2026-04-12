@@ -352,6 +352,114 @@ async function seedStaff() {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
+async function seedManagedDevices(staffIds: Record<string, string>) {
+  const rows = [
+    {
+      email: "ops@pouchcare.com",
+      deviceName: "Ops-MacBook-Pro",
+      deviceType: "Laptop",
+      os: "macOS",
+      ipAddress: "10.10.0.15",
+      status: "Active",
+      systemRole: "OP_MANAGER",
+      branch: "Bangladesh HQ",
+    },
+    {
+      email: "staff1@pouchcare.com",
+      deviceName: "SEO-Desktop-01",
+      deviceType: "Desktop",
+      os: "Windows 11",
+      ipAddress: "10.10.1.21",
+      status: "Active",
+      systemRole: "STAFF",
+      branch: "Bangladesh HQ",
+    },
+    {
+      email: "staff2@pouchcare.com",
+      deviceName: "Content-Laptop-02",
+      deviceType: "Laptop",
+      os: "Windows 11",
+      ipAddress: "10.10.2.34",
+      status: "Active",
+      systemRole: "STAFF",
+      branch: "Dhaka",
+    },
+    {
+      email: "staff3@pouchcare.com",
+      deviceName: "TechSEO-Workstation-03",
+      deviceType: "Workstation",
+      os: "Ubuntu 22.04",
+      ipAddress: "10.10.1.47",
+      status: "Active",
+      systemRole: "STAFF",
+      branch: "Bangladesh HQ",
+    },
+    {
+      email: "staff4@pouchcare.com",
+      deviceName: "Design-iMac-04",
+      deviceType: "Desktop",
+      os: "macOS",
+      ipAddress: "10.10.2.58",
+      status: "Inactive",
+      systemRole: "STAFF",
+      branch: "Dhaka",
+    },
+    {
+      email: "staff5@pouchcare.com",
+      deviceName: "Dev-Laptop-05",
+      deviceType: "Laptop",
+      os: "Windows 11",
+      ipAddress: "10.10.1.63",
+      status: "Active",
+      systemRole: "STAFF",
+      branch: "Bangladesh HQ",
+    },
+    {
+      email: "hr@pouchcare.com",
+      deviceName: "HR-Lenovo-06",
+      deviceType: "Laptop",
+      os: "Windows 10",
+      ipAddress: "10.10.1.74",
+      status: "Active",
+      systemRole: "HR_MANAGER",
+      branch: "Bangladesh HQ",
+    },
+  ];
+
+  for (const r of rows) {
+    const staffMemberId = staffIds[r.email];
+    if (!staffMemberId) continue;
+
+    const exists = await prisma.device.findFirst({
+      where: { staffMemberId, deviceName: r.deviceName },
+      select: { id: true },
+    });
+
+    if (exists) continue;
+
+    await prisma.device.create({
+      data: {
+        staffMemberId,
+        deviceName: r.deviceName,
+        deviceType: r.deviceType,
+        os: r.os,
+        ipAddress: r.ipAddress,
+        status: r.status,
+        systemRole: r.systemRole,
+        branch: r.branch,
+        macAddress: `AA:BB:CC:${randint(10, 99)}:${randint(10, 99)}:${randint(10, 99)}`,
+        registeredDate: daysAgo(randint(30, 540)),
+        lastActive: daysAgo(randint(0, 3)),
+        notes: "Seeded managed device",
+      },
+    });
+  }
+
+  console.log("✅ Managed devices seeded");
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 async function seedServices() {
   const data = [
     {
@@ -2459,7 +2567,7 @@ async function seedNotifications(
             title: t.title,
             message: t.message,
             read: chance(0.55),
-            link: "/dashboard",
+            link: "/",
             metadata: JSON.stringify({ seeded: true }),
           },
         })
@@ -2886,6 +2994,7 @@ async function main() {
   await seedBranches();
   await seedCameras();
   const staffIds = await seedStaff();
+  await seedManagedDevices(staffIds);
   await seedServices();
   await seedBacklinkPackages();
   await seedProjects(staffIds);

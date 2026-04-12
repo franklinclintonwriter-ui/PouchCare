@@ -11,6 +11,7 @@ import { ProgressBar } from '@/components/ui/ProgressBar';
 import { StatsRow } from '@/components/shared/StatsRow';
 import { Modal } from '@/components/ui/Modal';
 import { Input } from '@/components/ui/Input';
+import { Textarea } from '@/components/ui/Textarea';
 import { Button } from '@/components/ui/Button';
 import type { Project } from '@/types/models';
 import { toast } from 'sonner';
@@ -25,6 +26,9 @@ export default function ProjectList() {
   const [openCreate, setOpenCreate] = useState(false);
   const [name, setName] = useState('');
   const [clientName, setClientName] = useState('');
+  const [budget, setBudget] = useState('');
+  const [dueDate, setDueDate] = useState('');
+  const [projectDescription, setProjectDescription] = useState('');
   const createProject = useCreateProject();
 
   const { data, isLoading } = useProjects({
@@ -32,23 +36,29 @@ export default function ProjectList() {
     status: status || undefined,
     page,
     limit: 20,
+    sortBy: sortField || undefined,
+    sortDir: sortField ? sortDir : undefined,
   });
 
   const projects = data?.data ?? [];
   const meta = data?.meta;
 
+  // Fetch all projects for accurate stats (not just paginated page)
+  const { data: allData } = useProjects({});
+  const allProjects = allData?.data ?? [];
+
   const stats = useMemo(() => {
     const total = meta?.total ?? 0;
-    const active = projects.filter(p => p.status === 'IN_PROGRESS').length;
-    const onHold = projects.filter(p => p.status === 'ON_HOLD').length;
-    const delivered = projects.filter(p => p.status === 'DELIVERED').length;
+    const active = allProjects.filter(p => p.status === 'IN_PROGRESS').length;
+    const onHold = allProjects.filter(p => p.status === 'ON_HOLD').length;
+    const delivered = allProjects.filter(p => p.status === 'DELIVERED').length;
     return [
       { title: 'Total Projects', value: total, icon: <FolderKanban />, iconBg: 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' },
       { title: 'Active', value: active, icon: <Loader2 />, iconBg: 'bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400' },
       { title: 'On Hold', value: onHold, icon: <Pause />, iconBg: 'bg-orange-50 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400' },
       { title: 'Delivered', value: delivered, icon: <CheckCircle2 />, iconBg: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400' },
     ];
-  }, [projects, meta]);
+  }, [allProjects, meta]);
 
   const headerConfig = useMemo(() => ({
     title: 'Projects',
@@ -187,11 +197,20 @@ export default function ProjectList() {
                 onClick={async () => {
                   if (!name.trim()) return toast.error('Project name is required');
                   try {
-                    await createProject.mutateAsync({ name: name.trim(), clientName: clientName || undefined });
+                    await createProject.mutateAsync({
+                      name: name.trim(),
+                      clientName: clientName || undefined,
+                      price: budget ? Number(budget) : undefined,
+                      deadline: dueDate || undefined,
+                      notes: projectDescription.trim() || undefined,
+                    });
                     toast.success('Project created');
                     setOpenCreate(false);
                     setName('');
                     setClientName('');
+                    setBudget('');
+                    setDueDate('');
+                    setProjectDescription('');
                   } catch (err) {
                     toast.error(err instanceof Error ? err.message : 'Failed to create project');
                   }
@@ -203,8 +222,13 @@ export default function ProjectList() {
           )}
         >
           <div className="space-y-3">
-            <Input label="Project Name" value={name} onChange={(e) => setName(e.target.value)} />
+            <Input label="Project Name" value={name} onChange={(e) => setName(e.target.value)} required />
             <Input label="Client Name" value={clientName} onChange={(e) => setClientName(e.target.value)} />
+            <Textarea label="Description" value={projectDescription} onChange={(e) => setProjectDescription(e.target.value)} rows={3} placeholder="Project description..." />
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Input type="number" min="0" step="0.01" label="Budget (USD)" value={budget} onChange={(e) => setBudget(e.target.value)} />
+              <Input type="date" label="Due Date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+            </div>
           </div>
         </Modal>
       </div>

@@ -22,7 +22,7 @@ export default function PortalMemberDetail() {
   const headerConfig = useMemo(() => ({
     title: member?.fullName ?? 'Member',
     breadcrumbs: [
-      { label: 'Admin', href: '/admin' },
+      { label: 'Admin', href: '/admin/portal' },
       { label: 'Portal', href: '/admin/portal' },
       { label: 'Members', href: '/admin/portal/members' },
       { label: member?.fullName ?? '...' },
@@ -63,11 +63,14 @@ export default function PortalMemberDetail() {
   const overviewStats = [
     { title: 'Total Orders', value: member.totalOrders, icon: <ShoppingBag />, iconBg: 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' },
     { title: 'Total Spent', value: formatCurrency(member.totalSpent), icon: <DollarSign />, iconBg: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400' },
-    { title: 'Referrals', value: (member as any).referralsCount ?? (member as any).totalReferrals ?? 0, icon: <UsersRound />, iconBg: 'bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400' },
+    { title: 'Referrals', value: member.referralsCount ?? 0, icon: <UsersRound />, iconBg: 'bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400' },
     { title: 'Balance', value: formatCurrency(member.walletBalance), icon: <Wallet />, iconBg: 'bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400' },
   ];
 
-  const orderColumns: Column<any>[] = [
+  type MemberOrder = { orderId: string; service: string; amountUsd: number; status: string; orderDate: string };
+  type MemberWalletTx = { transactionDate: string; type: string; amountUsd: number; status: string };
+
+  const orderColumns: Column<MemberOrder>[] = [
     { key: 'orderId', label: 'Order #', render: (r) => <span className="font-mono text-xs">#{r.orderId}</span> },
     { key: 'service', label: 'Service' },
     { key: 'amountUsd', label: 'Amount', align: 'right', render: (r) => formatCurrency(r.amountUsd || 0) },
@@ -75,7 +78,7 @@ export default function PortalMemberDetail() {
     { key: 'orderDate', label: 'Date', render: (r) => <span className="text-xs text-gray-500">{new Date(r.orderDate).toLocaleDateString()}</span> },
   ];
 
-  const walletColumns: Column<any>[] = [
+  const walletColumns: Column<MemberWalletTx>[] = [
     { key: 'transactionDate', label: 'Date', render: (r) => <span className="text-xs text-gray-500">{new Date(r.transactionDate).toLocaleDateString()}</span> },
     { key: 'type', label: 'Type' },
     {
@@ -147,7 +150,7 @@ export default function PortalMemberDetail() {
             <CardContent className="mt-0">
               <DataTable
                 columns={orderColumns}
-                data={(member as any).orders ?? []}
+                data={(member.orders ?? []) as MemberOrder[]}
                 emptyTitle="No orders"
                 emptyDescription="This member has no portal orders yet."
                 compact
@@ -161,7 +164,7 @@ export default function PortalMemberDetail() {
             <CardContent className="mt-0">
               <DataTable
                 columns={walletColumns}
-                data={(member as any).walletTx ?? []}
+                data={(member.walletTx ?? []) as MemberWalletTx[]}
                 emptyTitle="No wallet transactions"
                 emptyDescription="No wallet activity found for this member."
                 compact

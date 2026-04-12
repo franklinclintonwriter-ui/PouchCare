@@ -17,6 +17,8 @@ type RawPayrollEntry = {
   deductions?: number | null;
   netSalary: number;
   paymentStatus?: string | null;
+  paymentMethod?: string | null;
+  notes?: string | null;
 };
 
 const MONTH_NAME_TO_NUM: Record<string, number> = {
@@ -78,6 +80,8 @@ function mapPayrollEntry(raw: RawPayrollEntry): PayrollEntry {
     deductions: raw.deductions ?? 0,
     netPay: raw.netSalary,
     status: normalizePaymentStatus(raw.paymentStatus),
+    paymentMethod: raw.paymentMethod ?? undefined,
+    notes: raw.notes ?? undefined,
   };
 }
 

@@ -20,12 +20,9 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useCurrency } from '@/hooks/useCurrency';
-import { useAuthStore } from '@/store/authStore';
-import type { StaffUser } from '@/types/auth';
+import { usePermission } from '@/hooks/usePermission';
 import type { Service } from '@/types/models';
 import { toast } from 'sonner';
-
-const SENIOR_ROLES = ['CEO', 'CO_MD', 'OP_MANAGER'];
 
 const CATEGORY_OPTIONS = ['SEO', 'Development', 'Content', 'Marketing', 'Design', 'Backlinks', 'General'];
 const CATEGORY_COLORS: Record<string, 'success' | 'primary' | 'info' | 'warning' | 'danger' | 'default'> = {
@@ -424,8 +421,8 @@ function BacklinkPackagesTab({ canManage, triggerAdd, onAddTriggered }: { canMan
 
 // ─── Page ─────────────────────────────────────────────────────────────────
 export default function ServiceList() {
-  const user = useAuthStore((s) => s.user) as StaffUser | null;
-  const canManage = SENIOR_ROLES.includes(user?.systemRole ?? '');
+  const perm = usePermission();
+  const canManage = perm.isCEO || perm.isOps;
   const [tab, setTab] = useState('catalog');
   const [catalogOpen, setCatalogOpen] = useState(false);
   const [backlinkOpen, setBacklinkOpen] = useState(false);

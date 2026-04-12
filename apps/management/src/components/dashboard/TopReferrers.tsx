@@ -16,14 +16,14 @@ export function TopReferrers({ leaderboard, loading = false }: TopReferrersProps
   const referrers = leaderboard?.referrers ?? [];
 
   return (
-    <Card className="h-full">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base font-semibold flex items-center gap-2">
-          <Share2 className="h-4 w-4 text-indigo-500" />
-          Top Referrers
+    <Card padding="none">
+      <CardHeader className="border-b border-gray-100 px-4 pb-3 pt-4 dark:border-gray-800 sm:px-5 sm:pt-5">
+        <CardTitle className="flex min-w-0 items-center gap-2 text-base font-semibold leading-snug sm:text-[17px]">
+          <Share2 className="h-[18px] w-[18px] shrink-0 text-indigo-500 sm:h-5 sm:w-5" aria-hidden />
+          <span className="truncate">Top Referrers</span>
         </CardTitle>
       </CardHeader>
-      <CardContent className="pt-0">
+      <CardContent className="!mt-0 px-4 pb-4 pt-2 sm:px-5 sm:pb-5">
         {loading ? (
           <div className="space-y-3">
             {Array.from({ length: 5 }).map((_, i) => (
@@ -48,12 +48,12 @@ export function TopReferrers({ leaderboard, loading = false }: TopReferrersProps
             </p>
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-1.5 sm:space-y-2">
             {referrers.slice(0, 5).map((ref, index) => (
               <div 
                 key={ref.id} 
                 className={cn(
-                  'flex items-center gap-3 p-2.5 rounded-xl transition-colors',
+                  'flex min-w-0 items-center gap-2 rounded-xl p-2 transition-colors sm:gap-3 sm:p-2.5',
                   index === 0 ? 'bg-indigo-50 dark:bg-indigo-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-800/30'
                 )}
               >
@@ -62,17 +62,17 @@ export function TopReferrers({ leaderboard, loading = false }: TopReferrersProps
                   <p className="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
                     {ref.fullName}
                   </p>
-                  <p className="truncate text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                    <span>{ref.country ?? 'Unknown'}</span>
-                    <span>·</span>
-                    <Users className="h-3 w-3" />
-                    <span>{ref.totalReferrals} referrals</span>
+                  <p className="flex min-w-0 items-center gap-1 truncate text-[11px] text-gray-500 dark:text-gray-400 sm:text-xs">
+                    <span className="shrink-0">{ref.country ?? 'Unknown'}</span>
+                    <span className="shrink-0">·</span>
+                    <Users className="h-3 w-3 shrink-0 opacity-70" aria-hidden />
+                    <span className="min-w-0 truncate">{ref.totalReferrals} referrals</span>
                   </p>
                 </div>
                 <span className={cn(
-                  'shrink-0 text-sm font-bold px-2 py-1 rounded-lg',
+                  'shrink-0 rounded-lg px-2 py-1 text-xs font-bold tabular-nums sm:text-sm',
                   index === 0 
-                    ? 'text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/30' 
+                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' 
                     : 'text-emerald-600 dark:text-emerald-400'
                 )}>
                   {formatCurrency(ref.totalCommissionEarned)}

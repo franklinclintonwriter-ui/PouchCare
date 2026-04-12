@@ -9,6 +9,7 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Avatar } from '@/components/ui/Avatar';
 import { Modal } from '@/components/ui/Modal';
 import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
 import { useCurrency } from '@/hooks/useCurrency';
 import { Users, Target, DollarSign, GitBranch, Plus } from 'lucide-react';
@@ -25,6 +26,9 @@ export default function LeadList() {
   const [company, setCompany] = useState('');
   const [contactName, setContactName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [source, setSource] = useState('');
+  const [estimatedValue, setEstimatedValue] = useState('');
   const createLead = useCreateLead();
 
   const { data, isLoading } = useLeads({ q: search, status, page, limit: 20 });
@@ -101,6 +105,8 @@ export default function LeadList() {
         onPageChange={setPage}
         onRowClick={(row) => navigate(`/crm/leads/${row.id}`)}
         getRowId={(row) => row.id}
+        emptyTitle="No leads found"
+        emptyDescription="Create your first lead to start tracking prospects."
       />
 
       <Modal
@@ -120,6 +126,9 @@ export default function LeadList() {
                     company: company.trim(),
                     contactName: contactName || undefined,
                     email: email || undefined,
+                    phone: phone || undefined,
+                    source: source || undefined,
+                    estimatedValue: estimatedValue ? Number(estimatedValue) : undefined,
                     stage: 'NEW',
                   });
                   toast.success('Lead created');
@@ -127,6 +136,9 @@ export default function LeadList() {
                   setCompany('');
                   setContactName('');
                   setEmail('');
+                  setPhone('');
+                  setSource('');
+                  setEstimatedValue('');
                 } catch (err) {
                   toast.error(err instanceof Error ? err.message : 'Create failed');
                 }
@@ -138,9 +150,29 @@ export default function LeadList() {
         )}
       >
         <div className="space-y-3">
-          <Input label="Company" value={company} onChange={(e) => setCompany(e.target.value)} />
-          <Input label="Contact Name" value={contactName} onChange={(e) => setContactName(e.target.value)} />
-          <Input label="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
+          <Input label="Company" value={company} onChange={(e) => setCompany(e.target.value)} required />
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Input label="Contact Name" value={contactName} onChange={(e) => setContactName(e.target.value)} />
+            <Input label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Input label="Phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
+            <Select
+              label="Source"
+              value={source}
+              onChange={(e) => setSource(e.target.value)}
+              options={[
+                { label: '— Select —', value: '' },
+                { label: 'Website', value: 'Website' },
+                { label: 'Referral', value: 'Referral' },
+                { label: 'Social Media', value: 'Social Media' },
+                { label: 'Cold Call', value: 'Cold Call' },
+                { label: 'Email Campaign', value: 'Email Campaign' },
+                { label: 'Other', value: 'Other' },
+              ]}
+            />
+          </div>
+          <Input type="number" min="0" step="0.01" label="Estimated Value (USD)" value={estimatedValue} onChange={(e) => setEstimatedValue(e.target.value)} />
         </div>
       </Modal>
     </PageTransition>

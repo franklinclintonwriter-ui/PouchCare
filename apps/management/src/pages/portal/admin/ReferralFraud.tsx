@@ -13,7 +13,7 @@ export default function ReferralFraud() {
   const headerConfig = useMemo(() => ({
     title: 'Referral Fraud',
     breadcrumbs: [
-      { label: 'Admin', href: '/admin' },
+      { label: 'Admin', href: '/admin/portal' },
       { label: 'Portal', href: '/admin/portal' },
       { label: 'Referral Fraud' },
     ],
@@ -52,6 +52,7 @@ export default function ReferralFraud() {
         isLoading={isLoading}
         getRowId={(r) => r.id}
         emptyTitle="No flagged commissions found"
+        emptyDescription="No suspicious referral activity detected."
       />
     </PageTransition>
   );

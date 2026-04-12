@@ -10,12 +10,9 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useCurrency } from '@/hooks/useCurrency';
+import { usePermission } from '@/hooks/usePermission';
 import { toast } from 'sonner';
 import type { ClientAccount } from '@/api/admin-resources';
-import { useAuthStore } from '@/store/authStore';
-import type { StaffUser } from '@/types/auth';
-
-const SENIOR_ROLES = ['CEO', 'CO_MD', 'OP_MANAGER'];
 const emptyForm = { clientName: '', email: '', country: '' };
 
 export default function ClientAccounts() {
@@ -26,8 +23,8 @@ export default function ClientAccounts() {
   const [editTarget, setEditTarget] = useState<ClientAccount | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ClientAccount | null>(null);
 
-  const user = useAuthStore((s) => s.user) as StaffUser | null;
-  const canManage = SENIOR_ROLES.includes(user?.systemRole ?? '');
+  const perm = usePermission();
+  const canManage = perm.isCEO || perm.isOps || perm.isManager;
 
   const { data, isLoading } = useClientAccounts({ page, limit: 20 });
   const createClient = useCreateClientAccount();

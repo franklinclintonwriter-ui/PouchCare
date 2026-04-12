@@ -66,7 +66,7 @@ router.post("/login", validate(loginSchema), async (req, res) => {
       role: staff.systemRole,
       type: "staff" as const,
     };
-    const access_token = signAccess(payload);
+    const access_token = await signAccess(payload);
     const refresh_token = signRefresh(payload);
 
     const loginIp = typeof req.ip === "string" ? req.ip : undefined
@@ -103,7 +103,7 @@ router.post("/refresh", validate(refreshSchema), async (req, res) => {
     const payload = verifyRefresh(req.body.refresh_token)
     const staff = await prisma.staffMember.findUnique({ where: { id: payload.sub } })
     if (!staff) return unauthorized(res, 'Invalid token')
-    const access_token = signAccess({ sub: staff.id, role: staff.systemRole, type: 'staff' })
+    const access_token = await signAccess({ sub: staff.id, role: staff.systemRole, type: 'staff' })
     return ok(res, { access_token })
   } catch (e) {
     if (isDbConnectionError(e)) {

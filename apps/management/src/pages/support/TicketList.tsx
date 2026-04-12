@@ -105,6 +105,7 @@ export default function TicketList() {
         pagination={data?.meta}
         onPageChange={setPage}
         emptyTitle="No tickets found"
+        emptyDescription="Create a ticket to get support."
       />
 
       <Modal

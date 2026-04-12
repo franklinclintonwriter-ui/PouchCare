@@ -82,6 +82,7 @@ export default function StaffLeaderboard() {
         isLoading={isLoading}
         getRowId={(row) => row.id}
         emptyTitle="No leaderboard data"
+        emptyDescription="Leaderboard data will populate as staff submit reports."
       />
     </PageTransition>
   );

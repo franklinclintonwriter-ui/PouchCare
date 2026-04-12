@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Calendar, Clock, CheckCircle2, XCircle } from "lucide-react";
+import { Calendar, Clock, CheckCircle2, XCircle, Plus, UserPlus } from "lucide-react";
 import { useHeaderConfig } from "@/hooks/useHeaderConfig";
 import {
   useLeaveRequests,
@@ -138,6 +138,7 @@ export default function LeaveList() {
         {
           type: "button" as const,
           label: "Request Leave",
+          icon: Plus,
           onClick: () => navigate("/leave/request"),
         },
         ...(perm.isManager
@@ -145,6 +146,7 @@ export default function LeaveList() {
               {
                 type: "button" as const,
                 label: "Add For Staff",
+                icon: UserPlus,
                 onClick: () => setCreateOpen(true),
               },
             ]

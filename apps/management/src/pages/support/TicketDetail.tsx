@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
-import { useLocation, useParams } from "react-router-dom";
-import { LifeBuoy } from "lucide-react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { LifeBuoy, Trash2 } from "lucide-react";
 import { useHeaderConfig } from "@/hooks/useHeaderConfig";
-import { useReplyToTicket, useTicket, useUpdateTicket } from "@/api/support";
+import { useReplyToTicket, useTicket, useUpdateTicket, useDeleteTicket } from "@/api/support";
+import { useStaffForManager } from "@/api/admin-resources";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { StatusBadge } from "@/components/ui/StatusBadge";
 import { Badge } from "@/components/ui/Badge";
@@ -11,7 +12,8 @@ import { PageTransition } from "@/components/ui/PageTransition";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { Textarea } from "@/components/ui/Textarea";
 import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { usePermission } from "@/hooks/usePermission";
 import { toast } from "sonner";
 
@@ -19,11 +21,15 @@ export default function TicketDetail() {
   const { id } = useParams<{ id: string }>();
   const location = useLocation();
   const { data: ticket, isLoading } = useTicket(id ?? "");
+  const navigate = useNavigate();
   const replyMutation = useReplyToTicket();
   const updateTicket = useUpdateTicket();
+  const deleteTicket = useDeleteTicket();
   const perm = usePermission();
+  const { data: staffCandidates } = useStaffForManager();
   const [reply, setReply] = useState("");
   const [assignee, setAssignee] = useState("");
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const isPortalPath = location.pathname.startsWith("/portal/");
   const canManageStatus = !isPortalPath && perm.isManager;
 
@@ -40,7 +46,9 @@ export default function TicketDetail() {
             { label: "Support", href: "/support" },
             { label: ticket?.number ?? "...", icon: LifeBuoy },
           ],
-      actions: [],
+      actions: canManageStatus ? [
+        { type: 'button' as const, label: 'Delete', icon: Trash2, variant: 'danger' as const, onClick: () => setDeleteOpen(true) },
+      ] : [],
     }),
     [ticket, isPortalPath],
   );
@@ -92,11 +100,17 @@ export default function TicketDetail() {
           </div>
           {canManageStatus && (
             <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end">
-              <Input
+              <Select
                 label="Assign To"
-                placeholder="Staff ID / email"
                 value={assignee || ticket.assigneeName || ""}
                 onChange={(e) => setAssignee(e.target.value)}
+                options={[
+                  { label: '— Unassigned —', value: '' },
+                  ...(staffCandidates ?? []).map(s => ({
+                    label: `${s.name}${s.branch ? ` (${s.branch})` : ''}`,
+                    value: s.name,
+                  })),
+                ]}
               />
               <Button
                 size="sm"
@@ -255,6 +269,26 @@ export default function TicketDetail() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Delete confirm */}
+      <ConfirmDialog
+        isOpen={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        title="Delete Ticket"
+        message={`Delete ticket "${ticket.number}"? This cannot be undone.`}
+        confirmLabel="Delete"
+        variant="danger"
+        isLoading={deleteTicket.isPending}
+        onConfirm={async () => {
+          try {
+            await deleteTicket.mutateAsync(ticket.id);
+            toast.success("Ticket deleted");
+            navigate(isPortalPath ? "/portal/support" : "/support");
+          } catch {
+            toast.error("Failed to delete ticket");
+          }
+        }}
+      />
     </PageTransition>
   );
 }

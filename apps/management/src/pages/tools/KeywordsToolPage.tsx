@@ -7,6 +7,7 @@ import { DataTable, type Column } from '@/components/ui/DataTable';
 import { StatsRow } from '@/components/shared/StatsRow';
 import { Badge } from '@/components/ui/Badge';
 import { ToolDisclaimer } from '@/features/tools/components/ToolDisclaimer';
+import { ToolPageIntro } from '@/features/tools/components/ToolPageIntro';
 import { ToolRunPanel } from '@/features/tools/components/ToolRunPanel';
 import { downloadCsv } from '@/features/tools/csv';
 import type { KeywordMetric } from '@/features/tools/types';
@@ -138,6 +139,17 @@ export default function KeywordsToolPage() {
       <div className="mx-auto max-w-6xl space-y-6 px-4 pb-10 pt-2 sm:px-6 lg:px-8">
         <ToolDisclaimer status={status} highlight="dfs" />
 
+        <ToolPageIntro
+          eyebrow="SEO"
+          title="Keyword research & expansion"
+          description="Start from a seed phrase to retrieve related keywords with search volume, difficulty (KD), CPC estimates, intent, and trend — sourced via DataForSEO (Google Ads–style data)."
+          bullets={[
+            'Try specific seeds (e.g. “enterprise SEO Dubai”) for tighter clusters.',
+            'Balance KD vs. volume before prioritizing content or paid campaigns.',
+            'Export CSV to share with content or PPC teams.',
+          ]}
+        />
+
         <ToolRunPanel
           onRun={run}
           onClear={() => {
@@ -166,7 +178,10 @@ export default function KeywordsToolPage() {
         {rows.length > 0 && (
           <>
             <StatsRow items={stats} />
-            <DataTable columns={columns} data={rows} compact />
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              KD = keyword difficulty (relative). CPC is an indicative Google Ads cost-per-click; intent labels are heuristic.
+            </p>
+            <DataTable columns={columns} data={rows} compact emptyTitle="No keywords found" emptyDescription="Enter a seed keyword to discover related terms." />
           </>
         )}
       </div>

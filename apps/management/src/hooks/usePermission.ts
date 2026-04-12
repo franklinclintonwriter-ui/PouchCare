@@ -3,7 +3,7 @@ import { useAuthStore } from '@/store/authStore';
 import type { SystemRole } from '@/types/enums';
 import type { StaffUser } from '@/types/auth';
 import type { PermissionKey } from '@/constants/permissionKeys';
-import { isCEO, isOps, isManager, isHR, normalizeRole } from '@/utils/permissions';
+import { isCEO, isOps, isManager, isHR, isBranchManager, normalizeRole } from '@/utils/permissions';
 
 export function usePermission() {
   const user = useAuthStore((s) => s.user);
@@ -17,6 +17,7 @@ export function usePermission() {
         isOps: false,
         isManager: false,
         isHR: false,
+        isBranchManager: false,
         isStaff: false,
         isPortal: userType === 'portal',
         hasRole: (_roles: SystemRole[]) => false,
@@ -39,6 +40,7 @@ export function usePermission() {
       isOps: isOps(role),
       isManager: isManager(role),
       isHR: isHR(role),
+      isBranchManager: isBranchManager(role),
       isStaff: true,
       isPortal: false,
       hasRole: (roles: SystemRole[]) => !!role && roles.includes(role),

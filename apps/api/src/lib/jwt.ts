@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken'
 import { env } from '@/config/env'
 import { SystemRole } from '@prisma/client'
+import { getSystemSetting } from './systemConfig'
 
 export interface TokenPayload {
   sub:  string
@@ -10,8 +11,9 @@ export interface TokenPayload {
   exp?: number
 }
 
-export function signAccess(payload: Omit<TokenPayload, 'iat' | 'exp'>): string {
-  return jwt.sign(payload, env.JWT_SECRET, { expiresIn: env.JWT_EXPIRES_IN } as any)
+export async function signAccess(payload: Omit<TokenPayload, 'iat' | 'exp'>): Promise<string> {
+  const sessionTimeout = await getSystemSetting('session_timeout', 120);
+  return jwt.sign(payload, env.JWT_SECRET, { expiresIn: `${sessionTimeout}m` } as any)
 }
 // Aliases
 export const signAccessToken  = signAccess

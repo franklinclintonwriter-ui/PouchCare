@@ -55,24 +55,41 @@ function MobileNav() {
   }
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 lg:hidden">
-      <div className="border-t border-gray-200/60 bg-white/90 backdrop-blur-xl dark:border-gray-800 dark:bg-gray-950/90">
-        <div className="mx-auto flex max-w-lg items-stretch justify-around px-2 pb-[env(safe-area-inset-bottom)]">
+    <nav
+      className="fixed inset-x-0 bottom-0 z-40 lg:hidden"
+      aria-label="Primary"
+    >
+      <div className="border-t border-gray-200/70 bg-white/95 shadow-[0_-8px_32px_-12px_rgba(15,23,42,0.12)] backdrop-blur-xl dark:border-gray-800 dark:bg-gray-950/95 dark:shadow-[0_-8px_32px_-12px_rgba(0,0,0,0.45)]">
+        {/* Equal columns — avoids uneven gaps from justify-around with 5 items */}
+        <div
+          className={cn(
+            'mx-auto grid w-full max-w-lg touch-manipulation',
+            'grid-cols-5',
+            'px-1 pt-1.5',
+            'pb-[max(0.5rem,env(safe-area-inset-bottom))]',
+          )}
+        >
           {items.map((item) => {
-            const active = isActive(item.href);
+            const active = item.href ? isActive(item.href) : false;
             const Icon = item.icon;
+
+            const itemClass = cn(
+              'group relative flex min-h-[52px] flex-col items-center justify-center gap-0.5 rounded-xl py-1.5 transition-colors',
+              'outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-950',
+            );
 
             if (item.action) {
               return (
                 <button
                   key={item.label}
+                  type="button"
                   onClick={item.action}
-                  className="group relative flex flex-1 flex-col items-center justify-center gap-0.5 py-2"
+                  className={itemClass}
                 >
-                  <div className="flex h-8 w-10 items-center justify-center rounded-2xl text-gray-400 transition-colors group-active:scale-90 dark:text-gray-500">
-                    <Icon className="h-[22px] w-[22px]" strokeWidth={1.8} />
+                  <div className="relative flex h-9 w-full max-w-[2.75rem] items-center justify-center rounded-xl text-gray-500 transition-transform active:scale-95 dark:text-gray-400">
+                    <Icon className="h-5 w-5" strokeWidth={1.75} aria-hidden />
                   </div>
-                  <span className="text-[10px] font-medium text-gray-400 dark:text-gray-500">
+                  <span className="max-w-full truncate px-0.5 text-center text-[10px] font-medium leading-tight text-gray-500 dark:text-gray-400">
                     {item.label}
                   </span>
                 </button>
@@ -83,28 +100,30 @@ function MobileNav() {
               <Link
                 key={item.label}
                 to={item.href!}
-                className="group relative flex flex-1 flex-col items-center justify-center gap-0.5 py-2"
+                className={itemClass}
+                aria-current={active ? 'page' : undefined}
               >
-                <div className="relative flex h-8 w-10 items-center justify-center rounded-2xl transition-all duration-200 group-active:scale-90">
+                <div className="relative flex h-9 w-full max-w-[2.75rem] items-center justify-center rounded-xl transition-all duration-200 active:scale-95">
                   {active && (
                     <motion.div
                       layoutId="mobile-nav-pill"
-                      className="absolute inset-0 rounded-2xl bg-primary-50 dark:bg-primary-900/30"
-                      transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                      className="absolute inset-0 rounded-xl bg-primary-100/90 dark:bg-primary-900/35"
+                      transition={{ type: 'spring', stiffness: 420, damping: 32 }}
                     />
                   )}
                   <Icon
                     className={cn(
-                      'relative z-10 h-[22px] w-[22px] transition-colors duration-200',
+                      'relative z-10 h-5 w-5 transition-colors duration-200',
                       active
                         ? 'text-primary-600 dark:text-primary-400'
-                        : 'text-gray-400 dark:text-gray-500',
+                        : 'text-gray-500 dark:text-gray-400',
                     )}
-                    strokeWidth={active ? 2.2 : 1.8}
+                    strokeWidth={active ? 2.25 : 1.75}
+                    aria-hidden
                   />
 
                   {item.badge != null && item.badge > 0 && (
-                    <span className="absolute -right-0.5 -top-0.5 z-20 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold leading-none text-white shadow-sm shadow-red-500/30">
+                    <span className="absolute -right-0.5 -top-0.5 z-20 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold leading-none text-white shadow-sm ring-2 ring-white dark:ring-gray-950">
                       {item.badge > 99 ? '99+' : item.badge}
                     </span>
                   )}
@@ -112,10 +131,10 @@ function MobileNav() {
 
                 <span
                   className={cn(
-                    'text-[10px] font-semibold transition-colors duration-200',
+                    'max-w-full truncate px-0.5 text-center text-[10px] font-semibold leading-tight transition-colors duration-200',
                     active
-                      ? 'text-primary-600 dark:text-primary-400'
-                      : 'text-gray-400 dark:text-gray-500',
+                      ? 'text-primary-700 dark:text-primary-300'
+                      : 'text-gray-500 dark:text-gray-400',
                   )}
                 >
                   {item.label}

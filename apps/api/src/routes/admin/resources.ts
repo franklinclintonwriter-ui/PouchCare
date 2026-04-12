@@ -4,12 +4,11 @@ import prisma from '@/lib/prisma'
 import {
   propagateBranchNameChange,
   countReferencesToBranchName,
-  formatBranchDeleteConflictMessage,
 } from '@/lib/branchRename'
 import { authenticate } from '@/middleware/auth'
 import { requirePermission } from '@/middleware/rbac'
 import { validate } from '@/middleware/validate'
-import { ok, created, notFound, serverError, conflict } from '@/lib/response'
+import { ok, created, notFound, serverError } from '@/lib/response'
 import { getPaginationParams, buildMeta } from '@/lib/pagination'
 import { branchCreateSchema, branchUpdateSchema } from '@/routes/admin/branchSchemas'
 
@@ -194,20 +193,6 @@ router.put('/branches/:id', requirePermission('staff.branches'), validate(branch
 
     const item = await prisma.branch.findUnique({ where: { id } })
     return ok(res, item)
-  } catch (err) { return serverError(res, err) }
-})
-
-router.delete('/branches/:id', requirePermission('staff.branches'), async (req, res) => {
-  try {
-    const { id } = req.params
-    const existing = await prisma.branch.findUnique({ where: { id } })
-    if (!existing) return notFound(res, 'Branch')
-    const refs = await countReferencesToBranchName(prisma, existing.name)
-    if (refs.total > 0) {
-      return conflict(res, formatBranchDeleteConflictMessage(existing.name, refs))
-    }
-    await prisma.branch.delete({ where: { id } })
-    return ok(res, { message: 'Branch deleted' })
   } catch (err) { return serverError(res, err) }
 })
 

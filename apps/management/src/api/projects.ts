@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from './client';
 import type { QueryParams, PaginatedResponse } from '@/types/api';
 import type { Project } from '@/types/models';
+import { projectKeys } from '@/constants/queryKeys';
 
 type RawProject = {
   id: string;
@@ -19,8 +20,8 @@ type RawProject = {
 };
 
 function mapProject(raw: RawProject): Project {
-  const assignee = raw.assignedTo?.trim();
-  const teamMembers = assignee ? [{ id: `assigned:${raw.id}`, name: assignee }] : [];
+  // Using assignedTo to simulate a team for now, but gracefully handling the type
+  const teamMembers = raw.assignedTo ? [{ id: raw.assignedTo, name: raw.assignedTo, avatarUrl: '' }] : [];
   return {
     id: raw.id,
     name: raw.name,
@@ -32,18 +33,18 @@ function mapProject(raw: RawProject): Project {
     spent: raw.paidAmount ?? 0,
     teamIds: teamMembers.map((m) => m.id),
     teamMembers,
-    startDate: raw.startDate ?? raw.createdAt ?? new Date().toISOString(),
-    dueDate: raw.deadline ?? raw.createdAt ?? new Date().toISOString(),
+    startDate: raw.startDate ?? raw.createdAt ?? '',
+    dueDate: raw.deadline ?? raw.createdAt ?? '',
     createdAt: raw.createdAt ?? new Date().toISOString(),
   };
 }
 
 export function useProjects(params?: QueryParams) {
   return useQuery<PaginatedResponse<Project>>({
-    queryKey: ['projects', params],
+    queryKey: projectKeys.list(params),
     queryFn: async () => {
       const { data } = await api.get('/projects', { params });
-      const rows = Array.isArray(data?.data) ? data.data : [];
+      const rows = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
       return { ...data, data: rows.map((item: RawProject) => mapProject(item)) };
     },
   });
@@ -51,7 +52,7 @@ export function useProjects(params?: QueryParams) {
 
 export function useProject(id: string) {
   return useQuery<Project>({
-    queryKey: ['project', id],
+    queryKey: projectKeys.detail(id),
     queryFn: async () => {
       const { data } = await api.get(`/projects/${id}`);
       return mapProject(data as RawProject);
@@ -63,16 +64,28 @@ export function useProject(id: string) {
 export function useCreateProject() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: Record<string, unknown>) => api.post('/projects', body),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['projects'] }),
+    mutationFn: (body: {
+      name: string;
+      clientName?: string;
+      notes?: string;
+      status?: string;
+      progress?: number;
+      price?: number;
+      startDate?: string;
+      deadline?: string;
+    }) => api.post('/projects', body),
+    onSuccess: () => qc.invalidateQueries({ queryKey: projectKeys.root }),
   });
 }
 
 export function useUpdateProject() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...body }: Record<string, unknown> & { id: string }) => api.put(`/projects/${id}`, body),
-    onSuccess: (_, v) => { qc.invalidateQueries({ queryKey: ['projects'] }); qc.invalidateQueries({ queryKey: ['project', v.id] }); },
+    mutationFn: ({ id, ...body }: { name: string; clientName?: string; notes?: string; status?: string; progress?: number; price?: number; id: string }) => api.put(`/projects/${id}`, body),
+    onSuccess: (_, v) => { 
+      qc.invalidateQueries({ queryKey: projectKeys.root }); 
+      qc.invalidateQueries({ queryKey: projectKeys.detail(v.id) }); 
+    },
   });
 }
 
@@ -80,6 +93,9 @@ export function useDeleteProject() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => api.delete(`/projects/${id}`),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['projects'] }),
+    onSuccess: (_, id) => { 
+      qc.invalidateQueries({ queryKey: projectKeys.root });
+      qc.removeQueries({ queryKey: projectKeys.detail(id) });
+    },
   });
 }

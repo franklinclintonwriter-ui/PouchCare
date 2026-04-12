@@ -12,12 +12,9 @@ import { Button } from '@/components/ui/Button';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { useCurrency } from '@/hooks/useCurrency';
-import { useAuthStore } from '@/store/authStore';
-import type { StaffUser } from '@/types/auth';
+import { usePermission } from '@/hooks/usePermission';
 import type { Domain } from '@/types/models';
 import { toast } from 'sonner';
-
-const SENIOR_ROLES = ['CEO', 'CO_MD', 'OP_MANAGER'];
 
 const emptyForm = { domainName: '', registrar: '', expiryDate: '', dnsProvider: '', annualCost: '', status: 'active' };
 
@@ -29,8 +26,8 @@ export default function Domains() {
   const createDomain = useCreateDomain();
   const updateDomain = useUpdateDomain();
   const deleteDomain = useDeleteDomain();
-  const user = useAuthStore((s) => s.user) as StaffUser | null;
-  const canManage = SENIOR_ROLES.includes(user?.systemRole ?? '');
+  const perm = usePermission();
+  const canManage = perm.isCEO || perm.isOps;
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editRow, setEditRow] = useState<Domain | null>(null);
@@ -197,6 +194,7 @@ export default function Domains() {
         isLoading={isLoading}
         getRowId={(row) => row.id}
         emptyTitle="No domains found"
+        emptyDescription="Add a domain to start tracking."
         onRowClick={(row) => navigate(`/assets/domains/${row.id}`)}
       />
 

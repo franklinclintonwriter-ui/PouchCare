@@ -119,8 +119,43 @@ export default function RolePermissions() {
             the staff app. Changes apply on next API request (refresh the page if something looks stale).
           </p>
         </CardHeader>
-        <CardContent className="space-y-4 overflow-x-auto">
-          <div className="min-w-[720px]">
+        <CardContent className="space-y-4">
+          <div className="space-y-3 sm:hidden">
+            {PERMISSION_KEYS.map((key) => (
+              <div
+                key={`mobile-${key}`}
+                className="rounded-xl border border-gray-200/80 bg-white p-3 dark:border-gray-700/60 dark:bg-gray-800/80"
+              >
+                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                  {KEY_LABELS[key]}
+                </p>
+                <div className="mt-3 grid grid-cols-1 gap-2">
+                  {ROLE_ORDER.map((role) => (
+                    <div
+                      key={`mobile-${role}-${key}`}
+                      className="flex items-center justify-between rounded-lg bg-gray-50 px-2.5 py-2 dark:bg-gray-800"
+                    >
+                      <span className="text-xs font-medium text-gray-600 dark:text-gray-300">
+                        {ROLE_LABELS[role]}
+                      </span>
+                      <Toggle
+                        checked={!!local[role]?.[key]}
+                        onChange={(v) =>
+                          setLocal((prev) => {
+                            if (!prev) return prev;
+                            return { ...prev, [role]: { ...prev[role], [key]: v } };
+                          })
+                        }
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="hidden overflow-x-auto sm:block">
+            <div className="min-w-[720px]">
             <table className="w-full border-collapse text-sm">
               <thead>
                 <tr className="border-b border-gray-200 dark:border-gray-700">
@@ -156,6 +191,7 @@ export default function RolePermissions() {
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
           <div className="flex justify-end gap-2 pt-2">
             <Button

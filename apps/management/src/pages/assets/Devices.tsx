@@ -6,6 +6,7 @@ import { PageTransition } from '@/components/ui/PageTransition';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { Modal } from '@/components/ui/Modal';
 import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import type { Device } from '@/api/admin-resources';
@@ -88,7 +89,20 @@ export default function Devices() {
         <div className="space-y-3">
           <Input label="Device Name" value={deviceName} onChange={(e) => setDeviceName(e.target.value)} />
           <Input label="Staff Member ID" value={staffMemberId} onChange={(e) => setStaffMemberId(e.target.value)} />
-          <Input label="Device Type" value={deviceType} onChange={(e) => setDeviceType(e.target.value)} />
+          <Select
+            label="Device Type"
+            value={deviceType}
+            onChange={(e) => setDeviceType(e.target.value)}
+            options={[
+              { label: '— Select —', value: '' },
+              { label: 'Laptop', value: 'Laptop' },
+              { label: 'Desktop', value: 'Desktop' },
+              { label: 'Phone', value: 'Phone' },
+              { label: 'Tablet', value: 'Tablet' },
+              { label: 'Monitor', value: 'Monitor' },
+              { label: 'Other', value: 'Other' },
+            ]}
+          />
           <Input label="IP Address" value={ipAddress} onChange={(e) => setIpAddress(e.target.value)} />
         </div>
       </Modal>

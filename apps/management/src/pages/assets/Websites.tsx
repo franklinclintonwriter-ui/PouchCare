@@ -11,12 +11,9 @@ import { Button } from '@/components/ui/Button';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { formatCompact } from '@/lib/format';
-import { useAuthStore } from '@/store/authStore';
-import type { StaffUser } from '@/types/auth';
+import { usePermission } from '@/hooks/usePermission';
 import type { WebsiteAsset } from '@/types/models';
 import { toast } from 'sonner';
-
-const SENIOR_ROLES = ['CEO', 'CO_MD', 'OP_MANAGER'];
 const emptyForm = { name: '', url: '', hostedOn: '', domainLinked: '', status: 'live', monthlyTraffic: '' };
 
 export default function Websites() {
@@ -26,8 +23,8 @@ export default function Websites() {
   const createWebsite = useCreateWebsite();
   const updateWebsite = useUpdateWebsite();
   const deleteWebsite = useDeleteWebsite();
-  const user = useAuthStore((s) => s.user) as StaffUser | null;
-  const canManage = SENIOR_ROLES.includes(user?.systemRole ?? '');
+  const perm = usePermission();
+  const canManage = perm.isCEO || perm.isOps;
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editRow, setEditRow] = useState<WebsiteAsset | null>(null);
@@ -167,6 +164,7 @@ export default function Websites() {
         isLoading={isLoading}
         getRowId={(row) => row.id}
         emptyTitle="No websites found"
+        emptyDescription="Add a website to start tracking."
         onRowClick={(row) => navigate(`/assets/websites/${row.id}`)}
       />
 

@@ -28,7 +28,7 @@ function KPICard({
   if (loading) {
     return (
       <div className={cn(
-        'rounded-xl border border-gray-200/80 bg-white p-3 sm:p-4 dark:border-gray-700/60 dark:bg-gray-800/80',
+        'rounded-xl border border-gray-200/80 bg-white p-2 sm:p-4 dark:border-gray-700/60 dark:bg-gray-800/80',
         className,
       )}>
         <div className="flex items-start justify-between">
@@ -44,17 +44,17 @@ function KPICard({
   }
 
   return (
-    <div className={cn(
-      'rounded-xl border border-gray-200/80 bg-white p-3 sm:p-4 transition-all duration-200',
-      'hover:shadow-card dark:border-gray-700/60 dark:bg-gray-800/80',
-      className,
-    )}>
+      <div className={cn(
+        'rounded-xl border border-gray-200/80 bg-white p-2 transition-all duration-200 sm:p-4',
+        'hover:shadow-card dark:border-gray-700/60 dark:bg-gray-800/80',
+        className,
+      )}>
       <div className="flex items-start justify-between">
         <div className="min-w-0">
-          <p className="truncate text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+          <p className="truncate text-[10px] font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400 sm:text-xs">
             {title}
           </p>
-          <p className="mt-1.5 truncate text-xl font-bold text-gray-900 dark:text-gray-100 sm:mt-2 sm:text-2xl">
+          <p className="mt-0.5 truncate text-base font-bold tabular-nums text-gray-900 dark:text-gray-100 sm:mt-2 sm:text-2xl">
             {value}
           </p>
           {change !== undefined && (
@@ -78,10 +78,13 @@ function KPICard({
               )}
             </div>
           )}
+          {change === undefined && changeLabel && (
+            <p className="mt-1.5 line-clamp-2 text-xs text-gray-500 dark:text-gray-400">{changeLabel}</p>
+          )}
         </div>
         {icon && (
-          <div className={cn('rounded-xl p-2 sm:p-2.5', iconBg)}>
-            <div className="[&>svg]:h-4 [&>svg]:w-4 sm:[&>svg]:h-5 sm:[&>svg]:w-5">{icon}</div>
+          <div className={cn('rounded-lg p-1.5 sm:rounded-xl sm:p-2.5', iconBg)}>
+            <div className="[&>svg]:h-3.5 [&>svg]:w-3.5 sm:[&>svg]:h-5 sm:[&>svg]:w-5">{icon}</div>
           </div>
         )}
       </div>

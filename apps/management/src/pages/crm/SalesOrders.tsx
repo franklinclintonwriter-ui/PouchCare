@@ -12,15 +12,12 @@ import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
+import { Textarea } from '@/components/ui/Textarea';
 import { useCurrency } from '@/hooks/useCurrency';
-import { useAuthStore } from '@/store/authStore';
-import type { StaffUser } from '@/types/auth';
 import { ShoppingCart, DollarSign, CheckCircle, Clock, CircleDot } from 'lucide-react';
 import type { SalesOrder } from '@/types/models';
 import { toast } from 'sonner';
 import { usePermission } from '@/hooks/usePermission';
-
-const SENIOR_ROLES = ['CEO', 'CO_MD', 'OP_MANAGER'];
 
 export default function SalesOrders() {
   const navigate = useNavigate();
@@ -32,8 +29,7 @@ export default function SalesOrders() {
   const deleteSalesOrder = useDeleteSalesOrder();
   const updateSalesOrder = useUpdateSalesOrder();
   const createSalesOrder = useCreateSalesOrder();
-  const user = useAuthStore((s) => s.user) as StaffUser | null;
-  const canDelete = SENIOR_ROLES.includes(user?.systemRole ?? '');
+  const canDelete = permission.isCEO || permission.isOps;
   const canCreate = permission.isOps || permission.isManager;
 
   const { data, isLoading } = useSalesOrders({ q: search, status, page, limit: 20 });
@@ -157,6 +153,8 @@ export default function SalesOrders() {
         onPageChange={setPage}
         getRowId={(row) => row.id}
         onRowClick={(row) => navigate(`/crm/orders/${row.id}`)}
+        emptyTitle="No orders found"
+        emptyDescription="Create your first sales order to get started."
       />
 
       <ConfirmDialog
@@ -196,7 +194,7 @@ export default function SalesOrders() {
                     deadline: createForm.deadline || undefined,
                     invoiceReference: createForm.invoiceReference.trim() || undefined,
                     notes: createForm.notes || undefined,
-                  } as any);
+                  });
                   setCreateOpen(false);
                   setCreateForm({
                     clientName: '',
@@ -239,7 +237,17 @@ export default function SalesOrders() {
             />
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
-            <Input label="Status" value={createForm.status} onChange={(e) => setCreateForm((s) => ({ ...s, status: e.target.value }))} />
+            <Select
+              label="Status"
+              value={createForm.status}
+              onChange={(e) => setCreateForm((s) => ({ ...s, status: e.target.value }))}
+              options={[
+                { label: 'New', value: 'New' },
+                { label: 'In Progress', value: 'In Progress' },
+                { label: 'Completed', value: 'Completed' },
+                { label: 'Cancelled', value: 'Cancelled' },
+              ]}
+            />
             <Input label="Assignee" value={createForm.assignedTo} onChange={(e) => setCreateForm((s) => ({ ...s, assignedTo: e.target.value }))} />
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -247,7 +255,7 @@ export default function SalesOrders() {
             <Input type="date" label="Deadline" value={createForm.deadline} onChange={(e) => setCreateForm((s) => ({ ...s, deadline: e.target.value }))} />
           </div>
           <Input label="Invoice Reference" value={createForm.invoiceReference} onChange={(e) => setCreateForm((s) => ({ ...s, invoiceReference: e.target.value }))} />
-          <Input label="Notes" value={createForm.notes} onChange={(e) => setCreateForm((s) => ({ ...s, notes: e.target.value }))} />
+          <Textarea label="Notes" value={createForm.notes} onChange={(e) => setCreateForm((s) => ({ ...s, notes: e.target.value }))} rows={2} />
         </div>
       </Modal>
     </PageTransition>

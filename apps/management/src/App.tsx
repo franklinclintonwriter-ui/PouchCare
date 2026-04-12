@@ -4,11 +4,13 @@ import { routes } from '@/routes';
 import { useThemeStore } from '@/store/themeStore';
 import { useAuthStore } from '@/store/authStore';
 import { CommandPalette } from '@/components/shared/CommandPalette';
+import { useAttendanceRealtime } from '@/hooks/useAttendanceRealtime';
 import api from '@/api/client';
 import { normalizeStaffUser } from '@/api/auth';
 import type { StaffUser, PortalUser } from '@/types/auth';
 
 export default function App() {
+  useAttendanceRealtime();
   const theme = useThemeStore((s) => s.theme);
   const { isAuthenticated, userType, user, setLoading } = useAuthStore();
 

@@ -17,6 +17,49 @@ const revenueSchema = z.object({
   totalExpensesUsd: z.number().optional(),
   notes: z.string().optional(),
 });
+
+const createInvoiceSchema = z.object({
+  clientName: z.string().min(1),
+  clientEmail: z.string().email().optional(),
+  amountUsd: z.number().min(0),
+  status: z.string().optional(),
+  service: z.string().optional(),
+  issueDate: z.string().optional(),
+  dueDate: z.string().optional(),
+  notes: z.string().optional(),
+});
+
+const updateInvoiceSchema = z.object({
+  clientName: z.string().min(1).optional(),
+  clientEmail: z.string().email().optional(),
+  amountUsd: z.number().min(0).optional(),
+  status: z.string().optional(),
+  service: z.string().optional(),
+  dueDate: z.string().optional(),
+  notes: z.string().optional(),
+});
+
+const createExpenseSchema = z.object({
+  title: z.string().min(1),
+  amountUsd: z.number().min(0),
+  category: z.string().optional(),
+  paidBy: z.string().optional(),
+  branch: z.string().optional(),
+  expenseDate: z.string().optional(),
+  receiptUrl: z.string().optional(),
+  notes: z.string().optional(),
+});
+
+const updateExpenseSchema = z.object({
+  title: z.string().min(1).optional(),
+  amountUsd: z.number().min(0).optional(),
+  category: z.string().optional(),
+  paidBy: z.string().optional(),
+  branch: z.string().optional(),
+  receiptUrl: z.string().optional(),
+  notes: z.string().optional(),
+});
+
 // ── INVOICES ──
 router.get(
   "/invoices",
@@ -43,7 +86,7 @@ router.get(
       ]);
       return ok(res, invoices, buildMeta(total, page, limit));
     } catch (err) {
-      serverError(res, err);
+      return serverError(res, err);
     }
   },
 );
@@ -59,7 +102,7 @@ router.get(
       if (!inv) return notFound(res);
       return ok(res, inv);
     } catch (err) {
-      serverError(res, err);
+      return serverError(res, err);
     }
   },
 );
@@ -67,20 +110,23 @@ router.get(
 router.post(
   "/invoices",
   requirePermission("finance.access"),
+  validate(createInvoiceSchema),
   async (req, res) => {
     try {
+      const { clientName, clientEmail, amountUsd, status, service, issueDate, dueDate, notes } = req.body as z.infer<typeof createInvoiceSchema>;
       const count = await prisma.invoice.count();
       const invoiceNumber = `INV-${String(count + 1).padStart(4, "0")}`;
       const inv = await prisma.invoice.create({
         data: {
-          ...req.body,
+          clientName, clientEmail, amountUsd, status, service, notes,
           invoiceNumber,
-          issueDate: new Date(req.body.issueDate || Date.now()),
+          issueDate: new Date(issueDate || Date.now()),
+          dueDate: dueDate ? new Date(dueDate) : undefined,
         },
       });
       return created(res, inv);
     } catch (err) {
-      serverError(res, err);
+      return serverError(res, err);
     }
   },
 );
@@ -88,15 +134,25 @@ router.post(
 router.put(
   "/invoices/:id",
   requirePermission("finance.access"),
+  validate(updateInvoiceSchema),
   async (req, res) => {
     try {
+      const { clientName, clientEmail, amountUsd, status, service, dueDate, notes } = req.body as z.infer<typeof updateInvoiceSchema>;
+      const data: Record<string, any> = {};
+      if (clientName !== undefined) data.clientName = clientName;
+      if (clientEmail !== undefined) data.clientEmail = clientEmail;
+      if (amountUsd !== undefined) data.amountUsd = amountUsd;
+      if (status !== undefined) data.status = status;
+      if (service !== undefined) data.service = service;
+      if (dueDate !== undefined) data.dueDate = new Date(dueDate);
+      if (notes !== undefined) data.notes = notes;
       const inv = await prisma.invoice.update({
         where: { id: req.params.id },
-        data: req.body,
+        data,
       });
       return ok(res, inv);
     } catch (err) {
-      serverError(res, err);
+      return serverError(res, err);
     }
   },
 );
@@ -109,7 +165,7 @@ router.delete(
       await prisma.invoice.delete({ where: { id: req.params.id } });
       return ok(res, { message: "Invoice deleted" });
     } catch (err) {
-      serverError(res, err);
+      return serverError(res, err);
     }
   },
 );
@@ -143,7 +199,7 @@ router.get(
       ]);
       return ok(res, expenses, buildMeta(total, page, limit));
     } catch (err) {
-      serverError(res, err);
+      return serverError(res, err);
     }
   },
 );
@@ -151,17 +207,19 @@ router.get(
 router.post(
   "/expenses",
   requirePermission("finance.access"),
+  validate(createExpenseSchema),
   async (req, res) => {
     try {
+      const { title, amountUsd, category, paidBy, branch, expenseDate, receiptUrl, notes } = req.body as z.infer<typeof createExpenseSchema>;
       const exp = await prisma.expense.create({
         data: {
-          ...req.body,
-          expenseDate: new Date(req.body.expenseDate || Date.now()),
+          title, amountUsd, category, paidBy, branch, receiptUrl, notes,
+          expenseDate: new Date(expenseDate || Date.now()),
         },
       });
       return created(res, exp);
     } catch (err) {
-      serverError(res, err);
+      return serverError(res, err);
     }
   },
 );
@@ -177,7 +235,7 @@ router.get(
       if (!exp) return notFound(res);
       return ok(res, exp);
     } catch (err) {
-      serverError(res, err);
+      return serverError(res, err);
     }
   },
 );
@@ -185,15 +243,25 @@ router.get(
 router.put(
   "/expenses/:id",
   requirePermission("finance.access"),
+  validate(updateExpenseSchema),
   async (req, res) => {
     try {
+      const { title, amountUsd, category, paidBy, branch, receiptUrl, notes } = req.body as z.infer<typeof updateExpenseSchema>;
+      const data: Record<string, any> = {};
+      if (title !== undefined) data.title = title;
+      if (amountUsd !== undefined) data.amountUsd = amountUsd;
+      if (category !== undefined) data.category = category;
+      if (paidBy !== undefined) data.paidBy = paidBy;
+      if (branch !== undefined) data.branch = branch;
+      if (receiptUrl !== undefined) data.receiptUrl = receiptUrl;
+      if (notes !== undefined) data.notes = notes;
       const exp = await prisma.expense.update({
         where: { id: req.params.id },
-        data: req.body,
+        data,
       });
       return ok(res, exp);
     } catch (err) {
-      serverError(res, err);
+      return serverError(res, err);
     }
   },
 );
@@ -206,7 +274,7 @@ router.delete(
       await prisma.expense.delete({ where: { id: req.params.id } });
       return ok(res, { message: "Expense deleted" });
     } catch (err) {
-      serverError(res, err);
+      return serverError(res, err);
     }
   },
 );
@@ -232,7 +300,7 @@ router.get(
       ]);
       return ok(res, records, buildMeta(total, page, limit));
     } catch (err) {
-      serverError(res, err);
+      return serverError(res, err);
     }
   },
 );
@@ -258,7 +326,7 @@ router.post(
       });
       return created(res, record);
     } catch (err) {
-      serverError(res, err);
+      return serverError(res, err);
     }
   },
 );
@@ -290,7 +358,7 @@ router.put(
       });
       return ok(res, record);
     } catch (err) {
-      serverError(res, err);
+      return serverError(res, err);
     }
   },
 );
@@ -303,7 +371,7 @@ router.delete(
       await prisma.monthlyRevenue.delete({ where: { id: req.params.id } });
       return ok(res, { message: "Revenue record deleted" });
     } catch (err) {
-      serverError(res, err);
+      return serverError(res, err);
     }
   },
 );
@@ -355,7 +423,7 @@ router.get(
       });
       return ok(res, { forecast, basedOnMonths: recent.length });
     } catch (err) {
-      serverError(res, err);
+      return serverError(res, err);
     }
   },
 );

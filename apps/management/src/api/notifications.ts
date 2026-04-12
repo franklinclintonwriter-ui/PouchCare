@@ -11,6 +11,66 @@ const NOTIF_TYPES: AppNotification["type"][] = [
   "order",
 ];
 
+const NOTIFICATION_PATH_ALIASES: Record<string, string> = {
+  "/dashboard": "/",
+};
+
+const ALLOWED_NOTIFICATION_PATH_PREFIXES = [
+  "/",
+  "/staff",
+  "/tasks",
+  "/projects",
+  "/attendance",
+  "/leave",
+  "/reports",
+  "/payroll",
+  "/finance",
+  "/crm",
+  "/hr",
+  "/assets",
+  "/services",
+  "/support",
+  "/broadcast",
+  "/analytics",
+  "/notifications",
+  "/settings",
+  "/portal",
+  "/admin/portal",
+  "/plugins",
+  "/tools",
+  "/monitor",
+];
+
+const NOTIFICATION_TYPE_FALLBACK_PATHS: Record<
+  AppNotification["type"],
+  string
+> = {
+  task: "/tasks",
+  leave: "/leave",
+  ticket: "/support",
+  payment: "/finance/invoices",
+  system: "/notifications",
+  order: "/admin/portal/orders",
+};
+
+function normalizeNotificationUrl(raw: unknown): string | undefined {
+  if (typeof raw !== "string") return undefined;
+  const trimmed = raw.trim();
+  if (!trimmed) return undefined;
+  if (/^https?:\/\//i.test(trimmed)) return undefined;
+
+  const prefixed = trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
+  const mapped = NOTIFICATION_PATH_ALIASES[prefixed] ?? prefixed;
+
+  if (mapped === "/") return "/";
+
+  const isAllowed = ALLOWED_NOTIFICATION_PATH_PREFIXES.some(
+    (prefix) => prefix !== "/" && (mapped === prefix || mapped.startsWith(`${prefix}/`)),
+  );
+
+  return isAllowed ? mapped : "/notifications";
+}
+
 /** Maps API/Prisma notification rows to `AppNotification`. */
 export function mapApiNotification(
   raw: Record<string, unknown>,
@@ -23,16 +83,22 @@ export function mapApiNotification(
         ? created.toISOString()
         : new Date(String(created)).toISOString();
   const type = String(raw.type ?? "system");
+  const normalizedType = (NOTIF_TYPES.includes(type as AppNotification["type"])
+    ? type
+    : "system") as AppNotification["type"];
+  const resourceUrl = normalizeNotificationUrl(raw.link ?? raw.resourceUrl);
+  const fallbackUrl = NOTIFICATION_TYPE_FALLBACK_PATHS[normalizedType];
+  const resolvedUrl =
+    normalizedType !== "system" && resourceUrl === "/" ? fallbackUrl : resourceUrl;
+
   return {
     id: String(raw.id),
-    type: (NOTIF_TYPES.includes(type as AppNotification["type"])
-      ? type
-      : "system") as AppNotification["type"],
+    type: normalizedType,
     title: String(raw.title ?? ""),
     description: String(raw.message ?? raw.description ?? ""),
     timestamp: ts,
     read: Boolean(raw.read),
-    resourceUrl: (raw.link ?? raw.resourceUrl) as string | undefined,
+    resourceUrl: resolvedUrl ?? fallbackUrl,
   };
 }
 

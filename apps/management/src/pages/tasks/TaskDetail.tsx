@@ -1,8 +1,21 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Calendar, FolderOpen, User, Clock, Send, CheckCircle2, XCircle, ShieldCheck, Star, Trash2 } from 'lucide-react';
+import { Calendar, FolderOpen, User, Clock, Send, CheckCircle2, XCircle, ShieldCheck, Star, Trash2, Pencil, Paperclip, TrendingUp, FileDown, Printer } from 'lucide-react';
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
-import { useAddTaskComment, useTask, useSubmitTask, useApproveTask, useRejectTask, useVerifyTask, useRateTask, useDeleteTask } from '@/api/tasks';
+import {
+  useAddTaskComment,
+  useTask,
+  useUpdateTask,
+  useSubmitTask,
+  useApproveTask,
+  useRejectTask,
+  useVerifyTask,
+  useRateTask,
+  useDeleteTask,
+  useUploadTaskAttachments,
+} from '@/api/tasks';
+import { useStaffList } from '@/api/staff';
+import { useAuthStore } from '@/store/authStore';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { Card, CardContent } from '@/components/ui/Card';
 import { StatusBadge } from '@/components/ui/StatusBadge';
@@ -11,12 +24,19 @@ import { Tabs } from '@/components/ui/Tabs';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { Badge } from '@/components/ui/Badge';
 import { Textarea } from '@/components/ui/Textarea';
+import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { usePermission } from '@/hooks/usePermission';
 import { toast } from 'sonner';
 import type { Task } from '@/types/models';
+import type { HeaderAction } from '@/types/header';
+import { downloadTaskPdf } from '@/utils/taskPdf';
+import { PrintBrandHeader } from '@/components/print/PrintBrandHeader';
+import { TaskSignatureBlock } from '@/components/tasks/TaskSignatureBlock';
+import { cn } from '@/utils/cn';
 
 type TaskComment = { id: string; authorName: string; content: string; createdAt: string };
 
@@ -25,6 +45,8 @@ export default function TaskDetail() {
   const navigate = useNavigate();
   const { data: task, isLoading } = useTask(id!);
   const perm = usePermission();
+  const isManager = perm.isCEO || perm.isOps || perm.isManager;
+  const updateTask = useUpdateTask();
   const addComment = useAddTaskComment();
   const submitTask = useSubmitTask();
   const approveTask = useApproveTask();
@@ -32,6 +54,12 @@ export default function TaskDetail() {
   const verifyTask = useVerifyTask();
   const rateTask = useRateTask();
   const deleteTask = useDeleteTask();
+  const uploadAttachments = useUploadTaskAttachments();
+  const authUser = useAuthStore((s) => s.user);
+  const staffId = authUser && 'id' in authUser ? authUser.id : '';
+  const { data: staffPage } = useStaffList({ limit: 400 }, { enabled: isManager });
+  const [assignSpecialistId, setAssignSpecialistId] = useState('');
+  const [progressInput, setProgressInput] = useState(0);
 
   const [tab, setTab] = useState('details');
   const [comment, setComment] = useState('');
@@ -42,9 +70,51 @@ export default function TaskDetail() {
   const [rateNote, setRateNote] = useState('');
   const [verifyConfirm, setVerifyConfirm] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editForm, setEditForm] = useState({ title: '', description: '', priority: 'MEDIUM', dueDate: '' });
 
-  const isManager = perm.isCEO || perm.isOps || perm.isManager;
   const taskId = id!;
+
+  useEffect(() => {
+    if (task) {
+      setProgressInput(typeof task.progress === 'number' ? task.progress : 0);
+      setAssignSpecialistId(task.assigneeId || '');
+    }
+  }, [task]);
+
+  const isAssignee = !!staffId && task?.assigneeId === staffId;
+
+  const openEdit = useCallback(() => {
+    if (task) {
+      setEditForm({
+        title: task.title,
+        description: task.description || '',
+        priority: task.priority,
+        dueDate: task.dueDate ? task.dueDate.slice(0, 10) : '',
+      });
+    }
+    setEditOpen(true);
+  }, [task]);
+
+  const handleEditSave = useCallback(async () => {
+    if (!editForm.title.trim()) {
+      toast.error('Title is required');
+      return;
+    }
+    try {
+      await updateTask.mutateAsync({
+        id: taskId,
+        title: editForm.title.trim(),
+        notes: editForm.description.trim() || undefined,
+        priority: editForm.priority,
+        deadline: editForm.dueDate || undefined,
+      });
+      toast.success('Task updated');
+      setEditOpen(false);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to update task');
+    }
+  }, [taskId, editForm, updateTask]);
 
   const handleAction = useCallback(async () => {
     if (!actionType) return;
@@ -98,9 +168,42 @@ export default function TaskDetail() {
     }
   }, [taskId, deleteTask, navigate]);
 
-  const headerActions = useMemo(() => {
+  const handleExportPdf = useCallback(async () => {
+    if (!task) return;
+    try {
+      const comments = (task as Task & { comments?: TaskComment[] }).comments ?? [];
+      await downloadTaskPdf({ task, comments });
+      toast.success('PDF downloaded');
+    } catch {
+      toast.error('Could not generate PDF');
+    }
+  }, [task]);
+
+  const handlePrint = useCallback(() => {
+    window.print();
+  }, []);
+
+  const headerActions = useMemo((): HeaderAction[] => {
     if (!task) return [];
-    const acts = [];
+    const acts: HeaderAction[] = [
+      {
+        type: 'button',
+        label: 'Export PDF',
+        icon: FileDown,
+        variant: 'outline',
+        onClick: handleExportPdf,
+      },
+      {
+        type: 'button',
+        label: 'Print',
+        icon: Printer,
+        variant: 'outline',
+        onClick: handlePrint,
+      },
+    ];
+    if (isManager) {
+      acts.push({ type: 'button' as const, label: 'Edit', icon: Pencil, variant: 'outline' as const, onClick: openEdit });
+    }
     if (task.status === 'IN_PROGRESS' && task.approvalStatus === 'WAITING') {
       acts.push({ type: 'button' as const, label: 'Submit', icon: Send, variant: 'outline' as const, onClick: () => setActionType('submit') });
     }
@@ -108,14 +211,14 @@ export default function TaskDetail() {
       acts.push({ type: 'button' as const, label: 'Approve', icon: CheckCircle2, variant: 'outline' as const, onClick: () => setActionType('approve') });
       acts.push({ type: 'button' as const, label: 'Reject', icon: XCircle, variant: 'danger' as const, onClick: () => setActionType('reject') });
     }
-    if (isManager && task.approvalStatus === 'APPROVED_MGR') {
+    if (perm.isCEO && task.approvalStatus === 'APPROVED_MGR') {
       acts.push({ type: 'button' as const, label: 'Verify', icon: ShieldCheck, onClick: () => setVerifyConfirm(true) });
     }
     if (perm.isCEO && task.approvalStatus === 'VERIFIED') {
       acts.push({ type: 'button' as const, label: 'Rate', icon: Star, variant: 'outline' as const, onClick: () => setRateOpen(true) });
     }
     return acts;
-  }, [task, isManager, perm.isCEO]);
+  }, [task, isManager, perm.isCEO, openEdit, handleExportPdf, handlePrint]);
 
   useHeaderConfig(useMemo(() => ({
     title: task?.title ?? 'Task',
@@ -158,16 +261,46 @@ export default function TaskDetail() {
     );
   }
 
+  const duePretty = new Date(task.dueDate).toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+
   return (
     <PageTransition>
       <div className="space-y-6">
+        <PrintBrandHeader
+          documentLabel="Task report"
+          title={task.title}
+          subtitle={task.projectName ? `Project: ${task.projectName}` : undefined}
+          meta={[
+            { label: 'Status', value: task.status },
+            { label: 'Priority', value: task.priority },
+            { label: 'Due', value: duePretty },
+            { label: 'Assignee', value: task.assigneeName || '—' },
+          ]}
+        />
+
         {/* Task info card */}
-        <Card>
+        <Card className="print:break-inside-avoid">
           <div className="flex flex-wrap items-start gap-4">
             <div className="flex items-center gap-3">
               <StatusBadge status={task.status} />
               <StatusBadge status={task.priority} />
             </div>
+          </div>
+
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            {task.tags?.[0] && (
+              <Badge variant="primary" size="sm">Category: {task.tags[0]}</Badge>
+            )}
+            {task.assignedBranch && (
+              <Badge variant="default" size="sm">Branch: {task.assignedBranch}</Badge>
+            )}
+            {task.assignedManagerName && (
+              <Badge variant="default" size="sm">Manager: {task.assignedManagerName}</Badge>
+            )}
           </div>
 
           <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -218,10 +351,157 @@ export default function TaskDetail() {
               </div>
             </div>
           </div>
+
+          {(isAssignee || isManager) && (
+            <div className="mt-6 rounded-xl border border-gray-100 bg-gray-50/80 p-4 dark:border-gray-700/60 dark:bg-gray-900/30">
+              <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                <TrendingUp className="h-4 w-4" />
+                Live progress
+              </div>
+              <p className="mb-3 hidden text-sm font-semibold tabular-nums text-gray-900 print:block">
+                Progress: {typeof task.progress === 'number' ? task.progress : progressInput}%
+                {task.progressUpdatedAt ? (
+                  <span className="ml-2 font-normal text-gray-500">
+                    (updated {new Date(task.progressUpdatedAt).toLocaleString()})
+                  </span>
+                ) : null}
+              </p>
+              <div className="no-print flex flex-col gap-3 sm:flex-row sm:items-center">
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  value={progressInput}
+                  disabled={!isAssignee || updateTask.isPending}
+                  onChange={(e) => setProgressInput(Number(e.target.value))}
+                  onMouseUp={async () => {
+                    if (!isAssignee) return;
+                    try {
+                      await updateTask.mutateAsync({ id: taskId, progress: progressInput });
+                      toast.success('Progress saved');
+                    } catch (err) {
+                      toast.error(err instanceof Error ? err.message : 'Failed');
+                    }
+                  }}
+                  className="h-2 w-full max-w-md cursor-pointer accent-primary-600 disabled:opacity-50"
+                />
+                <span className="text-sm font-semibold tabular-nums text-gray-900 dark:text-gray-100">{progressInput}%</span>
+                {task.progressUpdatedAt && (
+                  <span className="text-xs text-gray-400">
+                    Updated {new Date(task.progressUpdatedAt).toLocaleString()}
+                  </span>
+                )}
+              </div>
+              {!isAssignee && (
+                <p className="no-print mt-2 text-xs text-gray-500">Only the assignee can drag the progress slider.</p>
+              )}
+            </div>
+          )}
         </Card>
+
+        {(isManager || isAssignee) && (
+          <Card>
+            <CardContent className="mt-0">
+              <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                <Paperclip className="h-4 w-4" />
+                Files & documents
+              </div>
+              <ul className="space-y-2">
+                {(task.taskAttachments ?? []).map((a) => (
+                  <li key={a.url + a.name}>
+                    <a
+                      href={a.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-primary-600 underline hover:text-primary-700 dark:text-primary-400"
+                    >
+                      {a.name}
+                    </a>
+                    {a.uploadedAt && (
+                      <span className="ml-2 text-xs text-gray-400">{new Date(a.uploadedAt).toLocaleString()}</span>
+                    )}
+                  </li>
+                ))}
+                {(!task.taskAttachments || task.taskAttachments.length === 0) && (
+                  <li className="text-sm text-gray-500">No attachments yet.</li>
+                )}
+              </ul>
+              <label className="no-print mt-4 flex cursor-pointer flex-col gap-1 text-xs text-gray-600 dark:text-gray-300">
+                <span>Add files</span>
+                <input
+                  type="file"
+                  multiple
+                  className="text-xs file:mr-2 file:rounded file:border-0 file:bg-primary-50 file:px-2 file:py-1"
+                  onChange={async (e) => {
+                    const files = Array.from(e.target.files ?? []);
+                    if (!files.length) return;
+                    try {
+                      await uploadAttachments.mutateAsync({ taskId, files });
+                      toast.success('Files uploaded');
+                      e.target.value = '';
+                    } catch (err) {
+                      toast.error(err instanceof Error ? err.message : 'Upload failed');
+                    }
+                  }}
+                />
+              </label>
+            </CardContent>
+          </Card>
+        )}
+
+        {isManager && (
+          <Card className="no-print">
+            <CardContent className="mt-0 space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                Assign specialist
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Branch managers route work to staff in their branch; senior roles can assign anyone.
+              </p>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                <div className="min-w-[240px] flex-1">
+                  <Select
+                    label="Staff / intern"
+                    value={assignSpecialistId}
+                    onChange={(e) => setAssignSpecialistId(e.target.value)}
+                    options={[
+                      { label: 'Unassigned', value: '' },
+                      ...(staffPage?.data ?? [])
+                        .filter((s) => s.systemRole === 'STAFF' || s.systemRole === 'INTERN')
+                        .map((s) => ({
+                          label: `${s.name} · ${s.branch || '—'}`,
+                          value: s.id,
+                        })),
+                    ]}
+                  />
+                </div>
+                <Button
+                  size="sm"
+                  isLoading={updateTask.isPending}
+                  onClick={async () => {
+                    try {
+                      await updateTask.mutateAsync({
+                        id: taskId,
+                        ...(assignSpecialistId
+                          ? { assignedMemberId: assignSpecialistId }
+                          : { assignedMemberId: null }),
+                      });
+                      toast.success('Assignee updated');
+                    } catch (err) {
+                      toast.error(err instanceof Error ? err.message : 'Failed');
+                    }
+                  }}
+                >
+                  Save assignment
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Tabs section */}
         <Tabs
+          className="no-print"
           tabs={[
             { label: 'Details', value: 'details' },
             { label: 'Activity', value: 'activity' },
@@ -230,8 +510,8 @@ export default function TaskDetail() {
           onChange={setTab}
         />
 
-        {tab === 'details' && (
-          <Card>
+        <div className={cn(tab === 'details' ? 'block' : 'hidden', 'print:!block')}>
+          <Card className="print:break-inside-avoid">
             <CardContent className="mt-0">
               <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3">Description</p>
               <p className="text-sm leading-relaxed text-gray-700 dark:text-gray-300">
@@ -250,10 +530,10 @@ export default function TaskDetail() {
               )}
             </CardContent>
           </Card>
-        )}
+        </div>
 
-        {tab === 'activity' && (
-          <Card>
+        <div className={cn(tab === 'activity' ? 'block' : 'hidden', 'print:!block')}>
+          <Card className="print:break-inside-avoid">
             <CardContent className="mt-0 space-y-4">
               <div className="space-y-2">
                 <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Timeline</p>
@@ -270,7 +550,7 @@ export default function TaskDetail() {
                   </div>
                 ))}
               </div>
-              <div className="space-y-2 border-t border-gray-100 pt-3 dark:border-gray-700/40">
+              <div className="no-print space-y-2 border-t border-gray-100 pt-3 dark:border-gray-700/40">
                 <Textarea
                   label="Add comment"
                   value={comment}
@@ -299,8 +579,63 @@ export default function TaskDetail() {
               </div>
             </CardContent>
           </Card>
+        </div>
+
+        <TaskSignatureBlock task={task} />
+
+        {/* Delete (managers): same vertical rhythm as cards above — must stay inside space-y-6 */}
+        {perm.isCEO && task && (
+          <div
+            className="no-print rounded-xl border border-red-200/90 bg-red-50/50 p-4 dark:border-red-900/50 dark:bg-red-950/25"
+            role="region"
+            aria-label="Delete task"
+          >
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="w-full justify-center gap-2 border-red-300 text-red-700 shadow-sm hover:border-red-400 hover:bg-red-100/80 dark:border-red-800 dark:text-red-300 dark:hover:border-red-700 dark:hover:bg-red-950/50 sm:w-auto"
+              icon={<Trash2 className="h-4 w-4 shrink-0" aria-hidden />}
+              onClick={() => setDeleteConfirm(true)}
+            >
+              Delete Task
+            </Button>
+          </div>
         )}
       </div>
+
+      {/* Edit modal */}
+      <Modal
+        isOpen={editOpen}
+        onClose={() => setEditOpen(false)}
+        title="Edit Task"
+        size="sm"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setEditOpen(false)}>Cancel</Button>
+            <Button isLoading={updateTask.isPending} onClick={handleEditSave}>Save Changes</Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <Input label="Title" value={editForm.title} onChange={(e) => setEditForm(f => ({ ...f, title: e.target.value }))} required />
+          <Textarea label="Description" value={editForm.description} onChange={(e) => setEditForm(f => ({ ...f, description: e.target.value }))} rows={3} />
+          <div className="grid grid-cols-2 gap-4">
+            <Select
+              label="Priority"
+              value={editForm.priority}
+              onChange={(e) => setEditForm(f => ({ ...f, priority: e.target.value }))}
+              options={[
+                { label: 'Critical', value: 'CRITICAL' },
+                { label: 'High', value: 'HIGH' },
+                { label: 'Medium', value: 'MEDIUM' },
+                { label: 'Low', value: 'LOW' },
+              ]}
+            />
+            <Input type="date" label="Due Date" value={editForm.dueDate} onChange={(e) => setEditForm(f => ({ ...f, dueDate: e.target.value }))} />
+          </div>
+        </div>
+      </Modal>
 
       {/* Action modal (submit / approve / reject) */}
       <Modal
@@ -355,14 +690,14 @@ export default function TaskDetail() {
       >
         <div className="space-y-4">
           <div>
-            <p className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Rating (1–5)</p>
-            <div className="flex gap-2">
-              {[1, 2, 3, 4, 5].map((n) => (
+            <p className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Rating (1–10)</p>
+            <div className="flex flex-wrap gap-2">
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
                 <button
                   key={n}
                   type="button"
                   onClick={() => setRating(n)}
-                  className={`flex h-10 w-10 items-center justify-center rounded-lg border text-sm font-semibold transition-colors ${
+                  className={`flex h-9 w-9 items-center justify-center rounded-lg border text-xs font-semibold transition-colors ${
                     rating >= n
                       ? 'border-amber-400 bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
                       : 'border-gray-200 text-gray-400 hover:border-gray-300 dark:border-gray-700'
@@ -394,21 +729,6 @@ export default function TaskDetail() {
         isLoading={deleteTask.isPending}
         onConfirm={handleDelete}
       />
-
-      {/* Delete button in page (for managers) */}
-      {isManager && task && (
-        <div className="pt-6 border-t dark:border-gray-700">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-red-500 hover:text-red-600"
-            onClick={() => setDeleteConfirm(true)}
-          >
-            <Trash2 className="mr-2 h-4 w-4" />
-            Delete Task
-          </Button>
-        </div>
-      )}
     </PageTransition>
   );
 }

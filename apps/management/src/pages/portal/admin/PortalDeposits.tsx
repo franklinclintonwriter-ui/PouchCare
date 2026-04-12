@@ -37,7 +37,7 @@ export default function PortalDeposits() {
   const headerConfig = useMemo(() => ({
     title: 'Wallet Deposits',
     breadcrumbs: [
-      { label: 'Admin', href: '/admin' },
+      { label: 'Admin', href: '/admin/portal' },
       { label: 'Portal', href: '/admin/portal/members' },
       { label: 'Deposits' },
     ],

@@ -68,7 +68,7 @@ export function useServices(category?: string) {
     queryKey: ['services', category],
     queryFn: async () => {
       const { data } = await api.get('/services', { params: category ? { category } : undefined });
-      const rows = Array.isArray(data) ? data : data.data ?? [];
+      const rows = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
       return rows.map((item: RawService) => mapService(item));
     },
   });

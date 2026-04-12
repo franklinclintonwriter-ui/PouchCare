@@ -1,9 +1,9 @@
-import { CheckCircle, Users, Target, Heart, TrendingUp } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
-import { ProgressBar } from '@/components/ui/ProgressBar';
-import { Skeleton } from '@/components/ui/Skeleton';
-import { cn } from '@/utils/cn';
-import type { HealthScore } from '@/types/analytics';
+import { CheckCircle, Users, Target, Heart, TrendingUp } from "lucide-react";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
+import { ProgressBar } from "@/components/ui/ProgressBar";
+import { Skeleton } from "@/components/ui/Skeleton";
+import { cn } from "@/utils/cn";
+import type { HealthScore } from "@/types/analytics";
 
 interface HealthBreakdownProps {
   health?: HealthScore;
@@ -11,66 +11,71 @@ interface HealthBreakdownProps {
 }
 
 const items = [
-  { 
-    key: 'tasks' as const, 
-    label: 'Tasks Completion', 
-    color: 'primary' as const,
+  {
+    key: "tasks" as const,
+    label: "Tasks Completion",
+    color: "primary" as const,
     icon: CheckCircle,
-    iconColor: 'text-primary-500',
+    iconColor: "text-primary-500",
   },
-  { 
-    key: 'attendance' as const, 
-    label: 'Attendance Rate', 
-    color: 'success' as const,
+  {
+    key: "attendance" as const,
+    label: "Attendance Rate",
+    color: "success" as const,
     icon: Users,
-    iconColor: 'text-emerald-500',
+    iconColor: "text-emerald-500",
   },
-  { 
-    key: 'pipeline' as const, 
-    label: 'Sales Pipeline', 
-    color: 'warning' as const,
+  {
+    key: "pipeline" as const,
+    label: "Sales Pipeline",
+    color: "warning" as const,
     icon: Target,
-    iconColor: 'text-amber-500',
+    iconColor: "text-amber-500",
   },
-  { 
-    key: 'clients' as const, 
-    label: 'Client Health', 
-    color: 'primary' as const,
+  {
+    key: "clients" as const,
+    label: "Client Health",
+    color: "primary" as const,
     icon: Heart,
-    iconColor: 'text-pink-500',
+    iconColor: "text-pink-500",
   },
 ];
 
 /** Shared with Dashboard welcome banner so labels match Health Breakdown card */
 export function getHealthStatusLabel(score: number): string {
-  if (score >= 80) return 'Excellent';
-  if (score >= 60) return 'Good';
-  if (score >= 40) return 'Fair';
-  return 'Needs Attention';
+  if (score >= 80) return "Excellent";
+  if (score >= 60) return "Good";
+  if (score >= 40) return "Fair";
+  return "Needs Attention";
 }
 
 function getHealthStatus(score: number): { label: string; color: string } {
   const label = getHealthStatusLabel(score);
-  if (score >= 80) return { label, color: 'text-emerald-600 dark:text-emerald-400' };
-  if (score >= 60) return { label, color: 'text-blue-600 dark:text-blue-400' };
-  if (score >= 40) return { label, color: 'text-amber-600 dark:text-amber-400' };
-  return { label, color: 'text-red-500 dark:text-red-400' };
+  if (score >= 80)
+    return { label, color: "text-emerald-600 dark:text-emerald-400" };
+  if (score >= 60) return { label, color: "text-blue-600 dark:text-blue-400" };
+  if (score >= 40)
+    return { label, color: "text-amber-600 dark:text-amber-400" };
+  return { label, color: "text-red-500 dark:text-red-400" };
 }
 
-export function HealthBreakdown({ health, loading = false }: HealthBreakdownProps) {
+export function HealthBreakdown({
+  health,
+  loading = false,
+}: HealthBreakdownProps) {
   const status = health ? getHealthStatus(health.total) : null;
 
   return (
-    <Card className="h-full">
-      <CardHeader className="pb-4">
+    <Card padding="none">
+      <CardHeader className="border-b border-gray-100 px-4 pb-3 pt-4 dark:border-gray-800 sm:px-5 sm:pt-5">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-base font-semibold flex items-center gap-2">
-            <TrendingUp className="h-4 w-4 text-primary-500" />
-            Health Breakdown
+          <CardTitle className="flex min-w-0 items-center gap-2 text-base font-semibold leading-snug sm:text-[17px]">
+            <TrendingUp className="h-[18px] w-[18px] shrink-0 text-primary-500 sm:h-5 sm:w-5" aria-hidden />
+            <span className="truncate">Health Breakdown</span>
           </CardTitle>
         </div>
         {health && (
-          <div className="mt-4 flex items-center gap-4">
+          <div className="mt-2 flex items-center gap-4">
             <div className="relative w-20 h-20">
               <svg className="w-20 h-20 transform -rotate-90">
                 <circle
@@ -101,7 +106,7 @@ export function HealthBreakdown({ health, loading = false }: HealthBreakdownProp
               </div>
             </div>
             <div>
-              <p className={cn('text-lg font-semibold', status?.color)}>
+              <p className={cn("text-lg font-semibold", status?.color)}>
                 {status?.label}
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
@@ -111,7 +116,7 @@ export function HealthBreakdown({ health, loading = false }: HealthBreakdownProp
           </div>
         )}
       </CardHeader>
-      <CardContent className="pt-0">
+      <CardContent className="!mt-0 px-4 pb-4 pt-3 sm:px-5 sm:pb-5">
         {loading ? (
           <div className="space-y-5">
             {Array.from({ length: 4 }).map((_, i) => (
@@ -133,17 +138,21 @@ export function HealthBreakdown({ health, loading = false }: HealthBreakdownProp
                 <div key={item.key}>
                   <div className="mb-2 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Icon className={cn('h-4 w-4', item.iconColor)} />
+                      <Icon className={cn("h-4 w-4", item.iconColor)} />
                       <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                         {item.label}
                       </span>
                     </div>
-                    <span className={cn(
-                      'text-sm font-bold',
-                      value >= 70 ? 'text-emerald-600 dark:text-emerald-400' :
-                      value >= 40 ? 'text-amber-600 dark:text-amber-400' :
-                      'text-red-500 dark:text-red-400'
-                    )}>
+                    <span
+                      className={cn(
+                        "text-sm font-bold",
+                        value >= 70
+                          ? "text-emerald-600 dark:text-emerald-400"
+                          : value >= 40
+                            ? "text-amber-600 dark:text-amber-400"
+                            : "text-red-500 dark:text-red-400",
+                      )}
+                    >
                       {Math.round(value)}%
                     </span>
                   </div>

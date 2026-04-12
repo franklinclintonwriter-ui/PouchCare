@@ -67,10 +67,12 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         {isLoading ? (
           <Loader2 className="h-4 w-4 animate-spin" />
         ) : (
-          icon && <span className="shrink-0 [&>svg]:h-4 [&>svg]:w-4">{icon}</span>
+          <>
+            {icon && <span className="shrink-0 [&>svg]:h-4 [&>svg]:w-4">{icon}</span>}
+            {children && <span>{children}</span>}
+            {iconRight && <span className="shrink-0 [&>svg]:h-4 [&>svg]:w-4">{iconRight}</span>}
+          </>
         )}
-        {children && <span>{children}</span>}
-        {iconRight && <span className="shrink-0 [&>svg]:h-4 [&>svg]:w-4">{iconRight}</span>}
       </button>
     );
   },

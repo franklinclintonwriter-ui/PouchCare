@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   Bell,
@@ -33,6 +33,7 @@ const PREVIEW_LIMIT = 8;
 
 function NotificationPanel() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { isOpen, closePanel } = useNotificationStore();
   const { data, isLoading } = useNotifications();
   const markOne = useMarkOneNotificationRead();
@@ -56,6 +57,11 @@ function NotificationPanel() {
     };
   }, [isOpen, closePanel]);
 
+  useEffect(() => {
+    if (isOpen) closePanel();
+    // Close any open sheet/popover after route navigation.
+  }, [location.pathname]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleItem = (n: AppNotification) => {
     const go = () => {
       closePanel();
@@ -78,7 +84,11 @@ function NotificationPanel() {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.18 }}
-          className="fixed inset-0 z-[100] flex items-end justify-center sm:items-start sm:justify-end sm:pt-16 sm:pr-3"
+          className={cn(
+            'fixed inset-0 z-[100] flex items-start justify-end',
+            // Align with sticky header + horizontal padding (matches Header: px-3 lg:px-5, h-14 lg:h-16)
+            'pt-14 pl-3 pr-3 lg:pt-16 lg:pl-5 lg:pr-5',
+          )}
         >
           <motion.button
             type="button"
@@ -87,22 +97,27 @@ function NotificationPanel() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
-            className="absolute inset-0 bg-black/45 backdrop-blur-[1px] sm:bg-black/25"
+            className="absolute inset-0 bg-black/35 backdrop-blur-[1px] dark:bg-black/40"
             onClick={() => closePanel()}
           />
 
-          <div className="relative z-[1] flex max-h-[min(88dvh,560px)] w-full max-w-full flex-col px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:max-h-[min(72dvh,440px)] sm:w-[min(100vw-2rem,22rem)] sm:px-0 sm:pb-0">
+          <div
+            className={cn(
+              'relative z-[1] flex w-[min(100%,22rem)] max-w-[22rem] flex-col',
+              'max-h-[min(72dvh,560px)]',
+              'pb-[max(0.5rem,env(safe-area-inset-bottom))]',
+            )}
+          >
             <motion.div
               role="dialog"
               aria-modal="true"
               aria-labelledby="notification-panel-title"
-              initial={{ opacity: 0, y: 28 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 20 }}
-              transition={{ type: 'spring', damping: 28, stiffness: 340 }}
+              initial={{ opacity: 0, y: -10, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -6, scale: 0.99 }}
+              transition={{ type: 'spring', damping: 28, stiffness: 380 }}
               className={cn(
-                'flex max-h-full flex-col overflow-hidden border border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900',
-                'rounded-t-2xl sm:rounded-xl',
+                'flex max-h-full flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900',
               )}
             >
               <div className="flex shrink-0 items-center justify-between gap-2 border-b border-gray-100 px-4 py-3 dark:border-gray-800">

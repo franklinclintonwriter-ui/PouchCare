@@ -146,3 +146,69 @@
 #root {
   min-height: 100dvh;
 }
+
+/* —— Browser print (Ctrl+P): professional report layout —— */
+@media print {
+  @page {
+    margin: 14mm 12mm;
+    size: auto;
+  }
+
+  html {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  body {
+    @apply bg-white text-gray-900;
+    background-image: none !important;
+    min-height: auto;
+  }
+
+  .dark body,
+  .dark {
+    color: rgb(17 24 39) !important;
+    background: #fff !important;
+  }
+
+  /* App chrome */
+  .no-print {
+    display: none !important;
+  }
+
+  [data-sonner-toaster] {
+    display: none !important;
+  }
+
+  main {
+    max-width: none !important;
+    padding-bottom: 0 !important;
+  }
+
+  .content-shell {
+    max-width: none !important;
+  }
+
+  /* Cards: crisp borders, no heavy shadows */
+  [class*='shadow-'],
+  [class*='ring-'],
+  [class*='backdrop-'] {
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+  }
+
+  .rounded-xl,
+  .rounded-2xl,
+  .rounded-lg {
+    border: 1px solid rgb(229 231 235) !important;
+  }
+
+  /* Avoid awkward splits */
+  .break-inside-avoid,
+  tr,
+  thead {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+}

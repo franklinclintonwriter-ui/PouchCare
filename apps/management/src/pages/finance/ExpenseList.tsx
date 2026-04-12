@@ -9,6 +9,7 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
 import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
 import { useCurrency } from '@/hooks/useCurrency';
 import { Receipt, CheckCircle, Clock, Tag, Plus } from 'lucide-react';
@@ -33,6 +34,8 @@ export default function ExpenseList() {
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
   const [expCategory, setExpCategory] = useState('Operations');
+  const [expDate, setExpDate] = useState(new Date().toISOString().split('T')[0]);
+  const [receiptUrl, setReceiptUrl] = useState('');
   const createExpense = useCreateExpense();
 
   const { data, isLoading } = useExpenses({ q: search, category, page, limit: 20 });
@@ -98,6 +101,8 @@ export default function ExpenseList() {
         onPageChange={setPage}
         getRowId={(row) => row.id}
         onRowClick={(row) => navigate(`/finance/expenses/${row.id}`)}
+        emptyTitle="No expenses found"
+        emptyDescription="Submit your first expense to start tracking."
       />
 
       <Modal
@@ -117,13 +122,16 @@ export default function ExpenseList() {
                     title: description.trim(),
                     category: expCategory,
                     amountUsd: Number(amount),
-                    expenseDate: new Date().toISOString(),
+                    expenseDate: expDate ? new Date(`${expDate}T12:00:00Z`).toISOString() : new Date().toISOString(),
+                    receiptUrl: receiptUrl.trim() || undefined,
                     status: 'Pending',
                   });
                   toast.success('Expense created');
                   setOpenCreate(false);
                   setDescription('');
                   setAmount('');
+                  setExpDate(new Date().toISOString().split('T')[0]);
+                  setReceiptUrl('');
                 } catch (err) {
                   toast.error(err instanceof Error ? err.message : 'Create failed');
                 }
@@ -135,9 +143,27 @@ export default function ExpenseList() {
         )}
       >
         <div className="space-y-3">
-          <Input label="Description" value={description} onChange={(e) => setDescription(e.target.value)} />
-          <Input label="Category" value={expCategory} onChange={(e) => setExpCategory(e.target.value)} />
-          <Input type="number" label="Amount (USD)" value={amount} onChange={(e) => setAmount(e.target.value)} />
+          <Input label="Description" value={description} onChange={(e) => setDescription(e.target.value)} required />
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Select
+              label="Category"
+              value={expCategory}
+              onChange={(e) => setExpCategory(e.target.value)}
+              options={[
+                { label: 'Operations', value: 'Operations' },
+                { label: 'Marketing', value: 'Marketing' },
+                { label: 'Development', value: 'Development' },
+                { label: 'Sales', value: 'Sales' },
+                { label: 'Support', value: 'Support' },
+                { label: 'Other', value: 'Other' },
+              ]}
+            />
+            <Input type="number" min="0" step="0.01" label="Amount (USD)" value={amount} onChange={(e) => setAmount(e.target.value)} required />
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Input type="date" label="Date" value={expDate} onChange={(e) => setExpDate(e.target.value)} />
+            <Input label="Receipt URL" placeholder="https://..." value={receiptUrl} onChange={(e) => setReceiptUrl(e.target.value)} />
+          </div>
         </div>
       </Modal>
     </PageTransition>

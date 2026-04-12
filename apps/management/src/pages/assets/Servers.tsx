@@ -14,12 +14,9 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { useCurrency } from '@/hooks/useCurrency';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { useAuthStore } from '@/store/authStore';
-import type { StaffUser } from '@/types/auth';
+import { usePermission } from '@/hooks/usePermission';
 import type { ServerAsset } from '@/types/models';
 import { toast } from 'sonner';
-
-const SENIOR_ROLES = ['CEO', 'CO_MD', 'OP_MANAGER'];
 const emptyForm = { name: '', provider: '', ipAddress: '', type: '', ramGb: '', storageGb: '', monthlyCostUsd: '', status: 'online' };
 
 export default function Servers() {
@@ -29,8 +26,8 @@ export default function Servers() {
   const createServer = useCreateServer();
   const updateServer = useUpdateServer();
   const deleteServer = useDeleteServer();
-  const user = useAuthStore((s) => s.user) as StaffUser | null;
-  const canManage = SENIOR_ROLES.includes(user?.systemRole ?? '');
+  const perm = usePermission();
+  const canManage = perm.isCEO || perm.isOps;
 
   const [search, setSearch] = useState('');
   const [modalOpen, setModalOpen] = useState(false);

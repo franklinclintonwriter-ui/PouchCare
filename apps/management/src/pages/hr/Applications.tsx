@@ -220,6 +220,7 @@ export default function Applications() {
         onPageChange={setPage}
         onRowClick={(row) => navigate(`/hr/applications/${row.id}`)}
         emptyTitle="No applications found"
+        emptyDescription="Add an application to start tracking candidates."
       />
 
       <Modal
@@ -264,11 +265,20 @@ export default function Applications() {
               value={form.phone}
               onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
             />
-            <Input
+            <Select
               label="Source"
-              placeholder="e.g. LinkedIn, Referral"
               value={form.source}
               onChange={e => setForm(f => ({ ...f, source: e.target.value }))}
+              options={[
+                { label: '— Select —', value: '' },
+                { label: 'LinkedIn', value: 'LinkedIn' },
+                { label: 'Referral', value: 'Referral' },
+                { label: 'Job Board', value: 'Job Board' },
+                { label: 'Company Website', value: 'Company Website' },
+                { label: 'Social Media', value: 'Social Media' },
+                { label: 'Recruitment Agency', value: 'Recruitment Agency' },
+                { label: 'Other', value: 'Other' },
+              ]}
             />
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

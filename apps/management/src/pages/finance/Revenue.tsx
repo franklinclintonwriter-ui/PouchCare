@@ -275,6 +275,8 @@ export default function Revenue() {
         data={revenueData}
         isLoading={isLoading}
         getRowId={(row) => row.id ?? `${row.month}-${row.year ?? "na"}`}
+        emptyTitle="No revenue data"
+        emptyDescription="Add monthly revenue records to start tracking."
       />
 
       <Modal

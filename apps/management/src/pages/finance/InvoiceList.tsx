@@ -24,6 +24,8 @@ export default function InvoiceList() {
   const [clientName, setClientName] = useState('');
   const [clientEmail, setClientEmail] = useState('');
   const [amountUsd, setAmountUsd] = useState('');
+  const [service, setService] = useState('');
+  const [dueDate, setDueDate] = useState('');
   const createInvoice = useCreateInvoice();
 
   const { data, isLoading } = useInvoices({ q: search, status, page, limit: 20 });
@@ -95,6 +97,8 @@ export default function InvoiceList() {
         onPageChange={setPage}
         getRowId={(row) => row.id}
         onRowClick={(row) => navigate(`/finance/invoices/${row.id}`)}
+        emptyTitle="No invoices found"
+        emptyDescription="Create your first invoice to get started."
       />
 
       <Modal
@@ -114,15 +118,18 @@ export default function InvoiceList() {
                     clientName: clientName.trim(),
                     clientEmail: clientEmail || undefined,
                     amountUsd: Number(amountUsd),
-                    service: 'General',
+                    service: service.trim() || 'General',
                     status: 'Draft',
                     issueDate: new Date().toISOString(),
+                    dueDate: dueDate || undefined,
                   });
                   toast.success('Invoice created');
                   setOpenCreate(false);
                   setClientName('');
                   setClientEmail('');
                   setAmountUsd('');
+                  setService('');
+                  setDueDate('');
                 } catch (err) {
                   toast.error(err instanceof Error ? err.message : 'Create failed');
                 }
@@ -134,9 +141,15 @@ export default function InvoiceList() {
         )}
       >
         <div className="space-y-3">
-          <Input label="Client Name" value={clientName} onChange={(e) => setClientName(e.target.value)} />
-          <Input label="Client Email" value={clientEmail} onChange={(e) => setClientEmail(e.target.value)} />
-          <Input type="number" label="Amount (USD)" value={amountUsd} onChange={(e) => setAmountUsd(e.target.value)} />
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Input label="Client Name" value={clientName} onChange={(e) => setClientName(e.target.value)} required />
+            <Input label="Client Email" type="email" value={clientEmail} onChange={(e) => setClientEmail(e.target.value)} />
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Input type="number" min="0" step="0.01" label="Amount (USD)" value={amountUsd} onChange={(e) => setAmountUsd(e.target.value)} required />
+            <Input label="Service" placeholder="e.g. Web Development" value={service} onChange={(e) => setService(e.target.value)} />
+          </div>
+          <Input type="date" label="Due Date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
         </div>
       </Modal>
     </PageTransition>

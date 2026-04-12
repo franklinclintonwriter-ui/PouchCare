@@ -1,4 +1,9 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  type UseQueryOptions,
+} from '@tanstack/react-query';
 import api from './client';
 import type { QueryParams, PaginatedResponse } from '@/types/api';
 import type { StaffMember, StaffProfileDetail } from '@/types/models';
@@ -52,6 +57,8 @@ type RawStaffDetail = RawStaffMember & {
 };
 
 function mapStaff(raw: RawStaffMember): StaffMember {
+  const statusStr = (raw.status ?? '').toLowerCase();
+  const isActive = ['active', 'enabled'].includes(statusStr);
   return {
     id: raw.id,
     memberId: String(raw.memberId ?? raw.id.slice(0, 8)),
@@ -61,9 +68,9 @@ function mapStaff(raw: RawStaffMember): StaffMember {
     branch: raw.branch ?? '-',
     phone: raw.phone ?? '-',
     department: raw.jobRole ?? '-',
-    joinDate: raw.joinDate ?? new Date().toISOString(),
+    joinDate: raw.joinDate ?? '',
     salary: raw.salary ?? 0,
-    isActive: (raw.status ?? '').toLowerCase() === 'active',
+    isActive,
   };
 }
 
@@ -106,7 +113,13 @@ function mapStaffDetail(raw: RawStaffDetail): StaffProfileDetail {
   };
 }
 
-export function useStaffList(params?: QueryParams) {
+export function useStaffList(
+  params?: QueryParams,
+  options?: Omit<
+    UseQueryOptions<PaginatedResponse<StaffMember>>,
+    'queryKey' | 'queryFn'
+  >,
+) {
   return useQuery<PaginatedResponse<StaffMember>>({
     queryKey: ['staff-list', params],
     queryFn: async () => {
@@ -114,6 +127,7 @@ export function useStaffList(params?: QueryParams) {
       const rows = Array.isArray(data?.data) ? data.data : [];
       return { ...data, data: rows.map((item: RawStaffMember) => mapStaff(item)) };
     },
+    ...options,
   });
 }
 

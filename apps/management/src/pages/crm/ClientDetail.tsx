@@ -12,19 +12,16 @@ import { Modal } from '@/components/ui/Modal';
 import { Input } from '@/components/ui/Input';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useCurrency } from '@/hooks/useCurrency';
-import { useAuthStore } from '@/store/authStore';
-import type { StaffUser } from '@/types/auth';
+import { usePermission } from '@/hooks/usePermission';
 import { toast } from 'sonner';
-
-const SENIOR_ROLES = ['CEO', 'CO_MD', 'OP_MANAGER'];
 
 export default function ClientDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { formatCurrency } = useCurrency();
 
-  const user = useAuthStore((s) => s.user) as StaffUser | null;
-  const canManage = SENIOR_ROLES.includes(user?.systemRole ?? '');
+  const perm = usePermission();
+  const canManage = perm.isCEO || perm.isOps || perm.isManager;
 
   const { data: client, isLoading, isError } = useClientAccount(id);
   const updateClient = useUpdateClientAccount();

@@ -13,8 +13,8 @@ import { StatsRow } from '@/components/shared/StatsRow';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useCurrency } from '@/hooks/useCurrency';
-import { formatCompact } from '@/lib/format';
 import type { MonthlyRevenue } from '@/types/models';
+import { formatCompact } from '@/lib/format';
 
 export default function Analytics() {
   const { formatCurrency } = useCurrency();
@@ -25,7 +25,7 @@ export default function Analytics() {
   const opsLoading = health.isLoading || staffStats.isLoading || clientStats.isLoading;
   const opsError = health.isError || staffStats.isError || clientStats.isError;
   const chartData = useMemo(() => {
-    return (revenueData ?? []).map((r: any) => ({
+    return (revenueData ?? []).map((r: MonthlyRevenue & { totalRevenueUsd?: number; totalExpensesUsd?: number; netProfitUsd?: number }) => ({
       month: `${r.month}-${String(r.year).slice(-2)}`,
       revenue: r.totalRevenueUsd ?? r.revenue ?? 0,
       expenses: r.totalExpensesUsd ?? r.expenses ?? 0,
@@ -281,6 +281,7 @@ export default function Analytics() {
           getRowId={(row) => row.month}
           compact
           emptyTitle="No revenue data"
+          emptyDescription="Revenue data will appear once records are added."
         />
       </Card>
     </PageTransition>

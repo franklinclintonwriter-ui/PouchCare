@@ -46,14 +46,32 @@ export interface PluginDetail extends Plugin {
   activationCount: number;
 }
 
+function mapPlugin(raw: Record<string, unknown>): Plugin {
+  return {
+    id: String(raw.id ?? ''),
+    slug: String(raw.slug ?? ''),
+    name: String(raw.name ?? ''),
+    description: raw.description != null ? String(raw.description) : null,
+    status: raw.status === 'PUBLISHED' ? 'PUBLISHED' : 'DRAFT',
+    currentVersion: String(raw.currentVersion ?? ''),
+    versionCount: typeof raw.versionCount === 'number' ? raw.versionCount : undefined,
+    activationCount: typeof raw.activationCount === 'number' ? raw.activationCount : undefined,
+    createdById: String(raw.createdById ?? ''),
+    createdAt: String(raw.createdAt ?? ''),
+    updatedAt: String(raw.updatedAt ?? ''),
+  };
+}
+
 // ── Hooks ─────────────────────────────────────────────────────────────────
 
 export function usePlugins() {
-  return useQuery<Plugin[]>({
+  return useQuery({
     queryKey: ['plugins'],
     queryFn: async () => {
       const res = await api.get('/plugins');
-      return res.data.data;
+      const data = res.data;
+      const rows = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
+      return rows.map(mapPlugin);
     },
   });
 }

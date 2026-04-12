@@ -275,6 +275,7 @@ model Task {
   assignedBy       String?       @map("assigned_by")
   multipleAssignees String?      @map("multiple_assignees")
   relatedProject   String?       @map("related_project")
+  relatedProjectId String?       @map("related_project_id")
   relatedClient    String?       @map("related_client")
   taskUrl          String?       @map("task_url")
   startDate        DateTime?     @map("start_date")
@@ -298,6 +299,9 @@ model Task {
   attachment2      String?       @map("attachment_2")
   attachment3      String?       @map("attachment_3")
   attachmentNotes  String?       @map("attachment_notes")
+  // task_attachments: JSON array of { url, name, uploadedAt }
+  taskAttachments  Json?         @map("task_attachments")
+  progressUpdatedAt DateTime?    @map("progress_updated_at")
   notes            String?
   createdAt        DateTime      @default(now()) @map("created_at")
   updatedAt        DateTime      @updatedAt @map("updated_at")
@@ -305,8 +309,10 @@ model Task {
   // Relations
   assignedMember   StaffMember?  @relation("AssignedMember", fields: [assignedMemberId], references: [id])
   assignedManager  StaffMember?  @relation("AssignedManager", fields: [assignedManagerId], references: [id])
+  relatedProjectRef Project?     @relation("TaskRelatedProject", fields: [relatedProjectId], references: [id])
   comments         TaskComment[]
 
+  @@index([relatedProjectId])
   @@map("tasks")
 }
 
@@ -358,6 +364,8 @@ model Project {
   createdByRole    String?       @map("created_by_role")
   createdAt        DateTime      @default(now()) @map("created_at")
   updatedAt        DateTime      @updatedAt @map("updated_at")
+
+  tasks            Task[]        @relation("TaskRelatedProject")
   @@map("projects")
 }
 
@@ -1128,4 +1136,35 @@ model ToolRun {
 
   @@index([staffId, createdAt(sort: Desc)])
   @@map("tool_runs")
+}
+
+// ── System Configuration & Audit Logs ────────────────────────────────────────
+
+model SystemSetting {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  value       String   // JSON stringified value
+  type        String   @default("string") // string | boolean | number | json
+  group       String   @default("general") // general | financial | security | modules | integrations | notifications
+  label       String?
+  description String?
+  isPublic    Boolean  @default(false) @map("is_public") // If true, can be read by non-authenticated or portal users
+  updatedBy   String?  @map("updated_by")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("system_settings")
+}
+
+model SystemAuditLog {
+  id          String   @id @default(uuid())
+  action      String   // e.g. "UPDATE_SETTING", "CLEAR_CACHE"
+  module      String   // e.g. "system_config"
+  actorId     String   @map("actor_id")
+  actorName   String   @map("actor_name")
+  actorRole   String   @map("actor_role")
+  ipAddress   String?  @map("ip_address")
+  details     String?  // JSON stringified details (oldValue, newValue)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("system_audit_logs")
 }

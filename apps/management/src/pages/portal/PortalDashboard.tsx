@@ -26,12 +26,16 @@ export default function PortalDashboard() {
   const { data: ordersData, isLoading } = usePortalOrders({ limit: 5 });
   const recentOrders = ordersData?.data ?? [];
 
+  // Fetch all orders for accurate stats (not just the 5 recent ones)
+  const { data: allOrdersData } = usePortalOrders({ limit: 100 });
+  const allOrders = allOrdersData?.data ?? [];
+
   const stats = useMemo(() => {
-    const active = recentOrders.filter(o => ['PENDING', 'PROCESSING'].includes(o.status)).length;
-    const completed = recentOrders.filter(o => o.status === 'COMPLETED').length;
-    const totalSpent = recentOrders.reduce((s, o) => s + (o.amount || 0), 0);
+    const active = allOrders.filter(o => ['PENDING', 'PROCESSING'].includes(o.status)).length;
+    const completed = allOrders.filter(o => o.status === 'COMPLETED').length;
+    const totalSpent = allOrders.reduce((s, o) => s + (o.amount || 0), 0);
     return { active, completed, totalSpent };
-  }, [recentOrders]);
+  }, [allOrders]);
 
   const columns: Column<PortalOrder>[] = [
     { key: 'number', label: 'Order #', render: (r) => <span className="font-mono text-xs">{r.number}</span> },
@@ -56,17 +60,17 @@ export default function PortalDashboard() {
             <p className="mt-1 text-lg font-semibold text-gray-900 dark:text-gray-100">
               {portalUser?.fullName ?? 'User'}
             </p>
-            <div className="mt-4 grid grid-cols-3 gap-2">
-              {quickActions.map((a) => (
+            <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
+              {quickActions.map(({ path, label, icon: QuickIcon }) => (
                 <Button
-                  key={a.path}
+                  key={path}
                   variant="outline"
                   size="sm"
-                  icon={<a.icon className="h-3.5 w-3.5" />}
-                  onClick={() => navigate(a.path)}
-                  className="w-full justify-center text-[11px]"
+                  icon={<QuickIcon className="h-3.5 w-3.5 shrink-0" aria-hidden />}
+                  onClick={() => navigate(path)}
+                  className="w-full justify-center text-xs sm:text-[11px]"
                 >
-                  {a.label}
+                  {label}
                 </Button>
               ))}
             </div>
@@ -93,9 +97,14 @@ export default function PortalDashboard() {
         {/* Recent Orders */}
         <Card padding="none">
           <div className="p-4 pb-0 sm:p-5 sm:pb-0">
-            <CardHeader>
-              <CardTitle>Recent Orders</CardTitle>
-              <Button variant="ghost" size="sm" onClick={() => navigate('/portal/orders')}>
+            <CardHeader className="min-w-0 flex-wrap items-center gap-2 sm:flex-nowrap sm:gap-3">
+              <CardTitle className="min-w-0 flex-1">Recent Orders</CardTitle>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="shrink-0"
+                onClick={() => navigate('/portal/orders')}
+              >
                 View All
               </Button>
             </CardHeader>

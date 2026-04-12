@@ -67,7 +67,7 @@ export default function PlaceOrder() {
                     <Skeleton className="mt-3 h-8 w-full" />
                   </Card>
                 ))
-              : services?.filter((s: any) => s.isActive ?? s.status === 'Active').map((service) => (
+              : services?.filter((s: Service) => s.isActive).map((service) => (
                   <Card key={service.id} hover onClick={() => handleSelect(service)}>
                     <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{service.name}</p>
                     <Badge variant="primary" size="sm" className="mt-1">{service.category}</Badge>
@@ -128,7 +128,7 @@ export default function PlaceOrder() {
                 <div className="rounded-lg border border-gray-200 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-700">
                   <SummaryRow label="Service" value={selectedService?.name ?? ''} />
                   <SummaryRow label="Category" value={selectedService?.category ?? ''} />
-                  <SummaryRow label="Estimated Price" value={formatCurrency((selectedService as any)?.basePriceUsd ?? (selectedService as any)?.priceRange?.min ?? 0)} />
+                  <SummaryRow label="Estimated Price" value={formatCurrency(selectedService?.priceRange?.min ?? 0)} />
                   <SummaryRow label="URL" value={url} />
                   {notes && <SummaryRow label="Notes" value={notes} />}
                 </div>

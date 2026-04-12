@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CheckCircle2, XCircle, Clock, Wifi } from 'lucide-react';
+import { CheckCircle2, XCircle, Clock, Wifi, LogIn } from 'lucide-react';
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
 import { useMyAttendance } from '@/api/attendance';
 import { PageTransition } from '@/components/ui/PageTransition';
@@ -8,6 +8,7 @@ import { DataTable, type Column } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Badge } from '@/components/ui/Badge';
 import { StatsRow } from '@/components/shared/StatsRow';
+import { QueryErrorState } from '@/components/ui/QueryErrorState';
 import type { AttendanceRecord } from '@/types/models';
 
 const workTypeBadge: Record<string, 'primary' | 'success' | 'warning' | 'info' | 'default'> = {
@@ -21,7 +22,7 @@ const workTypeBadge: Record<string, 'primary' | 'success' | 'warning' | 'info' |
 export default function MyAttendance() {
   const navigate = useNavigate();
   const [page, setPage] = useState(1);
-  const { data: records = [], isLoading } = useMyAttendance();
+  const { data: records = [], isLoading, isError, refetch } = useMyAttendance();
 
   const paged = useMemo(() => {
     const limit = 20;
@@ -52,7 +53,7 @@ export default function MyAttendance() {
   const headerConfig = useMemo(() => ({
     title: 'My Attendance',
     breadcrumbs: [{ label: 'Home', href: '/' }, { label: 'Attendance' }, { label: 'My Attendance' }],
-    actions: [{ type: 'button' as const, label: 'Check In / Out', onClick: () => navigate('/attendance/check') }],
+    actions: [{ type: 'button' as const, label: 'Check In / Out', icon: LogIn, variant: 'outline' as const, onClick: () => navigate('/attendance/check') }],
   }), [navigate]);
 
   useHeaderConfig(headerConfig);
@@ -109,17 +110,26 @@ export default function MyAttendance() {
   return (
     <PageTransition>
       <div className="space-y-6">
-        <StatsRow items={stats} loading={isLoading} />
+        {isError ? (
+          <QueryErrorState
+            title="Could not load your attendance"
+            onRetry={() => void refetch()}
+          />
+        ) : (
+          <>
+            <StatsRow items={stats} loading={isLoading} />
 
-        <DataTable
-          columns={columns}
-          data={paged}
-          isLoading={isLoading}
-          pagination={paginationMeta}
-          onPageChange={setPage}
-          emptyTitle="No attendance records"
-          emptyDescription="Your attendance history will appear here"
-        />
+            <DataTable
+              columns={columns}
+              data={paged}
+              isLoading={isLoading}
+              pagination={paginationMeta}
+              onPageChange={setPage}
+              emptyTitle="No attendance records"
+              emptyDescription="Your attendance history will appear here"
+            />
+          </>
+        )}
       </div>
     </PageTransition>
   );

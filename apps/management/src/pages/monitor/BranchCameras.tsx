@@ -3,8 +3,22 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
-  Cctv, ArrowLeft, Radio, Wifi, WifiOff, Activity, RefreshCw,
-  LayoutGrid, List, Filter, Search, X, LayoutDashboard, Clock, Signal, Download,
+  Cctv,
+  Radio,
+  Wifi,
+  WifiOff,
+  Activity,
+  RefreshCw,
+  LayoutGrid,
+  List,
+  Search,
+  LayoutDashboard,
+  Clock,
+  Signal,
+  Download,
+  ArrowDownUp,
+  Layers,
+  Settings,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/utils/cn';
@@ -12,6 +26,7 @@ import { useHeaderConfig } from '@/hooks/useHeaderConfig';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import { Modal } from '@/components/ui/Modal';
 import { LiveViewerModal } from '@/components/monitor/LiveViewerModal';
 import {
   useCamerasByBranch,
@@ -356,49 +371,55 @@ function BranchStatsBar({ nvrLabel, cameras }: { nvrLabel: string; cameras: Came
   const offline = cameras.filter((c) => c.status === 'offline').length;
   const pct = cameras.length > 0 ? Math.round((online / cameras.length) * 100) : 0;
 
-  return (
-    <div className="rounded-xl border border-gray-800/60 bg-gray-900/70 px-3 py-3 sm:px-4 dark:bg-gray-900/70">
-      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
-          <div className="flex items-center gap-2">
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
-            </span>
-            <span className="font-semibold text-white">{online}</span>
-            <span className="text-gray-400">online</span>
-          </div>
-          <div className="hidden h-4 w-px bg-gray-700 sm:block" />
-          <div className="flex items-center gap-2">
-            <Radio className="h-3.5 w-3.5 text-red-500" />
-            <span className="font-semibold text-white">{recording}</span>
-            <span className="text-gray-400">recording</span>
-          </div>
-          <div className="hidden h-4 w-px bg-gray-700 sm:block" />
-          <div className="flex items-center gap-2">
-            <WifiOff className="h-3.5 w-3.5 text-gray-600" />
-            <span className="font-semibold text-white">{offline}</span>
-            <span className="text-gray-400">offline</span>
-          </div>
-        </div>
+  const statClass =
+    'flex flex-col items-center justify-center rounded-xl border border-gray-200/90 bg-white px-2 py-2.5 text-center shadow-sm dark:border-gray-700/80 dark:bg-gray-800/90 sm:py-3';
 
-        <div className="flex flex-wrap items-center gap-2 border-t border-gray-800 pt-3 text-xs sm:ml-auto sm:border-0 sm:pt-0">
-          <span className="min-w-0 truncate text-gray-400">
-            NVR: <span className="text-gray-300">{nvrLabel}</span>
+  return (
+    <div className="space-y-2">
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">
+        <div className={statClass}>
+          <span className="text-lg font-bold tabular-nums text-emerald-600 dark:text-emerald-400 sm:text-xl">
+            {online}
           </span>
-          <span
-            className={cn(
-              'rounded-full px-2 py-0.5 font-semibold',
-              pct >= 90
-                ? 'bg-emerald-900/40 text-emerald-400'
-                : pct >= 60
-                ? 'bg-amber-900/40 text-amber-400'
-                : 'bg-red-900/40 text-red-400',
-            )}
-          >
-            {pct}% uptime
+          <span className="mt-0.5 text-[10px] font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
+            Online
           </span>
         </div>
+        <div className={statClass}>
+          <span className="flex items-center justify-center gap-1 text-lg font-bold tabular-nums text-red-500 sm:text-xl">
+            <Radio className="h-3.5 w-3.5 sm:hidden" aria-hidden />
+            {recording}
+          </span>
+          <span className="mt-0.5 text-[10px] font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
+            Rec
+          </span>
+        </div>
+        <div className={statClass}>
+          <span className="text-lg font-bold tabular-nums text-gray-600 dark:text-gray-300 sm:text-xl">
+            {offline}
+          </span>
+          <span className="mt-0.5 text-[10px] font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
+            Off
+          </span>
+        </div>
+      </div>
+      <div className="flex min-w-0 items-center gap-2 rounded-xl border border-gray-200/80 bg-gray-50/90 px-3 py-2 dark:border-gray-700 dark:bg-gray-900/50">
+        <span
+          className={cn(
+            'shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-bold tabular-nums',
+            pct >= 90
+              ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300'
+              : pct >= 60
+                ? 'bg-amber-100 text-amber-900 dark:bg-amber-950/40 dark:text-amber-200'
+                : 'bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-300',
+          )}
+        >
+          {pct}%
+        </span>
+        <span className="min-w-0 truncate text-xs text-gray-600 dark:text-gray-300" title={nvrLabel}>
+          <span className="text-gray-400">NVR · </span>
+          {nvrLabel}
+        </span>
       </div>
     </div>
   );
@@ -503,6 +524,16 @@ export default function BranchCameras() {
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+
+  const onSearchChange = useCallback((v: string) => setSearch(v), []);
+
+  const clearAllFilters = useCallback(() => {
+    setSearch('');
+    setSourceFilter('all');
+    setSortKey('label_asc');
+    setFilterStatus('all');
+  }, []);
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
@@ -542,9 +573,73 @@ export default function BranchCameras() {
           { label: 'Monitor', href: '/monitor', icon: Cctv },
           { label: displayBranch?.name ?? '…' },
         ],
-        actions: [],
+        actions: [
+          {
+            type: 'search' as const,
+            placeholder: 'Search cameras…',
+            value: search,
+            onChange: onSearchChange,
+          },
+          {
+            type: 'filter' as const,
+            label: 'Source',
+            icon: Layers,
+            options: [
+              { label: 'Manual', value: 'manual' },
+              { label: 'Vigi', value: 'vigi' },
+            ],
+            value: sourceFilter === 'all' ? '' : sourceFilter,
+            onChange: (v: string) =>
+              setSourceFilter(v === '' ? 'all' : (v as 'manual' | 'vigi')),
+          },
+          {
+            type: 'filter' as const,
+            label: 'Sort',
+            icon: ArrowDownUp,
+            options: [
+              { label: 'Name A–Z', value: 'label_asc' },
+              { label: 'Name Z–A', value: 'label_desc' },
+              { label: 'By status', value: 'status' },
+              { label: 'Updated (newest)', value: 'updated_desc' },
+              { label: 'Updated (oldest)', value: 'updated_asc' },
+            ],
+            value: sortKey === 'label_asc' ? '' : sortKey,
+            onChange: (v: string) =>
+              setSortKey(
+                (v === '' ? 'label_asc' : v) as NonNullable<CamerasByBranchParams['sort']>,
+              ),
+          },
+          {
+            type: 'filter' as const,
+            label: 'Status',
+            icon: Activity,
+            options: [
+              { label: 'Online', value: 'online' },
+              { label: 'Recording', value: 'recording' },
+              { label: 'Offline', value: 'offline' },
+            ],
+            value: filterStatus === 'all' ? '' : filterStatus,
+            onChange: (v: string) =>
+              setFilterStatus(v === '' ? 'all' : (v as FilterStatus)),
+          },
+          {
+            type: 'button' as const,
+            label: '',
+            ariaLabel: 'Camera and NVR settings',
+            icon: Settings,
+            variant: 'outline' as const,
+            onClick: () => setSettingsOpen(true),
+          },
+        ],
       }),
-      [displayBranch?.name],
+      [
+        displayBranch?.name,
+        search,
+        onSearchChange,
+        sourceFilter,
+        sortKey,
+        filterStatus,
+      ],
     ),
   );
 
@@ -598,210 +693,118 @@ export default function BranchCameras() {
   const totalMatching = cameraPage?.meta?.total ?? cameras.length;
 
   return (
-    <PageTransition className="space-y-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-      {/* Back + branch header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-3">
-        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-          <button
-            type="button"
-            onClick={() => navigate('/monitor')}
-            className="flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-lg px-2 py-2 text-sm text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 active:bg-gray-200 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200 dark:active:bg-gray-700"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            All Branches
-          </button>
-          <div className="hidden h-4 w-px bg-gray-200 sm:block dark:bg-gray-700" />
-          <div className="min-w-0 flex-1">
-            <h1 className="truncate text-base font-bold text-gray-900 dark:text-gray-100">
-              {displayBranch!.name}
-            </h1>
-            <p className="line-clamp-2 text-xs text-gray-500">
-              {[displayBranch!.city, displayBranch!.country].filter(Boolean).join(', ') || '—'}
-              {displayBranch!.address ? ` — ${displayBranch!.address}` : ''}
-            </p>
-          </div>
-        </div>
-      </div>
-
+    <PageTransition className="space-y-3 sm:space-y-5 pb-[max(1rem,env(safe-area-inset-bottom))]">
       {/* Stats bar */}
       <BranchStatsBar nvrLabel={cameras[0]?.nvrDevice ?? '—'} cameras={cameras} />
 
-      {branchId && (
-        <VigiIntegrationCard branchId={branchId} canManage={canVigiManage} />
-      )}
-
-      {/* Toolbar — stacked on narrow screens for touch-friendly layout */}
-      <div className="flex flex-col gap-3">
-        <div className="flex flex-wrap items-stretch gap-2 sm:items-center">
-          <div className="relative min-w-0 flex-1 sm:max-w-xs">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-            <input
-              type="search"
-              enterKeyHint="search"
-              placeholder="Search cameras…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className={cn(
-                'min-h-[44px] w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pl-10 pr-10 text-sm text-gray-700',
-                'placeholder:text-gray-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/30',
-                'dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200',
-              )}
-            />
-            {search && (
+      {/* Actions: refresh, export, layout — search & filters live in the main header */}
+      <div className="rounded-xl border border-gray-200/90 bg-white p-2 shadow-sm dark:border-gray-700/80 dark:bg-gray-900/40 sm:p-3">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+          <div className="min-w-0 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-gray-600 dark:text-gray-400">
+            <span className="font-medium text-gray-700 dark:text-gray-300">
+              {cameras.length} of {totalMatching} cameras
+            </span>
+            {search.trim() && (
+              <span className="truncate text-gray-500" title={search.trim()}>
+                · “{search.trim()}”
+              </span>
+            )}
+            {(sourceFilter !== 'all' || filterStatus !== 'all' || sortKey !== 'label_asc') && (
+              <span className="text-gray-500">
+                · filtered
+              </span>
+            )}
+            {(search.trim() ||
+              sourceFilter !== 'all' ||
+              filterStatus !== 'all' ||
+              sortKey !== 'label_asc') && (
               <button
                 type="button"
-                onClick={() => setSearch('')}
-                className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-md text-gray-400 hover:bg-gray-200 hover:text-gray-700 dark:hover:bg-gray-700 dark:hover:text-gray-200"
+                onClick={clearAllFilters}
+                className="shrink-0 font-medium text-primary-600 hover:underline dark:text-primary-400"
               >
-                <X className="h-4 w-4" />
+                Reset all
               </button>
             )}
           </div>
-          <button
-            type="button"
-            onClick={handleRefresh}
-            className="flex min-h-[44px] shrink-0 items-center justify-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-4 text-sm text-gray-600 transition-colors hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700/80"
-          >
-            <RefreshCw className={cn('h-4 w-4', isRefreshing && 'animate-spin')} />
-            <span className="sm:inline">Refresh</span>
-          </button>
-          <button
-            type="button"
-            onClick={handleExportCsv}
-            disabled={exporting || !branchId || cameras.length === 0}
-            title="Download CSV with current filters (same as list API)"
-            className="flex min-h-[44px] shrink-0 items-center justify-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-4 text-sm text-gray-600 transition-colors hover:bg-gray-100 disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700/80"
-          >
-            <Download className={cn('h-4 w-4', exporting && 'animate-pulse')} />
-            <span className="hidden sm:inline">CSV</span>
-          </button>
-        </div>
-
-        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-          <div className="flex w-full flex-col gap-2 sm:w-auto sm:min-w-0 sm:flex-row sm:items-center sm:gap-2">
-            <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-500">Source</span>
-            <div className="-mx-1 flex gap-0.5 overflow-x-auto overflow-y-hidden rounded-lg border border-gray-200 bg-gray-50 p-1 dark:border-gray-700 dark:bg-gray-800 sm:mx-0">
-              {(['all', 'manual', 'vigi'] as const).map((f) => (
-                <button
-                  key={f}
-                  type="button"
-                  onClick={() => setSourceFilter(f)}
-                  className={cn(
-                    'shrink-0 rounded-md px-3 py-2.5 text-sm font-medium capitalize transition-colors sm:py-2 sm:text-xs',
-                    sourceFilter === f
-                      ? 'bg-white text-gray-900 shadow-sm dark:bg-gray-700 dark:text-white'
-                      : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300',
-                  )}
-                >
-                  {f}
-                </button>
-              ))}
-            </div>
-            <label className="flex min-w-0 items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-              <span className="shrink-0">Sort</span>
-              <select
-                value={sortKey}
-                onChange={(e) =>
-                  setSortKey(e.target.value as NonNullable<CamerasByBranchParams['sort']>)
-                }
-                className="min-h-[40px] min-w-0 flex-1 rounded-md border border-gray-200 bg-white px-2 py-1.5 text-sm text-gray-800 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 sm:max-w-[200px]"
-              >
-                <option value="label_asc">Name A–Z</option>
-                <option value="label_desc">Name Z–A</option>
-                <option value="status">Status</option>
-                <option value="updated_desc">Updated (newest)</option>
-                <option value="updated_asc">Updated (oldest)</option>
-              </select>
-            </label>
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div className="-mx-1 flex gap-0.5 overflow-x-auto overflow-y-hidden rounded-lg border border-gray-200 bg-gray-50 p-1 scrollbar-thin dark:border-gray-700 dark:bg-gray-800 sm:mx-0">
-            {(['all', 'online', 'recording', 'offline'] as FilterStatus[]).map((f) => (
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setSettingsOpen(true)}
+              className="flex h-10 items-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50 px-3 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700 sm:hidden"
+            >
+              <Settings className="h-4 w-4" aria-hidden />
+              Settings
+            </button>
+            <button
+              type="button"
+              onClick={handleRefresh}
+              aria-label="Refresh camera list"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-gray-50 text-gray-600 transition-colors hover:bg-gray-100 active:bg-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+            >
+              <RefreshCw className={cn('h-4 w-4', isRefreshing && 'animate-spin')} />
+            </button>
+            <button
+              type="button"
+              onClick={handleExportCsv}
+              disabled={exporting || !branchId || cameras.length === 0}
+              aria-label="Download camera list as CSV"
+              title="Export CSV (current filters)"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-gray-50 text-gray-600 transition-colors hover:bg-gray-100 active:bg-gray-200 disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+            >
+              <Download className={cn('h-4 w-4', exporting && 'animate-pulse')} />
+            </button>
+            <div
+              className="inline-flex overflow-hidden rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800/80"
+              role="group"
+              aria-label="View layout"
+            >
               <button
-                key={f}
                 type="button"
-                onClick={() => setFilterStatus(f)}
+                onClick={() => setViewMode('grid')}
+                aria-label="Grid view"
+                aria-pressed={viewMode === 'grid'}
                 className={cn(
-                  'shrink-0 rounded-md px-4 py-2.5 text-sm font-medium capitalize transition-colors sm:py-2 sm:text-xs',
-                  filterStatus === f
-                    ? 'bg-white text-gray-900 shadow-sm dark:bg-gray-700 dark:text-white'
-                    : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300',
+                  'flex h-10 w-10 items-center justify-center transition-colors sm:h-9 sm:w-9',
+                  viewMode === 'grid'
+                    ? 'bg-white text-primary-600 shadow-inner dark:bg-gray-700 dark:text-primary-400'
+                    : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700/80',
                 )}
               >
-                {f}
+                <LayoutGrid className="h-4 w-4" />
               </button>
-            ))}
-          </div>
-
-          <div className="flex shrink-0 items-center justify-end overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
-            <button
-              type="button"
-              onClick={() => setViewMode('grid')}
-              title="Grid view"
-              className={cn(
-                'flex min-h-[44px] min-w-[44px] items-center justify-center p-2.5 transition-colors sm:min-h-0 sm:p-2',
-                viewMode === 'grid'
-                  ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400'
-                  : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300',
-              )}
-            >
-              <LayoutGrid className="h-5 w-5 sm:h-4 sm:w-4" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('multiview')}
-              title="Multiview (2×2)"
-              className={cn(
-                'flex min-h-[44px] min-w-[44px] items-center justify-center border-x border-gray-200 p-2.5 transition-colors dark:border-gray-700 sm:min-h-0 sm:p-2',
-                viewMode === 'multiview'
-                  ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400'
-                  : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300',
-              )}
-            >
-              <LayoutDashboard className="h-5 w-5 sm:h-4 sm:w-4" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('list')}
-              title="List view"
-              className={cn(
-                'flex min-h-[44px] min-w-[44px] items-center justify-center p-2.5 transition-colors sm:min-h-0 sm:p-2',
-                viewMode === 'list'
-                  ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400'
-                  : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300',
-              )}
-            >
-              <List className="h-5 w-5 sm:h-4 sm:w-4" />
-            </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('multiview')}
+                aria-label="Multiview 2 by 2"
+                aria-pressed={viewMode === 'multiview'}
+                className={cn(
+                  'flex h-10 w-10 items-center justify-center border-x border-gray-200 transition-colors dark:border-gray-600 sm:h-9 sm:w-9',
+                  viewMode === 'multiview'
+                    ? 'bg-white text-primary-600 shadow-inner dark:bg-gray-700 dark:text-primary-400'
+                    : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700/80',
+                )}
+              >
+                <LayoutDashboard className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('list')}
+                aria-label="List view"
+                aria-pressed={viewMode === 'list'}
+                className={cn(
+                  'flex h-10 w-10 items-center justify-center transition-colors sm:h-9 sm:w-9',
+                  viewMode === 'list'
+                    ? 'bg-white text-primary-600 shadow-inner dark:bg-gray-700 dark:text-primary-400'
+                    : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700/80',
+                )}
+              >
+                <List className="h-4 w-4" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
-
-      {/* Filter info row */}
-      {(filterStatus !== 'all' || search || sourceFilter !== 'all') && (
-        <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-          <Filter className="h-3.5 w-3.5 shrink-0" />
-          <span>
-            Showing {cameras.length} of {totalMatching} cameras
-            {search.trim() && ` matching “${search.trim()}”`}
-            {sourceFilter !== 'all' && ` · source ${sourceFilter}`}
-          </span>
-          {(filterStatus !== 'all' || sourceFilter !== 'all') && (
-            <button
-              type="button"
-              onClick={() => {
-                setFilterStatus('all');
-                setSourceFilter('all');
-              }}
-              className="text-primary-600 hover:underline dark:text-primary-400"
-            >
-              Clear filters
-            </button>
-          )}
-        </div>
-      )}
 
       {/* ── Grid view ── */}
       {viewMode === 'grid' && (
@@ -928,6 +931,27 @@ export default function BranchCameras() {
           )}
         </div>
       )}
+
+      <Modal
+        isOpen={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        title="Camera & NVR settings"
+        description="Configure the Vigi NVR integration for this branch and sync imported channels. Search, source, sort, and status filters are in the header."
+        size="lg"
+      >
+        <div className="space-y-4">
+          <p className="text-sm leading-relaxed text-gray-600 dark:text-gray-300">
+            <strong className="text-gray-900 dark:text-gray-100">Importing cameras:</strong> connect the NVR, save the
+            integration, then use <strong>Sync cameras</strong> to pull channels. Manual camera records are maintained
+            through your existing admin or API workflows.
+          </p>
+          {branchId ? (
+            <VigiIntegrationCard branchId={branchId} canManage={canVigiManage} />
+          ) : (
+            <p className="text-sm text-gray-500">Branch context is missing.</p>
+          )}
+        </div>
+      </Modal>
 
       {/* Live viewer modal */}
       <LiveViewerModal

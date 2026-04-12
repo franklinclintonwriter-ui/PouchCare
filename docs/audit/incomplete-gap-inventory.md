@@ -1,5 +1,7 @@
 # Management UI ↔ API — gap inventory (2026-04-04)
 
+**Rolling action queue:** [OPEN_ISSUES_AND_PROGRESS.md](./OPEN_ISSUES_AND_PROGRESS.md) — sync open gap items (§4) and checkbox progress there so context is not lost.
+
 This document lists **incomplete**, **partial**, or **misaligned** areas between the **management** app (`apps/management`) and the **API** (`apps/api`). Use it with [TASKS.md](./TASKS.md) (coverage checklist) and [00-inventory.md](./00-inventory.md).
 
 ---

@@ -66,6 +66,7 @@ export default function ReferralLeaderboard() {
         isLoading={isLoading}
         getRowId={(row) => `${row.rank}-${row.name}`}
         emptyTitle="No leaderboard data"
+        emptyDescription="Refer friends to appear on the leaderboard."
       />
     </PageTransition>
   );

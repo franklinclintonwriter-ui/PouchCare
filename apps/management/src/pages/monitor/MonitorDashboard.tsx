@@ -3,13 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   Cctv, MapPin, Radio, Wifi, WifiOff, AlertTriangle, ChevronRight,
-  Building2, Search, Shield, Activity, Cpu, Satellite, Zap, Clock3,
+  Building2, Search, Shield, Activity, Cpu, Satellite, Zap, Clock3, Settings,
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { KPICard } from '@/components/ui/KPICard';
 import { Button } from '@/components/ui/Button';
+import { Modal } from '@/components/ui/Modal';
 import {
   useMonitorSummary,
   type MonitorBranchRow,
@@ -509,10 +510,10 @@ function OfflineAlert({ branches }: { branches: MonitorBranchRow[] }) {
 export default function MonitorDashboard() {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
-  const [liveUpdates, setLiveUpdates] = useState(true);
+  const [guideOpen, setGuideOpen] = useState(false);
 
   const { data, isLoading, isError, error, refetch } = useMonitorSummary({
-    refetchInterval: liveUpdates ? 45_000 : false,
+    refetchInterval: 45_000,
   });
 
   const totals = data?.totals ?? emptyTotals;
@@ -530,6 +531,14 @@ export default function MonitorDashboard() {
           placeholder: 'Search branches…',
           value: search,
           onChange: onSearchChange,
+        },
+        {
+          type: 'button' as const,
+          label: '',
+          ariaLabel: 'Monitor overview help',
+          icon: Settings,
+          variant: 'outline' as const,
+          onClick: () => setGuideOpen(true),
         },
       ],
     }),
@@ -572,21 +581,23 @@ export default function MonitorDashboard() {
 
   return (
     <PageTransition className="space-y-5 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+      <Modal
+        isOpen={guideOpen}
+        onClose={() => setGuideOpen(false)}
+        title="Monitor overview"
+        description="Fleet health and branch shortcuts. Per-branch camera and NVR settings open when you select a branch."
+        size="md"
+      >
+        <ul className="list-inside list-disc space-y-2 text-sm text-gray-600 dark:text-gray-300">
+          <li>Use the header search to filter branches by name, city, or country.</li>
+          <li>Open a branch card to view cameras, filters, exports, and Vigi NVR integration (with permission).</li>
+          <li>KPIs and alerts refresh periodically; use Refresh in the branch view after changing hardware.</li>
+        </ul>
+      </Modal>
+
       <MonitorKPIs totals={totals} loading={loading} />
 
       <SystemHealthBar totals={totals} />
-
-      <div className="flex flex-wrap items-center justify-end gap-2">
-        <label className="flex cursor-pointer select-none items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-medium text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
-          <input
-            type="checkbox"
-            className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-            checked={liveUpdates}
-            onChange={(e) => setLiveUpdates(e.target.checked)}
-          />
-          Auto-refresh summary every 45s
-        </label>
-      </div>
 
       <FleetInsightsPanel insights={data?.insights} loading={loading} />
 

@@ -29,6 +29,8 @@ export interface FilterParams {
   priority?: string;
   branch?: string;
   role?: string;
+  /** Filter tasks by project UUID (`relatedProject` matches project name or id). */
+  projectId?: string;
   [key: string]: string | number | undefined;
 }
 

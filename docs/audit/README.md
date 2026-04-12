@@ -2,6 +2,12 @@
 
 Structured checklists to review every Management portal page and every mounted API router **one row at a time**. This folder is documentation only; code changes are tracked separately.
 
+## Start here — open issues & progress (rolling)
+
+**[OPEN_ISSUES_AND_PROGRESS.md](./OPEN_ISSUES_AND_PROGRESS.md)** — master tracker: **build status**, **checkbox TODOs**, **links to verified audits**, and **session context** (what was already shipped). Update this when closing infra or gap items so nothing is forgotten.
+
+---
+
 ## Phased completion plan (recommended)
 
 **[PHASED-AUDIT.md](./PHASED-AUDIT.md)** — phases 0–4, all management page files, API client list, gap summary, and **Phase 1** execution items (RBAC + analytics parity). Use this when prioritizing work beyond the raw checklist.

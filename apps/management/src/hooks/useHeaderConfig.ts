@@ -20,10 +20,13 @@ export function useHeaderConfig(config: HeaderConfig) {
       })
       .join('|') ?? '';
 
+  const breadcrumbKey =
+    config.breadcrumbs?.map((b) => `${b.label}:${b.href ?? ''}`).join('|') ?? '';
+
   useEffect(() => {
     setHeader(config);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [config.title, actionKey, setHeader]);
+  }, [config.title, config.description, breadcrumbKey, actionKey, setHeader]);
 
   useEffect(() => {
     return () => clearHeader();

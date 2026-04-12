@@ -112,12 +112,11 @@ export function VigiIntegrationCard({ branchId, canManage }: Props) {
 
   if (!canManage) {
     return (
-      <div className="rounded-xl border border-gray-200 bg-gray-50/80 p-4 dark:border-gray-700 dark:bg-gray-900/40">
-        <div className="flex items-start gap-2">
-          <ShieldAlert className="mt-0.5 h-4 w-4 text-amber-500" />
-          <p className="text-xs text-gray-600 dark:text-gray-400">
-            TP-Link VIGI NVR linking is available to CEO / Co-MD / Ops. Ask an administrator to configure OpenAPI on
-            the NVR (port 20443) and connect it here.
+      <div className="rounded-xl border border-amber-200/60 bg-amber-50/50 p-3 dark:border-amber-900/40 dark:bg-amber-950/20 sm:p-4">
+        <div className="flex items-start gap-2.5">
+          <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+          <p className="text-xs leading-snug text-amber-900/90 dark:text-amber-100/90">
+            <span className="font-semibold">VIGI NVR</span> — Admin setup only. OpenAPI on port <strong>20443</strong>.
           </p>
         </div>
       </div>
@@ -125,22 +124,26 @@ export function VigiIntegrationCard({ branchId, canManage }: Props) {
   }
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm dark:border-gray-700 dark:bg-gray-900/60 sm:p-4">
-      <div className="mb-3 flex items-center gap-2">
-        <Link2 className="h-4 w-4 text-primary-500" />
-        <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">TP-Link VIGI NVR</h2>
+    <div className="rounded-xl border border-gray-200/80 bg-white p-3 shadow-sm dark:border-gray-700 dark:bg-gray-900/70 sm:p-4">
+      <div className="mb-2 flex flex-wrap items-center gap-2">
+        <div className="flex items-center gap-2">
+          <Link2 className="h-4 w-4 text-primary-500" />
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">VIGI NVR</h2>
+        </div>
         {integration && (
           <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-medium text-emerald-700 dark:text-emerald-400">
-            Connected
+            Linked
           </span>
         )}
       </div>
-      <p className="mb-3 text-[11px] leading-relaxed text-gray-500 dark:text-gray-400">
-        Enable OpenAPI on the NVR: <strong>Settings → Network → OpenAPI</strong> (HTTPS, default{' '}
-        <strong>20443</strong>). This server uses Digest (SHA-256) to obtain a token, then reads{' '}
-        <code className="rounded bg-gray-100 px-1 dark:bg-gray-800">/openapi/added_devices</code>. Use “Allow insecure
-        TLS” only if the NVR uses a self-signed certificate.
-      </p>
+      <details className="mb-3 text-[11px] text-gray-500 dark:text-gray-400">
+        <summary className="cursor-pointer select-none font-medium text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-gray-100">
+          Connection help
+        </summary>
+        <p className="mt-2 leading-relaxed">
+          Enable <strong>OpenAPI</strong> on the NVR (HTTPS · default <strong>20443</strong>). Optional: allow insecure TLS for self-signed certs.
+        </p>
+      </details>
 
       {isLoading ? (
         <div className="flex items-center gap-2 py-4 text-xs text-gray-500">
@@ -227,7 +230,7 @@ export function VigiIntegrationCard({ branchId, canManage }: Props) {
         <Button
           size="sm"
           variant="primary"
-          className="min-h-[44px] w-full justify-center sm:min-h-0 sm:w-auto"
+          className="h-10 w-full justify-center sm:h-9 sm:w-auto"
           onClick={onSave}
           disabled={upsert.isPending || !host.trim()}
         >
@@ -236,7 +239,7 @@ export function VigiIntegrationCard({ branchId, canManage }: Props) {
         <Button
           size="sm"
           variant="outline"
-          className="min-h-[44px] w-full justify-center sm:min-h-0 sm:w-auto"
+          className="h-10 w-full justify-center sm:h-9 sm:w-auto"
           onClick={onTest}
           disabled={test.isPending || testSaved.isPending}
         >
@@ -249,7 +252,7 @@ export function VigiIntegrationCard({ branchId, canManage }: Props) {
         <Button
           size="sm"
           variant="outline"
-          className="min-h-[44px] w-full justify-center sm:min-h-0 sm:w-auto"
+          className="h-10 w-full justify-center sm:h-9 sm:w-auto"
           onClick={onSync}
           disabled={sync.isPending || !integration}
         >
@@ -259,7 +262,7 @@ export function VigiIntegrationCard({ branchId, canManage }: Props) {
           <Button
             size="sm"
             variant="ghost"
-            className="min-h-[44px] w-full justify-center text-red-600 sm:min-h-0 sm:w-auto"
+            className="h-10 w-full justify-center text-red-600 sm:h-9 sm:w-auto"
             onClick={onRemove}
             disabled={del.isPending}
           >

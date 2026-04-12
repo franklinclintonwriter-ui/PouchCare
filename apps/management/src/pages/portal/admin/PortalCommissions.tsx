@@ -39,7 +39,7 @@ export default function PortalCommissions() {
   const headerConfig = useMemo(() => ({
     title: 'Commissions',
     breadcrumbs: [
-      { label: 'Admin', href: '/admin' },
+      { label: 'Admin', href: '/admin/portal' },
       { label: 'Portal', href: '/admin/portal' },
       { label: 'Commissions' },
     ],
