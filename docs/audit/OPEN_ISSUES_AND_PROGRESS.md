@@ -1,6 +1,6 @@
 # Open issues & progress — master tracker
 
-**Last updated:** 2026-04-12  
+**Last updated:** 2026-04-12 (continued — task cache + `relatedProjectId` + `ProjectDetail`)  
 **Purpose:** One place for **build blockers**, **verified technical debt**, **gap follow-ups**, and **checkbox progress** so work is not lost between sessions. Deep-dive evidence stays in linked files; this doc is the **action queue + context**.
 
 ---
@@ -58,9 +58,9 @@ Source: [ISSUE_VERIFICATION_2026-04-12](./ISSUE_VERIFICATION_2026-04-12.md). Ful
 
 ### Fix soon (correctness / stale data)
 
-- [ ] **INFRA-1** — `ProjectDetail`: avoid unsafe `id!`; use `id ?? ''` + `enabled: !!id` consistently
-- [ ] **INFRA-2** — `useDeleteProject`: invalidate/remove `['project', id]` detail cache on success
-- [ ] **INFRA-3** — Backend tasks: prefer `relatedProjectId` (UUID) instead of matching project **by name** (rename breaks links)
+- [x] **INFRA-1** — `ProjectDetail`: use `projectId = routeId?.trim() ?? ''`, early return when missing, no `id!` (2026-04-12)
+- [x] **INFRA-2** — `useDeleteProject`: already removes `projectKeys.detail(id)` + invalidates list (2026-04-12 verified)
+- [x] **INFRA-3** — Tasks: `POST /tasks` + `PUT /tasks/:id` now persist **`relatedProjectId`**; list filter by `projectId` already used `relatedProjectId` (2026-04-12). Legacy `relatedProject` string kept for display name.
 
 ### Fix next (data quality)
 
@@ -70,8 +70,8 @@ Source: [ISSUE_VERIFICATION_2026-04-12](./ISSUE_VERIFICATION_2026-04-12.md). Ful
 
 ### React Query / API hygiene
 
-- [ ] **RQ-1** — `useDeleteTask` (and siblings): invalidate `taskKeys.my` + detail where applicable ([verification #12](./ISSUE_VERIFICATION_2026-04-12.md))
-- [ ] **RQ-2** — Introduce `projectKeys` style keys for projects ([verification #16](./ISSUE_VERIFICATION_2026-04-12.md))
+- [x] **RQ-1** — `useDeleteTask`: `removeQueries` detail + invalidate `my`; submit/approve/reject/verify/rate: invalidate `taskKeys.my` (2026-04-12)
+- [x] **RQ-2** — `projectKeys` already in `constants/queryKeys.ts` and used by `projects.ts` (2026-04-12 verified)
 - [ ] **API-1** — Typed mutation inputs (`CreateProjectInput`, …) instead of only `Record<string, unknown>` ([verification #15](./ISSUE_VERIFICATION_2026-04-12.md))
 
 ### Architecture (ongoing)
@@ -85,7 +85,7 @@ Source: [ISSUE_VERIFICATION_2026-04-12](./ISSUE_VERIFICATION_2026-04-12.md). Ful
 Source: [incomplete-gap-inventory.md](./incomplete-gap-inventory.md)
 
 - [ ] **GAP-1** — Analytics page: align nav promise with `/v1/analytics` usage (or rename nav) — parity with dashboard widgets
-- [ ] **GAP-2** — HR: document or merge duplicate performance routes (`/v1/performance` vs `/v1/hr/performance`)
+- [ ] **GAP-2** — HR: document or merge duplicate performance routes — see [GAP2_HR_PERFORMANCE_ROUTES.md](./GAP2_HR_PERFORMANCE_ROUTES.md)
 - [ ] **GAP-3** — Preferences: document localStorage-only or add backend sync
 - [ ] **GAP-4** — Optional `recruiterRating` in schema if product needs real application scores
 - [ ] **GAP-5** — Remove or wire `apps/management/src/mocks/**` to avoid confusion
@@ -124,6 +124,7 @@ Re-verify in code before implementing (forms may already have been expanded: Tas
 | **Projects** | Print header/actions on `ProjectDetail` | `ProjectDetail.tsx` |
 | **Env / API** | Management client aligned with Vite proxy / API `PORT` | `apps/management` `.env`, `api/client.ts` |
 | **TS hygiene (mgmt)** | `tsc -b` unblocked: `mapPlugin`, project date strings, staff `joinDate`, attendance `checkIn`, create project field names vs API | `plugins.ts`, `projects.ts`, `staff.ts`, `attendance.ts`, `ProjectList.tsx` (2026-04-12) |
+| **Tasks + projects** | API stores `relatedProjectId` on create/update; task mutations invalidate **My Tasks**; delete removes task detail cache; `ProjectDetail` validates route id | `apps/api/.../tasks/index.ts`, `apps/management/src/api/tasks.ts`, `ProjectDetail.tsx` (2026-04-12) |
 
 If you **re-audit** a page, remove or update rows here when superseded.
 

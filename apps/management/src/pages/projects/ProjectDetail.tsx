@@ -66,17 +66,18 @@ function daysUntil(iso: string): number {
 }
 
 export default function ProjectDetail() {
-  const { id } = useParams<{ id?: string }>();
+  const { id: routeId } = useParams<{ id?: string }>();
+  const projectId = routeId?.trim() ?? "";
   const navigate = useNavigate();
   const { formatCurrency } = useCurrency();
   const perm = usePermission();
-  const { data: project, isLoading } = useProject(id ?? "");
+  const { data: project, isLoading } = useProject(projectId);
   const {
     data: relatedTasks,
     isLoading: tasksLoading,
     isError: tasksError,
     refetch: refetchTasks,
-  } = useTasks({ projectId: id, limit: 30 }, { enabled: !!id });
+  } = useTasks({ projectId, limit: 30 }, { enabled: !!projectId });
   const updateProject = useUpdateProject();
   const deleteProject = useDeleteProject();
 
@@ -107,13 +108,13 @@ export default function ProjectDetail() {
   }, [project]);
 
   const handleUpdate = async () => {
-    if (!id || !form.name.trim()) {
+    if (!projectId || !form.name.trim()) {
       toast.error("Project name is required");
       return;
     }
     try {
       await updateProject.mutateAsync({
-        id,
+        id: projectId,
         name: form.name.trim(),
         clientName: form.clientName.trim(),
         notes: form.notes.trim(),
@@ -129,9 +130,9 @@ export default function ProjectDetail() {
   };
 
   const handleDelete = async () => {
-    if (!id) return;
+    if (!projectId) return;
     try {
-      await deleteProject.mutateAsync(id);
+      await deleteProject.mutateAsync(projectId);
       toast.success("Project cancelled");
       navigate("/projects");
     } catch {
@@ -197,6 +198,17 @@ export default function ProjectDetail() {
   );
 
   useHeaderConfig(headerConfig);
+
+  if (!projectId) {
+    return (
+      <PageTransition>
+        <div className="flex min-h-[40vh] flex-col items-center justify-center px-4 py-16 text-center text-gray-500 dark:text-gray-400">
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Invalid project link</p>
+          <p className="mt-1 max-w-sm text-xs">The URL is missing a project id. Open a project from the list.</p>
+        </div>
+      </PageTransition>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -567,7 +579,7 @@ export default function ProjectDetail() {
                     No related tasks
                   </p>
                   <p className="mt-1 max-w-xs text-xs text-gray-500 dark:text-gray-500">
-                    Tasks with this project linked (by name or id) appear here.
+                    Tasks linked to this project (by project id) appear here.
                   </p>
                 </div>
               ) : (

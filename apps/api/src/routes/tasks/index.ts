@@ -117,16 +117,7 @@ router.get('/', async (req: AuthRequest, res) => {
     }
 
     if (projectId) {
-      const proj = await prisma.project.findUnique({
-        where: { id: projectId },
-        select: { id: true },
-      })
-      if (!proj) {
-        return paginated(res, [], buildMeta(0, page, limit))
-      }
-      const projectScope = {
-        relatedProjectId: proj.id,
-      }
+      const projectScope = { relatedProjectId: projectId }
       const existing = { ...where }
       if (Object.keys(existing).length === 0) {
         Object.assign(where, projectScope)
@@ -186,7 +177,8 @@ router.post('/', isManager, validate(taskSchema), async (req: AuthRequest, res) 
         where: { id: body.relatedProjectId },
         select: { id: true, name: true },
       })
-      relatedProject = p?.name ?? p?.id
+      if (!p) return badRequest(res, 'Invalid projectId')
+      relatedProject = p.name
     }
 
     const cat =
@@ -293,7 +285,8 @@ router.put('/:id', async (req: AuthRequest, res) => {
           where: { id: body.relatedProjectId },
           select: { id: true, name: true },
         })
-        relatedProject = p?.name ?? p?.id ?? null
+        if (!p) return badRequest(res, 'Invalid projectId')
+        relatedProject = p.name
       } else {
         relatedProject = null
       }

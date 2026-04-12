@@ -35,7 +35,7 @@ This document lists **incomplete**, **partial**, or **misaligned** areas between
 | Endpoint | Notes |
 |----------|--------|
 | `GET/POST /v1/performance` | Primary **staff performance ratings** (used by `Performance.tsx` + `api/performance.ts`). |
-| `GET/POST …/v1/hr/performance` | **Same underlying `PerformanceRating` model** exposed again under HR router. Risk: two ways to list/create reviews; prefer **one** public contract long-term. |
+| `GET/POST …/v1/hr/performance` | **Same underlying `PerformanceRating` model** exposed again under HR router. Risk: two ways to list/create reviews; prefer **one** public contract long-term. **Doc:** [GAP2_HR_PERFORMANCE_ROUTES.md](./GAP2_HR_PERFORMANCE_ROUTES.md). |
 
 ### Recruitment detail
 
