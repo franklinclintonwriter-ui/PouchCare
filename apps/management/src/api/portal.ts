@@ -294,6 +294,26 @@ export function useReferralStats() {
   });
 }
 
+export type FraudCommission = {
+  id: string;
+  fraudFlag: boolean;
+  createdAt: string;
+  commissionAmountUsd?: number | null;
+  orderId?: string | null;
+  earnerId?: string | null;
+};
+
+export function useReferralFraudFlags() {
+  return useQuery<FraudCommission[]>({
+    queryKey: ['referral-fraud'],
+    queryFn: async () => {
+      const { data } = await api.get('/portal/referrals/fraud');
+      const rows = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
+      return rows as FraudCommission[];
+    },
+  });
+}
+
 export function useCommissions(params?: QueryParams) {
   return useQuery<PaginatedResponse<CommissionRecord>>({
     queryKey: ['commissions', params],

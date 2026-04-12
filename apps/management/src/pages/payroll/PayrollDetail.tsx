@@ -1,11 +1,16 @@
-import { useMemo } from 'react';
-import { useParams } from 'react-router-dom';
+import { useMemo, useState, useCallback } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Pencil, Trash2 } from 'lucide-react';
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
-import { usePayrollEntry, useMarkPayrollPaid } from '@/api/payroll';
+import { usePayrollEntry, useMarkPayrollPaid, useUpdatePayroll, useDeletePayroll } from '@/api/payroll';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Badge } from '@/components/ui/Badge';
+import { Modal } from '@/components/ui/Modal';
+import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useCurrency } from '@/hooks/useCurrency';
 import { usePermission } from '@/hooks/usePermission';
 import { toast } from 'sonner';
@@ -14,21 +19,95 @@ const MONTH_NAMES = ['January','February','March','April','May','June','July','A
 
 export default function PayrollDetail() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const perm = usePermission();
   const { formatCurrency } = useCurrency();
   const { data: entry, isLoading } = usePayrollEntry(id ?? '');
   const markPaid = useMarkPayrollPaid();
+  const updatePayroll = useUpdatePayroll();
+  const deletePayroll = useDeletePayroll();
 
-  const headerConfig = useMemo(() => ({
-    title: entry ? `${entry.staffName} — ${MONTH_NAMES[(entry.month ?? 1) - 1]} ${entry.year}` : 'Payroll Detail',
-    breadcrumbs: [
-      { label: 'Payroll', href: '/payroll' },
-      { label: entry?.staffName ?? '...' },
-    ],
-    actions: perm.isCEO && entry?.status !== 'PAID' ? [
-      {
+  const canEdit = perm.can('payroll.access');
+
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [form, setForm] = useState({
+    baseSalary: '',
+    bonus: '',
+    deductions: '',
+    paymentMethod: '',
+    notes: '',
+  });
+
+  const openEdit = useCallback(() => {
+    if (entry) {
+      setForm({
+        baseSalary: String(entry.baseSalary),
+        bonus: String(entry.bonus),
+        deductions: String(entry.deductions),
+        paymentMethod: '',
+        notes: '',
+      });
+    }
+    setEditOpen(true);
+  }, [entry]);
+
+  const handleSave = async () => {
+    if (!id) return;
+    try {
+      await updatePayroll.mutateAsync({
+        id,
+        baseSalary: form.baseSalary ? Number(form.baseSalary) : undefined,
+        bonus: form.bonus ? Number(form.bonus) : undefined,
+        deductions: form.deductions ? Number(form.deductions) : undefined,
+        paymentMethod: form.paymentMethod || undefined,
+        notes: form.notes || undefined,
+      });
+      toast.success('Payroll updated');
+      setEditOpen(false);
+    } catch {
+      toast.error('Failed to update payroll');
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!id) return;
+    try {
+      await deletePayroll.mutateAsync(id);
+      toast.success('Payroll record deleted');
+      navigate('/payroll');
+    } catch {
+      toast.error('Failed to delete payroll');
+    }
+  };
+
+  const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement>) =>
+    setForm(f => ({ ...f, [k]: e.target.value }));
+
+  const headerConfig = useMemo(() => {
+    const actions: Array<{
+      type: 'button';
+      label: string;
+      icon?: typeof Pencil;
+      variant?: 'outline' | 'danger' | 'primary';
+      onClick: () => void;
+    }> = [];
+
+    if (canEdit) {
+      actions.push({
+        type: 'button' as const,
+        label: 'Edit',
+        icon: Pencil,
+        variant: 'outline' as const,
+        onClick: openEdit,
+      });
+    }
+
+    if (perm.isCEO && entry?.status !== 'PAID') {
+      actions.push({
         type: 'button' as const,
         label: 'Mark as Paid',
+        variant: 'primary' as const,
         onClick: async () => {
           if (!id) return;
           try {
@@ -38,9 +117,28 @@ export default function PayrollDetail() {
             toast.error('Failed to mark as paid');
           }
         },
-      },
-    ] : [],
-  }), [entry, perm.isCEO, id]);
+      });
+    }
+
+    if (perm.isCEO) {
+      actions.push({
+        type: 'button' as const,
+        label: 'Delete',
+        icon: Trash2,
+        variant: 'danger' as const,
+        onClick: () => setDeleteOpen(true),
+      });
+    }
+
+    return {
+      title: entry ? `${entry.staffName} — ${MONTH_NAMES[(entry.month ?? 1) - 1]} ${entry.year}` : 'Payroll Detail',
+      breadcrumbs: [
+        { label: 'Payroll', href: '/payroll' },
+        { label: entry?.staffName ?? '...' },
+      ],
+      actions,
+    };
+  }, [entry, perm.isCEO, canEdit, id, openEdit]);
 
   useHeaderConfig(headerConfig);
 
@@ -134,6 +232,40 @@ export default function PayrollDetail() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Edit modal */}
+      <Modal
+        isOpen={editOpen}
+        onClose={() => setEditOpen(false)}
+        title="Edit Payroll"
+        size="sm"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setEditOpen(false)}>Cancel</Button>
+            <Button isLoading={updatePayroll.isPending} onClick={handleSave}>Save Changes</Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <Input label="Base Salary (USD)" type="number" min="0" step="0.01" value={form.baseSalary} onChange={set('baseSalary')} />
+          <Input label="Bonus (USD)" type="number" min="0" step="0.01" value={form.bonus} onChange={set('bonus')} />
+          <Input label="Deductions (USD)" type="number" min="0" step="0.01" value={form.deductions} onChange={set('deductions')} />
+          <Input label="Payment Method" placeholder="e.g. Bank Transfer, Cash" value={form.paymentMethod} onChange={set('paymentMethod')} />
+          <Input label="Notes" value={form.notes} onChange={set('notes')} />
+        </div>
+      </Modal>
+
+      {/* Delete confirm */}
+      <ConfirmDialog
+        isOpen={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        title="Delete Payroll Record"
+        message={`Delete payroll record for ${entry.staffName} — ${MONTH_NAMES[(entry.month ?? 1) - 1]} ${entry.year}? This cannot be undone.`}
+        confirmLabel="Delete"
+        variant="danger"
+        isLoading={deletePayroll.isPending}
+        onConfirm={handleDelete}
+      />
     </PageTransition>
   );
 }

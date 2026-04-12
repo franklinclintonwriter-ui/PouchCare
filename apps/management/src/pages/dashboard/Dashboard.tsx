@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { LayoutDashboard, RefreshCw, Clock, Sparkles } from 'lucide-react';
+import { LayoutDashboard, Clock, Sparkles } from 'lucide-react';
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
 import { useDashboardSummary, useForecast } from '@/api/analytics';
 import {
@@ -37,7 +37,7 @@ function formatDate(): string {
 }
 
 export default function Dashboard() {
-  const { data, isLoading, isError, error, refetch, isFetching } = useDashboardSummary();
+  const { data, isLoading, isError, error } = useDashboardSummary();
   const forecast = useForecast();
   const user = useAuthStore((s) => s.user) as StaffUser | null;
 
@@ -47,21 +47,9 @@ export default function Dashboard() {
     () => ({
       title: 'Dashboard',
       breadcrumbs: [{ label: 'Dashboard', icon: LayoutDashboard }],
-      actions: [
-        {
-          type: 'button' as const,
-          label: 'Refresh',
-          icon: RefreshCw,
-          variant: 'outline' as const,
-          isLoading: isFetching || forecast.isFetching,
-          onClick: () => {
-            void refetch();
-            void forecast.refetch();
-          },
-        },
-      ],
+      actions: [],
     }),
-    [refetch, forecast.refetch, isFetching, forecast.isFetching]
+    []
   );
 
   useHeaderConfig(headerConfig);
@@ -228,18 +216,6 @@ export default function Dashboard() {
         <div className="flex items-center justify-center gap-2 text-xs text-gray-400 dark:text-gray-500 pt-4 border-t border-gray-100 dark:border-gray-800">
           <Clock className="h-3 w-3" />
           <span>Last updated: {new Date(data.generatedAt).toLocaleTimeString()}</span>
-          <span className="text-gray-300 dark:text-gray-600">|</span>
-          <button
-            type="button"
-            onClick={() => {
-              refetch();
-              forecast.refetch();
-            }}
-            className="text-primary-500 hover:text-primary-600 dark:text-primary-400 dark:hover:text-primary-300 font-medium disabled:opacity-50"
-            disabled={isFetching || forecast.isFetching}
-          >
-            {isFetching || forecast.isFetching ? 'Refreshing...' : 'Refresh now'}
-          </button>
         </div>
       )}
     </div>

@@ -15,7 +15,7 @@ import {
   MonitorSmartphone, Megaphone, HeadphonesIcon, BellRing, UserPlus,
   Receipt, CreditCard, Building2, ChevronDown, X, LogOut, Wallet,
   Users2, Star, ShoppingCart, Package, ChevronsLeft, ChevronsRight,
-  Settings, Puzzle, Cctv, Wrench,
+  Settings, Puzzle, Cctv, Wrench, Trophy, Cpu,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -72,7 +72,7 @@ function Sidebar() {
       label: 'HR',
       items: [
         { label: 'Staff', icon: Users, href: '/staff' },
-        { label: 'Leaderboard', icon: Star, href: '/staff/leaderboard' },
+        { label: 'Leaderboard', icon: Trophy, href: '/staff/leaderboard' },
         { label: 'Branches', icon: Building2, href: '/staff/branches', permission: () => perm.can('staff.branches') },
         { label: 'Attendance', icon: Clock, href: '/attendance' },
         { label: 'Leave', icon: CalendarOff, href: '/leave' },
@@ -109,7 +109,7 @@ function Sidebar() {
         { label: 'Servers', icon: Server, href: '/assets/servers' },
         { label: 'Websites', icon: MonitorSmartphone, href: '/assets/websites' },
         { label: 'Monitor', icon: Cctv, href: '/monitor', permission: () => perm.can('monitor.view') },
-        { label: 'Devices', icon: MonitorSmartphone, href: '/assets/devices', permission: () => perm.can('assets.devices') },
+        { label: 'Devices', icon: Cpu, href: '/assets/devices', permission: () => perm.can('assets.devices') },
         { label: 'Services', icon: Package, href: '/services' },
         { label: 'Plugins', icon: Puzzle, href: '/plugins' },
       ],
@@ -141,6 +141,7 @@ function Sidebar() {
           { label: 'Commissions', href: '/admin/portal/commissions' },
           { label: 'Payouts', href: '/admin/portal/payouts' },
           { label: 'Deposits', href: '/admin/portal/deposits' },
+          { label: 'Referral Fraud', href: '/admin/portal/referrals/fraud' },
         ], permission: () => perm.can('admin_portal.access') },
       ],
     },

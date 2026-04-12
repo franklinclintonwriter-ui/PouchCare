@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wc -l /w/PouchCare/PouchCare/apps/management/src/pages/**/*.tsx)",
+      "Bash(npx tsc:*)"
+    ]
+  }
+}

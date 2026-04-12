@@ -161,4 +161,5 @@ export const ROUTES = {
   ADMIN_PORTAL_COMMISSIONS: '/admin/portal/commissions',
   ADMIN_PORTAL_PAYOUTS: '/admin/portal/payouts',
   ADMIN_PORTAL_DEPOSITS: '/admin/portal/deposits',
+  ADMIN_PORTAL_REFERRAL_FRAUD: '/admin/portal/referrals/fraud',
 } as const;

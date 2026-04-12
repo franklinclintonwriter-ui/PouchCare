@@ -1,13 +1,20 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LifeBuoy } from 'lucide-react';
+import { LifeBuoy, Plus } from 'lucide-react';
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
-import { useTickets } from '@/api/support';
+import { useCreateTicket, useTickets } from '@/api/support';
+import { usePermission } from '@/hooks/usePermission';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Tabs } from '@/components/ui/Tabs';
 import { PageTransition } from '@/components/ui/PageTransition';
+import { Modal } from '@/components/ui/Modal';
+import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
+import { Textarea } from '@/components/ui/Textarea';
+import { Button } from '@/components/ui/Button';
 import type { Ticket } from '@/types/models';
+import { toast } from 'sonner';
 
 const tabs = [
   { label: 'All', value: 'all' },
@@ -17,8 +24,12 @@ const tabs = [
 
 export default function TicketList() {
   const navigate = useNavigate();
+  const permission = usePermission();
   const [tab, setTab] = useState('all');
   const [page, setPage] = useState(1);
+  const [createOpen, setCreateOpen] = useState(false);
+  const createTicket = useCreateTicket();
+  const [createForm, setCreateForm] = useState({ subject: '', message: '', priority: 'MEDIUM' });
 
   const params = useMemo(() => ({
     status: tab === 'all' ? undefined : tab,
@@ -32,8 +43,10 @@ export default function TicketList() {
   const headerConfig = useMemo(() => ({
     title: 'Support Tickets',
     breadcrumbs: [{ label: 'Support', icon: LifeBuoy }],
-    actions: [],
-  }), []);
+    actions: permission.isStaff
+      ? [{ type: 'button' as const, label: 'New Ticket', icon: Plus, onClick: () => setCreateOpen(true) }]
+      : [],
+  }), [permission]);
   useHeaderConfig(headerConfig);
 
   const columns: Column<Ticket>[] = [
@@ -93,6 +106,52 @@ export default function TicketList() {
         onPageChange={setPage}
         emptyTitle="No tickets found"
       />
+
+      <Modal
+        isOpen={createOpen}
+        onClose={() => setCreateOpen(false)}
+        title="New Ticket"
+        footer={(
+          <>
+            <Button variant="outline" size="sm" onClick={() => setCreateOpen(false)}>Cancel</Button>
+            <Button
+              size="sm"
+              isLoading={createTicket.isPending}
+              onClick={async () => {
+                const subject = createForm.subject.trim();
+                const message = createForm.message.trim();
+                if (!subject || !message) return toast.error('Subject and message are required');
+                try {
+                  await createTicket.mutateAsync({ subject, message, priority: createForm.priority });
+                  setCreateOpen(false);
+                  setCreateForm({ subject: '', message: '', priority: 'MEDIUM' });
+                  toast.success('Ticket created');
+                } catch (err) {
+                  toast.error(err instanceof Error ? err.message : 'Failed to create ticket');
+                }
+              }}
+            >
+              Create
+            </Button>
+          </>
+        )}
+      >
+        <div className="space-y-3">
+          <Input label="Subject" value={createForm.subject} onChange={(e) => setCreateForm((s) => ({ ...s, subject: e.target.value }))} />
+          <Select
+            label="Priority"
+            value={createForm.priority}
+            onChange={(e) => setCreateForm((s) => ({ ...s, priority: e.target.value }))}
+            options={[
+              { label: 'Low', value: 'LOW' },
+              { label: 'Medium', value: 'MEDIUM' },
+              { label: 'High', value: 'HIGH' },
+              { label: 'Critical', value: 'CRITICAL' },
+            ]}
+          />
+          <Textarea label="Message" value={createForm.message} onChange={(e) => setCreateForm((s) => ({ ...s, message: e.target.value }))} />
+        </div>
+      </Modal>
     </PageTransition>
   );
 }

@@ -14,6 +14,7 @@ import {
   CheckCircle2,
   LogIn,
   LogOut,
+  Globe,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -72,7 +73,7 @@ const QUICK_ACTIONS: QuickAction[] = [
     id: 'clients',
     label: 'Client Accounts',
     description: 'View clients',
-    icon: <Users className="h-5 w-5" />,
+    icon: <Globe className="h-5 w-5" />,
     path: ROUTES.CRM_CLIENTS,
     permission: 'crm.client_accounts',
     color: 'bg-emerald-500',

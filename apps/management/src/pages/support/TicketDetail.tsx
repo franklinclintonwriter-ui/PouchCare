@@ -11,6 +11,7 @@ import { PageTransition } from "@/components/ui/PageTransition";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { Textarea } from "@/components/ui/Textarea";
 import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
 import { usePermission } from "@/hooks/usePermission";
 import { toast } from "sonner";
 
@@ -22,6 +23,7 @@ export default function TicketDetail() {
   const updateTicket = useUpdateTicket();
   const perm = usePermission();
   const [reply, setReply] = useState("");
+  const [assignee, setAssignee] = useState("");
   const isPortalPath = location.pathname.startsWith("/portal/");
   const canManageStatus = !isPortalPath && perm.isManager;
 
@@ -88,6 +90,33 @@ export default function TicketDetail() {
             <StatusBadge status={ticket.priority} />
             <Badge variant="default">{ticket.category}</Badge>
           </div>
+          {canManageStatus && (
+            <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end">
+              <Input
+                label="Assign To"
+                placeholder="Staff ID / email"
+                value={assignee || ticket.assigneeName || ""}
+                onChange={(e) => setAssignee(e.target.value)}
+              />
+              <Button
+                size="sm"
+                variant="outline"
+                isLoading={updateTicket.isPending}
+                onClick={async () => {
+                  const assignedTo = (assignee || "").trim() || undefined;
+                  try {
+                    await updateTicket.mutateAsync({ id: ticket.id, assignedTo });
+                    toast.success("Assignee updated");
+                    setAssignee("");
+                  } catch (err) {
+                    toast.error(err instanceof Error ? err.message : "Failed to update assignee");
+                  }
+                }}
+              >
+                Save
+              </Button>
+            </div>
+          )}
           {canManageStatus && (
             <div className="mt-3 flex flex-wrap gap-2">
               {[

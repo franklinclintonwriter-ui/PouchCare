@@ -1,33 +1,40 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Trash2 } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
-import { useSalesOrders, useDeleteSalesOrder, useUpdateSalesOrder } from '@/api/crm';
+import { useSalesOrders, useDeleteSalesOrder, useUpdateSalesOrder, useCreateSalesOrder } from '@/api/crm';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { StatsRow } from '@/components/shared/StatsRow';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/Button';
+import { Modal } from '@/components/ui/Modal';
+import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
 import { useCurrency } from '@/hooks/useCurrency';
 import { useAuthStore } from '@/store/authStore';
 import type { StaffUser } from '@/types/auth';
 import { ShoppingCart, DollarSign, CheckCircle, Clock, CircleDot } from 'lucide-react';
 import type { SalesOrder } from '@/types/models';
 import { toast } from 'sonner';
+import { usePermission } from '@/hooks/usePermission';
 
 const SENIOR_ROLES = ['CEO', 'CO_MD', 'OP_MANAGER'];
 
 export default function SalesOrders() {
   const navigate = useNavigate();
   const { formatCurrency } = useCurrency();
+  const permission = usePermission();
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const [page, setPage] = useState(1);
   const deleteSalesOrder = useDeleteSalesOrder();
   const updateSalesOrder = useUpdateSalesOrder();
+  const createSalesOrder = useCreateSalesOrder();
   const user = useAuthStore((s) => s.user) as StaffUser | null;
   const canDelete = SENIOR_ROLES.includes(user?.systemRole ?? '');
+  const canCreate = permission.isOps || permission.isManager;
 
   const { data, isLoading } = useSalesOrders({ q: search, status, page, limit: 20 });
   const orders = data?.data ?? [];
@@ -54,6 +61,19 @@ export default function SalesOrders() {
   };
 
   const [deleteTarget, setDeleteTarget] = useState<SalesOrder | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createForm, setCreateForm] = useState({
+    clientName: '',
+    service: '',
+    amountUsd: '',
+    paymentStatus: 'UNPAID',
+    status: 'New',
+    assignedTo: '',
+    branch: '',
+    deadline: '',
+    invoiceReference: '',
+    notes: '',
+  });
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
@@ -70,6 +90,7 @@ export default function SalesOrders() {
     title: 'Sales Orders',
     breadcrumbs: [{ label: 'CRM' }, { label: 'Sales Orders' }],
     actions: [
+      ...(canCreate ? [{ type: 'button' as const, label: 'New Order', icon: Plus, onClick: () => setCreateOpen(true) }] : []),
       { type: 'search', placeholder: 'Search orders...', value: search, onChange: setSearch },
       {
         type: 'filter', label: 'Status', icon: CircleDot, value: status, onChange: setStatus,
@@ -148,6 +169,87 @@ export default function SalesOrders() {
         isLoading={deleteSalesOrder.isPending}
         onConfirm={handleDelete}
       />
+
+      <Modal
+        isOpen={createOpen}
+        onClose={() => setCreateOpen(false)}
+        title="New Order"
+        footer={(
+          <>
+            <Button variant="outline" size="sm" onClick={() => setCreateOpen(false)}>Cancel</Button>
+            <Button
+              size="sm"
+              isLoading={createSalesOrder.isPending}
+              onClick={async () => {
+                if (!createForm.clientName.trim()) return toast.error('Client name is required');
+                const amount = Number(createForm.amountUsd);
+                if (!Number.isFinite(amount) || amount <= 0) return toast.error('Amount must be a positive number');
+                try {
+                  await createSalesOrder.mutateAsync({
+                    clientName: createForm.clientName.trim(),
+                    service: createForm.service.trim() || undefined,
+                    amountUsd: amount,
+                    paymentStatus: createForm.paymentStatus,
+                    status: createForm.status,
+                    assignedTo: createForm.assignedTo.trim() || undefined,
+                    branch: createForm.branch.trim() || undefined,
+                    deadline: createForm.deadline || undefined,
+                    invoiceReference: createForm.invoiceReference.trim() || undefined,
+                    notes: createForm.notes || undefined,
+                  } as any);
+                  setCreateOpen(false);
+                  setCreateForm({
+                    clientName: '',
+                    service: '',
+                    amountUsd: '',
+                    paymentStatus: 'UNPAID',
+                    status: 'New',
+                    assignedTo: '',
+                    branch: '',
+                    deadline: '',
+                    invoiceReference: '',
+                    notes: '',
+                  });
+                  toast.success('Order created');
+                } catch (err) {
+                  toast.error(err instanceof Error ? err.message : 'Failed to create order');
+                }
+              }}
+            >
+              Create
+            </Button>
+          </>
+        )}
+      >
+        <div className="space-y-3">
+          <Input label="Client Name" value={createForm.clientName} onChange={(e) => setCreateForm((s) => ({ ...s, clientName: e.target.value }))} />
+          <Input label="Service" value={createForm.service} onChange={(e) => setCreateForm((s) => ({ ...s, service: e.target.value }))} />
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Input type="number" step="0.01" label="Amount (USD)" value={createForm.amountUsd} onChange={(e) => setCreateForm((s) => ({ ...s, amountUsd: e.target.value }))} />
+            <Select
+              label="Payment Status"
+              value={createForm.paymentStatus}
+              onChange={(e) => setCreateForm((s) => ({ ...s, paymentStatus: e.target.value }))}
+              options={[
+                { label: 'Unpaid', value: 'UNPAID' },
+                { label: 'Paid', value: 'PAID' },
+                { label: 'Partial', value: 'PARTIAL' },
+                { label: 'Refunded', value: 'REFUNDED' },
+              ]}
+            />
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Input label="Status" value={createForm.status} onChange={(e) => setCreateForm((s) => ({ ...s, status: e.target.value }))} />
+            <Input label="Assignee" value={createForm.assignedTo} onChange={(e) => setCreateForm((s) => ({ ...s, assignedTo: e.target.value }))} />
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Input label="Branch" value={createForm.branch} onChange={(e) => setCreateForm((s) => ({ ...s, branch: e.target.value }))} />
+            <Input type="date" label="Deadline" value={createForm.deadline} onChange={(e) => setCreateForm((s) => ({ ...s, deadline: e.target.value }))} />
+          </div>
+          <Input label="Invoice Reference" value={createForm.invoiceReference} onChange={(e) => setCreateForm((s) => ({ ...s, invoiceReference: e.target.value }))} />
+          <Input label="Notes" value={createForm.notes} onChange={(e) => setCreateForm((s) => ({ ...s, notes: e.target.value }))} />
+        </div>
+      </Modal>
     </PageTransition>
   );
 }

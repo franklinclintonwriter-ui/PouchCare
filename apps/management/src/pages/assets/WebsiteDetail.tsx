@@ -1,25 +1,111 @@
-import { useParams } from 'react-router-dom';
-import { Globe2 } from 'lucide-react';
+import { useMemo, useState, useCallback } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Globe2, Pencil, Trash2 } from 'lucide-react';
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
-import { useWebsite } from '@/api/assets';
+import { useWebsite, useUpdateWebsite, useDeleteWebsite } from '@/api/assets';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { Modal } from '@/components/ui/Modal';
+import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
+import { Button } from '@/components/ui/Button';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { usePermission } from '@/hooks/usePermission';
 import { formatCompact } from '@/lib/format';
+import { toast } from 'sonner';
+
+const STATUS_OPTIONS = [
+  { label: 'Live', value: 'live' },
+  { label: 'Staging', value: 'staging' },
+  { label: 'Down', value: 'down' },
+  { label: 'Maintenance', value: 'maintenance' },
+];
 
 export default function WebsiteDetail() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const perm = usePermission();
   const { data: w, isLoading } = useWebsite(id);
+  const updateWebsite = useUpdateWebsite();
+  const deleteWebsite = useDeleteWebsite();
 
-  useHeaderConfig({
+  const canEdit = perm.can('assets.devices');
+
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [form, setForm] = useState({
+    name: '',
+    url: '',
+    hostedOn: '',
+    domainLinked: '',
+    status: 'live',
+    monthlyTraffic: '',
+  });
+
+  const openEdit = useCallback(() => {
+    if (w) {
+      setForm({
+        name: w.name,
+        url: w.url,
+        hostedOn: w.serverName,
+        domainLinked: w.domainName,
+        status: w.status,
+        monthlyTraffic: String(w.monthlyTraffic),
+      });
+    }
+    setEditOpen(true);
+  }, [w]);
+
+  const handleSave = async () => {
+    if (!id || !form.name.trim()) {
+      toast.error('Website name is required');
+      return;
+    }
+    try {
+      await updateWebsite.mutateAsync({
+        id,
+        name: form.name.trim(),
+        url: form.url || undefined,
+        hostedOn: form.hostedOn || undefined,
+        domainLinked: form.domainLinked || undefined,
+        status: form.status || undefined,
+        monthlyTraffic: form.monthlyTraffic ? Number(form.monthlyTraffic) : undefined,
+      });
+      toast.success('Website updated');
+      setEditOpen(false);
+    } catch {
+      toast.error('Failed to update website');
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!id) return;
+    try {
+      await deleteWebsite.mutateAsync(id);
+      toast.success('Website deleted');
+      navigate('/assets/websites');
+    } catch {
+      toast.error('Failed to delete website');
+    }
+  };
+
+  const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+    setForm(f => ({ ...f, [k]: e.target.value }));
+
+  useHeaderConfig(useMemo(() => ({
     title: w?.name ?? 'Website',
     breadcrumbs: [
       { label: 'Assets', href: '/assets/websites' },
       { label: 'Websites', href: '/assets/websites' },
       { label: w?.name ?? '…' },
     ],
-  });
+    actions: canEdit ? [
+      { type: 'button' as const, label: 'Edit', icon: Pencil, variant: 'outline' as const, onClick: openEdit },
+      { type: 'button' as const, label: 'Delete', icon: Trash2, variant: 'danger' as const, onClick: () => setDeleteOpen(true) },
+    ] : [],
+  }), [w, canEdit, openEdit]));
 
   if (isLoading) {
     return (
@@ -66,6 +152,41 @@ export default function WebsiteDetail() {
           <Field label="Last deploy" value={w.lastDeploy} />
         </CardContent>
       </Card>
+
+      {/* Edit modal */}
+      <Modal
+        isOpen={editOpen}
+        onClose={() => setEditOpen(false)}
+        title="Edit Website"
+        size="sm"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setEditOpen(false)}>Cancel</Button>
+            <Button isLoading={updateWebsite.isPending} onClick={handleSave}>Save Changes</Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <Input label="Website Name" value={form.name} onChange={set('name')} required />
+          <Input label="URL" placeholder="https://example.com" value={form.url} onChange={set('url')} />
+          <Input label="Hosted On (Server)" value={form.hostedOn} onChange={set('hostedOn')} />
+          <Input label="Domain Linked" value={form.domainLinked} onChange={set('domainLinked')} />
+          <Select label="Status" options={STATUS_OPTIONS} value={form.status} onChange={set('status')} />
+          <Input label="Monthly Traffic" type="number" min="0" value={form.monthlyTraffic} onChange={set('monthlyTraffic')} />
+        </div>
+      </Modal>
+
+      {/* Delete confirm */}
+      <ConfirmDialog
+        isOpen={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        title="Delete Website"
+        message={`Delete "${w.name}"? This cannot be undone.`}
+        confirmLabel="Delete"
+        variant="danger"
+        isLoading={deleteWebsite.isPending}
+        onConfirm={handleDelete}
+      />
     </PageTransition>
   );
 }

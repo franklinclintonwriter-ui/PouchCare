@@ -121,13 +121,25 @@ router.get(
   async (req, res) => {
     try {
       const { page, limit, skip } = getPagination(req);
+      const { q, category } = req.query as Record<string, string>;
+      const where: any = {};
+      if (category) where.category = category;
+      if (q) {
+        where.OR = [
+          { title: { contains: q, mode: "insensitive" } },
+          { notes: { contains: q, mode: "insensitive" } },
+          { paidBy: { contains: q, mode: "insensitive" } },
+          { branch: { contains: q, mode: "insensitive" } },
+        ];
+      }
       const [expenses, total] = await Promise.all([
         prisma.expense.findMany({
+          where,
           skip,
           take: limit,
           orderBy: { expenseDate: "desc" },
         }),
-        prisma.expense.count(),
+        prisma.expense.count({ where }),
       ]);
       return ok(res, expenses, buildMeta(total, page, limit));
     } catch (err) {
@@ -206,13 +218,17 @@ router.get(
   async (req, res) => {
     try {
       const { page, limit, skip } = getPagination(req);
+      const { year } = req.query as Record<string, string>;
+      const where: any = {};
+      if (year) where.year = Number(year);
       const [records, total] = await Promise.all([
         prisma.monthlyRevenue.findMany({
+          where,
           skip,
           take: limit,
           orderBy: [{ year: "desc" }, { month: "desc" }],
         }),
-        prisma.monthlyRevenue.count(),
+        prisma.monthlyRevenue.count({ where }),
       ]);
       return ok(res, records, buildMeta(total, page, limit));
     } catch (err) {

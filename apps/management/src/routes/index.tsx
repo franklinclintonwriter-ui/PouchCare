@@ -103,6 +103,7 @@ const PortalOrdersAdmin = lazy(() => import('@/pages/portal/admin/PortalOrdersAd
 const PortalCommissions = lazy(() => import('@/pages/portal/admin/PortalCommissions'));
 const PortalPayouts = lazy(() => import('@/pages/portal/admin/PortalPayouts'));
 const PortalDeposits = lazy(() => import('@/pages/portal/admin/PortalDeposits'));
+const ReferralFraud = lazy(() => import('@/pages/portal/admin/ReferralFraud'));
 const InvoiceDetail = lazy(() => import('@/pages/finance/InvoiceDetail'));
 const ExpenseDetail = lazy(() => import('@/pages/finance/ExpenseDetail'));
 const PayrollDetail = lazy(() => import('@/pages/payroll/PayrollDetail'));
@@ -179,8 +180,8 @@ export const routes: RouteObject[] = [
       { path: 'attendance/team', element: <LazyPage element={<TeamAttendance />} /> },
       { path: 'attendance/check', element: <LazyPage element={<CheckinCheckout />} /> },
       { path: 'leave', element: <LazyPage element={<LeaveList />} /> },
-      { path: 'leave/:id', element: <LazyPage element={<LeaveDetail />} /> },
       { path: 'leave/request', element: <LazyPage element={<LeaveRequestForm />} /> },
+      { path: 'leave/:id', element: <LazyPage element={<LeaveDetail />} /> },
       { path: 'reports', element: <LazyPage element={<DailyReports />} /> },
       { path: 'reports/submit', element: <LazyPage element={<ReportSubmit />} /> },
       {
@@ -451,6 +452,14 @@ export const routes: RouteObject[] = [
         element: (
           <PermissionGuard permission="admin_portal.access">
             <LazyPage element={<PortalDeposits />} />
+          </PermissionGuard>
+        ),
+      },
+      {
+        path: 'admin/portal/referrals/fraud',
+        element: (
+          <PermissionGuard permission="admin_portal.access">
+            <LazyPage element={<ReferralFraud />} />
           </PermissionGuard>
         ),
       },

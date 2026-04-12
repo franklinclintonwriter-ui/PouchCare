@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import prisma from '@/lib/prisma'
-import { authenticate, requirePortal, isOps } from '@/middleware/auth'
+import { authenticate, requirePortal, requireStaff, isOps } from '@/middleware/auth'
 import { ok, serverError } from '@/lib/response'
 import { getPaginationParams, buildMeta } from '@/lib/pagination'
 
@@ -15,6 +15,14 @@ router.get('/leaderboard', async (req, res) => {
       select: { id: true, country: true, totalReferrals: true, totalCommissionEarned: true },
     })
     return ok(res, top.map((m, i) => ({ rank: i + 1, name: `Referrer #${i + 1}`, country: m.country || '—', referrals: m.totalReferrals, earned: m.totalCommissionEarned })))
+  } catch { return serverError(res) }
+})
+
+// GET /portal/referrals/fraud — staff ops only
+router.get('/fraud', authenticate, requireStaff, isOps, async (req, res) => {
+  try {
+    const flagged = await prisma.commission.findMany({ where: { fraudFlag: true }, take: 50, orderBy: { createdAt: 'desc' } })
+    return ok(res, flagged)
   } catch { return serverError(res) }
 })
 
@@ -45,16 +53,6 @@ router.get('/stats', async (req, res) => {
   try {
     const me = await prisma.portalMember.findUnique({ where: { id: req.user!.id }, select: { referralCode: true, totalReferrals: true, totalCommissionEarned: true } })
     return ok(res, { referralCode: me?.referralCode, totalReferrals: me?.totalReferrals || 0, totalCommissionEarned: me?.totalCommissionEarned || 0 })
-  } catch { return serverError(res) }
-})
-
-
-
-// GET /portal/referrals/fraud — admin only
-router.get('/fraud', isOps, async (req, res) => {
-  try {
-    const flagged = await prisma.commission.findMany({ where: { fraudFlag: true }, take: 50, orderBy: { createdAt: 'desc' } })
-    return ok(res, flagged)
   } catch { return serverError(res) }
 })
 
