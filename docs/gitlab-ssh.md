@@ -1,7 +1,6 @@
 # GitLab remote and SSH
 
-**Primary remote (push here):** `git@gitlab.com:Pouchcare/OS.git`  
-**Legacy GitHub mirror (optional):** `git remote add github https://github.com/Pcexperience/PouchCare.git` — already added if you cloned from this repo’s config.
+**Remote:** `git@gitlab.com:Pouchcare/OS.git` — [project on GitLab](https://gitlab.com/Pouchcare/OS).
 
 ## One-time SSH setup (Windows / OpenSSH)
 
@@ -52,3 +51,13 @@ git push -u origin main
 ```
 
 If the GitLab project is empty, the first push creates `main`. If GitLab already has commits, you may need to pull with `--allow-unrelated-histories` or use a new branch—follow GitLab’s empty-repo instructions.
+
+## CI/CD
+
+Pipelines are defined in **`.gitlab-ci.yml`** at the repo root:
+
+- **pouchcare:quality** — `npm ci`, then API `prisma generate` + `tsc --noEmit`, ESLint on Management and Landing.
+- **pouchcare:build** — `npm run build` (Turbo: API + Vite apps).
+- **deploy:production** — manual job on `main` only (placeholder for your deploy script).
+
+Runners: GitLab shared runners (Linux) are sufficient. If `npm ci` fails because `package-lock.json` still lists removed apps (e.g. old workspace paths), run `npm install` locally, commit the updated lockfile, and push.

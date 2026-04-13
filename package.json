@@ -22,7 +22,6 @@
     "dev:stack":    "turbo run dev --filter=api --filter=m.pouchcare.com",
     "dev:win":      "powershell -ExecutionPolicy Bypass -File scripts/dev-start.ps1",
     "export:notion": "node scripts/export-notion.mjs",
-    "sync:github":  "node scripts/sync-tasks-to-github.mjs",
     "db:up":        "docker compose up -d",
     "db:down":      "docker compose down",
     "db:setup":     "npm run db:push -w api && npm run db:seed -w api",

@@ -12,17 +12,17 @@
 #   API:     http://127.0.0.1:7000  (PM2 → Nginx reverse proxy)
 #   DB:      PostgreSQL  name=pouchcare  user=pouchcare  pass=pouchcare
 #
-# IMPORTANT — private repo:
-#   Option A (recommended): Add server SSH key to GitHub before running:
+# IMPORTANT — private repo (GitLab: gitlab.com/Pouchcare/OS):
+#   Option A (recommended): Add server SSH public key as a GitLab deploy key:
 #     ssh-keygen -t ed25519 -C "pouchcare-server" -f ~/.ssh/id_ed25519 -N ""
-#     cat ~/.ssh/id_ed25519.pub   → paste into GitHub → Settings → Deploy Keys
-#   Option B: Set GITHUB_TOKEN env var before running:
-#     export GITHUB_TOKEN=ghp_xxxxxxxxxxxxxxxxxxxx
+#     cat ~/.ssh/id_ed25519.pub   → Project → Settings → Repository → Deploy keys
+#   Option B: Personal Access Token (read_repository):
+#     export GITLAB_TOKEN=glpat-xxxxxxxxxxxxxxxxxxxx
 #     sudo -E bash deploy.sh
 #
 # Usage:
 #   sudo bash deploy.sh          (if SSH key is already configured)
-#   sudo -E bash deploy.sh       (to pass GITHUB_TOKEN env var)
+#   sudo -E bash deploy.sh       (to pass GITLAB_TOKEN env var)
 # ═══════════════════════════════════════════════════════════════════════════
 set -e
 
@@ -44,18 +44,20 @@ APP_USER="pouchcare"
 DEV_DIR="/home/${APP_USER}/Developments"
 REPO_DIR="${DEV_DIR}/PouchCare"
 HTDOCS="/home/${APP_USER}/htdocs"
-REPO_NAME="franklinclintonwriter-ui/PouchCare"
+# GitLab project (SSH path uses : between group and project)
+REPO_SSH="git@gitlab.com:Pouchcare/OS.git"
+REPO_HTTPS="https://gitlab.com/Pouchcare/OS.git"
 
 # Build repo URL: SSH if key exists, HTTPS+token if token set, HTTPS as fallback
 SSH_KEY="/home/${APP_USER}/.ssh/id_ed25519"
 if [ -f "${SSH_KEY}" ] || [ -f "/home/${APP_USER}/.ssh/id_rsa" ]; then
-  REPO_URL="git@github.com:${REPO_NAME}.git"
+  REPO_URL="${REPO_SSH}"
   AUTH_METHOD="SSH"
-elif [ -n "${GITHUB_TOKEN}" ]; then
-  REPO_URL="https://${GITHUB_TOKEN}@github.com/${REPO_NAME}.git"
+elif [ -n "${GITLAB_TOKEN}" ]; then
+  REPO_URL="https://oauth2:${GITLAB_TOKEN}@gitlab.com/Pouchcare/OS.git"
   AUTH_METHOD="token"
 else
-  REPO_URL="https://github.com/${REPO_NAME}.git"
+  REPO_URL="${REPO_HTTPS}"
   AUTH_METHOD="public/unauthenticated"
 fi
 API_DIR="${REPO_DIR}/apps/api"
@@ -137,18 +139,18 @@ log "Directories ready under ${HTDOCS}"
 step "5/9  Repository"
 
 if [ "${AUTH_METHOD}" = "public/unauthenticated" ]; then
-  warn "No SSH key and no GITHUB_TOKEN found."
+  warn "No SSH key and no GITLAB_TOKEN found."
   warn "Attempting clone as public — this will fail if repo is private."
   warn "To fix: run   ssh-keygen -t ed25519 -C 'pouchcare' -f /home/${APP_USER}/.ssh/id_ed25519 -N ''"
-  warn "        then  cat /home/${APP_USER}/.ssh/id_ed25519.pub   → add to GitHub Deploy Keys"
+  warn "        then  cat /home/${APP_USER}/.ssh/id_ed25519.pub   → GitLab Project → Deploy keys"
   warn "        then  re-run this script"
   echo ""
 elif [ "${AUTH_METHOD}" = "SSH" ]; then
-  # Make sure SSH knows github.com
+  # Make sure SSH knows gitlab.com
   sudo -u ${APP_USER} bash -c "
     mkdir -p ~/.ssh
     chmod 700 ~/.ssh
-    ssh-keyscan -t ed25519 github.com >> ~/.ssh/known_hosts 2>/dev/null
+    ssh-keyscan -t ed25519 gitlab.com >> ~/.ssh/known_hosts 2>/dev/null
     sort -u ~/.ssh/known_hosts -o ~/.ssh/known_hosts
   "
   log "SSH key ready (${AUTH_METHOD})"

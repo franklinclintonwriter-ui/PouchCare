@@ -2,9 +2,9 @@
 
 > Full-stack agency management platform — CEO: Abdullah Al Mamun | MD: Md Oliullah | Ops: Md. Habibullah
 
-**Primary Git remote:** [GitLab — Pouchcare/OS](https://gitlab.com/Pouchcare/OS) (`git@gitlab.com:Pouchcare/OS.git`). SSH setup: [docs/gitlab-ssh.md](docs/gitlab-ssh.md).
+**Git remote:** [gitlab.com/Pouchcare/OS](https://gitlab.com/Pouchcare/OS) · SSH: `git@gitlab.com:Pouchcare/OS.git` · [SSH setup](docs/gitlab-ssh.md) · [CI/CD pipeline](https://gitlab.com/Pouchcare/OS/-/pipelines)
 
-[![CI](https://github.com/franklinclintonwriter-ui/PouchCare/actions/workflows/ci.yml/badge.svg)](https://github.com/franklinclintonwriter-ui/PouchCare/actions)
+[![Pipeline status](https://gitlab.com/Pouchcare/OS/badges/main/pipeline.svg)](https://gitlab.com/Pouchcare/OS/-/commits/main)
 
 ## Architecture
 
@@ -84,7 +84,7 @@ Portal demo accounts use `john@example.com` and other `@example.com` members in 
 ```bash
 # First deploy (fresh server)
 ssh pouchcare@72.60.204.92
-sudo bash -c "$(curl -fsSL https://raw.githubusercontent.com/franklinclintonwriter-ui/PouchCare/main/deploy.sh)"
+sudo bash -c "$(curl -fsSL https://gitlab.com/Pouchcare/OS/-/raw/main/deploy.sh)"
 
 # Update after code push
 sudo bash /home/pouchcare/htdocs/PouchCare/deploy/update.sh
@@ -168,5 +168,4 @@ Fonts: Sora (headings) · Inter (body) · JetBrains Mono (amounts/IDs)
 
 ## Notion Workspace
 
-- Root: https://www.notion.so/32b510b39ec9814b85bfc16add3d957e
-- Build Tracker: https://www.notion.so/27db768f81204caba2837294afb3a858
+

@@ -4,9 +4,8 @@
 Full-stack agency management system.
 CEO: Abdullah Al Mamun | MD (Co-MD): Md Oliullah | Ops: Md. Habibullah
 
-## Git remotes
-Primary: https://gitlab.com/Pouchcare/OS (SSH: `git@gitlab.com:Pouchcare/OS.git`)  
-Mirror / legacy: https://github.com/franklinclintonwriter-ui/PouchCare  
+## Git
+Remote: https://gitlab.com/Pouchcare/OS (SSH: `git@gitlab.com:Pouchcare/OS.git`). CI/CD: `.gitlab-ci.yml`. SSH setup: `docs/gitlab-ssh.md`.  
 Branch from develop. Never push directly to main.
 
 ## Tech Stack

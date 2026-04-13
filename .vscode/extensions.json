@@ -33,11 +33,7 @@
     // Productivity
     "aaron-bond.better-comments",
     "oderwat.indent-rainbow",
-    "usernamehw.errorlens",
-
-    // GitHub Copilot (optional — Cursor has built-in AI)
-    "GitHub.copilot",
-    "GitHub.copilot-chat"
+    "usernamehw.errorlens"
   ],
   "unwantedRecommendations": []
 }
