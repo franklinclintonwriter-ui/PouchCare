@@ -74,69 +74,11 @@ Set-Location $ProjectRoot
 Write-Host ""
 Write-Host "═══════════════════════════════════════════════════════════" -ForegroundColor DarkGray
 Write-Host ""
-
-# Start API Server
-Write-Host "🔧 Starting API Server (port 7000)..." -ForegroundColor Cyan
-$apiJob = Start-Job -ScriptBlock {
-    param($root)
-    Set-Location "$root\apps\api"
-    npx tsx watch src/server.ts
-} -ArgumentList $ProjectRoot
-
-# Wait a moment for API to initialize
-Start-Sleep -Seconds 2
-
-# Start Management Frontend
-Write-Host "🎨 Starting Management Frontend (port 3000)..." -ForegroundColor Cyan
-$mgmtJob = Start-Job -ScriptBlock {
-    param($root)
-    Set-Location "$root\apps\management"
-    npm run dev
-} -ArgumentList $ProjectRoot
-
-# Wait for services to start
-Start-Sleep -Seconds 3
-
-Write-Host ""
-Write-Host "═══════════════════════════════════════════════════════════" -ForegroundColor DarkGray
-Write-Host ""
-Write-Host "✅ Development servers starting!" -ForegroundColor Green
-Write-Host ""
-Write-Host "   📡 API:        http://localhost:7000" -ForegroundColor White
-Write-Host "   🖥️  Management: http://localhost:3000" -ForegroundColor White
-Write-Host "   📊 Prisma:     npx prisma studio (run manually)" -ForegroundColor DarkGray
-Write-Host ""
-Write-Host "   Press Ctrl+C to stop all servers" -ForegroundColor DarkGray
+Write-Host "Starting API (7000) + Management (3000) via Turbo..." -ForegroundColor Cyan
+Write-Host "  API:        http://localhost:7000/health" -ForegroundColor White
+Write-Host "  Management: http://localhost:3000" -ForegroundColor White
+Write-Host "  (Ctrl+C stops both)" -ForegroundColor DarkGray
 Write-Host ""
 
-# Monitor jobs and stream output
-try {
-    while ($true) {
-        # Get and display API output
-        $apiOutput = Receive-Job -Job $apiJob -ErrorAction SilentlyContinue
-        if ($apiOutput) {
-            $apiOutput | ForEach-Object { Write-Host "[API] $_" -ForegroundColor Blue }
-        }
-
-        # Get and display Management output
-        $mgmtOutput = Receive-Job -Job $mgmtJob -ErrorAction SilentlyContinue
-        if ($mgmtOutput) {
-            $mgmtOutput | ForEach-Object { Write-Host "[MGMT] $_" -ForegroundColor Magenta }
-        }
-
-        # Check if jobs are still running
-        if ($apiJob.State -eq "Failed" -or $mgmtJob.State -eq "Failed") {
-            Write-Host "⚠️  A job has failed. Check the output above." -ForegroundColor Red
-        }
-
-        Start-Sleep -Milliseconds 500
-    }
-} finally {
-    Write-Host ""
-    Write-Host "🛑 Stopping servers..." -ForegroundColor Yellow
-    Stop-Job -Job $apiJob -ErrorAction SilentlyContinue
-    Stop-Job -Job $mgmtJob -ErrorAction SilentlyContinue
-    Remove-Job -Job $apiJob -Force -ErrorAction SilentlyContinue
-    Remove-Job -Job $mgmtJob -Force -ErrorAction SilentlyContinue
-    Write-Host "✅ Servers stopped" -ForegroundColor Green
-}
+# Single Turbo process — prefixed logs for api vs m.pouchcare.com
+npm run dev:stack

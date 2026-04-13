@@ -14,15 +14,17 @@ import type {
 
 // ── Dashboard Summary (Consolidated - Single Request) ───────────────────────
 
-export function useDashboardSummary() {
+export function useDashboardSummary(options?: { enabled?: boolean }) {
+  const enabled = options?.enabled !== false;
   return useQuery({
     queryKey: ['analytics', 'summary'],
     queryFn: async () => {
       const res = await api.get<DashboardSummary>('/analytics/summary');
       return res.data;
     },
+    enabled,
     staleTime: 2 * 60 * 1000,
-    refetchInterval: 5 * 60 * 1000,
+    refetchInterval: enabled ? 5 * 60 * 1000 : false,
   });
 }
 
@@ -85,13 +87,15 @@ export function useLeaderboard() {
   });
 }
 
-export function useForecast() {
+export function useForecast(options?: { enabled?: boolean }) {
+  const enabled = options?.enabled !== false;
   return useQuery({
     queryKey: ['analytics', 'forecast'],
     queryFn: async () => {
       const res = await api.get<ForecastData>('/analytics/forecast');
       return res.data;
     },
+    enabled,
     staleTime: 30 * 60 * 1000,
   });
 }

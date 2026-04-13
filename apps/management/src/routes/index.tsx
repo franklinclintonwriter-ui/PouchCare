@@ -3,7 +3,7 @@ import type { RouteObject } from "react-router-dom";
 import { Navigate } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { PortalLayout } from "@/components/layout/PortalLayout";
-import { AuthGuard, GuestGuard, PermissionGuard } from "./guards";
+import { AuthGuard, GuestGuard, PermissionGuard, ManagerGuard } from "./guards";
 
 function PageLoader() {
   return (
@@ -229,7 +229,11 @@ export const routes: RouteObject[] = [
       { path: "attendance", element: <LazyPage element={<MyAttendance />} /> },
       {
         path: "attendance/team",
-        element: <LazyPage element={<TeamAttendance />} />,
+        element: (
+          <ManagerGuard>
+            <LazyPage element={<TeamAttendance />} />
+          </ManagerGuard>
+        ),
       },
       {
         path: "attendance/check",
@@ -326,14 +330,46 @@ export const routes: RouteObject[] = [
           </PermissionGuard>
         ),
       },
-      { path: "crm/leads", element: <LazyPage element={<LeadList />} /> },
-      { path: "crm/leads/:id", element: <LazyPage element={<LeadDetail />} /> },
-      { path: "crm/pipeline", element: <LazyPage element={<Pipeline />} /> },
+      {
+        path: "crm/leads",
+        element: (
+          <ManagerGuard>
+            <LazyPage element={<LeadList />} />
+          </ManagerGuard>
+        ),
+      },
+      {
+        path: "crm/leads/:id",
+        element: (
+          <ManagerGuard>
+            <LazyPage element={<LeadDetail />} />
+          </ManagerGuard>
+        ),
+      },
+      {
+        path: "crm/pipeline",
+        element: (
+          <ManagerGuard>
+            <LazyPage element={<Pipeline />} />
+          </ManagerGuard>
+        ),
+      },
       {
         path: "crm/orders/:id",
-        element: <LazyPage element={<SalesOrderDetail />} />,
+        element: (
+          <ManagerGuard>
+            <LazyPage element={<SalesOrderDetail />} />
+          </ManagerGuard>
+        ),
       },
-      { path: "crm/orders", element: <LazyPage element={<SalesOrders />} /> },
+      {
+        path: "crm/orders",
+        element: (
+          <ManagerGuard>
+            <LazyPage element={<SalesOrders />} />
+          </ManagerGuard>
+        ),
+      },
       {
         path: "crm/clients",
         element: (
@@ -492,7 +528,11 @@ export const routes: RouteObject[] = [
       },
       {
         path: "settings/api-keys",
-        element: <LazyPage element={<ApiKeys />} />,
+        element: (
+          <PermissionGuard permission="settings.role_permissions">
+            <LazyPage element={<ApiKeys />} />
+          </PermissionGuard>
+        ),
       },
       {
         path: "monitor",

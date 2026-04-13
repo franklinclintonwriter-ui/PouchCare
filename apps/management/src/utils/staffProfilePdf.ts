@@ -101,13 +101,15 @@ export interface StaffProfilePdfInput {
   attendance: AttendanceRecord[];
   documents: StaffDocument[];
   formatCurrency: (n: number) => string;
+  /** Salary line — use when salary is stored in BDT vs USD. */
+  formatSalary?: (n: number) => string;
 }
 
 /**
  * Builds a styled multi-section staff dossier PDF and triggers download in the browser.
  */
 export function downloadStaffProfilePdf(input: StaffProfilePdfInput): void {
-  const { member, tasks, attendance, documents, formatCurrency } = input;
+  const { member, tasks, attendance, documents, formatCurrency, formatSalary } = input;
   const generatedAt = new Date().toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' });
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
   const pageW = doc.internal.pageSize.getWidth();
@@ -189,7 +191,7 @@ export function downloadStaffProfilePdf(input: StaffProfilePdfInput): void {
 
   addKv('Employment & compensation', [
     ['Employment type', s(member.employmentType)],
-    ['Salary', formatCurrency(member.salary)],
+    ['Salary', (formatSalary ?? formatCurrency)(member.salary ?? 0)],
     ['Termination date', fmtDate(member.terminationDate)],
     ['Exit reason', s(member.exitReason)],
   ]);

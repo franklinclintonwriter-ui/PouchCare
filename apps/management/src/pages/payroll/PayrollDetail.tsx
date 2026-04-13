@@ -1,6 +1,6 @@
 import { useMemo, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Pencil, Trash2, CircleDollarSign, type LucideIcon } from 'lucide-react';
+import { Pencil, Trash2, CircleDollarSign, Printer, type LucideIcon } from 'lucide-react';
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
 import { usePayrollEntry, useMarkPayrollPaid, useUpdatePayroll, useDeletePayroll } from '@/api/payroll';
 import { PageTransition } from '@/components/ui/PageTransition';
@@ -15,6 +15,8 @@ import { Button } from '@/components/ui/Button';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useCurrency } from '@/hooks/useCurrency';
 import { usePermission } from '@/hooks/usePermission';
+import { BranchTeamScopeNotice } from '@/components/team/BranchTeamScopeNotice';
+import { usePayrollSlipPrint } from '@/components/payroll/PayrollSlipPrintPortal';
 import { toast } from 'sonner';
 
 const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -23,11 +25,13 @@ export default function PayrollDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const perm = usePermission();
-  const { formatCurrency } = useCurrency();
+  const { formatMoney } = useCurrency();
+  const fmtPayroll = (n: number) => formatMoney(n, { storedIn: 'BDT' });
   const { data: entry, isLoading } = usePayrollEntry(id ?? '');
   const markPaid = useMarkPayrollPaid();
   const updatePayroll = useUpdatePayroll();
   const deletePayroll = useDeletePayroll();
+  const { printSlip, portal: printPortal } = usePayrollSlipPrint();
 
   const canEdit = perm.can('payroll.access');
 
@@ -103,6 +107,13 @@ export default function PayrollDetail() {
         variant: 'outline' as const,
         onClick: openEdit,
       });
+      actions.push({
+        type: 'button' as const,
+        label: 'Print salary sheet',
+        icon: Printer,
+        variant: 'outline' as const,
+        onClick: () => entry && printSlip(entry),
+      });
     }
 
     if (perm.isCEO && entry?.status !== 'PAID') {
@@ -141,7 +152,7 @@ export default function PayrollDetail() {
       ],
       actions,
     };
-  }, [entry, perm.isCEO, canEdit, id, openEdit]);
+  }, [entry, perm.isCEO, canEdit, id, openEdit, printSlip]);
 
   useHeaderConfig(headerConfig);
 
@@ -168,6 +179,7 @@ export default function PayrollDetail() {
 
   return (
     <PageTransition className="space-y-4">
+      <BranchTeamScopeNotice />
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader>
@@ -206,6 +218,18 @@ export default function PayrollDetail() {
               <span className="text-sm text-gray-500">Status</span>
               <StatusBadge status={entry.status} />
             </div>
+            {entry.status === 'PAID' && entry.paymentDate && (
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-500">Payment date</span>
+                <span className="text-sm font-medium">
+                  {new Date(entry.paymentDate).toLocaleDateString('en-GB', {
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric',
+                  })}
+                </span>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -218,19 +242,19 @@ export default function PayrollDetail() {
           <div className="space-y-3">
             <div className="flex items-center justify-between border-b border-gray-100 pb-2 dark:border-gray-700">
               <span className="text-sm text-gray-500">Base Salary</span>
-              <span>{formatCurrency(entry.baseSalary)}</span>
+              <span>{fmtPayroll(entry.baseSalary)}</span>
             </div>
             <div className="flex items-center justify-between border-b border-gray-100 pb-2 dark:border-gray-700">
               <span className="text-sm text-gray-500">Bonus</span>
-              <span className="text-emerald-600 dark:text-emerald-400">+{formatCurrency(entry.bonus)}</span>
+              <span className="text-emerald-600 dark:text-emerald-400">+{fmtPayroll(entry.bonus)}</span>
             </div>
             <div className="flex items-center justify-between border-b border-gray-100 pb-2 dark:border-gray-700">
               <span className="text-sm text-gray-500">Deductions</span>
-              <span className="text-red-500 dark:text-red-400">-{formatCurrency(entry.deductions)}</span>
+              <span className="text-red-500 dark:text-red-400">-{fmtPayroll(entry.deductions)}</span>
             </div>
             <div className="flex items-center justify-between pt-1">
               <span className="font-semibold">Net Pay</span>
-              <span className="font-bold text-xl text-gray-900 dark:text-gray-100">{formatCurrency(entry.netPay)}</span>
+              <span className="font-bold text-xl text-gray-900 dark:text-gray-100">{fmtPayroll(entry.netPay)}</span>
             </div>
           </div>
         </CardContent>
@@ -250,9 +274,9 @@ export default function PayrollDetail() {
         }
       >
         <div className="space-y-4">
-          <Input label="Base Salary (USD)" type="number" min="0" step="0.01" value={form.baseSalary} onChange={set('baseSalary')} />
-          <Input label="Bonus (USD)" type="number" min="0" step="0.01" value={form.bonus} onChange={set('bonus')} />
-          <Input label="Deductions (USD)" type="number" min="0" step="0.01" value={form.deductions} onChange={set('deductions')} />
+          <Input label="Base Salary (BDT, ৳)" type="number" min="0" step="0.01" value={form.baseSalary} onChange={set('baseSalary')} />
+          <Input label="Bonus (BDT, ৳)" type="number" min="0" step="0.01" value={form.bonus} onChange={set('bonus')} />
+          <Input label="Deductions (BDT, ৳)" type="number" min="0" step="0.01" value={form.deductions} onChange={set('deductions')} />
           <Select
             label="Payment Method"
             value={form.paymentMethod}
@@ -281,6 +305,8 @@ export default function PayrollDetail() {
         isLoading={deletePayroll.isPending}
         onConfirm={handleDelete}
       />
+
+      {printPortal}
     </PageTransition>
   );
 }

@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/Button';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useCurrency } from '@/hooks/useCurrency';
 import { usePermission } from '@/hooks/usePermission';
+import { CrmScopeNotice } from '@/components/crm/CrmScopeNotice';
 import { ShoppingCart, Calendar, User, Building2, FileText, Link2, Trash2, CheckCircle2, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -175,6 +176,7 @@ export default function SalesOrderDetail() {
 
   return (
     <PageTransition className="space-y-6">
+      <CrmScopeNotice />
       <ConfirmDialog
         isOpen={deleteOpen}
         onClose={() => setDeleteOpen(false)}

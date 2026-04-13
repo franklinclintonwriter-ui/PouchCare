@@ -2,12 +2,14 @@ import { Outlet } from 'react-router-dom';
 import { cn } from '@/utils/cn';
 import { useSidebarStore } from '@/store/sidebarStore';
 import { useIsMobile } from '@/hooks/useMediaQuery';
+import { useCurrency } from '@/hooks/useCurrency';
 import { Header } from './Header';
 import { NotificationBridge } from './NotificationBridge';
 import { Sidebar } from './Sidebar';
 import { MobileNav } from './MobileNav';
 
 function PortalLayout() {
+  useCurrency();
   const { isCollapsed } = useSidebarStore();
   const isMobile = useIsMobile();
 

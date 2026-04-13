@@ -5,8 +5,10 @@ import { useReferralFraudFlags } from '@/api/portal';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { Badge } from '@/components/ui/Badge';
+import { useCurrency } from '@/hooks/useCurrency';
 
 export default function ReferralFraud() {
+  const { formatCurrency } = useCurrency();
   const { data, isLoading } = useReferralFraudFlags();
   const rows = data ?? [];
 
@@ -29,7 +31,11 @@ export default function ReferralFraud() {
       key: 'commissionAmountUsd',
       label: 'Amount',
       align: 'right',
-      render: (r) => <span className="text-sm font-medium">{r.commissionAmountUsd != null ? `$${r.commissionAmountUsd.toFixed(2)}` : '-'}</span>,
+      render: (r) => (
+        <span className="text-sm font-medium">
+          {r.commissionAmountUsd != null ? formatCurrency(r.commissionAmountUsd) : '-'}
+        </span>
+      ),
     },
     {
       key: 'fraudFlag',

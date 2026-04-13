@@ -1,6 +1,8 @@
 # PouchCare OS
 
-> Full-stack agency management platform — CEO: Abdullah Al Mamun | Co-MD: Oliullah Mithu | Ops: Habib Sourov
+> Full-stack agency management platform — CEO: Abdullah Al Mamun | MD: Md Oliullah | Ops: Md. Habibullah
+
+**Primary Git remote:** [GitLab — Pouchcare/OS](https://gitlab.com/Pouchcare/OS) (`git@gitlab.com:Pouchcare/OS.git`). SSH setup: [docs/gitlab-ssh.md](docs/gitlab-ssh.md).
 
 [![CI](https://github.com/franklinclintonwriter-ui/PouchCare/actions/workflows/ci.yml/badge.svg)](https://github.com/franklinclintonwriter-ui/PouchCare/actions)
 
@@ -10,7 +12,7 @@
 Internet → Nginx :80/:443
   ├── pouchcare.com          → /home/pouchcare/htdocs/pouchcare.com/      (Landing, static)
   ├── m.pouchcare.com        → /home/pouchcare/htdocs/m.pouchcare.com/    (Management, React)
-  ├── office.pouchcare.com   → /home/pouchcare/htdocs/office.pouchcare.com/ (Office, React)
+  ├── office.pouchcare.com   → optional / legacy Staff UI (not in this monorepo; use m.pouchcare.com)
   ├── my.pouchcare.com       → /home/pouchcare/htdocs/my.pouchcare.com/   (Client Portal, React)
   └── api.pouchcare.com      → http://127.0.0.1:7000  (PM2: pouchcare-api)
                                     └── PostgreSQL:5432 + Redis:6379
@@ -30,7 +32,7 @@ Internet → Nginx :80/:443
 | 0 | Infra, monorepo, CI/CD | ✅ 100% |
 | 1 | API — 33 routes, 32 tables, 100+ endpoints | ✅ 100% — TypeScript clean |
 | 2 | Landing site (pouchcare.com) | ✅ 95% |
-| 3 | Staff Office (office.pouchcare.com) | ✅ 100% |
+| 3 | Staff Office (see Management app in monorepo) | ✅ 100% |
 | 4 | Management Portal (m.pouchcare.com) | ✅ 100% |
 | 5 | Client Portal (my.pouchcare.com) | ✅ 100% |
 | 6 | Polish & Launch | ⏳ Next |
@@ -58,24 +60,24 @@ npm install && npx prisma generate && npx prisma db push
 npm run db:seed && npm run dev
 
 # Management Portal (port 3000 in dev — see apps/management/vite.config.ts)
+# CEO through Staff/Intern all use this app in the monorepo (there is no separate apps/office package).
 cd apps/management && npm install && npm run dev
-
-# Staff Office (port 5175)
-cd apps/office && npm install && npm run dev
 
 # Client Portal (port 5176)
 cd apps/client-portal && npm install && npm run dev
 ```
 
-## Seed Credentials (all: `Password123!`)
+## Seed Credentials (all: `Password123!` unless noted)
 
 | Role | Email | App |
 |---|---|---|
 | CEO | ceo@pouchcare.com | m.pouchcare.com |
-| Co-MD | comd@pouchcare.com | m.pouchcare.com |
+| MD (Co-MD in app) | comd@pouchcare.com | m.pouchcare.com |
 | Ops Manager | ops@pouchcare.com | m.pouchcare.com |
-| Staff | staff1@pouchcare.com | office.pouchcare.com |
+| Branch Manager (Dhaka) | branch@pouchcare.com | m.pouchcare.com |
 | Client | john@example.com | my.pouchcare.com |
+
+Portal demo accounts use `john@example.com` and other `@example.com` members in seed (same password).
 
 ## Deploy
 
@@ -100,8 +102,7 @@ PouchCare/
 ├── apps/
 │   ├── api/              Express API (TypeScript, 0 TS errors)
 │   ├── landing/          Static landing site
-│   ├── management/       Management Portal (CEO/Co-MD/Ops)
-│   ├── office/           Staff Office (Managers/Staff)
+│   ├── management/       Management Portal (all internal staff roles in this repo)
 │   └── client-portal/    Client Portal (registered clients)
 ├── packages/types/       Shared TypeScript types
 ├── packages/utils/       Shared utilities

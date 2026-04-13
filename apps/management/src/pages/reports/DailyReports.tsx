@@ -12,6 +12,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Textarea } from '@/components/ui/Textarea';
 import { StatsRow } from '@/components/shared/StatsRow';
 import { usePermission } from '@/hooks/usePermission';
+import { BranchTeamScopeNotice } from '@/components/team/BranchTeamScopeNotice';
 import { cn } from '@/utils/cn';
 import type { DailyReport } from '@/types/models';
 import { toast } from 'sonner';
@@ -148,6 +149,7 @@ export default function DailyReports() {
   return (
     <PageTransition>
       <div className="space-y-6">
+        <BranchTeamScopeNotice />
         <StatsRow items={stats} loading={isLoading} />
 
         <DataTable

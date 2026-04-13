@@ -18,6 +18,7 @@ type RawPayrollEntry = {
   netSalary: number;
   paymentStatus?: string | null;
   paymentMethod?: string | null;
+  paymentDate?: string | null;
   notes?: string | null;
 };
 
@@ -82,6 +83,7 @@ function mapPayrollEntry(raw: RawPayrollEntry): PayrollEntry {
     status: normalizePaymentStatus(raw.paymentStatus),
     paymentMethod: raw.paymentMethod ?? undefined,
     notes: raw.notes ?? undefined,
+    paymentDate: raw.paymentDate ?? undefined,
   };
 }
 

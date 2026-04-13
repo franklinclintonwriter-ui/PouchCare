@@ -14,8 +14,10 @@ import type { KeywordMetric } from '@/features/tools/types';
 import { useToolHistory } from '@/features/tools/useToolHistory';
 import { useKeywordsResearch, useToolsStatus } from '@/api/tools';
 import { toast } from 'sonner';
+import { useCurrency } from '@/hooks/useCurrency';
 
 export default function KeywordsToolPage() {
+  const { formatCurrency } = useCurrency();
   const [seed, setSeed] = useState('seo agency dubai');
   const [running, setRunning] = useState(false);
   const [rows, setRows] = useState<KeywordMetric[]>([]);
@@ -66,12 +68,12 @@ export default function KeywordsToolPage() {
       },
       {
         title: 'Max CPC',
-        value: `$${maxCpc.toFixed(2)}`,
+        value: formatCurrency(maxCpc),
         icon: <Search />,
         iconBg: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400',
       },
     ];
-  }, [rows]);
+  }, [rows, formatCurrency]);
 
   const columns: Column<KeywordMetric>[] = useMemo(
     () => [
@@ -93,7 +95,7 @@ export default function KeywordsToolPage() {
       {
         key: 'cpc',
         label: 'CPC',
-        render: (r) => `$${r.cpcUsd.toFixed(2)}`,
+        render: (r) => formatCurrency(r.cpcUsd),
       },
       {
         key: 'intent',
@@ -115,7 +117,7 @@ export default function KeywordsToolPage() {
         ),
       },
     ],
-    [],
+    [formatCurrency],
   );
 
   const exportCsv = useCallback(() => {

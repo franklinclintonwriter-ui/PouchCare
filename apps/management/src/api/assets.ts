@@ -128,10 +128,29 @@ export function useDomain(id: string | undefined) {
   });
 }
 
+export type CreateDomainInput = {
+  domainName: string;
+  registrar?: string;
+  expiryDate?: string;
+  hostingServer?: string;
+  annualRenewalCost?: number;
+  status?: string;
+};
+
+export type UpdateDomainInput = {
+  id: string;
+  domainName?: string;
+  registrar?: string;
+  expiryDate?: string;
+  hostingServer?: string;
+  annualRenewalCost?: number;
+  status?: string;
+};
+
 export function useCreateDomain() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: Record<string, unknown>) => api.post('/assets/domains', body),
+    mutationFn: (body: CreateDomainInput) => api.post('/assets/domains', body),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['domains'] }),
   });
 }
@@ -139,7 +158,7 @@ export function useCreateDomain() {
 export function useUpdateDomain() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...body }: Record<string, unknown> & { id: string }) => api.put(`/assets/domains/${id}`, body),
+    mutationFn: ({ id, ...body }: UpdateDomainInput) => api.put(`/assets/domains/${id}`, body),
     onSuccess: (_, v) => {
       qc.invalidateQueries({ queryKey: ['domains'] });
       qc.invalidateQueries({ queryKey: ['domain', v.id] });
@@ -180,10 +199,33 @@ export function useServer(id: string | undefined) {
   });
 }
 
+export type CreateServerInput = {
+  name: string;
+  provider?: string;
+  ipAddress?: string;
+  type?: string;
+  ramGb?: number;
+  storageGb?: number;
+  monthlyCostUsd?: number;
+  status?: string;
+};
+
+export type UpdateServerInput = {
+  id: string;
+  name?: string;
+  provider?: string;
+  ipAddress?: string;
+  type?: string;
+  ramGb?: number;
+  storageGb?: number;
+  monthlyCostUsd?: number;
+  status?: string;
+};
+
 export function useCreateServer() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: Record<string, unknown>) => api.post('/assets/servers', body),
+    mutationFn: (body: CreateServerInput) => api.post('/assets/servers', body),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['servers'] }),
   });
 }
@@ -191,7 +233,7 @@ export function useCreateServer() {
 export function useUpdateServer() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...body }: Record<string, unknown> & { id: string }) => api.put(`/assets/servers/${id}`, body),
+    mutationFn: ({ id, ...body }: UpdateServerInput) => api.put(`/assets/servers/${id}`, body),
     onSuccess: (_, v) => {
       qc.invalidateQueries({ queryKey: ['servers'] });
       qc.invalidateQueries({ queryKey: ['server', v.id] });
@@ -233,10 +275,29 @@ export function useWebsite(id: string | undefined) {
   });
 }
 
+export type CreateWebsiteInput = {
+  name: string;
+  url?: string;
+  hostedOn?: string;
+  domainLinked?: string;
+  status?: string;
+  monthlyTraffic?: number;
+};
+
+export type UpdateWebsiteInput = {
+  id: string;
+  name?: string;
+  url?: string;
+  hostedOn?: string;
+  domainLinked?: string;
+  status?: string;
+  monthlyTraffic?: number;
+};
+
 export function useCreateWebsite() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: Record<string, unknown>) => api.post('/assets/websites', body),
+    mutationFn: (body: CreateWebsiteInput) => api.post('/assets/websites', body),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['websites'] }),
   });
 }
@@ -244,7 +305,7 @@ export function useCreateWebsite() {
 export function useUpdateWebsite() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...body }: Record<string, unknown> & { id: string }) => api.put(`/assets/websites/${id}`, body),
+    mutationFn: ({ id, ...body }: UpdateWebsiteInput) => api.put(`/assets/websites/${id}`, body),
     onSuccess: (_, v) => {
       qc.invalidateQueries({ queryKey: ['websites'] });
       qc.invalidateQueries({ queryKey: ['website', v.id] });

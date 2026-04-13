@@ -1,24 +1,46 @@
 import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
-import { config } from '@/config'
+import { env } from '@/config/env'
 import { randomUUID } from 'crypto'
 import path from 'path'
 import fs from 'fs/promises'
 
-const USE_S3 = !!(config.s3Bucket && config.s3AccessKey && config.s3SecretKey)
+const s3AccessKey = env.S3_ACCESS_KEY || env.S3_ACCESS_KEY_ID
+const s3SecretKey = env.S3_SECRET_KEY || env.S3_SECRET_ACCESS_KEY
+const s3Bucket = env.S3_BUCKET
+const s3Region = env.S3_REGION
+const s3Endpoint = env.S3_ENDPOINT.trim()
+
+/** Cloudflare R2 (S3-compatible): bucket + S3 API keys + account endpoint are all required. */
+export const isCloudflareR2Configured = !!(
+  s3Bucket &&
+  s3AccessKey &&
+  s3SecretKey &&
+  s3Endpoint
+)
+
+const allowLocalDisk =
+  env.NODE_ENV !== 'production' && env.STORAGE_LOCAL_FALLBACK === 'true'
+
+/** True when `/uploads` static middleware should be mounted (local disk fallback only). */
+export const isLocalUploadFallbackEnabled = allowLocalDisk
+
 const LOCAL_UPLOADS_DIR = path.join(process.cwd(), 'uploads')
 
-const s3Client = USE_S3
+const s3Client = isCloudflareR2Configured
   ? new S3Client({
-      region: config.s3Region,
-      endpoint: config.s3Endpoint || undefined,
+      region: s3Region,
+      endpoint: s3Endpoint,
       credentials: {
-        accessKeyId: config.s3AccessKey,
-        secretAccessKey: config.s3SecretKey,
+        accessKeyId: s3AccessKey,
+        secretAccessKey: s3SecretKey,
       },
-      forcePathStyle: !!config.s3Endpoint,
+      forcePathStyle: true,
     })
   : null
+
+/** @deprecated use isCloudflareR2Configured */
+export const isObjectStorageConfigured = isCloudflareR2Configured
 
 export interface UploadResult {
   fileUrl: string
@@ -60,19 +82,17 @@ export async function uploadFile(
   const fileName = `${randomUUID()}${ext}`
   const key = `${folder}/${fileName}`
 
-  if (USE_S3 && s3Client) {
+  if (isCloudflareR2Configured && s3Client) {
     await s3Client.send(
       new PutObjectCommand({
-        Bucket: config.s3Bucket,
+        Bucket: s3Bucket,
         Key: key,
         Body: buffer,
         ContentType: mimeType,
       })
     )
 
-    const fileUrl = config.s3Endpoint
-      ? `${config.s3Endpoint}/${config.s3Bucket}/${key}`
-      : `https://${config.s3Bucket}.s3.${config.s3Region}.amazonaws.com/${key}`
+    const fileUrl = `${s3Endpoint.replace(/\/$/, '')}/${s3Bucket}/${key}`
 
     return {
       fileUrl,
@@ -82,12 +102,19 @@ export async function uploadFile(
     }
   }
 
+  if (!allowLocalDisk) {
+    throw new Error(
+      'Object storage is not configured. Set S3_BUCKET, S3_ENDPOINT (R2 URL), S3_ACCESS_KEY_ID + S3_SECRET_ACCESS_KEY ' +
+        'for Cloudflare R2, or for local dev only set STORAGE_LOCAL_FALLBACK=true in .env'
+    )
+  }
+
   const localDir = path.join(LOCAL_UPLOADS_DIR, folder)
   await ensureLocalDir(localDir)
   const localPath = path.join(localDir, fileName)
   await fs.writeFile(localPath, buffer)
 
-  const fileUrl = `${config.apiUrl}/uploads/${folder}/${fileName}`
+  const fileUrl = `${env.API_URL.replace(/\/$/, '')}/uploads/${folder}/${fileName}`
 
   return {
     fileUrl,
@@ -98,12 +125,12 @@ export async function uploadFile(
 }
 
 export async function deleteFile(fileUrl: string): Promise<void> {
-  if (USE_S3 && s3Client && fileUrl.includes(config.s3Bucket)) {
+  if (isCloudflareR2Configured && s3Client && fileUrl.includes(s3Bucket)) {
     const key = extractS3Key(fileUrl)
     if (key) {
       await s3Client.send(
         new DeleteObjectCommand({
-          Bucket: config.s3Bucket,
+          Bucket: s3Bucket,
           Key: key,
         })
       )
@@ -120,7 +147,7 @@ export async function deleteFile(fileUrl: string): Promise<void> {
 }
 
 export async function getSignedDownloadUrl(fileUrl: string, expiresIn = 3600): Promise<string> {
-  if (!USE_S3 || !s3Client || !fileUrl.includes(config.s3Bucket)) {
+  if (!isCloudflareR2Configured || !s3Client || !fileUrl.includes(s3Bucket)) {
     return fileUrl
   }
 
@@ -130,7 +157,7 @@ export async function getSignedDownloadUrl(fileUrl: string, expiresIn = 3600): P
   return getSignedUrl(
     s3Client,
     new GetObjectCommand({
-      Bucket: config.s3Bucket,
+      Bucket: s3Bucket,
       Key: key,
     }),
     { expiresIn }
@@ -141,10 +168,7 @@ function extractS3Key(fileUrl: string): string | null {
   try {
     const url = new URL(fileUrl)
     const pathParts = url.pathname.split('/').filter(Boolean)
-    if (config.s3Endpoint) {
-      return pathParts.slice(1).join('/')
-    }
-    return pathParts.join('/')
+    return pathParts.slice(1).join('/')
   } catch {
     return null
   }
@@ -183,3 +207,19 @@ export const DOCUMENT_TYPES = {
   medical: ['medical_certificate', 'fitness_certificate', 'vaccination_record'],
   other: ['other'],
 } as const
+
+/** Call once at process startup. Production must use Cloudflare R2 only. */
+export function assertProductionStorageOrExit(): void {
+  if (env.NODE_ENV !== 'production') return
+  if (env.STORAGE_LOCAL_FALLBACK === 'true') {
+    console.error('❌ STORAGE_LOCAL_FALLBACK cannot be enabled in production.')
+    process.exit(1)
+  }
+  if (!isCloudflareR2Configured) {
+    console.error(
+      '❌ Production requires Cloudflare R2. Set S3_BUCKET, S3_ENDPOINT (https://<id>.r2.cloudflarestorage.com), ' +
+        'and S3 API credentials (S3_ACCESS_KEY_ID + S3_SECRET_ACCESS_KEY or S3_ACCESS_KEY + S3_SECRET_KEY).'
+    )
+    process.exit(1)
+  }
+}

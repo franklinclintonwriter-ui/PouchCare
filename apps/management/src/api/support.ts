@@ -109,10 +109,16 @@ export function useReplyToTicket() {
   });
 }
 
+export type UpdateTicketInput = {
+  id: string;
+  status?: string;
+  assignedTo?: string;
+};
+
 export function useUpdateTicket() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...body }: Record<string, unknown> & { id: string }) => api.put(`/support/tickets/${id}`, body),
+    mutationFn: ({ id, ...body }: UpdateTicketInput) => api.put(`/support/tickets/${id}`, body),
     onSuccess: (_, v) => { qc.invalidateQueries({ queryKey: ['tickets'] }); qc.invalidateQueries({ queryKey: ['ticket', v.id] }); },
   });
 }

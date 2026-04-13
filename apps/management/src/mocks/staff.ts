@@ -103,7 +103,7 @@ export const mockLeave: LeaveRequest[] = Array.from({ length: 18 }, () => {
 });
 
 export const mockPayroll: PayrollEntry[] = mockStaff.map((s) => {
-  const base = s.salary / 12;
+  const base = (s.salary ?? 60_000) / 12;
   const bonus = randomInt(0, 5) * 1000;
   const deductions = randomInt(500, 3000);
   return {

@@ -271,17 +271,21 @@ export default function ProjectDetail() {
     },
   ];
 
-  const startLabel = new Date(project.startDate).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-  const dueLabel = new Date(project.dueDate).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-  const dueIn = daysUntil(project.dueDate);
+  const startLabel = project.startDate
+    ? new Date(project.startDate).toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      })
+    : "Not set";
+  const dueLabel = project.dueDate
+    ? new Date(project.dueDate).toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      })
+    : "Not set";
+  const dueIn = project.dueDate ? daysUntil(project.dueDate) : null;
   const teamPreview = project.teamMembers.slice(0, 4);
   const teamExtra = Math.max(0, project.teamMembers.length - 4);
   const taskCount = tasksError ? undefined : (relatedTasks?.data?.length ?? 0);
@@ -334,7 +338,9 @@ export default function ProjectDetail() {
             { label: "Budget", value: formatCurrency(project.budget) },
             {
               label: "Timeline",
-              value: `${startLabel} → ${dueLabel}`,
+              value: project.startDate || project.dueDate
+                ? `${startLabel} → ${dueLabel}`
+                : "Not set",
             },
           ]}
         />
@@ -402,13 +408,15 @@ export default function ProjectDetail() {
               "Due",
               <>
                 {dueLabel}
-                <span className="mt-1 block text-xs font-normal text-gray-500 dark:text-gray-400">
-                  {dueIn < 0
-                    ? `${Math.abs(dueIn)}d overdue`
-                    : dueIn === 0
-                      ? "Due today"
-                      : `${dueIn}d remaining`}
-                </span>
+                {dueIn != null && (
+                  <span className="mt-1 block text-xs font-normal text-gray-500 dark:text-gray-400">
+                    {dueIn < 0
+                      ? `${Math.abs(dueIn)}d overdue`
+                      : dueIn === 0
+                        ? "Due today"
+                        : `${dueIn}d remaining`}
+                  </span>
+                )}
               </>,
               <CalendarClock className="h-4 w-4" aria-hidden />,
               "bg-violet-50 text-violet-600 dark:bg-violet-950/50 dark:text-violet-400",

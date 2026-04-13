@@ -10,6 +10,7 @@ import {
   Target, Globe, HeadphonesIcon, BarChart3, Settings, Shield,
 } from 'lucide-react';
 import { usePermission } from '@/hooks/usePermission';
+import type { PermissionKey } from '@/constants/permissionKeys';
 
 interface CommandItem {
   id: string;
@@ -18,6 +19,9 @@ interface CommandItem {
   href: string;
   icon: React.ReactNode;
   category: string;
+  permission?: PermissionKey;
+  /** Managers and above only (see usePermission.isManager) */
+  requireManager?: boolean;
 }
 
 function CommandPalette() {
@@ -31,13 +35,13 @@ function CommandPalette() {
       { id: 'projects', label: 'Projects', href: '/projects', icon: <FolderKanban className="h-4 w-4" />, category: 'Navigation' },
       { id: 'staff', label: 'Staff Members', href: '/staff', icon: <Users className="h-4 w-4" />, category: 'Navigation' },
       { id: 'attendance', label: 'Attendance', href: '/attendance', icon: <Clock className="h-4 w-4" />, category: 'Navigation' },
-      { id: 'payroll', label: 'Payroll', href: '/payroll', icon: <DollarSign className="h-4 w-4" />, category: 'Finance' },
-      { id: 'invoices', label: 'Invoices', href: '/finance/invoices', icon: <DollarSign className="h-4 w-4" />, category: 'Finance' },
-      { id: 'leads', label: 'CRM Leads', href: '/crm/leads', icon: <Target className="h-4 w-4" />, category: 'Business' },
-      { id: 'pipeline', label: 'Sales Pipeline', href: '/crm/pipeline', icon: <Target className="h-4 w-4" />, category: 'Business' },
+      { id: 'payroll', label: 'Payroll', href: '/payroll', icon: <DollarSign className="h-4 w-4" />, category: 'Finance', permission: 'payroll.access' },
+      { id: 'invoices', label: 'Invoices', href: '/finance/invoices', icon: <DollarSign className="h-4 w-4" />, category: 'Finance', permission: 'finance.access' },
+      { id: 'leads', label: 'CRM Leads', href: '/crm/leads', icon: <Target className="h-4 w-4" />, category: 'Business', requireManager: true },
+      { id: 'pipeline', label: 'Sales Pipeline', href: '/crm/pipeline', icon: <Target className="h-4 w-4" />, category: 'Business', requireManager: true },
       { id: 'domains', label: 'Domains', href: '/assets/domains', icon: <Globe className="h-4 w-4" />, category: 'Assets' },
       { id: 'support', label: 'Support Tickets', href: '/support', icon: <HeadphonesIcon className="h-4 w-4" />, category: 'Support' },
-      { id: 'analytics', label: 'Analytics', href: '/analytics', icon: <BarChart3 className="h-4 w-4" />, category: 'Analytics' },
+      { id: 'analytics', label: 'Analytics', href: '/analytics', icon: <BarChart3 className="h-4 w-4" />, category: 'Analytics', permission: 'analytics.access' },
       { id: 'settings', label: 'Settings', href: '/settings/profile', icon: <Settings className="h-4 w-4" />, category: 'Settings' },
     ];
     if (perm.can('settings.role_permissions')) {
@@ -47,9 +51,14 @@ function CommandPalette() {
         href: '/settings/role-permissions',
         icon: <Shield className="h-4 w-4" />,
         category: 'Settings',
+        permission: 'settings.role_permissions',
       });
     }
-    return base;
+    return base.filter(
+      (c) =>
+        (!c.requireManager || perm.isManager) &&
+        (!c.permission || perm.can(c.permission)),
+    );
   }, [perm]);
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -107,22 +116,37 @@ function CommandPalette() {
       icon: <FolderKanban className="h-4 w-4" />,
       category: 'Projects',
     }));
-    (r.leads ?? []).forEach((item) => out.push({
-      id: `live-lead-${item.id}`,
-      label: item.company,
-      description: `Lead #${item.leadId}`,
-      href: `/crm/leads/${item.id}`,
-      icon: <Target className="h-4 w-4" />,
-      category: 'Leads',
-    }));
-    (r.clients ?? []).forEach((item) => out.push({
-      id: `live-client-${item.id}`,
-      label: item.fullName,
-      description: item.email,
-      href: `/admin/portal/members/${item.id}`,
-      icon: <Users className="h-4 w-4" />,
-      category: 'Portal Members',
-    }));
+    if (perm.isManager) {
+      (r.leads ?? []).forEach((item) => out.push({
+        id: `live-lead-${item.id}`,
+        label: item.company,
+        description: `Lead #${item.leadId}`,
+        href: `/crm/leads/${item.id}`,
+        icon: <Target className="h-4 w-4" />,
+        category: 'Leads',
+      }));
+    }
+    (r.clients ?? []).forEach((item) => {
+      if (perm.can('crm.client_accounts')) {
+        out.push({
+          id: `live-client-${item.id}`,
+          label: item.fullName,
+          description: item.email,
+          href: `/crm/clients/${item.id}`,
+          icon: <Users className="h-4 w-4" />,
+          category: 'CRM Clients',
+        });
+      } else if (perm.can('admin_portal.access')) {
+        out.push({
+          id: `live-portal-${item.id}`,
+          label: item.fullName,
+          description: item.email,
+          href: `/admin/portal/members/${item.id}`,
+          icon: <Users className="h-4 w-4" />,
+          category: 'Portal Members',
+        });
+      }
+    });
     (r.domains ?? []).forEach((item) => out.push({
       id: `live-domain-${item.id}`,
       label: item.domainName,
@@ -133,7 +157,7 @@ function CommandPalette() {
     }));
 
     return out;
-  }, [liveSearch, query]);
+  }, [liveSearch, query, perm]);
 
   const mergedResults = useMemo(() => {
     if (!query.trim()) return filtered;

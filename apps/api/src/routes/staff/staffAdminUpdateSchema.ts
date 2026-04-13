@@ -17,7 +17,11 @@ export const staffAdminUpdateSchema = z
     yearsExperience: z.number().min(0).max(80).optional().nullable(),
     employmentType: z.string().max(80).nullable().optional(),
     salary: z.number().min(0).optional().nullable(),
-    email2: z.string().max(255).nullable().optional(),
+    email2: z
+      .union([z.string().email(), z.literal('')])
+      .nullable()
+      .optional()
+      .transform((v) => (v === '' ? null : v)),
     phone: z.string().max(50).nullable().optional(),
     whatsapp: z.string().max(50).nullable().optional(),
     address: z.string().max(500).nullable().optional(),

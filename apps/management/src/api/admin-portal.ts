@@ -225,6 +225,38 @@ export function useUpdateMemberStatus() {
   });
 }
 
+export function useUploadPortalMemberAvatar() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, file }: { id: string; file: File }) => {
+      const form = new FormData();
+      form.append('file', file);
+      const { data } = await api.post<{ id: string; avatarUrl: string | null }>(`/admin/portal/members/${id}/avatar`, form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return data;
+    },
+    onSuccess: (_data, { id }) => {
+      qc.invalidateQueries({ queryKey: ['admin-portal-member', id] });
+      qc.invalidateQueries({ queryKey: ['admin-portal-members'] });
+    },
+  });
+}
+
+export function useDeletePortalMemberAvatar() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await api.delete<{ avatarUrl: null }>(`/admin/portal/members/${id}/avatar`);
+      return data;
+    },
+    onSuccess: (_data, id) => {
+      qc.invalidateQueries({ queryKey: ['admin-portal-member', id] });
+      qc.invalidateQueries({ queryKey: ['admin-portal-members'] });
+    },
+  });
+}
+
 export function useUpdateOrderStatus() {
   const qc = useQueryClient();
   return useMutation({

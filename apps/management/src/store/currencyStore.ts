@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { DEFAULT_USD_TO_BDT } from '@/constants/currency';
 
 export type Currency = 'USD' | 'BDT';
 
@@ -25,14 +26,14 @@ interface CurrencyState {
 }
 
 const DEFAULT_RATE: ExchangeRate = {
-  usdToBdt: 125,
+  usdToBdt: DEFAULT_USD_TO_BDT,
   usdToAed: 3.67,
   bdtToAed: null,
   effectiveDate: new Date().toISOString(),
 };
 
 export const useCurrencyStore = create<CurrencyState>((set, get) => ({
-  currency: 'USD',
+  currency: 'BDT',
   exchangeRate: DEFAULT_RATE,
   isLoading: false,
 

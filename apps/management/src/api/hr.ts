@@ -102,10 +102,33 @@ export function usePositions(params?: QueryParams) {
   });
 }
 
+export type CreatePositionInput = {
+  title: string;
+  department: string;
+  branch: string;
+  employmentType: string;
+  salaryMin: number;
+  salaryMax: number;
+  status: string;
+  postedDate?: string;
+};
+
+export type UpdatePositionInput = {
+  id: string;
+  title?: string;
+  department?: string;
+  branch?: string;
+  employmentType?: string;
+  salaryMin?: number;
+  salaryMax?: number;
+  status?: string;
+  postedDate?: string;
+};
+
 export function useCreatePosition() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: Record<string, unknown>) => api.post('/hr/positions', body),
+    mutationFn: (body: CreatePositionInput) => api.post('/hr/positions', body),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['positions'] }),
   });
 }
@@ -113,7 +136,7 @@ export function useCreatePosition() {
 export function useUpdatePosition() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...body }: Record<string, unknown> & { id: string }) => api.put(`/hr/positions/${id}`, body),
+    mutationFn: ({ id, ...body }: UpdatePositionInput) => api.put(`/hr/positions/${id}`, body),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['positions'] }),
   });
 }
@@ -140,10 +163,30 @@ export function useApplications(params?: QueryParams) {
   });
 }
 
+export type CreateApplicationInput = {
+  positionId: string;
+  applicantName: string;
+  email: string;
+  phone?: string;
+  cvUrl?: string;
+  portfolioUrl?: string;
+  experienceYears?: number;
+  expectedSalary?: number;
+  source?: string;
+  notes?: string;
+};
+
+export type UpdateApplicationInput = {
+  id: string;
+  status?: string;
+  notes?: string;
+  interviewerNotes?: string;
+};
+
 export function useCreateApplication() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: Record<string, unknown>) => api.post('/hr/applications', body),
+    mutationFn: (body: CreateApplicationInput) => api.post('/hr/applications', body),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['applications'] }),
   });
 }
@@ -151,7 +194,7 @@ export function useCreateApplication() {
 export function useUpdateApplication() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...body }: Record<string, unknown> & { id: string }) => api.put(`/hr/applications/${id}`, body),
+    mutationFn: ({ id, ...body }: UpdateApplicationInput) => api.put(`/hr/applications/${id}`, body),
     onSuccess: (_d, variables) => {
       qc.invalidateQueries({ queryKey: ['applications'] });
       qc.invalidateQueries({ queryKey: ['application', variables.id] });

@@ -40,8 +40,8 @@ function mapAttendance(raw: RawAttendance): AttendanceRecord {
     staffId: raw.staffMemberId,
     staffName: raw.name,
     date: raw.date,
-    checkIn: raw.checkInTime ?? '',
-    checkOut: raw.checkOutTime ?? undefined,
+    checkIn: raw.checkInTime || undefined,
+    checkOut: raw.checkOutTime || undefined,
     status: (raw.status ?? "PRESENT") as AttendanceRecord["status"],
     workType: (raw.workType ?? "OFFICE") as AttendanceRecord["workType"],
     hours: raw.hoursWorked ?? 0,
@@ -153,10 +153,14 @@ export function useTodayAttendance() {
   });
 }
 
+export type CheckInInput = {
+  workType?: string;
+};
+
 export function useCheckIn() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body?: Record<string, unknown>) =>
+    mutationFn: (body?: CheckInInput) =>
       api.post("/attendance/checkin", body),
     onMutate: async (body) => {
       await qc.cancelQueries({ queryKey: attendanceKeys.today });
@@ -182,10 +186,14 @@ export function useCheckIn() {
   });
 }
 
+export type CheckOutInput = {
+  notes?: string;
+};
+
 export function useCheckOut() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body?: Record<string, unknown>) =>
+    mutationFn: (body?: CheckOutInput) =>
       api.post("/attendance/checkout", body),
     onMutate: async () => {
       await qc.cancelQueries({ queryKey: attendanceKeys.today });

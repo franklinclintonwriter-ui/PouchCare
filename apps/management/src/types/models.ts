@@ -29,13 +29,16 @@ export interface StaffMember {
   phone: string;
   department: string;
   joinDate: string;
-  salary: number;
+  /** Omitted on the list API when the viewer lacks HR/profile-admin access. */
+  salary?: number;
   isActive: boolean;
   avatarUrl?: string;
 }
 
 /** Full staff record from GET /staff/members/:id (extends list fields). */
 export interface StaffProfileDetail extends StaffMember {
+  /** `limited` = colleague directory view (no salary/PII). `full` = self or HR. */
+  profileScope?: 'full' | 'limited';
   profileAdmin?: boolean;
   rolePermissions?: Record<string, boolean> | null;
   email2?: string | null;
@@ -68,6 +71,8 @@ export interface StaffProfileDetail extends StaffMember {
   twoFactorEnabled?: boolean;
   lastLoginAt?: string | null;
   lastLoginIp?: string | null;
+  /** Salary stored in this currency (default system: BDT). */
+  preferredCurrency?: 'USD' | 'BDT' | null;
 }
 
 export type TaskAttachmentItem = { url: string; name: string; uploadedAt: string };
@@ -114,8 +119,8 @@ export interface Project {
   spent: number;
   teamIds: string[];
   teamMembers: { id: string; name: string; avatarUrl?: string }[];
-  startDate: string;
-  dueDate: string;
+  startDate: string | null;
+  dueDate: string | null;
   createdAt: string;
 }
 
@@ -125,7 +130,7 @@ export interface AttendanceRecord {
   staffName: string;
   avatarUrl?: string;
   date: string;
-  checkIn: string;
+  checkIn?: string;
   checkOut?: string;
   status: AttendanceStatus;
   workType: WorkType;
@@ -162,6 +167,8 @@ export interface PayrollEntry {
   status: PaymentStatus;
   paymentMethod?: string;
   notes?: string;
+  /** ISO date when payment was marked complete (if paid) */
+  paymentDate?: string | null;
 }
 
 export interface PerformanceReview {

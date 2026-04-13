@@ -11,6 +11,8 @@ export interface PaginationMeta {
   page: number;
   limit: number;
   totalPages: number;
+  /** Present on CRM list endpoints: branch managers see a scoped dataset. */
+  crmView?: 'full' | 'branch_manager';
 }
 
 export interface PaginatedResponse<T> {
@@ -31,6 +33,9 @@ export interface FilterParams {
   role?: string;
   /** Filter tasks by project UUID (`relatedProject` matches project name or id). */
   projectId?: string;
+  /** Staff list: whitelist `name` | `email` | `joinDate` | `memberId` | `systemRole` | `createdAt` */
+  sortBy?: string;
+  sortDir?: 'asc' | 'desc';
   [key: string]: string | number | undefined;
 }
 

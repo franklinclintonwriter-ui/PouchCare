@@ -6,7 +6,14 @@ import {
   requireStaff,
   requireRoles,
   MANAGER_ROLES,
+  type AuthRequest,
 } from "@/middleware/auth";
+import type { SystemRole } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
+import {
+  canManagerAccessStaffMember,
+  mergeAttendanceWhereForManager,
+} from "@/lib/teamBranchScope";
 import { validate } from "@/middleware/validate";
 import { getPagination, paginatedMeta, buildMeta } from "@/utils/pagination";
 import {
@@ -15,6 +22,7 @@ import {
   badRequest,
   notFound,
   serverError,
+  forbidden,
 } from "@/utils/response";
 import { broadcastAttendanceUpdate } from "@/lib/websocket";
 
@@ -37,7 +45,7 @@ const createSchema = z.object({
 });
 
 // GET /v1/attendance
-router.get("/", requireStaff, async (req, res) => {
+router.get("/", requireStaff, async (req: AuthRequest, res) => {
   try {
     const { page, limit, skip } = getPagination(
       req.query as Record<string, string>,
@@ -46,13 +54,22 @@ router.get("/", requireStaff, async (req, res) => {
       string,
       string
     >;
+    const role = req.user!.role as SystemRole;
 
-    const where: any = {};
-    if (!MANAGER_ROLES.includes(req.user!.role))
+    const where: Prisma.AttendanceWhereInput = {};
+    if (!MANAGER_ROLES.includes(role)) {
       where.staffMemberId = req.user!.id;
-    else if (memberId) where.staffMemberId = memberId;
+    } else if (memberId) {
+      const allowed = await canManagerAccessStaffMember(
+        req.user!.id,
+        role,
+        memberId,
+      );
+      if (!allowed) return forbidden(res, "Cannot access this team's attendance");
+      where.staffMemberId = memberId;
+    }
 
-    if (status) where.status = status;
+    if (status) where.status = status as Prisma.EnumAttendanceStatusFilter["equals"];
     if (date) {
       const day = new Date(date);
       const next = new Date(day);
@@ -60,18 +77,23 @@ router.get("/", requireStaff, async (req, res) => {
       where.date = { gte: day, lt: next };
     } else if (startDate || endDate) {
       where.date = {};
-      if (startDate) where.date.gte = new Date(startDate);
-      if (endDate) where.date.lte = new Date(endDate);
+      if (startDate) (where.date as Prisma.DateTimeFilter).gte = new Date(startDate);
+      if (endDate) (where.date as Prisma.DateTimeFilter).lte = new Date(endDate);
+    }
+
+    let finalWhere = where;
+    if (MANAGER_ROLES.includes(role)) {
+      finalWhere = await mergeAttendanceWhereForManager(req, where);
     }
 
     const [records, total] = await Promise.all([
       prisma.attendance.findMany({
-        where,
+        where: finalWhere,
         skip,
         take: limit,
         orderBy: { date: "desc" },
       }),
-      prisma.attendance.count({ where }),
+      prisma.attendance.count({ where: finalWhere }),
     ]);
     return ok(res, records, buildMeta(total, page, limit));
   } catch (err) {
@@ -97,9 +119,18 @@ router.get("/today", requireStaff, async (req, res) => {
 router.get(
   "/staff/:staffId",
   requireRoles(...(MANAGER_ROLES as any)),
-  async (req, res) => {
+  async (req: AuthRequest, res) => {
     try {
-      const { page, limit, skip } = getPagination(req);
+      const role = req.user!.role as SystemRole;
+      const allowed = await canManagerAccessStaffMember(
+        req.user!.id,
+        role,
+        req.params.staffId,
+      );
+      if (!allowed) return forbidden(res, "Cannot access this team's attendance");
+      const { page, limit, skip } = getPagination(
+        req.query as Record<string, string>,
+      );
       const [records, total] = await Promise.all([
         prisma.attendance.findMany({
           where: { staffMemberId: req.params.staffId },
@@ -123,9 +154,16 @@ router.post(
   "/",
   requireRoles(...(MANAGER_ROLES as any)),
   validate(createSchema),
-  async (req, res) => {
+  async (req: AuthRequest, res) => {
     try {
       const payload = req.body as z.infer<typeof createSchema>;
+      const role = req.user!.role as SystemRole;
+      const staffOk = await canManagerAccessStaffMember(
+        req.user!.id,
+        role,
+        payload.staffMemberId,
+      );
+      if (!staffOk) return forbidden(res, "Cannot record attendance for this staff member");
       const staff = await prisma.staffMember.findUnique({
         where: { id: payload.staffMemberId },
         select: { id: true, name: true, branch: true, systemRole: true },
@@ -258,8 +296,20 @@ router.post("/checkout", requireStaff, async (req, res) => {
 router.put(
   "/:id",
   requireRoles(...(MANAGER_ROLES as any)),
-  async (req, res) => {
+  async (req: AuthRequest, res) => {
     try {
+      const existing = await prisma.attendance.findUnique({
+        where: { id: req.params.id },
+        select: { id: true, staffMemberId: true },
+      });
+      if (!existing) return notFound(res, "Attendance record not found");
+      const role = req.user!.role as SystemRole;
+      const staffOk = await canManagerAccessStaffMember(
+        req.user!.id,
+        role,
+        existing.staffMemberId,
+      );
+      if (!staffOk) return forbidden(res, "Cannot update this attendance record");
       const record = await prisma.attendance.update({
         where: { id: req.params.id },
         data: { ...req.body, approvedBy: req.user!.id },
@@ -276,13 +326,20 @@ router.put(
 router.delete(
   "/:id",
   requireRoles(...(MANAGER_ROLES as any)),
-  async (req, res) => {
+  async (req: AuthRequest, res) => {
     try {
       const record = await prisma.attendance.findUnique({
         where: { id: req.params.id },
         select: { id: true, staffMemberId: true, date: true },
       });
       if (!record) return notFound(res, "Attendance record not found");
+      const role = req.user!.role as SystemRole;
+      const staffOk = await canManagerAccessStaffMember(
+        req.user!.id,
+        role,
+        record.staffMemberId,
+      );
+      if (!staffOk) return forbidden(res, "Cannot delete this attendance record");
 
       await prisma.attendance.delete({ where: { id: req.params.id } });
       broadcastAttendanceUpdate({ staffMemberId: record.staffMemberId });
@@ -315,15 +372,28 @@ router.post(
   "/bulk",
   requireRoles(...(MANAGER_ROLES as any)),
   validate(bulkSchema),
-  async (req, res) => {
+  async (req: AuthRequest, res) => {
     try {
       const { records } = req.body;
       const results = { created: 0, updated: 0, errors: [] as string[] };
+      const role = req.user!.role as SystemRole;
 
       for (const record of records) {
         try {
           const date = new Date(record.date);
           date.setHours(0, 0, 0, 0);
+
+          const allowed = await canManagerAccessStaffMember(
+            req.user!.id,
+            role,
+            record.staffMemberId,
+          );
+          if (!allowed) {
+            results.errors.push(
+              `Staff ${record.staffMemberId} not in your branch scope`,
+            );
+            continue;
+          }
 
           const staff = await prisma.staffMember.findUnique({
             where: { id: record.staffMemberId },

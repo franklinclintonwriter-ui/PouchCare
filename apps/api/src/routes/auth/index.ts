@@ -47,8 +47,9 @@ router.post("/login", validate(loginSchema), async (req, res) => {
     const staff = await prisma.staffMember.findUnique({ where: { email: emailNorm } })
     if (!staff || !(await comparePassword(password, staff.passwordHash)))
       return unauthorized(res, "Invalid credentials");
-    if (staff.status === "INACTIVE")
-      return unauthorized(res, "Account is inactive");
+    const statusNorm = (staff.status ?? '').trim().toLowerCase();
+    if (statusNorm === 'inactive' || statusNorm === 'suspended')
+      return unauthorized(res, 'Account is inactive');
 
     // 2FA for CEO/CO_MD
     if (staff.twoFactorEnabled && ['CEO', 'CO_MD'].includes(staff.systemRole)) {
@@ -85,6 +86,7 @@ router.post("/login", validate(loginSchema), async (req, res) => {
         systemRole: staff.systemRole,
         branch: staff.branch,
         memberId: staff.memberId,
+        avatarUrl: staff.avatarUrl ?? undefined,
       },
     });
   } catch (e) {

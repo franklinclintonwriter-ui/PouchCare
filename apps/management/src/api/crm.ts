@@ -104,10 +104,65 @@ export function useLeadsByStage() {
   });
 }
 
+type PipelineColumnApi = {
+  stage: string;
+  count: number;
+  totalValue: number;
+  leads: RawLead[];
+};
+
+/** Server-built pipeline (accurate counts / sums per stage; up to 20 cards per column). */
+export function usePipeline() {
+  return useQuery({
+    queryKey: ['crm-pipeline'],
+    queryFn: async () => {
+      const res = await api.get('/crm/pipeline');
+      const raw = res.data as {
+        data: PipelineColumnApi[];
+        meta?: { crmView?: 'full' | 'branch_manager' };
+      };
+      const columns = raw.data ?? [];
+      const grouped: Record<string, Lead[]> = {};
+      const columnStats: Record<string, { count: number; totalValue: number }> = {};
+      for (const col of columns) {
+        grouped[col.stage] = col.leads.map((r) => mapLead(r));
+        columnStats[col.stage] = { count: col.count, totalValue: col.totalValue };
+      }
+      return {
+        grouped,
+        columnStats,
+        crmView: raw.meta?.crmView,
+      };
+    },
+  });
+}
+
+export type CreateLeadInput = {
+  company: string;
+  contactName?: string;
+  email?: string;
+  phone?: string;
+  source?: string;
+  estimatedValue?: number;
+  stage?: string;
+};
+
+export type UpdateLeadInput = {
+  id: string;
+  company?: string;
+  contactName?: string;
+  email?: string;
+  phone?: string;
+  stage?: string;
+  source?: string;
+  estimatedValue?: number;
+  notes?: string;
+};
+
 export function useCreateLead() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: Record<string, unknown>) => api.post('/crm/leads', body),
+    mutationFn: (body: CreateLeadInput) => api.post('/crm/leads', body),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['leads'] }); qc.invalidateQueries({ queryKey: ['leads-by-stage'] }); },
   });
 }
@@ -115,7 +170,7 @@ export function useCreateLead() {
 export function useUpdateLead() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...body }: Record<string, unknown> & { id: string }) => api.put(`/crm/leads/${id}`, body),
+    mutationFn: ({ id, ...body }: UpdateLeadInput) => api.put(`/crm/leads/${id}`, body),
     onSuccess: (_, v) => { qc.invalidateQueries({ queryKey: ['leads'] }); qc.invalidateQueries({ queryKey: ['lead', v.id] }); qc.invalidateQueries({ queryKey: ['leads-by-stage'] }); },
   });
 }
@@ -181,10 +236,38 @@ export function useSalesOrderRecord(id: string | undefined) {
   });
 }
 
+export type CreateSalesOrderInput = {
+  clientName: string;
+  service?: string;
+  amountUsd: number;
+  paymentStatus?: string;
+  status?: string;
+  assignedTo?: string;
+  branch?: string;
+  deadline?: string;
+  invoiceReference?: string;
+  notes?: string;
+};
+
+export type UpdateSalesOrderInput = {
+  id: string;
+  clientName?: string;
+  service?: string;
+  amountUsd?: number;
+  paymentStatus?: string;
+  status?: string;
+  assignedTo?: string;
+  branch?: string;
+  deadline?: string;
+  deliveryLink?: string;
+  invoiceReference?: string;
+  notes?: string;
+};
+
 export function useCreateSalesOrder() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: Record<string, unknown>) => api.post('/crm/orders', body),
+    mutationFn: (body: CreateSalesOrderInput) => api.post('/crm/orders', body),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['sales-orders'] }),
   });
 }
@@ -192,7 +275,7 @@ export function useCreateSalesOrder() {
 export function useUpdateSalesOrder() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...body }: Record<string, unknown> & { id: string }) => api.put(`/crm/orders/${id}`, body),
+    mutationFn: ({ id, ...body }: UpdateSalesOrderInput) => api.put(`/crm/orders/${id}`, body),
     onSuccess: (_, v) => {
       qc.invalidateQueries({ queryKey: ['sales-orders'] });
       qc.invalidateQueries({ queryKey: ['sales-order', v.id] });

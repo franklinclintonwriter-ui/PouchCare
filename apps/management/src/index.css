@@ -212,3 +212,36 @@
   }
 
 }
+
+/* —— Payroll salary slip: isolate print to slip only —— */
+@media screen {
+  html.payroll-slip-mode #payroll-slip-root {
+    position: fixed;
+    left: -10000px;
+    top: 0;
+    width: 210mm;
+    max-width: 100vw;
+    z-index: 99999;
+    pointer-events: none;
+  }
+}
+
+@media print {
+  html.payroll-slip-mode #root {
+    display: none !important;
+  }
+
+  html.payroll-slip-mode [data-sonner-toaster] {
+    display: none !important;
+  }
+
+  html.payroll-slip-mode #payroll-slip-root {
+    position: relative !important;
+    left: auto !important;
+    top: auto !important;
+    width: 100% !important;
+    max-width: 210mm !important;
+    margin: 0 auto !important;
+    pointer-events: auto !important;
+  }
+}

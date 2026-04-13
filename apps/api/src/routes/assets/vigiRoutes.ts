@@ -1,6 +1,8 @@
 import { Router } from 'express'
 import prisma from '@/lib/prisma'
-import { requireRoles, SENIOR_ROLES } from '@/middleware/auth'
+import { requireRoles, SENIOR_ROLES, type AuthRequest } from '@/middleware/auth'
+import { requirePermission } from '@/middleware/rbac'
+import { assertRouteBranchId } from '@/lib/monitorBranchScope'
 import { validate } from '@/middleware/validate'
 import { badRequest, notFound, ok, serverError } from '@/utils/response'
 import { encryptCredential, decryptCredential } from '@/lib/credentialsCrypto'
@@ -96,8 +98,9 @@ router.post(
 )
 
 /** GET /v1/assets/vigi/branches/:branchId — integration metadata (no secrets). */
-router.get('/branches/:branchId', requireRoles(...(SENIOR_ROLES as any)), async (req, res) => {
+router.get('/branches/:branchId', requirePermission('monitor.view'), async (req: AuthRequest, res) => {
   try {
+    if (!(await assertRouteBranchId(req, res, req.params.branchId))) return
     const branch = await prisma.branch.findUnique({ where: { id: req.params.branchId } })
     if (!branch) return notFound(res, 'Branch')
 

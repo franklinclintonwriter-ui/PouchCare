@@ -16,8 +16,10 @@ import { Select } from '@/components/ui/Select';
 import { Textarea } from '@/components/ui/Textarea';
 import { Dropdown, type DropdownItem } from '@/components/ui/Dropdown';
 import { useCurrency } from '@/hooks/useCurrency';
-import { Wallet, Users, Gift, TrendingUp, Plus, CalendarRange, RotateCcw, Edit, Trash2 } from 'lucide-react';
+import { Wallet, Users, Gift, TrendingUp, Plus, CalendarRange, RotateCcw, Edit, Trash2, Printer } from 'lucide-react';
 import { usePermission } from '@/hooks/usePermission';
+import { BranchTeamScopeNotice } from '@/components/team/BranchTeamScopeNotice';
+import { usePayrollSlipPrint } from '@/components/payroll/PayrollSlipPrintPortal';
 import type { PayrollEntry } from '@/types/models';
 import { toast } from 'sonner';
 
@@ -38,7 +40,8 @@ const MONTHS = [
 
 export default function PayrollList() {
   const navigate = useNavigate();
-  const { formatCurrency } = useCurrency();
+  const { formatMoney } = useCurrency();
+  const fmtPayroll = (n: number) => formatMoney(n, { storedIn: 'BDT' });
   const now = new Date();
   const [page, setPage] = useState(1);
   const [filterMonth, setFilterMonth] = useState(now.getMonth() + 1);
@@ -58,6 +61,7 @@ export default function PayrollList() {
   const markPaid = useMarkPayrollPaid();
   const updatePayroll = useUpdatePayroll();
   const deletePayroll = useDeletePayroll();
+  const { printSlip, portal: printPortal } = usePayrollSlipPrint();
 
   const { data: staffData } = useStaffList({ limit: 500, status: 'Active' });
   const staffList = staffData?.data ?? [];
@@ -142,6 +146,8 @@ export default function PayrollList() {
         baseSalary: editEntry.baseSalary,
         bonus: editEntry.bonus,
         deductions: editEntry.deductions,
+        paymentMethod: editEntry.paymentMethod || undefined,
+        notes: editEntry.notes || undefined,
       });
       toast.success('Payroll record updated');
       setEditEntry(null);
@@ -179,16 +185,16 @@ export default function PayrollList() {
       <Badge variant={roleVariant[row.role] ?? 'default'}>{row.role.replace('_', ' ')}</Badge>
     )},
     { key: 'baseSalary', label: 'Base Salary', align: 'right', render: (row) => (
-      <span>{formatCurrency(row.baseSalary)}</span>
+      <span>{fmtPayroll(row.baseSalary)}</span>
     )},
     { key: 'bonus', label: 'Bonus', align: 'right', render: (row) => (
-      <span className={row.bonus > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400'}>{formatCurrency(row.bonus)}</span>
+      <span className={row.bonus > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400'}>{fmtPayroll(row.bonus)}</span>
     )},
     { key: 'deductions', label: 'Deductions', align: 'right', render: (row) => (
-      <span className="text-red-500 dark:text-red-400">-{formatCurrency(row.deductions)}</span>
+      <span className="text-red-500 dark:text-red-400">-{fmtPayroll(row.deductions)}</span>
     )},
     { key: 'netPay', label: 'Net Pay', align: 'right', render: (row) => (
-      <span className="font-semibold text-gray-900 dark:text-gray-100">{formatCurrency(row.netPay)}</span>
+      <span className="font-semibold text-gray-900 dark:text-gray-100">{fmtPayroll(row.netPay)}</span>
     )},
     { key: 'status', label: 'Status', render: (row) => <StatusBadge status={row.status} /> },
     ...(perm.can('payroll.access') ? [{
@@ -197,6 +203,11 @@ export default function PayrollList() {
       width: '100px',
       render: (row: PayrollEntry) => {
         const items: DropdownItem[] = [
+          {
+            label: 'Print salary sheet',
+            icon: <Printer className="h-4 w-4" />,
+            onClick: () => printSlip(row),
+          },
           { label: 'Edit', icon: <Edit className="h-4 w-4" />, onClick: () => setEditEntry(row) },
           ...(perm.isCEO ? [{ label: 'Delete', icon: <Trash2 className="h-4 w-4" />, onClick: () => setDeleteEntry(row), variant: 'danger' as const }] : []),
         ];
@@ -227,13 +238,15 @@ export default function PayrollList() {
         </div>
       )}
 
+      <BranchTeamScopeNotice />
+
       <StatsRow
         loading={isLoading}
         items={[
-          { title: 'Total Payroll', value: formatCurrency(stats.totalPayroll), icon: <Wallet className="h-4 w-4" />, iconBg: 'bg-blue-100 dark:bg-blue-900/30' },
-          { title: 'Avg Salary', value: formatCurrency(stats.avgSalary), icon: <TrendingUp className="h-4 w-4" />, iconBg: 'bg-purple-100 dark:bg-purple-900/30' },
+          { title: 'Total Payroll', value: fmtPayroll(stats.totalPayroll), icon: <Wallet className="h-4 w-4" />, iconBg: 'bg-blue-100 dark:bg-blue-900/30' },
+          { title: 'Avg Salary', value: fmtPayroll(stats.avgSalary), icon: <TrendingUp className="h-4 w-4" />, iconBg: 'bg-purple-100 dark:bg-purple-900/30' },
           { title: 'Headcount', value: stats.headcount, icon: <Users className="h-4 w-4" />, iconBg: 'bg-emerald-100 dark:bg-emerald-900/30' },
-          { title: 'Total Bonus', value: formatCurrency(stats.totalBonus), icon: <Gift className="h-4 w-4" />, iconBg: 'bg-amber-100 dark:bg-amber-900/30' },
+          { title: 'Total Bonus', value: fmtPayroll(stats.totalBonus), icon: <Gift className="h-4 w-4" />, iconBg: 'bg-amber-100 dark:bg-amber-900/30' },
         ]}
       />
 
@@ -290,7 +303,7 @@ export default function PayrollList() {
             />
           </div>
           <Input
-            label="Base Salary (USD) *"
+            label="Base Salary (BDT, ৳) *"
             type="number"
             min="0"
             placeholder="0.00"
@@ -299,14 +312,14 @@ export default function PayrollList() {
           />
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Input
-              label="Bonus (USD)"
+              label="Bonus (BDT, ৳)"
               type="number"
               min="0"
               value={form.bonus}
               onChange={e => setForm(f => ({ ...f, bonus: e.target.value }))}
             />
             <Input
-              label="Deductions (USD)"
+              label="Deductions (BDT, ৳)"
               type="number"
               min="0"
               value={form.deductions}
@@ -351,7 +364,7 @@ export default function PayrollList() {
         {editEntry && (
           <div className="space-y-4">
             <Input
-              label="Base Salary (USD)"
+              label="Base Salary (BDT, ৳)"
               type="number"
               min="0"
               value={String(editEntry.baseSalary)}
@@ -359,24 +372,43 @@ export default function PayrollList() {
             />
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Input
-                label="Bonus (USD)"
+                label="Bonus (BDT, ৳)"
                 type="number"
                 min="0"
                 value={String(editEntry.bonus)}
                 onChange={e => setEditEntry(prev => prev ? { ...prev, bonus: Number(e.target.value) } : null)}
               />
               <Input
-                label="Deductions (USD)"
+                label="Deductions (BDT, ৳)"
                 type="number"
                 min="0"
                 value={String(editEntry.deductions)}
                 onChange={e => setEditEntry(prev => prev ? { ...prev, deductions: Number(e.target.value) } : null)}
               />
             </div>
-            <div className="pt-2 border-t">
+            <Select
+              label="Payment Method"
+              value={editEntry.paymentMethod ?? ''}
+              onChange={e => setEditEntry(prev => prev ? { ...prev, paymentMethod: e.target.value || undefined } : null)}
+              options={[
+                { label: '— Select —', value: '' },
+                { label: 'Bank Transfer', value: 'Bank Transfer' },
+                { label: 'Mobile Money', value: 'Mobile Money' },
+                { label: 'Cash', value: 'Cash' },
+                { label: 'Cheque', value: 'Cheque' },
+                { label: 'Other', value: 'Other' },
+              ]}
+            />
+            <Textarea
+              label="Notes"
+              rows={2}
+              value={editEntry.notes ?? ''}
+              onChange={e => setEditEntry(prev => prev ? { ...prev, notes: e.target.value || undefined } : null)}
+            />
+            <div className="pt-2 border-t border-gray-100 dark:border-gray-800">
               <p className="text-sm text-gray-500">
                 Net Pay: <span className="font-semibold text-gray-900 dark:text-gray-100">
-                  {formatCurrency(editEntry.baseSalary + editEntry.bonus - editEntry.deductions)}
+                  {fmtPayroll(editEntry.baseSalary + editEntry.bonus - editEntry.deductions)}
                 </span>
               </p>
             </div>
@@ -394,6 +426,8 @@ export default function PayrollList() {
         isLoading={deletePayroll.isPending}
         onConfirm={handleDelete}
       />
+
+      {printPortal}
     </PageTransition>
   );
 }

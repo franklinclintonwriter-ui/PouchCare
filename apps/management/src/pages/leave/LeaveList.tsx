@@ -25,6 +25,7 @@ import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { useAuthStore } from "@/store/authStore";
 import { usePermission } from "@/hooks/usePermission";
+import { BranchTeamScopeNotice } from "@/components/team/BranchTeamScopeNotice";
 import type { LeaveRequest } from "@/types/models";
 import { toast } from "sonner";
 
@@ -322,6 +323,7 @@ export default function LeaveList() {
   return (
     <PageTransition>
       <div className="space-y-6">
+        <BranchTeamScopeNotice />
         <StatsRow items={stats} loading={isLoading} />
 
         <Tabs tabs={tabItems} value={tab} onChange={handleTabChange} />

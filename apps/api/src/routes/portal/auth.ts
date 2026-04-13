@@ -143,6 +143,7 @@ router.post("/login", validate(loginSchema), async (req, res) => {
         email: member.email,
         referralCode: member.referralCode,
         walletBalance: member.walletBalance,
+        avatarUrl: member.avatarUrl ?? undefined,
       },
     });
   } catch (e) {

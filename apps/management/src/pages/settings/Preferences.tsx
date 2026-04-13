@@ -91,9 +91,13 @@ export default function Preferences() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <DollarSign className="h-5 w-5" />
-            Currency
+          <CardTitle className="flex items-center gap-2 flex-wrap">
+            <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400" aria-hidden title="Taka">৳</span>
+            <span className="text-gray-300 dark:text-gray-600" aria-hidden>/</span>
+            <span title="US Dollar" className="inline-flex shrink-0">
+              <DollarSign className="h-5 w-5" aria-hidden />
+            </span>
+            <span>Currency</span>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -104,8 +108,8 @@ export default function Preferences() {
               onChange={(e) => handleCurrencyChange(e.target.value as Currency)}
               disabled={updateCurrency.isPending}
               options={[
-                { label: '$ USD (US Dollar)', value: 'USD' },
                 { label: '৳ BDT (Bangladeshi Taka)', value: 'BDT' },
+                { label: '$ USD (US Dollar)', value: 'USD' },
               ]}
             />
             <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">

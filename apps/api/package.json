@@ -15,7 +15,11 @@
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
     "db:seed": "tsx prisma/seed.ts",
-    "db:reset": "prisma db push --force-reset && prisma db seed"
+    "db:seed:salary-april-2026": "tsx prisma/seed-salary-april-2026.ts",
+    "db:reset-demo": "tsx prisma/reset-demo-seed.ts",
+    "db:reset": "prisma db push --force-reset && prisma db seed",
+    "test:r2": "tsx scripts/test-r2-connection.ts",
+    "test:r2:setup": "tsx scripts/r2-setup-and-test.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1028.0",

@@ -18,6 +18,7 @@ import { ShoppingCart, DollarSign, CheckCircle, Clock, CircleDot } from 'lucide-
 import type { SalesOrder } from '@/types/models';
 import { toast } from 'sonner';
 import { usePermission } from '@/hooks/usePermission';
+import { CrmScopeNotice } from '@/components/crm/CrmScopeNotice';
 
 export default function SalesOrders() {
   const navigate = useNavigate();
@@ -135,6 +136,7 @@ export default function SalesOrders() {
 
   return (
     <PageTransition className="space-y-6">
+      <CrmScopeNotice />
       <StatsRow
         loading={isLoading}
         items={[

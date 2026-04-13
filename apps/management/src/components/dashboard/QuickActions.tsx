@@ -31,6 +31,8 @@ interface QuickAction {
   icon: React.ReactNode;
   path: string;
   permission?: PermissionKey;
+  /** Only CEO, Co-MD, Ops, Branch Mgr, HR Mgr */
+  managerOnly?: boolean;
   color: string;
 }
 
@@ -67,6 +69,7 @@ const QUICK_ACTIONS: QuickAction[] = [
     description: "Manage prospects",
     icon: <Briefcase className="h-5 w-5" />,
     path: ROUTES.LEADS,
+    managerOnly: true,
     color: "bg-pink-500",
   },
   {
@@ -204,10 +207,12 @@ function AttendanceWidget() {
 
 export function QuickActions() {
   const navigate = useNavigate();
-  const { can } = usePermission();
+  const perm = usePermission();
 
   const availableActions = QUICK_ACTIONS.filter(
-    (action) => !action.permission || can(action.permission),
+    (action) =>
+      (!action.managerOnly || perm.isManager) &&
+      (!action.permission || perm.can(action.permission)),
   ).slice(0, 4);
 
   return (

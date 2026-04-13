@@ -46,6 +46,12 @@ import toolsRouter from "@/routes/tools/index";
 import { setupWebSocket } from "@/lib/websocket";
 import { startJobs } from "@/jobs/index";
 import prisma from "@/lib/prisma";
+import {
+  assertProductionStorageOrExit,
+  isLocalUploadFallbackEnabled,
+} from "@/lib/storage";
+
+assertProductionStorageOrExit();
 
 const app = express();
 const httpServer = createServer(app);
@@ -70,8 +76,10 @@ app.use(compression());
 // ── Rate limiting ─────────────────────────────────────
 app.use(generalRateLimit);
 
-// ── Static files (uploads) ────────────────────────────
-app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
+// ── Static files (local disk uploads only; production uses Cloudflare R2 URLs) ──
+if (isLocalUploadFallbackEnabled) {
+  app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
+}
 
 // ── Health check ──────────────────────────────────────
 app.get("/health", (_, res) => {

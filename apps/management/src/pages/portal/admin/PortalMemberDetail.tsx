@@ -1,8 +1,8 @@
 import { useState, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
-import { Mail, Globe, ShoppingBag, DollarSign, UsersRound, Wallet } from 'lucide-react';
+import { Mail, Globe, ShoppingBag, DollarSign, UsersRound, Wallet, Camera, Trash2 } from 'lucide-react';
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
-import { usePortalMember } from '@/api/admin-portal';
+import { useDeletePortalMemberAvatar, usePortalMember, useUploadPortalMemberAvatar } from '@/api/admin-portal';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Avatar } from '@/components/ui/Avatar';
@@ -10,14 +10,20 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Tabs } from '@/components/ui/Tabs';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { StatsRow } from '@/components/shared/StatsRow';
+import { AvatarUploadDialog } from '@/components/shared/AvatarUploadDialog';
 import { useCurrency } from '@/hooks/useCurrency';
 import { DataTable, type Column } from '@/components/ui/DataTable';
+import { Button } from '@/components/ui/Button';
+import { toast } from 'sonner';
 
 export default function PortalMemberDetail() {
   const { id } = useParams<{ id: string }>();
   const { formatCurrency } = useCurrency();
   const { data: member, isLoading } = usePortalMember(id!);
+  const uploadAvatar = useUploadPortalMemberAvatar();
+  const deleteAvatar = useDeletePortalMemberAvatar();
   const [tab, setTab] = useState('overview');
+  const [avatarDialogOpen, setAvatarDialogOpen] = useState(false);
 
   const headerConfig = useMemo(() => ({
     title: member?.fullName ?? 'Member',
@@ -126,9 +132,56 @@ export default function PortalMemberDetail() {
                 {formatCurrency(member.walletBalance)}
                 <span className="ml-1 text-xs font-normal text-gray-500 dark:text-gray-400">balance</span>
               </p>
+              <div className="mt-3 flex flex-wrap items-center justify-center gap-2 sm:justify-start">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={uploadAvatar.isPending || deleteAvatar.isPending}
+                  onClick={() => setAvatarDialogOpen(true)}
+                >
+                  <Camera className="mr-1 h-3.5 w-3.5" />
+                  Upload photo
+                </Button>
+                {member.avatarUrl ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="text-red-600 hover:text-red-700 dark:text-red-400"
+                    disabled={uploadAvatar.isPending || deleteAvatar.isPending}
+                    onClick={async () => {
+                      if (!id) return;
+                      try {
+                        await deleteAvatar.mutateAsync(id);
+                        toast.success('Member photo removed');
+                      } catch (err) {
+                        toast.error(err instanceof Error ? err.message : 'Remove failed');
+                      }
+                    }}
+                  >
+                    <Trash2 className="mr-1 h-3.5 w-3.5" />
+                    Remove photo
+                  </Button>
+                ) : null}
+              </div>
             </div>
           </div>
         </Card>
+        <AvatarUploadDialog
+          isOpen={avatarDialogOpen}
+          onClose={() => setAvatarDialogOpen(false)}
+          name={member.fullName}
+          currentAvatarUrl={member.avatarUrl}
+          isLoading={uploadAvatar.isPending}
+          title={`Update ${member.fullName}'s photo`}
+          description="Preview the image before uploading it to this portal member profile."
+          onConfirm={async (file) => {
+            if (!id) return;
+            await uploadAvatar.mutateAsync({ id, file });
+            toast.success('Member photo updated');
+          }}
+        />
 
         {/* Tabs */}
         <Tabs

@@ -3,6 +3,7 @@ import { cn } from '@/utils/cn';
 import { ChevronRight, Users } from 'lucide-react';
 import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
+import { useCurrency } from '@/hooks/useCurrency';
 import type { Referral } from '@/types/models';
 
 interface ReferralTreeProps {
@@ -30,6 +31,7 @@ function ReferralTree({ referrals, maxDepth = 3 }: ReferralTreeProps) {
 }
 
 function ReferralNode({ referral, depth, maxDepth }: { referral: Referral; depth: number; maxDepth: number }) {
+  const { formatCurrency } = useCurrency();
   const [isExpanded, setIsExpanded] = useState(depth < 1);
   const hasChildren = referral.children && referral.children.length > 0 && depth < maxDepth;
 
@@ -56,7 +58,7 @@ function ReferralNode({ referral, depth, maxDepth }: { referral: Referral; depth
           {referral.status === 'ACTIVE' ? 'Active' : referral.status === 'PENDING_VERIFICATION' ? 'Pending' : 'Inactive'}
         </Badge>
         <span className="hidden text-xs text-gray-400 sm:block">{referral.ordersCount} orders</span>
-        <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">${referral.earnings.toFixed(0)}</span>
+        <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">{formatCurrency(referral.earnings)}</span>
       </div>
       {hasChildren && isExpanded && (
         <div className="border-l border-gray-100 dark:border-gray-700/40" style={{ marginLeft: `${depth * 20 + 22}px` }}>

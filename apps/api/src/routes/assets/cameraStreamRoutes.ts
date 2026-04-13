@@ -1,8 +1,10 @@
 import { Router } from 'express'
 import { z } from 'zod'
 import prisma from '@/lib/prisma'
+import type { AuthRequest } from '@/middleware/auth'
 import { validate } from '@/middleware/validate'
 import { requirePermission } from '@/middleware/rbac'
+import { assertCameraBranchAccess } from '@/lib/monitorBranchScope'
 import { badRequest, notFound, ok, serverError } from '@/utils/response'
 import { buildVigiLiveRtsp, buildVigiReplayRtsp } from '@/lib/vigiRtsp'
 
@@ -22,13 +24,14 @@ const exportWindowSchema = z
  * GET /cameras/:cameraId/stream-urls
  * RTSP templates for VIGI NVR (live + instructions). Does not include credentials — VLC / client will prompt.
  */
-router.get('/cameras/:cameraId/stream-urls', requirePermission('monitor.view'), async (req, res) => {
+router.get('/cameras/:cameraId/stream-urls', requirePermission('monitor.view'), async (req: AuthRequest, res) => {
   try {
     const cam = await prisma.cameraDevice.findUnique({
       where: { id: req.params.cameraId },
       include: { vigiIntegration: true },
     })
     if (!cam) return notFound(res, 'Camera')
+    if (!(await assertCameraBranchAccess(req, res, cam.branchId))) return
 
     const integration =
       cam.vigiIntegration ??
@@ -81,13 +84,14 @@ router.post(
   '/cameras/:cameraId/export-window',
   requirePermission('monitor.view'),
   validate(exportWindowSchema),
-  async (req, res) => {
+  async (req: AuthRequest, res) => {
     try {
       const cam = await prisma.cameraDevice.findUnique({
         where: { id: req.params.cameraId },
         include: { vigiIntegration: true },
       })
       if (!cam) return notFound(res, 'Camera')
+      if (!(await assertCameraBranchAccess(req, res, cam.branchId))) return
 
       const integration =
         cam.vigiIntegration ??

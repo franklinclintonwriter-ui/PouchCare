@@ -58,12 +58,54 @@ export function useStaffMe() {
 export function useUpdateStaffProfile() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (body: { name?: string; phone?: string; whatsapp?: string; country?: string; portfolioUrl?: string }) => {
+    mutationFn: async (body: {
+      name?: string;
+      phone?: string;
+      whatsapp?: string;
+      country?: string;
+      portfolioUrl?: string;
+    }) => {
       const res = await api.put('/staff/me', body);
       return res.data;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['auth', 'me'] });
+    },
+  });
+}
+
+export function useUploadStaffAvatar() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (file: File) => {
+      const form = new FormData();
+      form.append('file', file);
+      const { data } = await api.post<{ id: string; avatarUrl: string | null }>('/staff/me/avatar', form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return data;
+    },
+    onSuccess: (data) => {
+      if (data?.avatarUrl) {
+        useAuthStore.getState().updateUser({ avatarUrl: data.avatarUrl });
+      }
+      qc.invalidateQueries({ queryKey: ['auth', 'me'] });
+      qc.invalidateQueries({ queryKey: ['staff-list'] });
+    },
+  });
+}
+
+export function useDeleteStaffAvatar() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const { data } = await api.delete<{ avatarUrl: null }>('/staff/me/avatar');
+      return data;
+    },
+    onSuccess: () => {
+      useAuthStore.getState().updateUser({ avatarUrl: undefined });
+      qc.invalidateQueries({ queryKey: ['auth', 'me'] });
+      qc.invalidateQueries({ queryKey: ['staff-list'] });
     },
   });
 }

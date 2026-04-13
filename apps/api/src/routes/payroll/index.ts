@@ -1,11 +1,16 @@
 import { Router } from 'express'
 import { z } from 'zod'
+import type { Prisma, SystemRole } from '@prisma/client'
 import { authenticate, isCEO, type AuthRequest } from '@/middleware/auth'
 import { requirePermission } from '@/middleware/rbac'
 import { validate } from '@/middleware/validate'
 import prisma from '@/lib/prisma'
-import { ok, created, notFound, serverError, paginated } from '@/lib/response'
-import { getPagination, paginatedMeta, buildMeta} from '@/lib/pagination'
+import {
+  canManagerAccessStaffMember,
+  mergePayrollWhereForManager,
+} from '@/lib/teamBranchScope'
+import { ok, created, notFound, serverError, paginated, forbidden } from '@/lib/response'
+import { getPagination, buildMeta } from '@/lib/pagination'
 
 const router = Router()
 router.use(authenticate, requirePermission('payroll.access'))
@@ -26,16 +31,28 @@ router.get('/', async (req: AuthRequest, res) => {
   try {
     const { page, limit, skip } = getPagination(req)
     const { staffMemberId, memberId, month, year } = req.query as Record<string, string>
-    const where: any = {}
-    // Support both staffMemberId and memberId (legacy) for filtering
-    if (staffMemberId) where.staffMemberId = staffMemberId
-    else if (memberId) where.staffMemberId = memberId
-    if (month)    where.month = month
-    if (year)     where.year = parseInt(year)
+    const role = req.user!.role as SystemRole
+    const filterId = staffMemberId || memberId
+    if (filterId) {
+      const allowed = await canManagerAccessStaffMember(req.user!.id, role, filterId)
+      if (!allowed) return forbidden(res, 'Cannot access payroll for this staff member')
+    }
+
+    const where: Prisma.PayrollWhereInput = {}
+    if (filterId) where.staffMemberId = filterId
+    if (month) where.month = month
+    if (year) where.year = parseInt(year, 10)
+
+    const scoped = await mergePayrollWhereForManager(req, where)
 
     const [data, total] = await Promise.all([
-      prisma.payroll.findMany({ where, skip, take: limit, orderBy: [{ year: 'desc' }, { month: 'asc' }] }),
-      prisma.payroll.count({ where }),
+      prisma.payroll.findMany({
+        where: scoped,
+        skip,
+        take: limit,
+        orderBy: [{ year: 'desc' }, { month: 'asc' }],
+      }),
+      prisma.payroll.count({ where: scoped }),
     ])
     return paginated(res, data, buildMeta(total, page, limit))
   } catch { return serverError(res) }
@@ -44,6 +61,14 @@ router.get('/', async (req: AuthRequest, res) => {
 // POST /payroll — process payroll
 router.post('/', validate(schema), async (req: AuthRequest, res) => {
   try {
+    const role = req.user!.role as SystemRole
+    const okScope = await canManagerAccessStaffMember(
+      req.user!.id,
+      role,
+      req.body.staffMemberId,
+    )
+    if (!okScope) return forbidden(res, 'Cannot process payroll for this staff member')
+
     const member = await prisma.staffMember.findUnique({ where: { id: req.body.staffMemberId } })
     if (!member) return notFound(res, 'Member')
     const { bonus = 0, deductions = 0, staffMemberId } = req.body
@@ -74,6 +99,13 @@ router.get('/:id', async (req: AuthRequest, res) => {
   try {
     const record = await prisma.payroll.findUnique({ where: { id: req.params.id } })
     if (!record) return notFound(res, 'Payroll record')
+    const role = req.user!.role as SystemRole
+    const allowed = await canManagerAccessStaffMember(
+      req.user!.id,
+      role,
+      record.staffMemberId,
+    )
+    if (!allowed) return notFound(res, 'Payroll record')
     return ok(res, record)
   } catch { return serverError(res) }
 })
@@ -84,6 +116,13 @@ router.put('/:id', requirePermission('payroll.access'), async (req: AuthRequest,
     const { bonus, deductions, baseSalary, ...rest } = req.body
     const existing = await prisma.payroll.findUnique({ where: { id: req.params.id } })
     if (!existing) return notFound(res, 'Payroll record')
+    const role = req.user!.role as SystemRole
+    const okScope = await canManagerAccessStaffMember(
+      req.user!.id,
+      role,
+      existing.staffMemberId,
+    )
+    if (!okScope) return forbidden(res, 'Cannot edit this payroll record')
     const base = baseSalary ?? existing.baseSalary
     const b    = bonus      ?? existing.bonus ?? 0
     const d    = deductions ?? existing.deductions ?? 0

@@ -134,10 +134,28 @@ export function useInvoices(params?: QueryParams) {
   });
 }
 
+export type CreateInvoiceInput = {
+  clientName: string;
+  clientEmail?: string;
+  amountUsd: number;
+  service?: string;
+  status?: string;
+  issueDate?: string;
+  dueDate?: string;
+};
+
+export type UpdateInvoiceInput = {
+  id: string;
+  clientName?: string;
+  clientEmail?: string;
+  status?: string;
+  dueDate?: string;
+};
+
 export function useCreateInvoice() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: Record<string, unknown>) =>
+    mutationFn: (body: CreateInvoiceInput) =>
       api.post("/finance/invoices", body),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["invoices"] }),
   });
@@ -146,7 +164,7 @@ export function useCreateInvoice() {
 export function useUpdateInvoice() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...body }: Record<string, unknown> & { id: string }) =>
+    mutationFn: ({ id, ...body }: UpdateInvoiceInput) =>
       api.put(`/finance/invoices/${id}`, body),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["invoices"] }),
   });
@@ -166,10 +184,27 @@ export function useExpenses(params?: QueryParams) {
   });
 }
 
+export type CreateExpenseInput = {
+  title: string;
+  category?: string;
+  amountUsd: number;
+  expenseDate?: string;
+  receiptUrl?: string;
+  status?: string;
+};
+
+export type UpdateExpenseInput = {
+  id: string;
+  description?: string;
+  category?: string;
+  status?: string;
+  amount?: number;
+};
+
 export function useCreateExpense() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: Record<string, unknown>) =>
+    mutationFn: (body: CreateExpenseInput) =>
       api.post("/finance/expenses", body),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["expenses"] }),
   });
@@ -208,7 +243,7 @@ export function useExpense(id: string) {
 export function useUpdateExpense() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...body }: Record<string, unknown> & { id: string }) =>
+    mutationFn: ({ id, ...body }: UpdateExpenseInput) =>
       api.put(`/finance/expenses/${id}`, body),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["expenses"] }),
   });

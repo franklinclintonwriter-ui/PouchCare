@@ -45,8 +45,8 @@ export function downloadProjectPdf(input: ProjectPdfInput): void {
     ['Progress', `${project.progress ?? 0}%`],
     ['Budget', formatCurrency(project.budget ?? 0)],
     ['Spent', formatCurrency(project.spent ?? 0)],
-    ['Start', fmtDate(project.startDate)],
-    ['Due', fmtDate(project.dueDate)],
+    ['Start', project.startDate ? fmtDate(project.startDate) : 'Not set'],
+    ['Due', project.dueDate ? fmtDate(project.dueDate) : 'Not set'],
     ['Created', fmtDate(project.createdAt)],
     ['Team size', String(project.teamMembers?.length ?? 0)],
   ];

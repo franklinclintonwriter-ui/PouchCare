@@ -33,8 +33,8 @@ function mapProject(raw: RawProject): Project {
     spent: raw.paidAmount ?? 0,
     teamIds: teamMembers.map((m) => m.id),
     teamMembers,
-    startDate: raw.startDate ?? raw.createdAt ?? '',
-    dueDate: raw.deadline ?? raw.createdAt ?? '',
+    startDate: raw.startDate ?? null,
+    dueDate: raw.deadline ?? null,
     createdAt: raw.createdAt ?? new Date().toISOString(),
   };
 }

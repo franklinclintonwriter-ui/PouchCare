@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users, UserCheck, UserX, Building, Shield, Plus, Edit, UserMinus, RotateCcw } from 'lucide-react';
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
-import { useCreateStaff, useStaffList, useDeactivateStaff, useRestoreStaff } from '@/api/staff';
+import { useCreateStaff, useStaffList, useStaffStats, useDeactivateStaff, useRestoreStaff } from '@/api/staff';
 import { useBranches } from '@/api/admin-resources';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { DataTable, type Column } from '@/components/ui/DataTable';
@@ -18,6 +18,7 @@ import { Dropdown, type DropdownItem } from '@/components/ui/Dropdown';
 import { usePermission } from '@/hooks/usePermission';
 import type { StaffMember } from '@/types/models';
 import { toast } from 'sonner';
+import { getApiErrorMessage } from '@/utils/apiError';
 
 const roleBadgeVariant: Record<string, 'primary' | 'success' | 'warning' | 'danger' | 'info' | 'default'> = {
   CEO: 'danger',
@@ -67,28 +68,30 @@ export default function StaffList() {
     role: role || undefined,
     page,
     limit: 20,
-    sortBy: sortField || undefined,
+    sortBy: sortField === 'isActive' ? 'status' : sortField || undefined,
     sortDir: sortField ? sortDir : undefined,
   });
 
-  const { data: allData } = useStaffList({ limit: 500 });
+  const { data: statsData, isLoading: statsLoading } = useStaffStats({
+    q: search || undefined,
+    role: role || undefined,
+  });
 
   const staff = data?.data ?? [];
-  const allStaff = allData?.data ?? [];
   const meta = data?.meta;
 
   const stats = useMemo(() => {
-    const total = meta?.total ?? allStaff.length;
-    const active = allStaff.filter(s => s.isActive).length;
-    const inactive = allStaff.filter(s => !s.isActive).length;
-    const branches = new Set(allStaff.map(s => s.branch)).size;
+    const total = statsData?.total ?? meta?.total ?? 0;
+    const active = statsData?.active ?? 0;
+    const inactive = statsData?.inactive ?? 0;
+    const branches = statsData?.branchCount ?? 0;
     return [
       { title: 'Total Staff', value: total, icon: <Users />, iconBg: 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' },
       { title: 'Active', value: active, icon: <UserCheck />, iconBg: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400' },
       { title: 'Inactive', value: inactive, icon: <UserX />, iconBg: 'bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400' },
       { title: 'Branches', value: branches, icon: <Building />, iconBg: 'bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400' },
     ];
-  }, [allStaff, meta]);
+  }, [statsData, meta]);
 
   const headerConfig = useMemo(() => ({
     title: 'Staff',
@@ -119,6 +122,7 @@ export default function StaffList() {
   useHeaderConfig(headerConfig);
 
   const handleSort = (field: string) => {
+    setPage(1);
     if (sortField === field) {
       setSortDir(d => (d === 'asc' ? 'desc' : 'asc'));
     } else {
@@ -181,7 +185,9 @@ export default function StaffList() {
       sortable: true,
       render: (row) => (
         <span className="text-sm text-gray-500 dark:text-gray-400">
-          {new Date(row.joinDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+          {row.joinDate && !Number.isNaN(new Date(row.joinDate).getTime())
+            ? new Date(row.joinDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+            : '—'}
         </span>
       ),
     },
@@ -204,7 +210,7 @@ export default function StaffList() {
   return (
     <PageTransition>
       <div className="space-y-6">
-        <StatsRow items={stats} loading={isLoading} />
+        <StatsRow items={stats} loading={isLoading || statsLoading} />
 
         <DataTable
           columns={columns}
@@ -247,7 +253,7 @@ export default function StaffList() {
                     setPassword('');
                     setBranchName('');
                   } catch (err) {
-                    toast.error(err instanceof Error ? err.message : 'Failed to create staff');
+                    toast.error(getApiErrorMessage(err, 'Failed to create staff'));
                   }
                 }}
               >
@@ -301,7 +307,7 @@ export default function StaffList() {
               toast.success(`${confirmDeactivate.name} has been deactivated`);
               setConfirmDeactivate(null);
             } catch (err) {
-              toast.error(err instanceof Error ? err.message : 'Failed to deactivate staff');
+              toast.error(getApiErrorMessage(err, 'Failed to deactivate staff'));
             }
           }}
         />
@@ -321,7 +327,7 @@ export default function StaffList() {
               toast.success(`${confirmRestore.name} has been restored`);
               setConfirmRestore(null);
             } catch (err) {
-              toast.error(err instanceof Error ? err.message : 'Failed to restore staff');
+              toast.error(getApiErrorMessage(err, 'Failed to restore staff'));
             }
           }}
         />

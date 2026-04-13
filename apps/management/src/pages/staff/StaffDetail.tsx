@@ -15,12 +15,19 @@ import {
   FileText,
   ListTodo,
   FileDown,
+  Camera,
+  Trash2,
 } from 'lucide-react';
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
 import { usePermission } from '@/hooks/usePermission';
 import { useAuth } from '@/hooks/useAuth';
 import { useAttendance } from '@/api/attendance';
-import { useStaffMember, useUpdateStaff } from '@/api/staff';
+import {
+  useStaffMember,
+  useUpdateStaff,
+  useUploadStaffMemberAvatar,
+  useDeleteStaffMemberAvatar,
+} from '@/api/staff';
 import { useStaffDocuments } from '@/api/documents';
 import { useTasks } from '@/api/tasks';
 import { PageTransition } from '@/components/ui/PageTransition';
@@ -37,28 +44,35 @@ import { StaffRolePermissionsPanel } from '@/components/staff/StaffRolePermissio
 import { StaffProfileAdminForm } from '@/components/staff/StaffProfileAdminForm';
 import { StaffCeoRatingPanel } from '@/components/staff/StaffCeoRatingPanel';
 import { DocumentManager } from '@/components/staff/DocumentManager';
+import { AvatarUploadDialog } from '@/components/shared/AvatarUploadDialog';
 import { useCurrency } from '@/hooks/useCurrency';
 import { toast } from 'sonner';
 import type { Task, AttendanceRecord } from '@/types/models';
 import { ROLE_LABELS } from '@/utils/permissions';
 import { downloadStaffProfilePdf } from '@/utils/staffProfilePdf';
+import { getApiErrorMessage } from '@/utils/apiError';
 
 export default function StaffDetail() {
   const { id } = useParams<{ id: string }>();
   const perm = usePermission();
   const { user } = useAuth();
-  const { formatCurrency } = useCurrency();
+  const { formatCurrency, formatMoney } = useCurrency();
   const { data: member, isLoading } = useStaffMember(id!);
   const updateStaff = useUpdateStaff();
+  const uploadAvatar = useUploadStaffMemberAvatar();
+  const deleteAvatar = useDeleteStaffMemberAvatar();
   const { data: memberTasks } = useTasks({ assignedTo: id, limit: 50 });
   const { data: attendance } = useAttendance({ memberId: id, limit: 50 });
   const { data: documentsPage } = useStaffDocuments(id);
   const [tab, setTab] = useState('overview');
   const [editOpen, setEditOpen] = useState(false);
-  const [form, setForm] = useState({ name: '', email: '', phone: '', branch: '', department: '', salary: '' });
+  const [avatarBusy, setAvatarBusy] = useState(false);
+  const [avatarDialogOpen, setAvatarDialogOpen] = useState(false);
+  const [form, setForm] = useState({ name: '', email: '', phone: '', branch: '', jobRole: '', salary: '' });
 
   const isOwnProfile = user?.id === id;
   const canEdit = perm.can('staff.manage_profiles') || perm.isCEO;
+  const canManageAvatar = Boolean(member?.profileAdmin && id);
 
   const openEdit = useCallback(() => {
     if (member) {
@@ -67,8 +81,8 @@ export default function StaffDetail() {
         email: member.email,
         phone: member.phone || '',
         branch: member.branch || '',
-        department: member.department || '',
-        salary: String(member.salary || ''),
+        jobRole: member.department || '',
+        salary: member.salary != null ? String(member.salary) : '',
       });
     }
     setEditOpen(true);
@@ -76,6 +90,10 @@ export default function StaffDetail() {
 
   const handleExportPdf = useCallback(() => {
     if (!member) return;
+    if (member.profileScope === 'limited') {
+      toast.error('PDF export includes HR-only fields. Open a full profile (self or HR) to export.');
+      return;
+    }
     try {
       downloadStaffProfilePdf({
         member,
@@ -83,12 +101,16 @@ export default function StaffDetail() {
         attendance: (attendance?.data ?? []) as AttendanceRecord[],
         documents: documentsPage?.data ?? [],
         formatCurrency,
+        formatSalary: (n) =>
+          formatMoney(n, {
+            storedIn: member.preferredCurrency === 'USD' ? 'USD' : 'BDT',
+          }),
       });
       toast.success('PDF downloaded');
     } catch {
       toast.error('Could not generate PDF');
     }
-  }, [member, memberTasks?.data, attendance?.data, documentsPage?.data, formatCurrency]);
+  }, [member, memberTasks?.data, attendance?.data, documentsPage?.data, formatCurrency, formatMoney]);
 
   const handleSave = async () => {
     if (!id || !form.name.trim()) {
@@ -102,13 +124,40 @@ export default function StaffDetail() {
         email: form.email.trim() || undefined,
         phone: form.phone || undefined,
         branch: form.branch || undefined,
-        department: form.department || undefined,
+        jobRole: form.jobRole.trim() || undefined,
         salary: form.salary ? Number(form.salary) : undefined,
       });
       toast.success('Staff member updated');
       setEditOpen(false);
-    } catch {
-      toast.error('Failed to update staff member');
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, 'Failed to update staff member'));
+    }
+  };
+
+  const handleAvatarSelect = async (file: File | undefined) => {
+    if (!file || !id) return;
+    try {
+      setAvatarBusy(true);
+      await uploadAvatar.mutateAsync({ id, file });
+      toast.success('Profile photo updated');
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, 'Failed to upload profile photo'));
+      throw err;
+    } finally {
+      setAvatarBusy(false);
+    }
+  };
+
+  const handleAvatarRemove = async () => {
+    if (!id) return;
+    try {
+      setAvatarBusy(true);
+      await deleteAvatar.mutateAsync(id);
+      toast.success('Profile photo removed');
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, 'Failed to remove profile photo'));
+    } finally {
+      setAvatarBusy(false);
     }
   };
 
@@ -127,12 +176,14 @@ export default function StaffDetail() {
       { label: member?.name ?? '...' },
     ],
     actions: [
-      { type: 'button' as const, label: 'Export PDF', icon: FileDown, variant: 'outline' as const, onClick: handleExportPdf },
+      ...(member && member.profileScope !== 'limited'
+        ? [{ type: 'button' as const, label: 'Export PDF', icon: FileDown, variant: 'outline' as const, onClick: handleExportPdf }]
+        : []),
       ...(canEdit
         ? [{ type: 'button' as const, label: 'Edit', icon: Pencil, variant: 'outline' as const, onClick: openEdit }]
         : []),
     ],
-  }), [member?.name, canEdit, openEdit, handleExportPdf]);
+  }), [member, canEdit, openEdit, handleExportPdf]);
 
   useHeaderConfig(headerConfig);
 
@@ -175,19 +226,31 @@ export default function StaffDetail() {
 
   const displayStatus = member.status ?? (member.isActive ? 'Active' : 'Inactive');
   const isActiveBadge = displayStatus.toLowerCase() === 'active';
+  const isLimitedProfile = member.profileScope === 'limited';
 
-  const infoItems = [
-    { icon: Mail, label: 'Email', value: member.email },
-    { icon: Phone, label: 'Phone', value: member.phone || '—' },
-    { icon: Building, label: 'Branch', value: member.branch || '—' },
-    { icon: Briefcase, label: 'Department', value: member.department || '—' },
-    {
-      icon: Calendar,
-      label: 'Joined',
-      value: new Date(member.joinDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
-    },
-    { icon: DollarSign, label: 'Salary', value: formatCurrency(member.salary) },
-  ];
+  const infoItems = useMemo(() => {
+    const joined =
+      member.joinDate && !Number.isNaN(new Date(member.joinDate).getTime())
+        ? new Date(member.joinDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+        : '—';
+    const rows: { icon: typeof Mail; label: string; value: string }[] = [
+      { icon: Mail, label: 'Email', value: member.email },
+      { icon: Phone, label: 'Phone', value: member.phone || '—' },
+      { icon: Building, label: 'Branch', value: member.branch || '—' },
+      { icon: Briefcase, label: 'Department', value: member.department || '—' },
+      { icon: Calendar, label: 'Joined', value: joined },
+    ];
+    if (!isLimitedProfile) {
+      rows.push({
+        icon: DollarSign,
+        label: 'Salary',
+        value: formatMoney(member.salary ?? 0, {
+          storedIn: member.preferredCurrency === 'USD' ? 'USD' : 'BDT',
+        }),
+      });
+    }
+    return rows;
+  }, [member, formatMoney, isLimitedProfile]);
 
   const tabDefs = [
     { label: 'Overview', value: 'overview', icon: <LayoutGrid className="h-3.5 w-3.5 sm:h-4 sm:w-4" /> },
@@ -212,6 +275,11 @@ export default function StaffDetail() {
             <div className="flex justify-center sm:justify-start">
               <div className="relative">
                 <Avatar name={member.name} src={member.avatarUrl} size="xl" className="!h-28 !w-28 text-2xl ring-4 ring-white shadow-md dark:ring-gray-800 sm:!h-32 sm:!w-32" />
+                {avatarBusy ? (
+                  <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/35">
+                    <span className="h-7 w-7 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  </div>
+                ) : null}
               </div>
             </div>
             <div className="min-w-0 flex-1 text-center sm:text-left">
@@ -242,6 +310,33 @@ export default function StaffDetail() {
                 <span className="font-sans text-[10px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-500">Staff ID</span>
                 {member.memberId}
               </p>
+              {canManageAvatar ? (
+                <div className="mt-3 flex flex-wrap items-center justify-center gap-2 sm:justify-start">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={avatarBusy}
+                    onClick={() => setAvatarDialogOpen(true)}
+                  >
+                    <Camera className="mr-1 h-3.5 w-3.5" />
+                    Upload photo
+                  </Button>
+                  {member.avatarUrl ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="text-red-600 hover:text-red-700 dark:text-red-400"
+                      disabled={avatarBusy}
+                      onClick={() => void handleAvatarRemove()}
+                    >
+                      <Trash2 className="mr-1 h-3.5 w-3.5" />
+                      Remove photo
+                    </Button>
+                  ) : null}
+                </div>
+              ) : null}
               <div className="mt-4 flex flex-col gap-2 border-t border-gray-200/80 pt-4 text-left dark:border-gray-700/60 sm:mt-5">
                 {member.profileAdmin && member.lastLoginAt ? (
                   <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -263,6 +358,18 @@ export default function StaffDetail() {
             </div>
           </div>
         </Card>
+        <AvatarUploadDialog
+          isOpen={avatarDialogOpen}
+          onClose={() => setAvatarDialogOpen(false)}
+          name={member.name}
+          currentAvatarUrl={member.avatarUrl}
+          isLoading={avatarBusy}
+          title={`Update ${member.name}'s photo`}
+          description="Preview the image before uploading it to this staff profile."
+          onConfirm={async (file) => {
+            await handleAvatarSelect(file);
+          }}
+        />
 
         <Tabs
           variant="wrap"
@@ -272,6 +379,12 @@ export default function StaffDetail() {
           onChange={setTab}
           className={member.profileAdmin ? 'w-full' : 'w-full lg:grid-cols-4'}
         />
+
+        {isLimitedProfile ? (
+          <div className="rounded-xl border border-amber-200/80 bg-amber-50/90 px-4 py-3 text-sm text-amber-950 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-100">
+            Directory view: salary, ID documents, and other HR-only fields are hidden. HR or profile admins see the full record.
+          </div>
+        ) : null}
 
         {tab === 'overview' && (
           <div className="space-y-6 sm:space-y-8">
@@ -410,9 +523,16 @@ export default function StaffDetail() {
           <Input label="Phone" value={form.phone} onChange={set('phone')} />
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Input label="Branch" value={form.branch} onChange={set('branch')} />
-            <Input label="Department" value={form.department} onChange={set('department')} />
+            <Input label="Job title / department" value={form.jobRole} onChange={set('jobRole')} />
           </div>
-          <Input label="Salary (USD)" type="number" min="0" step="0.01" value={form.salary} onChange={set('salary')} />
+          <Input
+            label={member?.preferredCurrency === 'USD' ? 'Salary (US$)' : 'Salary (BDT, ৳)'}
+            type="number"
+            min="0"
+            step="0.01"
+            value={form.salary}
+            onChange={set('salary')}
+          />
         </div>
       </Modal>
     </PageTransition>

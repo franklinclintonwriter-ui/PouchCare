@@ -19,6 +19,7 @@ import { usePermission } from '@/hooks/usePermission';
 import { Pencil, Trash2, Mail, Phone, Building2, Globe, Calendar, User, DollarSign, Tag } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Lead } from '@/types/models';
+import { CrmScopeNotice } from '@/components/crm/CrmScopeNotice';
 
 const STAGE_OPTIONS = [
   { label: 'New', value: 'NEW' },
@@ -148,6 +149,7 @@ export default function LeadDetail() {
 
   return (
     <PageTransition className="space-y-6">
+      <CrmScopeNotice />
       {/* Header card */}
       <Card>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

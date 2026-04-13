@@ -201,7 +201,8 @@ model StaffMember {
   refreshToken         String?    @map("refresh_token")
   lastLoginAt          DateTime?  @map("last_login_at")
   lastLoginIp          String?    @map("last_login_ip")
-  preferredCurrency    String     @default("USD") @map("preferred_currency") // USD | BDT
+  preferredCurrency    String     @default("BDT") @map("preferred_currency") // USD | BDT
+  avatarUrl            String?    @map("avatar_url") // profile photo URL (R2 or local)
   createdAt            DateTime   @default(now()) @map("created_at")
   updatedAt            DateTime   @updatedAt @map("updated_at")
 
@@ -833,6 +834,7 @@ model PortalMember {
   phone                 String?
   whatsapp              String?
   country               String?
+  avatarUrl             String?            @map("avatar_url") // profile photo URL (R2 or local)
   status                PortalMemberStatus @default(PENDING_VERIFICATION)
   referralCode          String             @unique @map("referral_code")
   referredById          String?            @map("referred_by_id")

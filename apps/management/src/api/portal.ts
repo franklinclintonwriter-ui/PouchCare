@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from './client';
 import type { QueryParams, PaginatedResponse } from '@/types/api';
 import type { PortalOrder, WalletTransaction, Referral, CommissionRecord, PayoutRecord } from '@/types/models';
+import { useAuthStore } from '@/store/authStore';
 
 type RawPortalOrder = {
   id: string;
@@ -359,6 +360,40 @@ export function useUpdatePortalProfile() {
       api.put('/portal/me', body),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['portal', 'me'] });
+    },
+  });
+}
+
+export function useUploadPortalAvatar() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (file: File) => {
+      const form = new FormData();
+      form.append('file', file);
+      const { data } = await api.post<{ id: string; avatarUrl: string | null }>('/portal/me/avatar', form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return data;
+    },
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: ['portal', 'me'] });
+      if (data?.avatarUrl) {
+        useAuthStore.getState().updateUser({ avatarUrl: data.avatarUrl });
+      }
+    },
+  });
+}
+
+export function useDeletePortalAvatar() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const { data } = await api.delete<{ avatarUrl: null }>('/portal/me/avatar');
+      return data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['portal', 'me'] });
+      useAuthStore.getState().updateUser({ avatarUrl: undefined });
     },
   });
 }

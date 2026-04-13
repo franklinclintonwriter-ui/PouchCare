@@ -15,6 +15,7 @@ import { useCurrency } from '@/hooks/useCurrency';
 import { Users, Target, DollarSign, GitBranch, Plus } from 'lucide-react';
 import type { Lead } from '@/types/models';
 import { toast } from 'sonner';
+import { CrmScopeNotice } from '@/components/crm/CrmScopeNotice';
 
 export default function LeadList() {
   const navigate = useNavigate();
@@ -88,6 +89,7 @@ export default function LeadList() {
 
   return (
     <PageTransition className="space-y-6">
+      <CrmScopeNotice />
       <StatsRow
         loading={isLoading}
         items={[

@@ -42,6 +42,9 @@ Thumbs.db
 coverage/
 .nyc_output/
 
+# ── Generated employee credentials (salary seed) ───────
+apps/api/prisma/.salary-seed-credentials.txt
+
 # ── Misc ───────────────────────────────────────────────
 *.pem
 .vercel

@@ -137,11 +137,29 @@ export function useMyTasks() {
   });
 }
 
+export type CreateTaskInput = {
+  title: string;
+  priority?: string;
+  notes?: string;
+  deadline?: string;
+  category?: string;
+  assignedBranch?: string;
+  assignedManagerId?: string;
+  assignedMemberId?: string;
+};
+
+export type UpdateTaskInput = { id: string } & Partial<
+  Omit<CreateTaskInput, 'assignedMemberId'> & {
+    progress?: number;
+    assignedMemberId?: string | null;
+  }
+>;
+
 export function useCreateTask() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (body: Record<string, unknown>) => {
-      const res = await api.post<{ id: string } & Record<string, unknown>>('/tasks', body);
+    mutationFn: async (body: CreateTaskInput) => {
+      const res = await api.post<{ id: string }>('/tasks', body);
       return res.data;
     },
     onSuccess: () => {
@@ -154,7 +172,7 @@ export function useCreateTask() {
 export function useUpdateTask() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...body }: Record<string, unknown> & { id: string }) => api.put(`/tasks/${id}`, body),
+    mutationFn: ({ id, ...body }: UpdateTaskInput) => api.put(`/tasks/${id}`, body),
     onSuccess: (_, v) => {
       qc.invalidateQueries({ queryKey: taskKeys.root });
       qc.invalidateQueries({ queryKey: taskKeys.my });

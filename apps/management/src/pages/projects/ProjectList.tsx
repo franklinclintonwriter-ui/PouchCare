@@ -15,8 +15,10 @@ import { Textarea } from '@/components/ui/Textarea';
 import { Button } from '@/components/ui/Button';
 import type { Project } from '@/types/models';
 import { toast } from 'sonner';
+import { useCurrency } from '@/hooks/useCurrency';
 
 export default function ProjectList() {
+  const { formatCurrency } = useCurrency();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
@@ -149,7 +151,9 @@ export default function ProjectList() {
       sortable: true,
       render: (row) => (
         <span className="text-sm text-gray-500 dark:text-gray-400">
-          {new Date(row.dueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+          {row.dueDate
+            ? new Date(row.dueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+            : 'Not set'}
         </span>
       ),
     },
@@ -159,7 +163,7 @@ export default function ProjectList() {
       align: 'right',
       render: (row) => (
         <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-          ${row.budget.toLocaleString()}
+          {formatCurrency(row.budget)}
         </span>
       ),
     },

@@ -73,7 +73,7 @@ export default function MyAttendance() {
       key: 'checkIn',
       label: 'Check In',
       render: (row) => (
-        <span className="text-sm text-gray-700 dark:text-gray-300">{row.checkIn}</span>
+        <span className="text-sm text-gray-700 dark:text-gray-300">{row.checkIn || '-'}</span>
       ),
     },
     {

@@ -54,14 +54,37 @@ export function usePerformanceReviews(period?: string) {
   });
 }
 
+export type CreatePerformanceReviewInput = {
+  staffMemberId: string;
+  staffName?: string;
+  reviewQuarter?: string;
+  reviewYear?: number;
+  overallRating: number;
+  taskQuality?: number;
+  communication?: number;
+  punctuality?: number;
+  teamwork?: number;
+  notes?: string;
+};
+
+export type UpdatePerformanceReviewInput = {
+  id: string;
+  overallRating?: number;
+  taskQuality?: number;
+  communication?: number;
+  punctuality?: number;
+  teamwork?: number;
+  notes?: string;
+};
+
 export function useCreatePerformanceReview() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: Record<string, unknown>) => {
-      const memberId = String(body.staffMemberId ?? body.memberId ?? '').trim();
-      const reviewQuarter = String(body.reviewQuarter ?? 'Q1');
-      const reviewYear = Number(body.reviewYear ?? new Date().getFullYear());
-      const reviewPeriod = String(body.reviewPeriod ?? `${reviewQuarter} ${reviewYear}`);
+    mutationFn: (body: CreatePerformanceReviewInput) => {
+      const memberId = body.staffMemberId.trim();
+      const reviewQuarter = body.reviewQuarter ?? 'Q1';
+      const reviewYear = body.reviewYear ?? new Date().getFullYear();
+      const reviewPeriod = `${reviewQuarter} ${reviewYear}`;
       return api.post('/performance', {
         memberId,
         reviewPeriod,
@@ -82,7 +105,7 @@ export function useCreatePerformanceReview() {
 export function useUpdatePerformanceReview() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...body }: Record<string, unknown> & { id: string }) =>
+    mutationFn: ({ id, ...body }: UpdatePerformanceReviewInput) =>
       api.put(`/performance/${id}`, body),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['performance'] }),
   });

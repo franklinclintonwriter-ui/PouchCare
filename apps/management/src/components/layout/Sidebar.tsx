@@ -145,13 +145,18 @@ function Sidebar() {
             { label: "Expenses", href: "/finance/expenses" },
             { label: "Revenue", href: "/finance/revenue" },
             { label: "Forecast", href: "/finance/forecast" },
-            { label: "Exchange Rates", href: "/finance/exchange-rates" },
+            {
+              label: "Exchange Rates",
+              href: "/finance/exchange-rates",
+              permission: () => perm.can("finance.exchange_rates"),
+            },
           ],
           permission: () => perm.can("finance.access"),
         },
         {
           label: "CRM",
           icon: Target,
+          permission: () => perm.isManager,
           children: [
             { label: "Leads", href: "/crm/leads" },
             { label: "Pipeline", href: "/crm/pipeline" },
@@ -255,12 +260,12 @@ function Sidebar() {
             {
               label: "System Config",
               href: "/settings/system",
-              permission: () => perm.isCEO,
+              permission: () => perm.can("settings.role_permissions"),
             },
             {
               label: "API Keys",
               href: "/settings/api-keys",
-              permission: () => perm.isCEO,
+              permission: () => perm.can("settings.role_permissions"),
             },
           ],
         },
@@ -354,6 +359,7 @@ function Sidebar() {
                 (user as { fullName?: string }).fullName ||
                 ""
               }
+              src={(user as { avatarUrl?: string }).avatarUrl}
               size="sm"
             />
             {!isCollapsed && (

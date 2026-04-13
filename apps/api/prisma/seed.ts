@@ -27,8 +27,6 @@ import crypto from "crypto";
 const prisma = new PrismaClient();
 
 const HASH = bcrypt.hashSync("Password123!", 10);
-/** Ops login: habib@pouchcare.com / Test@123 */
-const HABIB_OPS_HASH = bcrypt.hashSync("Test@123", 10);
 const now = new Date();
 const daysAgo = (d: number) => new Date(now.getTime() - d * 86_400_000);
 const daysFrom = (d: number) => new Date(now.getTime() + d * 86_400_000);
@@ -37,19 +35,12 @@ const randint = (min: number, max: number) =>
   Math.floor(Math.random() * (max - min + 1)) + min;
 const chance = (p: number) => Math.random() < p;
 
+/** Core team only — demo/test staff accounts removed */
 const STAFF_EMAILS = [
   "ceo@pouchcare.com",
   "comd@pouchcare.com",
   "ops@pouchcare.com",
-  "habib@pouchcare.com",
-  "hr@pouchcare.com",
   "branch@pouchcare.com",
-  "staff1@pouchcare.com",
-  "staff2@pouchcare.com",
-  "staff3@pouchcare.com",
-  "staff4@pouchcare.com",
-  "staff5@pouchcare.com",
-  "intern1@pouchcare.com",
 ];
 
 const PORTAL_EMAILS = [
@@ -71,7 +62,7 @@ async function seedBranches() {
       type: "HQ",
       status: "Active",
       branchManager: "Abdullah Al Mamun",
-      staffCount: 3,
+      staffCount: 2,
     },
     {
       name: "Bangladesh HQ",
@@ -79,8 +70,8 @@ async function seedBranches() {
       city: "Chittagong",
       type: "HQ",
       status: "Active",
-      branchManager: "Habib Sourov",
-      staffCount: 8,
+      branchManager: "Md. Habibullah",
+      staffCount: 4,
     },
     {
       name: "Dhaka",
@@ -88,8 +79,8 @@ async function seedBranches() {
       city: "Dhaka",
       type: "Regional",
       status: "Active",
-      branchManager: "Kamal Hossain",
-      staffCount: 5,
+      branchManager: "Zihadduzzaman",
+      staffCount: 8,
     },
     {
       name: "London",
@@ -175,8 +166,8 @@ async function seedStaff() {
       name: "Abdullah Al Mamun",
       role: SystemRole.CEO,
       branch: "Dubai HQ",
-      jobRole: "CEO & Founder",
-      skill: "On-Page SEO",
+      jobRole: "Chief Executive Officer",
+      skill: "Strategy & Growth",
       level: "Expert",
       exp: 10,
       salary: null,
@@ -184,141 +175,45 @@ async function seedStaff() {
     },
     {
       email: "comd@pouchcare.com",
-      name: "Oliullah Mithu",
+      name: "Md Oliullah",
       role: SystemRole.CO_MD,
       branch: "Bangladesh HQ",
-      jobRole: "Co-MD & Partner",
-      skill: "Project Management",
+      jobRole: "Managing Director",
+      skill: "On-Page SEO",
       level: "Expert",
-      exp: 8,
+      exp: 10,
       salary: null,
-      join: new Date("2017-06-01"),
+      join: new Date("2016-01-01"),
     },
     {
       email: "ops@pouchcare.com",
-      name: "Habib Sourov",
+      name: "Md. Habibullah",
       role: SystemRole.OP_MANAGER,
       branch: "Bangladesh HQ",
       jobRole: "Operations Manager",
-      skill: "Off-Page SEO",
+      skill: "Operations & Delivery",
       level: "Expert",
       exp: 6,
       salary: 2500,
       join: new Date("2019-03-01"),
-    },
-    {
-      email: "habib@pouchcare.com",
-      name: "Habib Sourov",
-      role: SystemRole.OP_MANAGER,
-      branch: "Bangladesh HQ",
-      jobRole: "Operations Manager",
-      skill: "Off-Page SEO",
-      level: "Expert",
-      exp: 6,
-      salary: 2500,
-      join: new Date("2019-03-01"),
-    },
-    {
-      email: "hr@pouchcare.com",
-      name: "Fatema Khatun",
-      role: SystemRole.HR_MANAGER,
-      branch: "Bangladesh HQ",
-      jobRole: "HR Manager",
-      skill: "HR Management",
-      level: "Advanced",
-      exp: 5,
-      salary: 1800,
-      join: new Date("2020-01-10"),
     },
     {
       email: "branch@pouchcare.com",
-      name: "Kamal Hossain",
+      name: "Zihadduzzaman",
       role: SystemRole.BRANCH_MANAGER,
       branch: "Dhaka",
-      jobRole: "Branch Manager – Dhaka",
+      jobRole: "Branch Manager — Dhaka",
       skill: "Client Management",
       level: "Advanced",
       exp: 4,
       salary: 2000,
       join: new Date("2020-07-01"),
     },
-    {
-      email: "staff1@pouchcare.com",
-      name: "Farhan Ahmed",
-      role: SystemRole.STAFF,
-      branch: "Bangladesh HQ",
-      jobRole: "SEO Specialist",
-      skill: "Link Building",
-      level: "Advanced",
-      exp: 3,
-      salary: 800,
-      join: new Date("2021-08-01"),
-    },
-    {
-      email: "staff2@pouchcare.com",
-      name: "Riya Begum",
-      role: SystemRole.STAFF,
-      branch: "Dhaka",
-      jobRole: "Content Writer",
-      skill: "Content Writing",
-      level: "Intermediate",
-      exp: 2,
-      salary: 600,
-      join: new Date("2022-05-01"),
-    },
-    {
-      email: "staff3@pouchcare.com",
-      name: "Mehedi Hasan",
-      role: SystemRole.STAFF,
-      branch: "Bangladesh HQ",
-      jobRole: "Technical SEO Analyst",
-      skill: "Technical SEO",
-      level: "Advanced",
-      exp: 3,
-      salary: 900,
-      join: new Date("2021-11-01"),
-    },
-    {
-      email: "staff4@pouchcare.com",
-      name: "Nasrin Akter",
-      role: SystemRole.STAFF,
-      branch: "Dhaka",
-      jobRole: "Graphic Designer",
-      skill: "Graphic Design",
-      level: "Intermediate",
-      exp: 2,
-      salary: 550,
-      join: new Date("2023-01-15"),
-    },
-    {
-      email: "staff5@pouchcare.com",
-      name: "Rafiq Islam",
-      role: SystemRole.STAFF,
-      branch: "Bangladesh HQ",
-      jobRole: "Web Developer",
-      skill: "Web Development",
-      level: "Advanced",
-      exp: 4,
-      salary: 1200,
-      join: new Date("2021-03-01"),
-    },
-    {
-      email: "intern1@pouchcare.com",
-      name: "Sajib Roy",
-      role: SystemRole.INTERN,
-      branch: "Dhaka",
-      jobRole: "SEO Intern",
-      skill: "On-Page SEO",
-      level: "Beginner",
-      exp: 0.5,
-      salary: 200,
-      join: new Date("2025-10-01"),
-    },
   ];
 
   const created: Record<string, string> = {};
   for (const m of members) {
-    const pwdHash = m.email === "habib@pouchcare.com" ? HABIB_OPS_HASH : HASH;
+    const pwdHash = HASH;
     const sm = await prisma.staffMember.upsert({
       where: { email: m.email },
       update: {
@@ -355,6 +250,26 @@ async function seedStaff() {
 async function seedManagedDevices(staffIds: Record<string, string>) {
   const rows = [
     {
+      email: "ceo@pouchcare.com",
+      deviceName: "CEO-MacBook",
+      deviceType: "Laptop",
+      os: "macOS",
+      ipAddress: "10.10.0.10",
+      status: "Active",
+      systemRole: "CEO",
+      branch: "Dubai HQ",
+    },
+    {
+      email: "comd@pouchcare.com",
+      deviceName: "CoMD-ThinkPad",
+      deviceType: "Laptop",
+      os: "Windows 11",
+      ipAddress: "10.10.0.11",
+      status: "Active",
+      systemRole: "CO_MD",
+      branch: "Bangladesh HQ",
+    },
+    {
       email: "ops@pouchcare.com",
       deviceName: "Ops-MacBook-Pro",
       deviceType: "Laptop",
@@ -365,64 +280,14 @@ async function seedManagedDevices(staffIds: Record<string, string>) {
       branch: "Bangladesh HQ",
     },
     {
-      email: "staff1@pouchcare.com",
-      deviceName: "SEO-Desktop-01",
+      email: "branch@pouchcare.com",
+      deviceName: "Dhaka-Desk-01",
       deviceType: "Desktop",
       os: "Windows 11",
-      ipAddress: "10.10.1.21",
+      ipAddress: "10.10.2.21",
       status: "Active",
-      systemRole: "STAFF",
-      branch: "Bangladesh HQ",
-    },
-    {
-      email: "staff2@pouchcare.com",
-      deviceName: "Content-Laptop-02",
-      deviceType: "Laptop",
-      os: "Windows 11",
-      ipAddress: "10.10.2.34",
-      status: "Active",
-      systemRole: "STAFF",
+      systemRole: "BRANCH_MANAGER",
       branch: "Dhaka",
-    },
-    {
-      email: "staff3@pouchcare.com",
-      deviceName: "TechSEO-Workstation-03",
-      deviceType: "Workstation",
-      os: "Ubuntu 22.04",
-      ipAddress: "10.10.1.47",
-      status: "Active",
-      systemRole: "STAFF",
-      branch: "Bangladesh HQ",
-    },
-    {
-      email: "staff4@pouchcare.com",
-      deviceName: "Design-iMac-04",
-      deviceType: "Desktop",
-      os: "macOS",
-      ipAddress: "10.10.2.58",
-      status: "Inactive",
-      systemRole: "STAFF",
-      branch: "Dhaka",
-    },
-    {
-      email: "staff5@pouchcare.com",
-      deviceName: "Dev-Laptop-05",
-      deviceType: "Laptop",
-      os: "Windows 11",
-      ipAddress: "10.10.1.63",
-      status: "Active",
-      systemRole: "STAFF",
-      branch: "Bangladesh HQ",
-    },
-    {
-      email: "hr@pouchcare.com",
-      deviceName: "HR-Lenovo-06",
-      deviceType: "Laptop",
-      os: "Windows 10",
-      ipAddress: "10.10.1.74",
-      status: "Active",
-      systemRole: "HR_MANAGER",
-      branch: "Bangladesh HQ",
     },
   ];
 
@@ -679,8 +544,8 @@ async function seedProjects(staffIds: Record<string, string>) {
       paymentStatus: PaymentStatus.PAID,
       clientName: "James Martin",
       clientEmail: "james@techflow.io",
-      projectManager: "Habib Sourov",
-      assignedTo: staffIds["staff5@pouchcare.com"],
+      projectManager: "Md. Habibullah",
+      assignedTo: staffIds["branch@pouchcare.com"],
       startDate: daysAgo(60),
       deadline: daysAgo(30),
       price: 1200,
@@ -705,7 +570,7 @@ async function seedProjects(staffIds: Record<string, string>) {
       clientName: "Sarah Chen",
       clientEmail: "sarah@globalmart.com",
       projectManager: "Abdullah Al Mamun",
-      assignedTo: staffIds["staff1@pouchcare.com"],
+      assignedTo: staffIds["branch@pouchcare.com"],
       startDate: daysAgo(30),
       deadline: daysFrom(60),
       price: 2400,
@@ -727,8 +592,8 @@ async function seedProjects(staffIds: Record<string, string>) {
       paymentStatus: PaymentStatus.PAID,
       clientName: "Emma Wilson",
       clientEmail: "emma@bloombeauty.co",
-      projectManager: "Habib Sourov",
-      assignedTo: staffIds["staff2@pouchcare.com"],
+      projectManager: "Md. Habibullah",
+      assignedTo: staffIds["ops@pouchcare.com"],
       startDate: daysAgo(14),
       deadline: daysFrom(14),
       price: 500,
@@ -748,7 +613,7 @@ async function seedProjects(staffIds: Record<string, string>) {
       paymentStatus: PaymentStatus.UNPAID,
       clientName: "Carlos Rivera",
       clientEmail: "carlos@nexashop.mx",
-      assignedTo: staffIds["staff1@pouchcare.com"],
+      assignedTo: staffIds["branch@pouchcare.com"],
       startDate: daysFrom(2),
       deadline: daysFrom(20),
       price: 750,
@@ -765,8 +630,8 @@ async function seedProjects(staffIds: Record<string, string>) {
       paymentStatus: PaymentStatus.PAID,
       clientName: "David Kim",
       clientEmail: "david@profitgym.com",
-      projectManager: "Habib Sourov",
-      assignedTo: staffIds["staff3@pouchcare.com"],
+      projectManager: "Md. Habibullah",
+      assignedTo: staffIds["branch@pouchcare.com"],
       startDate: daysAgo(10),
       deadline: daysFrom(5),
       price: 350,
@@ -786,7 +651,7 @@ async function seedProjects(staffIds: Record<string, string>) {
       paymentStatus: PaymentStatus.PARTIAL,
       clientName: "Priya Sharma",
       clientEmail: "priya@startupxyz.in",
-      assignedTo: staffIds["staff4@pouchcare.com"],
+      assignedTo: staffIds["ops@pouchcare.com"],
       startDate: daysAgo(20),
       deadline: daysFrom(10),
       price: 300,
@@ -814,7 +679,7 @@ async function seedTasks(staffIds: Record<string, string>) {
       priority: Priority.CRITICAL,
       category: "SEO",
       createdByRole: "CEO",
-      assignedMemberId: staffIds["staff1@pouchcare.com"],
+      assignedMemberId: staffIds["branch@pouchcare.com"],
       assignedManagerId: staffIds["ops@pouchcare.com"],
       assignedBranch: "Bangladesh HQ",
       estimatedHours: 20,
@@ -829,7 +694,7 @@ async function seedTasks(staffIds: Record<string, string>) {
       priority: Priority.MEDIUM,
       category: "Content",
       createdByRole: "OP_MANAGER",
-      assignedMemberId: staffIds["staff2@pouchcare.com"],
+      assignedMemberId: staffIds["ops@pouchcare.com"],
       assignedManagerId: staffIds["ops@pouchcare.com"],
       assignedBranch: "Dhaka",
       estimatedHours: 15,
@@ -843,7 +708,7 @@ async function seedTasks(staffIds: Record<string, string>) {
       approvalStatus: ApprovalStatus.SUBMITTED,
       priority: Priority.HIGH,
       category: "SEO",
-      assignedMemberId: staffIds["staff3@pouchcare.com"],
+      assignedMemberId: staffIds["branch@pouchcare.com"],
       assignedManagerId: staffIds["ops@pouchcare.com"],
       assignedBranch: "Bangladesh HQ",
       estimatedHours: 25,
@@ -857,7 +722,7 @@ async function seedTasks(staffIds: Record<string, string>) {
       status: TaskStatus.BLOCKED,
       priority: Priority.LOW,
       category: "Design",
-      assignedMemberId: staffIds["staff4@pouchcare.com"],
+      assignedMemberId: staffIds["ops@pouchcare.com"],
       assignedManagerId: staffIds["branch@pouchcare.com"],
       assignedBranch: "Dhaka",
       estimatedHours: 8,
@@ -870,7 +735,7 @@ async function seedTasks(staffIds: Record<string, string>) {
       status: TaskStatus.NOT_STARTED,
       priority: Priority.MEDIUM,
       category: "Dev",
-      assignedMemberId: staffIds["staff5@pouchcare.com"],
+      assignedMemberId: staffIds["branch@pouchcare.com"],
       assignedManagerId: staffIds["ops@pouchcare.com"],
       assignedBranch: "Bangladesh HQ",
       estimatedHours: 12,
@@ -900,7 +765,7 @@ async function seedTasks(staffIds: Record<string, string>) {
       status: TaskStatus.IN_PROGRESS,
       priority: Priority.HIGH,
       category: "SEO",
-      assignedMemberId: staffIds["staff1@pouchcare.com"],
+      assignedMemberId: staffIds["branch@pouchcare.com"],
       assignedManagerId: staffIds["ops@pouchcare.com"],
       assignedBranch: "Bangladesh HQ",
       estimatedHours: 6,
@@ -912,7 +777,7 @@ async function seedTasks(staffIds: Record<string, string>) {
       status: TaskStatus.NOT_STARTED,
       priority: Priority.LOW,
       category: "Social Media",
-      assignedMemberId: staffIds["staff2@pouchcare.com"],
+      assignedMemberId: staffIds["ops@pouchcare.com"],
       assignedManagerId: staffIds["branch@pouchcare.com"],
       assignedBranch: "Dhaka",
       estimatedHours: 4,
@@ -970,12 +835,10 @@ async function seedTaskComments(staffIds: Record<string, string>) {
 
 async function seedAttendance(staffIds: Record<string, string>) {
   const staffEmails = [
-    "staff1@pouchcare.com",
-    "staff2@pouchcare.com",
-    "staff3@pouchcare.com",
-    "staff4@pouchcare.com",
-    "staff5@pouchcare.com",
+    "ceo@pouchcare.com",
+    "comd@pouchcare.com",
     "ops@pouchcare.com",
+    "branch@pouchcare.com",
   ];
 
   const statuses: AttendanceStatus[] = [
@@ -1008,7 +871,7 @@ async function seedAttendance(staffIds: Record<string, string>) {
         checkInTime: checkIn,
         checkOutTime: checkOut,
         hoursWorked: parseFloat((8 + Math.random() * 2).toFixed(1)),
-        approvedBy: "Habib Sourov",
+        approvedBy: "Md. Habibullah",
       });
     }
   }
@@ -1032,30 +895,30 @@ async function seedAttendance(staffIds: Record<string, string>) {
 async function seedLeaveRequests(staffIds: Record<string, string>) {
   const requests = [
     {
-      staffMemberId: staffIds["staff2@pouchcare.com"],
-      staffName: "Riya Begum",
+      staffMemberId: staffIds["branch@pouchcare.com"],
+      staffName: "Zihadduzzaman",
       leaveType: LeaveType.ANNUAL,
       status: LeaveStatus.APPROVED,
       startDate: daysFrom(10),
       endDate: daysFrom(14),
       totalDays: 5,
       reason: "Family vacation",
-      approvedBy: "Habib Sourov",
+      approvedBy: "Md. Habibullah",
     },
     {
-      staffMemberId: staffIds["staff1@pouchcare.com"],
-      staffName: "Farhan Ahmed",
+      staffMemberId: staffIds["branch@pouchcare.com"],
+      staffName: "Zihadduzzaman",
       leaveType: LeaveType.SICK,
       status: LeaveStatus.APPROVED,
       startDate: daysAgo(5),
       endDate: daysAgo(4),
       totalDays: 2,
       reason: "Fever and cold",
-      approvedBy: "Habib Sourov",
+      approvedBy: "Md. Habibullah",
     },
     {
-      staffMemberId: staffIds["staff3@pouchcare.com"],
-      staffName: "Mehedi Hasan",
+      staffMemberId: staffIds["comd@pouchcare.com"],
+      staffName: "Md Oliullah",
       leaveType: LeaveType.EMERGENCY,
       status: LeaveStatus.PENDING,
       startDate: daysFrom(2),
@@ -1064,15 +927,15 @@ async function seedLeaveRequests(staffIds: Record<string, string>) {
       reason: "Family emergency",
     },
     {
-      staffMemberId: staffIds["staff4@pouchcare.com"],
-      staffName: "Nasrin Akter",
+      staffMemberId: staffIds["ops@pouchcare.com"],
+      staffName: "Md. Habibullah",
       leaveType: LeaveType.ANNUAL,
       status: LeaveStatus.REJECTED,
       startDate: daysFrom(5),
       endDate: daysFrom(7),
       totalDays: 3,
       reason: "Personal travel",
-      approvedBy: "Kamal Hossain",
+      approvedBy: "Zihadduzzaman",
       notes: "Overlaps with project deadline",
     },
   ];
@@ -1088,10 +951,10 @@ async function seedLeaveRequests(staffIds: Record<string, string>) {
 async function seedDailyReports(staffIds: Record<string, string>) {
   const reports = [
     {
-      staffMemberId: staffIds["staff1@pouchcare.com"],
-      submitterName: "Farhan Ahmed",
-      submitterRole: "SEO Specialist",
-      branch: "Bangladesh HQ",
+      staffMemberId: staffIds["branch@pouchcare.com"],
+      submitterName: "Zihadduzzaman",
+      submitterRole: "Branch Manager — Dhaka",
+      branch: "Dhaka",
       reportDate: daysAgo(1),
       hoursWorked: 8.5,
       tasksCompleted:
@@ -1101,10 +964,10 @@ async function seedDailyReports(staffIds: Record<string, string>) {
       mood: "Good",
     },
     {
-      staffMemberId: staffIds["staff2@pouchcare.com"],
-      submitterName: "Riya Begum",
-      submitterRole: "Content Writer",
-      branch: "Dhaka",
+      staffMemberId: staffIds["ops@pouchcare.com"],
+      submitterName: "Md. Habibullah",
+      submitterRole: "Operations Manager",
+      branch: "Bangladesh HQ",
       reportDate: daysAgo(1),
       hoursWorked: 8,
       tasksCompleted:
@@ -1113,9 +976,9 @@ async function seedDailyReports(staffIds: Record<string, string>) {
       mood: "Great",
     },
     {
-      staffMemberId: staffIds["staff3@pouchcare.com"],
-      submitterName: "Mehedi Hasan",
-      submitterRole: "Technical SEO Analyst",
+      staffMemberId: staffIds["comd@pouchcare.com"],
+      submitterName: "Md Oliullah",
+      submitterRole: "Managing Director",
       branch: "Bangladesh HQ",
       reportDate: daysAgo(1),
       hoursWorked: 9,
@@ -1126,10 +989,10 @@ async function seedDailyReports(staffIds: Record<string, string>) {
       mood: "Neutral",
     },
     {
-      staffMemberId: staffIds["staff1@pouchcare.com"],
-      submitterName: "Farhan Ahmed",
-      submitterRole: "SEO Specialist",
-      branch: "Bangladesh HQ",
+      staffMemberId: staffIds["branch@pouchcare.com"],
+      submitterName: "Zihadduzzaman",
+      submitterRole: "Branch Manager — Dhaka",
+      branch: "Dhaka",
       reportDate: daysAgo(2),
       hoursWorked: 8,
       tasksCompleted: "Completed outreach to 15 sites; 3 confirmed placements",
@@ -1161,57 +1024,29 @@ async function seedDailyReports(staffIds: Record<string, string>) {
 async function seedPayroll(staffIds: Record<string, string>) {
   const payrollData = [
     {
-      email: "staff1@pouchcare.com",
-      name: "Farhan Ahmed",
-      role: "STAFF",
+      email: "ceo@pouchcare.com",
+      name: "Abdullah Al Mamun",
+      role: "CEO",
+      branch: "Dubai HQ",
+      base: 0,
+    },
+    {
+      email: "comd@pouchcare.com",
+      name: "Md Oliullah",
+      role: "CO_MD",
       branch: "Bangladesh HQ",
-      base: 800,
-    },
-    {
-      email: "staff2@pouchcare.com",
-      name: "Riya Begum",
-      role: "STAFF",
-      branch: "Dhaka",
-      base: 600,
-    },
-    {
-      email: "staff3@pouchcare.com",
-      name: "Mehedi Hasan",
-      role: "STAFF",
-      branch: "Bangladesh HQ",
-      base: 900,
-    },
-    {
-      email: "staff4@pouchcare.com",
-      name: "Nasrin Akter",
-      role: "STAFF",
-      branch: "Dhaka",
-      base: 550,
-    },
-    {
-      email: "staff5@pouchcare.com",
-      name: "Rafiq Islam",
-      role: "STAFF",
-      branch: "Bangladesh HQ",
-      base: 1200,
+      base: 0,
     },
     {
       email: "ops@pouchcare.com",
-      name: "Habib Sourov",
+      name: "Md. Habibullah",
       role: "OP_MANAGER",
       branch: "Bangladesh HQ",
       base: 2500,
     },
     {
-      email: "hr@pouchcare.com",
-      name: "Fatema Khatun",
-      role: "HR_MANAGER",
-      branch: "Bangladesh HQ",
-      base: 1800,
-    },
-    {
       email: "branch@pouchcare.com",
-      name: "Kamal Hossain",
+      name: "Zihadduzzaman",
       role: "BRANCH_MANAGER",
       branch: "Dhaka",
       base: 2000,
@@ -1271,58 +1106,40 @@ async function seedPayroll(staffIds: Record<string, string>) {
 async function seedPerformanceRatings(staffIds: Record<string, string>) {
   const ratings = [
     {
-      email: "staff1@pouchcare.com",
-      name: "Farhan Ahmed",
-      overall: 4.2,
-      quality: 4.0,
-      comms: 4.5,
-      punct: 4.0,
-      team: 4.3,
-    },
-    {
-      email: "staff2@pouchcare.com",
-      name: "Riya Begum",
-      overall: 4.5,
-      quality: 4.7,
-      comms: 4.3,
-      punct: 4.6,
-      team: 4.4,
-    },
-    {
-      email: "staff3@pouchcare.com",
-      name: "Mehedi Hasan",
-      overall: 4.0,
-      quality: 4.2,
-      comms: 3.8,
-      punct: 4.1,
-      team: 3.9,
-    },
-    {
-      email: "staff4@pouchcare.com",
-      name: "Nasrin Akter",
-      overall: 3.8,
-      quality: 4.0,
-      comms: 3.7,
-      punct: 3.9,
-      team: 3.6,
-    },
-    {
-      email: "staff5@pouchcare.com",
-      name: "Rafiq Islam",
-      overall: 4.6,
+      email: "ceo@pouchcare.com",
+      name: "Abdullah Al Mamun",
+      overall: 4.9,
       quality: 4.8,
-      comms: 4.4,
-      punct: 4.5,
-      team: 4.7,
+      comms: 4.9,
+      punct: 4.8,
+      team: 4.9,
     },
     {
-      email: "ops@pouchcare.com",
-      name: "Habib Sourov",
+      email: "comd@pouchcare.com",
+      name: "Md Oliullah",
       overall: 4.8,
       quality: 4.9,
       comms: 4.7,
       punct: 4.8,
-      team: 4.9,
+      team: 4.8,
+    },
+    {
+      email: "ops@pouchcare.com",
+      name: "Md. Habibullah",
+      overall: 4.6,
+      quality: 4.7,
+      comms: 4.5,
+      punct: 4.6,
+      team: 4.6,
+    },
+    {
+      email: "branch@pouchcare.com",
+      name: "Zihadduzzaman",
+      overall: 4.4,
+      quality: 4.3,
+      comms: 4.5,
+      punct: 4.4,
+      team: 4.3,
     },
   ];
 
@@ -1332,7 +1149,14 @@ async function seedPerformanceRatings(staffIds: Record<string, string>) {
         data: {
           staffMemberId: staffIds[r.email],
           staffName: r.name,
-          ratedBy: "Abdullah Al Mamun",
+          systemRole: r.email.includes("ceo")
+            ? "CEO"
+            : r.email.includes("comd")
+              ? "CO_MD"
+              : r.email.includes("ops")
+                ? "OP_MANAGER"
+                : "BRANCH_MANAGER",
+          ratedBy: "Md Oliullah",
           reviewPeriod: "Q1 2026",
           reviewQuarter: "Q1",
           reviewYear: 2026,
@@ -1463,7 +1287,7 @@ async function seedSalesOrders() {
       status: "Processing",
       paymentStatus: PaymentStatus.PARTIAL,
       amountUsd: 2400,
-      assignedTo: "Habib Sourov",
+      assignedTo: "Md. Habibullah",
       branch: "Bangladesh HQ",
       orderDate: daysAgo(28),
       deadline: daysFrom(32),
@@ -1474,7 +1298,7 @@ async function seedSalesOrders() {
       status: "Delivered",
       paymentStatus: PaymentStatus.PAID,
       amountUsd: 1200,
-      assignedTo: "Rafiq Islam",
+      assignedTo: "Md. Habibullah",
       branch: "Bangladesh HQ",
       orderDate: daysAgo(58),
       deliveryDate: daysAgo(30),
@@ -1486,7 +1310,7 @@ async function seedSalesOrders() {
       status: "In Progress",
       paymentStatus: PaymentStatus.PAID,
       amountUsd: 500,
-      assignedTo: "Riya Begum",
+      assignedTo: "Zihadduzzaman",
       branch: "Dhaka",
       orderDate: daysAgo(14),
       deadline: daysFrom(10),
@@ -1497,7 +1321,7 @@ async function seedSalesOrders() {
       status: "New",
       paymentStatus: PaymentStatus.UNPAID,
       amountUsd: 750,
-      assignedTo: "Farhan Ahmed",
+      assignedTo: "Zihadduzzaman",
       branch: "Bangladesh HQ",
       orderDate: daysAgo(2),
       deadline: daysFrom(16),
@@ -1608,7 +1432,7 @@ async function seedFinance() {
       title: "Office Rent – Bangladesh HQ",
       category: "Rent",
       amountUsd: 300,
-      paidBy: "Habib Sourov",
+      paidBy: "Md. Habibullah",
       branch: "Bangladesh HQ",
       paymentMethod: "Bank Transfer",
       status: "Approved",
@@ -1618,7 +1442,7 @@ async function seedFinance() {
       title: "Freelancer Content Writers",
       category: "Freelance",
       amountUsd: 120,
-      paidBy: "Habib Sourov",
+      paidBy: "Md. Habibullah",
       branch: "Bangladesh HQ",
       paymentMethod: "Payoneer",
       status: "Approved",
@@ -1628,7 +1452,7 @@ async function seedFinance() {
       title: "Team Dinner – March 2026",
       category: "Team",
       amountUsd: 85,
-      paidBy: "Kamal Hossain",
+      paidBy: "Zihadduzzaman",
       branch: "Dhaka",
       paymentMethod: "Cash",
       status: "Approved",
@@ -1638,7 +1462,7 @@ async function seedFinance() {
       title: "Semrush Monthly",
       category: "Software",
       amountUsd: 99,
-      paidBy: "Habib Sourov",
+      paidBy: "Md. Habibullah",
       branch: "Bangladesh HQ",
       paymentMethod: "Credit Card",
       status: "Pending",
@@ -1648,7 +1472,7 @@ async function seedFinance() {
       title: "Laptop Repair – Staff3",
       category: "Equipment",
       amountUsd: 65,
-      paidBy: "Fatema Khatun",
+      paidBy: "Md. Habibullah",
       branch: "Bangladesh HQ",
       paymentMethod: "Cash",
       status: "Approved",
@@ -2022,7 +1846,7 @@ async function seedHR() {
       totalOrders: 1,
       firstOrderDate: daysAgo(30),
       lastOrderDate: daysAgo(30),
-      assignedManager: "Habib Sourov",
+      assignedManager: "Md. Habibullah",
     },
     {
       clientName: "Emma Wilson",
@@ -2033,7 +1857,7 @@ async function seedHR() {
       totalOrders: 1,
       firstOrderDate: daysAgo(14),
       lastOrderDate: daysAgo(14),
-      assignedManager: "Habib Sourov",
+      assignedManager: "Md. Habibullah",
     },
     {
       clientName: "David Kim",
@@ -2044,7 +1868,7 @@ async function seedHR() {
       totalOrders: 1,
       firstOrderDate: daysAgo(10),
       lastOrderDate: daysAgo(10),
-      assignedManager: "Habib Sourov",
+      assignedManager: "Md. Habibullah",
     },
     {
       clientName: "Carlos Rivera",
@@ -2096,9 +1920,7 @@ async function seedStaffDocuments(staffIds: Record<string, string>) {
     },
   ];
 
-  for (const email of STAFF_EMAILS.filter(
-    (e) => e.startsWith("staff") || e.includes("ops") || e.includes("hr"),
-  )) {
+  for (const email of STAFF_EMAILS) {
     const staffMemberId = staffIds[email];
     if (!staffMemberId) continue;
     const pickDocs = docs.slice(0, randint(2, 4));
@@ -2119,7 +1941,7 @@ async function seedStaffDocuments(staffIds: Record<string, string>) {
             issueDate: daysAgo(randint(60, 1000)),
             expiryDate: chance(0.4) ? daysFrom(randint(60, 720)) : null,
             isVerified: chance(0.7),
-            verifiedBy: chance(0.7) ? "Fatema Khatun" : null,
+            verifiedBy: chance(0.7) ? "Md. Habibullah" : null,
             verifiedAt: chance(0.7) ? daysAgo(randint(1, 40)) : null,
             uploadedBy: "System Seeder",
           },
@@ -2491,7 +2313,7 @@ async function seedPortal() {
         subject: "Delivery delayed for order #2",
         status: "Open",
         priority: "High",
-        assignedTo: "Habib Sourov",
+        assignedTo: "Md. Habibullah",
       },
     })
     .catch(() => null);
@@ -2633,7 +2455,7 @@ async function seedSupportExpansion(
           subject: t.subject,
           status: t.status,
           priority: t.priority,
-          assignedTo: "Habib Sourov",
+          assignedTo: "Md. Habibullah",
         },
       })
       .catch(() => null);
@@ -2659,7 +2481,7 @@ async function seedSupportExpansion(
           data: {
             ticketId: ticket.id,
             authorId: staffAuthorId,
-            authorName: "Habib Sourov",
+            authorName: "Md. Habibullah",
             authorType: "staff",
             content:
               "Thanks for reporting. We are reviewing and will update shortly.",
@@ -2742,13 +2564,13 @@ async function seedPluginsAndApiKeys(
     const actCandidates = [
       {
         type: "staff",
-        id: staffIds["staff1@pouchcare.com"],
-        name: "Farhan Ahmed",
+        id: staffIds["branch@pouchcare.com"],
+        name: "Zihadduzzaman",
       },
       {
         type: "staff",
-        id: staffIds["staff3@pouchcare.com"],
-        name: "Mehedi Hasan",
+        id: staffIds["comd@pouchcare.com"],
+        name: "Md Oliullah",
       },
       { type: "portal", id: portalIds["john@example.com"], name: "John Smith" },
     ];
@@ -2826,9 +2648,10 @@ async function seedToolRuns(staffIds: Record<string, string>) {
   ];
 
   const authors = [
+    "ceo@pouchcare.com",
+    "comd@pouchcare.com",
     "ops@pouchcare.com",
-    "staff1@pouchcare.com",
-    "staff3@pouchcare.com",
+    "branch@pouchcare.com",
   ];
   for (let i = 0; i < 40; i++) {
     const email = pick(authors);
@@ -2963,7 +2786,7 @@ async function seedMisc() {
         title: "New Service Launched – Social Media Management",
         message:
           "We have launched a new Social Media Management service. Check the services page for pricing.",
-        sentBy: "Habib Sourov",
+        sentBy: "Md. Habibullah",
         audience: "all",
         channel: "email",
         isUrgent: false,
@@ -3023,14 +2846,10 @@ async function main() {
   console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
   console.log("  Login credentials (default password: Password123!)");
   console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-  console.log("  CEO:             ceo@pouchcare.com");
-  console.log("  Co-MD:           comd@pouchcare.com");
-  console.log("  Ops Manager:     ops@pouchcare.com");
-  console.log("  Ops (alt):       habib@pouchcare.com   password: Test@123");
-  console.log("  HR Manager:      hr@pouchcare.com");
-  console.log("  Branch Manager:  branch@pouchcare.com");
-  console.log("  Staff (×5):      staff1–5@pouchcare.com");
-  console.log("  Intern:          intern1@pouchcare.com");
+  console.log("  CEO:             ceo@pouchcare.com  (Abdullah Al Mamun)");
+  console.log("  MD (Co-MD):      comd@pouchcare.com  (Md Oliullah)");
+  console.log("  Ops Manager:     ops@pouchcare.com  (Md. Habibullah)");
+  console.log("  Branch Manager:  branch@pouchcare.com  (Zihadduzzaman — Dhaka)");
   console.log("  Portal Members:  john / alice / michael / omar @example.com");
   console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 }

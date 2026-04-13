@@ -33,6 +33,7 @@ import { Input } from "@/components/ui/Input";
 import { StatsRow } from "@/components/shared/StatsRow";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { QueryErrorState } from "@/components/ui/QueryErrorState";
+import { BranchTeamScopeNotice } from "@/components/team/BranchTeamScopeNotice";
 import { usePermission } from "@/hooks/usePermission";
 import { cn } from "@/utils/cn";
 import { toast } from "sonner";
@@ -239,7 +240,7 @@ export default function TeamAttendance() {
       label: "Check In",
       render: (row) => (
         <span className="text-sm text-gray-700 dark:text-gray-300">
-          {row.checkIn}
+          {row.checkIn || "-"}
         </span>
       ),
     },
@@ -310,6 +311,7 @@ export default function TeamAttendance() {
           />
         ) : (
           <>
+        <BranchTeamScopeNotice />
         <StatsRow items={stats} loading={isLoading} />
 
         {/* Staff status grid */}

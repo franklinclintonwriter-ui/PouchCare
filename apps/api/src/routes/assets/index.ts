@@ -1,10 +1,15 @@
 import { Router } from 'express'
 import prisma from '@/lib/prisma'
-import { authenticate, requireStaff, requireRoles, SENIOR_ROLES } from '@/middleware/auth'
+import { authenticate, requireStaff, requireRoles, SENIOR_ROLES, type AuthRequest } from '@/middleware/auth'
 import { requirePermission } from '@/middleware/rbac'
+import {
+  resolveMonitorBranchScope,
+  cameraWhereForScope,
+  assertCameraBranchAccess,
+} from '@/lib/monitorBranchScope'
 import { validate } from '@/middleware/validate'
 import { getPagination, buildMeta } from '@/utils/pagination'
-import { ok, created, notFound, serverError } from '@/utils/response'
+import { ok, created, notFound, serverError, forbidden } from '@/utils/response'
 import {
   cameraCreateSchema,
   cameraUpdateSchema,
@@ -188,10 +193,48 @@ function csvEscapeCell(value: unknown): string {
   return s
 }
 
-router.get('/cameras/summary', requirePermission('monitor.view'), async (_req, res) => {
+router.get('/cameras/summary', requirePermission('monitor.view'), async (req: AuthRequest, res) => {
   try {
+    if (!req.user || req.user.type !== 'staff') return forbidden(res, 'Staff access required')
+    const scope = await resolveMonitorBranchScope(req.user.id, req.user.role)
+    if (scope.kind === 'unassigned') {
+      return ok(res, {
+        totals: {
+          totalCameras: 0,
+          onlineCameras: 0,
+          recordingCameras: 0,
+          offlineCameras: 0,
+          totalBranches: 0,
+          onlineBranches: 0,
+        },
+        branches: [],
+        insights: {
+          manualCameras: 0,
+          vigiCameras: 0,
+          vigiNvrIntegrations: 0,
+          motionEventsLast24h: 0,
+          lastMotionAt: null,
+          lastPingAt: null,
+          onlineButStalePing: 0,
+        },
+        alerts: { branchesNeedingAttention: [], alertCount: 0 },
+      })
+    }
+
+    const camWhere = cameraWhereForScope(scope)
     const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
     const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+
+    const branchInclude = {
+      orderBy: { name: 'asc' as const },
+      include: {
+        cameraDevices: { select: { status: true } },
+      },
+    }
+    const branchesQuery =
+      scope.kind === 'branch'
+        ? prisma.branch.findMany({ where: { id: scope.branchId }, ...branchInclude })
+        : prisma.branch.findMany(branchInclude)
 
     const [
       statusGroups,
@@ -205,26 +248,26 @@ router.get('/cameras/summary', requirePermission('monitor.view'), async (_req, r
     ] = await Promise.all([
       prisma.cameraDevice.groupBy({
         by: ['status'],
+        where: camWhere,
         _count: { _all: true },
       }),
       prisma.cameraDevice.groupBy({
         by: ['source'],
+        where: camWhere,
         _count: { _all: true },
       }),
-      prisma.branch.findMany({
-        orderBy: { name: 'asc' },
-        include: {
-          cameraDevices: { select: { status: true } },
-        },
-      }),
-      prisma.vigiNvrIntegration.count(),
-      prisma.cameraDevice.aggregate({ _max: { lastMotionAt: true } }),
-      prisma.cameraDevice.aggregate({ _max: { lastPingAt: true } }),
+      branchesQuery,
+      scope.kind === 'branch'
+        ? prisma.vigiNvrIntegration.count({ where: { branchId: scope.branchId } })
+        : prisma.vigiNvrIntegration.count(),
+      prisma.cameraDevice.aggregate({ where: camWhere, _max: { lastMotionAt: true } }),
+      prisma.cameraDevice.aggregate({ where: camWhere, _max: { lastPingAt: true } }),
       prisma.cameraDevice.count({
-        where: { lastMotionAt: { gte: dayAgo } },
+        where: { ...camWhere, lastMotionAt: { gte: dayAgo } },
       }),
       prisma.cameraDevice.count({
         where: {
+          ...camWhere,
           status: { not: 'offline' },
           OR: [{ lastPingAt: null }, { lastPingAt: { lt: weekAgo } }],
         },
@@ -311,10 +354,21 @@ router.get('/cameras/summary', requirePermission('monitor.view'), async (_req, r
   }
 })
 
-router.get('/cameras', requirePermission('monitor.view'), async (req, res) => {
+router.get('/cameras', requirePermission('monitor.view'), async (req: AuthRequest, res) => {
   try {
-    const { page, limit, skip } = getPagination(req)
-    const { where, orderBy } = buildCameraListWhereAndOrder(req.query as Record<string, string | undefined>)
+    if (!req.user || req.user.type !== 'staff') return forbidden(res, 'Staff access required')
+    const scope = await resolveMonitorBranchScope(req.user.id, req.user.role)
+    if (scope.kind === 'unassigned') {
+      const { page, limit, skip } = getPagination(req.query as Record<string, any>)
+      return ok(res, [], buildMeta(0, page, limit))
+    }
+    const query = { ...(req.query as Record<string, string | undefined>) }
+    if (scope.kind === 'branch') {
+      if (query.branchId && query.branchId !== scope.branchId) return forbidden(res, 'Cannot access another branch')
+      query.branchId = scope.branchId
+    }
+    const { page, limit, skip } = getPagination(query as Record<string, any>)
+    const { where, orderBy } = buildCameraListWhereAndOrder(query)
 
     const [cameras, total] = await Promise.all([
       prisma.cameraDevice.findMany({
@@ -332,9 +386,21 @@ router.get('/cameras', requirePermission('monitor.view'), async (req, res) => {
 })
 
 /** CSV export — same filters as GET /cameras (up to CAMERA_EXPORT_MAX rows). */
-router.get('/cameras/export', requirePermission('monitor.view'), async (req, res) => {
+router.get('/cameras/export', requirePermission('monitor.view'), async (req: AuthRequest, res) => {
   try {
-    const { where, orderBy } = buildCameraListWhereAndOrder(req.query as Record<string, string | undefined>)
+    if (!req.user || req.user.type !== 'staff') return forbidden(res, 'Staff access required')
+    const scope = await resolveMonitorBranchScope(req.user.id, req.user.role)
+    if (scope.kind === 'unassigned') {
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8')
+      res.setHeader('Content-Disposition', 'attachment; filename="cameras-empty.csv"')
+      return res.send('\uFEFFid\n')
+    }
+    const query = { ...(req.query as Record<string, string | undefined>) }
+    if (scope.kind === 'branch') {
+      if (query.branchId && query.branchId !== scope.branchId) return forbidden(res, 'Cannot access another branch')
+      query.branchId = scope.branchId
+    }
+    const { where, orderBy } = buildCameraListWhereAndOrder(query)
     const rows = await prisma.cameraDevice.findMany({
       where: where as any,
       orderBy: orderBy as any,
@@ -413,8 +479,11 @@ router.post(
 )
 
 /** PATCH /cameras/:id/ping — mark camera as seen (updates lastPingAt). Any operator can heartbeat a feed check. */
-router.patch('/cameras/:id/ping', requirePermission('monitor.view'), async (req, res) => {
+router.patch('/cameras/:id/ping', requirePermission('monitor.view'), async (req: AuthRequest, res) => {
   try {
+    const existing = await prisma.cameraDevice.findUnique({ where: { id: req.params.id } })
+    if (!existing) return notFound(res, 'Camera')
+    if (!(await assertCameraBranchAccess(req, res, existing.branchId))) return
     const camera = await prisma.cameraDevice.update({
       where: { id: req.params.id },
       data: { lastPingAt: new Date() },
@@ -426,10 +495,11 @@ router.patch('/cameras/:id/ping', requirePermission('monitor.view'), async (req,
   }
 })
 
-router.get('/cameras/:id', requirePermission('monitor.view'), async (req, res) => {
+router.get('/cameras/:id', requirePermission('monitor.view'), async (req: AuthRequest, res) => {
   try {
     const camera = await prisma.cameraDevice.findUnique({ where: { id: req.params.id } })
     if (!camera) return notFound(res, 'Camera')
+    if (!(await assertCameraBranchAccess(req, res, camera.branchId))) return
     return ok(res, camera)
   } catch (err) {
     return serverError(res, err)

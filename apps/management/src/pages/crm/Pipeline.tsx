@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
-import { useLeadsByStage } from '@/api/crm';
+import { usePipeline } from '@/api/crm';
+import { CrmScopeNotice } from '@/components/crm/CrmScopeNotice';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { Badge } from '@/components/ui/Badge';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -29,7 +30,9 @@ const STAGE_BADGE_VARIANT: Record<string, 'default' | 'primary' | 'info' | 'warn
 export default function Pipeline() {
   const navigate = useNavigate();
   const { formatCurrency } = useCurrency();
-  const { data: grouped, isLoading } = useLeadsByStage();
+  const { data: pipelineData, isLoading } = usePipeline();
+  const grouped = pipelineData?.grouped;
+  const columnStats = pipelineData?.columnStats;
 
   useHeaderConfig({
     title: 'Pipeline',
@@ -37,25 +40,31 @@ export default function Pipeline() {
   });
 
   return (
-    <PageTransition>
+    <PageTransition className="space-y-4">
+      <CrmScopeNotice />
       <div className="overflow-x-auto pb-4 -mx-1">
         <div className="inline-grid grid-cols-6 gap-3 min-w-[900px] px-1" style={{ gridTemplateColumns: 'repeat(6, minmax(170px, 1fr))' }}>
           {STAGES.map((stage) => {
             const leads = grouped?.[stage.key] ?? [];
-            const totalValue = leads.reduce((s, l) => s + l.value, 0);
+            const stats = columnStats?.[stage.key];
+            const totalValue = stats?.totalValue ?? leads.reduce((s, l) => s + l.value, 0);
+            const totalCount = stats?.count ?? leads.length;
 
             return (
               <div key={stage.key} className="flex flex-col gap-2">
                 {/* Column header */}
                 <div className={`rounded-lg p-3 ${stage.color}`}>
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-1">
                     <span className="text-xs font-semibold uppercase tracking-wide text-gray-700 dark:text-gray-300">
                       {stage.label}
                     </span>
-                    <Badge variant={STAGE_BADGE_VARIANT[stage.key]} size="sm">{leads.length}</Badge>
+                    <Badge variant={STAGE_BADGE_VARIANT[stage.key]} size="sm">{totalCount}</Badge>
                   </div>
                   <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                     {formatCurrency(totalValue)}
+                    {totalCount > leads.length ? (
+                      <span className="ml-1 text-[10px] opacity-80">(showing {leads.length} of {totalCount})</span>
+                    ) : null}
                   </p>
                 </div>
 

@@ -74,10 +74,27 @@ export function useServices(category?: string) {
   });
 }
 
+export type CreateServiceInput = {
+  name: string;
+  category?: string;
+  shortDescription?: string;
+  basePriceUsd?: number;
+  status?: string;
+};
+
+export type UpdateServiceInput = {
+  id: string;
+  name?: string;
+  category?: string;
+  shortDescription?: string;
+  basePriceUsd?: number;
+  status?: string;
+};
+
 export function useCreateService() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: Record<string, unknown>) => api.post('/services/admin', body),
+    mutationFn: (body: CreateServiceInput) => api.post('/services/admin', body),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['services'] }),
   });
 }
@@ -85,7 +102,7 @@ export function useCreateService() {
 export function useUpdateService() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...body }: Record<string, unknown> & { id: string }) => api.put(`/services/admin/${id}`, body),
+    mutationFn: ({ id, ...body }: UpdateServiceInput) => api.put(`/services/admin/${id}`, body),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['services'] }),
   });
 }

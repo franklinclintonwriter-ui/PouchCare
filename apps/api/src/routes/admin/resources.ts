@@ -5,11 +5,15 @@ import {
   propagateBranchNameChange,
   countReferencesToBranchName,
 } from '@/lib/branchRename'
+import type { AuthRequest } from '@/middleware/auth'
 import { authenticate } from '@/middleware/auth'
 import { requirePermission } from '@/middleware/rbac'
+import { isStaffAllowed } from '@/lib/managementPermissions'
+import { resolveMonitorBranchScope } from '@/lib/monitorBranchScope'
 import { validate } from '@/middleware/validate'
-import { ok, created, notFound, serverError } from '@/lib/response'
+import { ok, created, notFound, serverError, forbidden } from '@/lib/response'
 import { getPaginationParams, buildMeta } from '@/lib/pagination'
+import { env } from '@/config/env'
 import { branchCreateSchema, branchUpdateSchema } from '@/routes/admin/branchSchemas'
 
 const router = Router()
@@ -73,9 +77,17 @@ router.get('/branches/:id/members', requirePermission('staff.branches'), async (
   } catch (err) { return serverError(res, err) }
 })
 
-router.get('/branches/:id', requirePermission('staff.branches'), async (req, res) => {
+router.get('/branches/:id', async (req: AuthRequest, res) => {
   try {
+    if (!req.user || req.user.type !== 'staff') return forbidden(res, 'Staff access required')
     const { id } = req.params
+    const canAdmin = await isStaffAllowed(req.user.role, 'staff.branches')
+    const scope = await resolveMonitorBranchScope(req.user.id, req.user.role)
+    if (!canAdmin) {
+      if (scope.kind !== 'branch' || scope.branchId !== id) {
+        return forbidden(res, 'Branch access denied')
+      }
+    }
     const branch = await prisma.branch.findUnique({ where: { id } })
     if (!branch) return notFound(res, 'Branch')
 
@@ -369,8 +381,12 @@ router.get('/exchange-rates/latest', async (_req, res) => {
       orderBy: { effectiveDate: 'desc' },
     })
     if (!latest) {
-      // Return sensible default if no rates exist
-      return ok(res, { usdToBdt: 125, usdToAed: 3.67, bdtToAed: null, effectiveDate: new Date().toISOString() })
+      return ok(res, {
+        usdToBdt: env.DEFAULT_USD_TO_BDT,
+        usdToAed: 3.67,
+        bdtToAed: null,
+        effectiveDate: new Date().toISOString(),
+      })
     }
     return ok(res, latest)
   } catch (err) { return serverError(res, err) }

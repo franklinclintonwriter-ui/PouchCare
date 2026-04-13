@@ -6,7 +6,13 @@ import {
   requireStaff,
   requireRoles,
   MANAGER_ROLES,
+  type AuthRequest,
 } from "@/middleware/auth";
+import type { Prisma, SystemRole } from "@prisma/client";
+import {
+  canManagerAccessStaffMember,
+  mergeLeaveWhereForManager,
+} from "@/lib/teamBranchScope";
 import { validate } from "@/middleware/validate";
 import { getPagination, paginatedMeta, buildMeta } from "@/utils/pagination";
 import {
@@ -33,12 +39,16 @@ const adminCreateSchema = applySchema.extend({
 });
 
 // GET /v1/leave
-router.get("/", requireStaff, async (req, res) => {
+router.get("/", requireStaff, async (req: AuthRequest, res) => {
   try {
     const { page, limit, skip } = getPagination(req);
-    const where: any = {};
-    if (!MANAGER_ROLES.includes(req.user!.role))
+    const role = req.user!.role as SystemRole;
+    let where: Prisma.LeaveRequestWhereInput = {};
+    if (!MANAGER_ROLES.includes(role)) {
       where.staffMemberId = req.user!.id;
+    } else {
+      where = await mergeLeaveWhereForManager(req, {});
+    }
 
     const [requests, total] = await Promise.all([
       prisma.leaveRequest.findMany({
@@ -56,17 +66,23 @@ router.get("/", requireStaff, async (req, res) => {
 });
 
 // GET /v1/leave/:id
-router.get("/:id", requireStaff, async (req, res) => {
+router.get("/:id", requireStaff, async (req: AuthRequest, res) => {
   try {
     const request = await prisma.leaveRequest.findUnique({
       where: { id: req.params.id },
     });
     if (!request) return notFound(res);
-    if (
-      !MANAGER_ROLES.includes(req.user!.role) &&
-      request.staffMemberId !== req.user!.id
-    )
+    const role = req.user!.role as SystemRole;
+    if (!MANAGER_ROLES.includes(role) && request.staffMemberId !== req.user!.id)
       return notFound(res);
+    if (MANAGER_ROLES.includes(role)) {
+      const okScope = await canManagerAccessStaffMember(
+        req.user!.id,
+        role,
+        request.staffMemberId,
+      );
+      if (!okScope) return notFound(res);
+    }
     return ok(res, request);
   } catch (err) {
     serverError(res, err);
@@ -77,8 +93,20 @@ router.get("/:id", requireStaff, async (req, res) => {
 router.delete(
   "/:id",
   requireRoles(...(MANAGER_ROLES as any)),
-  async (req, res) => {
+  async (req: AuthRequest, res) => {
     try {
+      const row = await prisma.leaveRequest.findUnique({
+        where: { id: req.params.id },
+        select: { id: true, staffMemberId: true },
+      });
+      if (!row) return notFound(res);
+      const role = req.user!.role as SystemRole;
+      const okScope = await canManagerAccessStaffMember(
+        req.user!.id,
+        role,
+        row.staffMemberId,
+      );
+      if (!okScope) return forbidden(res, "Cannot delete this leave request");
       await prisma.leaveRequest.delete({ where: { id: req.params.id } });
       return ok(res, { message: "Leave request deleted" });
     } catch (err) {
@@ -125,9 +153,16 @@ router.post(
   "/",
   requireRoles(...(MANAGER_ROLES as any)),
   validate(adminCreateSchema),
-  async (req, res) => {
+  async (req: AuthRequest, res) => {
     try {
       const { staffMemberId, leaveType, startDate, endDate, reason } = req.body;
+      const role = req.user!.role as SystemRole;
+      const okScope = await canManagerAccessStaffMember(
+        req.user!.id,
+        role,
+        staffMemberId,
+      );
+      if (!okScope) return forbidden(res, "Cannot create leave for this staff member");
       const staff = await prisma.staffMember.findUnique({
         where: { id: staffMemberId },
         select: { id: true, name: true, branch: true, systemRole: true },
@@ -163,8 +198,20 @@ router.post(
 router.put(
   "/:id/approve",
   requireRoles(...(MANAGER_ROLES as any)),
-  async (req, res) => {
+  async (req: AuthRequest, res) => {
     try {
+      const row = await prisma.leaveRequest.findUnique({
+        where: { id: req.params.id },
+        select: { id: true, staffMemberId: true },
+      });
+      if (!row) return notFound(res);
+      const role = req.user!.role as SystemRole;
+      const okScope = await canManagerAccessStaffMember(
+        req.user!.id,
+        role,
+        row.staffMemberId,
+      );
+      if (!okScope) return forbidden(res, "Cannot approve this leave request");
       const updated = await prisma.leaveRequest.update({
         where: { id: req.params.id },
         data: { status: "APPROVED", approvedBy: req.user!.id },
@@ -180,8 +227,20 @@ router.put(
 router.put(
   "/:id/reject",
   requireRoles(...(MANAGER_ROLES as any)),
-  async (req, res) => {
+  async (req: AuthRequest, res) => {
     try {
+      const row = await prisma.leaveRequest.findUnique({
+        where: { id: req.params.id },
+        select: { id: true, staffMemberId: true },
+      });
+      if (!row) return notFound(res);
+      const role = req.user!.role as SystemRole;
+      const okScope = await canManagerAccessStaffMember(
+        req.user!.id,
+        role,
+        row.staffMemberId,
+      );
+      if (!okScope) return forbidden(res, "Cannot reject this leave request");
       const updated = await prisma.leaveRequest.update({
         where: { id: req.params.id },
         data: { status: "REJECTED", notes: req.body.note ?? req.body.reason },
