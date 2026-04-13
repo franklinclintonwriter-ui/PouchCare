@@ -22,14 +22,14 @@ const schema = z.object({
   S3_ENDPOINT:       z.string().default(''),
   /** Public base URL of this API (used for local disk upload URLs; set in production). */
   API_URL:             z.string().default('http://localhost:7000'),
-  ALLOWED_ORIGINS:   z.string().default('http://localhost:3000,http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176'),
+  ALLOWED_ORIGINS:   z.string().default('http://localhost:3000,http://localhost:3001,http://localhost:5173,http://localhost:5174,http://localhost:5175'),
   COMMISSION_RATE:   z.coerce.number().default(0.20),
   COMMISSION_HOLD_DAYS: z.coerce.number().default(14),
   MIN_PAYOUT_USD:    z.coerce.number().default(50),
   DEFAULT_USD_TO_BDT: z.coerce.number().default(124),
   FRONTEND_URL:      z.string().default('http://localhost:5173'),
-  /** Base URL for client portal (verify email, reset password links). */
-  PORTAL_URL:        z.string().default('http://localhost:5176'),
+  /** Base URL for client portal (verify email, reset password links). Production: https://pouchcare.com */
+  PORTAL_URL:        z.string().default('https://pouchcare.com'),
   IP_WHITELIST_ENABLED: z.string().default('false'),
   IP_WHITELIST:         z.string().default('127.0.0.1,::1'),
   /**

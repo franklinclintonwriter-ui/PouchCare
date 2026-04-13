@@ -8,7 +8,7 @@
 #   Builds:  /home/pouchcare/htdocs/pouchcare.com/     ← served by Nginx
 #            /home/pouchcare/htdocs/m.pouchcare.com/
 #            /home/pouchcare/htdocs/office.pouchcare.com/
-#            /home/pouchcare/htdocs/my.pouchcare.com/
+#            (Client portal routes live on pouchcare.com — see apps/landing/docs/CLIENT_PORTAL_PAGES_PLAN.md)
 #   API:     http://127.0.0.1:7000  (PM2 → Nginx reverse proxy)
 #   DB:      PostgreSQL  name=pouchcare  user=pouchcare  pass=pouchcare
 #
@@ -70,7 +70,6 @@ DB_URL="postgresql://${DB_USER}:${DB_PASS}@localhost:5432/${DB_NAME}"
 WEB_LANDING="${HTDOCS}/pouchcare.com"
 WEB_MGMT="${HTDOCS}/m.pouchcare.com"
 WEB_OFFICE="${HTDOCS}/office.pouchcare.com"
-WEB_CLIENT="${HTDOCS}/my.pouchcare.com"
 
 NGINX_CONF="/etc/nginx/sites-available"
 NGINX_ENABLED="/etc/nginx/sites-enabled"
@@ -130,7 +129,7 @@ redis-cli ping | grep -q PONG && log "Redis running" || fail "Redis failed to st
 step "4/9  Directories"
 id ${APP_USER} &>/dev/null || useradd -m -s /bin/bash ${APP_USER}
 mkdir -p "${HTDOCS}"
-mkdir -p "${WEB_LANDING}" "${WEB_MGMT}" "${WEB_OFFICE}" "${WEB_CLIENT}"
+mkdir -p "${WEB_LANDING}" "${WEB_MGMT}" "${WEB_OFFICE}"
 mkdir -p "${DEV_DIR}" "/home/${APP_USER}/logs"
 chown -R ${APP_USER}:${APP_USER} "/home/${APP_USER}"
 log "Directories ready under ${HTDOCS}"
@@ -194,11 +193,12 @@ JWT_REFRESH_EXPIRES_IN=7d
 BCRYPT_ROUNDS=12
 RESEND_API_KEY=
 EMAIL_FROM=hello@pouchcare.com
-FRONTEND_URL=https://my.pouchcare.com
+FRONTEND_URL=https://m.pouchcare.com
 IP_WHITELIST_ENABLED=false
 COMMISSION_RATE=0.20
 COMMISSION_HOLD_DAYS=14
 MIN_PAYOUT_USD=50
+PORTAL_URL=https://pouchcare.com
 ENVEOF
 chown ${APP_USER}:${APP_USER} .env
 chmod 600 .env
@@ -240,17 +240,9 @@ build_app() {
   log "${NAME} → ${OUT}"
 }
 
-# Landing (static HTML — no build step)
-if [ -f "${REPO_DIR}/apps/landing/index.html" ]; then
-  rm -rf "${WEB_LANDING}"
-  cp -r "${REPO_DIR}/apps/landing/." "${WEB_LANDING}/"
-  chown -R ${APP_USER}:${APP_USER} "${WEB_LANDING}"
-  log "Landing → ${WEB_LANDING}"
-fi
-
+build_app "Landing (marketing + client portal routes)" "apps/landing" "${WEB_LANDING}"
 build_app "Management Portal" "apps/management"   "${WEB_MGMT}"
 build_app "Staff Office"      "apps/office"        "${WEB_OFFICE}"
-build_app "Client Portal"     "apps/client-portal" "${WEB_CLIENT}"
 
 # ── Step 8: PM2 ─────────────────────────────────────────────────────────────
 step "8/9  PM2 + Nginx"
@@ -355,7 +347,6 @@ log "Nginx: api.pouchcare.com → http://127.0.0.1:${API_PORT}"
 write_spa_conf "pouchcare.com"         "${WEB_LANDING}"
 write_spa_conf "m.pouchcare.com"       "${WEB_MGMT}"
 write_spa_conf "office.pouchcare.com"  "${WEB_OFFICE}"
-write_spa_conf "my.pouchcare.com"      "${WEB_CLIENT}"
 
 rm -f "${NGINX_ENABLED}/default"
 nginx -t && systemctl reload nginx
@@ -366,20 +357,19 @@ step "9/9  SSL Certificates"
 
 SERVER_IP=$(curl -s --max-time 5 ifconfig.me 2>/dev/null || echo "unknown")
 info "Server IP: ${SERVER_IP}"
-info "DNS must point all 5 domains → ${SERVER_IP} before SSL will work"
+info "DNS must point all production domains → ${SERVER_IP} before SSL will work"
 
 certbot --nginx \
   -d pouchcare.com -d www.pouchcare.com \
   -d m.pouchcare.com \
   -d office.pouchcare.com \
-  -d my.pouchcare.com \
   -d api.pouchcare.com \
   --non-interactive --agree-tos \
   --email ssl@pouchcare.com \
   --redirect 2>/dev/null \
   && log "SSL certificates installed" \
   || warn "SSL skipped — run after DNS is pointed to ${SERVER_IP}:
-    certbot --nginx -d pouchcare.com -d www.pouchcare.com -d m.pouchcare.com -d office.pouchcare.com -d my.pouchcare.com -d api.pouchcare.com --non-interactive --agree-tos --email ssl@pouchcare.com --redirect"
+    certbot --nginx -d pouchcare.com -d www.pouchcare.com -d m.pouchcare.com -d office.pouchcare.com -d api.pouchcare.com --non-interactive --agree-tos --email ssl@pouchcare.com --redirect"
 
 systemctl enable certbot.timer 2>/dev/null || true
 
@@ -395,16 +385,15 @@ echo -e "  ${CYAN}API health:${NC}   ${API_STATUS}"
 echo -e "  ${CYAN}Repo:${NC}         ${REPO_DIR}"
 echo ""
 echo -e "  ${CYAN}Sites:${NC}"
-echo "    https://pouchcare.com              (Landing)"
+echo "    https://pouchcare.com              (Landing + client portal — see apps/landing/docs/CLIENT_PORTAL_PAGES_PLAN.md)"
 echo "    https://m.pouchcare.com            (Management — CEO/Co-MD/Ops)"
 echo "    https://office.pouchcare.com       (Staff Office)"
-echo "    https://my.pouchcare.com           (Client Portal)"
 echo "    https://api.pouchcare.com/health   (API)"
 echo ""
 echo -e "  ${CYAN}Seed credentials  (password: Password123!)${NC}"
 echo "    ceo@pouchcare.com      →  m.pouchcare.com"
 echo "    staff1@pouchcare.com   →  office.pouchcare.com"
-echo "    client@example.com     →  my.pouchcare.com"
+echo "    client@example.com     →  pouchcare.com (portal routes under /my-accounts, /dashboard)"
 echo ""
 echo -e "  ${CYAN}Server commands:${NC}"
 echo "    pm2 status                      — API process"

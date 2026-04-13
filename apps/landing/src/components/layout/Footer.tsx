@@ -1,4 +1,11 @@
 import { Link } from "react-router-dom";
+import { cn } from "@/lib/cn";
+import { BrandLogo } from "@/components/layout/BrandLogo";
+import {
+  BRAND_OPERATES_UNDER_ENTITY,
+  LEGAL_ENTITY_NAME,
+  TRADING_NAME,
+} from "@/lib/legalEntity";
 import {
   Twitter,
   Linkedin,
@@ -7,17 +14,16 @@ import {
   Mail,
   MapPin,
   Phone,
-  ExternalLink,
   Facebook,
   Star,
 } from "lucide-react";
-
-const PORTAL_URL =
-  import.meta.env.VITE_PORTAL_URL ?? "https://portal.pouchcare.com";
+import { portalLoginUrl, portalRegisterUrl } from "@/lib/portal";
 
 const LINKS = {
   Services: [
     { label: "SEO Services", href: "/services" },
+    { label: "Domains & hosting", href: "/services/hosting" },
+    { label: "Web → Android APK", href: "/services/web-to-apk" },
     { label: "Link Building", href: "/backlinks" },
     { label: "Web Development", href: "/services" },
     { label: "Content Writing", href: "/services" },
@@ -69,6 +75,7 @@ const ORG_SCHEMA = {
   "@type": "Organization",
   "@id": "https://pouchcare.com/#organization",
   name: "PouchCare",
+  legalName: LEGAL_ENTITY_NAME,
   alternateName: "PouchCare Digital Agency",
   url: "https://pouchcare.com",
   logo: {
@@ -78,7 +85,9 @@ const ORG_SCHEMA = {
     height: 214,
   },
   description:
-    "PouchCare is a premium SEO, link building, web development and digital marketing agency founded by Abdullah Al Mamun (Abdullah Babu). Trusted by 500+ businesses across 30+ countries. Specialising in white-hat organic growth, high-authority backlinks, technical SEO, and full-stack web development.",
+    "PouchCare is a premium SEO, link building, web development and digital marketing agency founded by Abdullah Al Mamun (Abdullah Babu). Trusted by 500+ businesses across 30+ countries. Specialising in white-hat organic growth, high-authority backlinks, technical SEO, and full-stack web development. " +
+    BRAND_OPERATES_UNDER_ENTITY +
+    ".",
   foundingDate: "2016",
   founder: {
     "@type": "Person",
@@ -211,20 +220,19 @@ export function Footer() {
       <footer className="bg-white border-t border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-8">
           {/* Top grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-8 mb-12">
+          <div className="mb-12 grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-6 lg:gap-8">
             {/* Brand col — spans 2 on lg */}
-            <div className="col-span-2 sm:col-span-3 lg:col-span-2">
-              <Link to="/" className="inline-flex items-center mb-4 group">
-                <img
-                  src="/pouchcare-logo-transparent.png"
-                  alt="PouchCare"
-                  className="h-11 w-auto object-contain group-hover:opacity-85 transition-opacity drop-shadow-[0_0_6px_rgba(56,189,248,0.2)]"
-                  style={{ maxWidth: "200px" }}
-                />
-              </Link>
+            <div className="sm:col-span-2 lg:col-span-2">
+              <BrandLogo
+                variant="footer"
+                className="mb-4 group [&_img]:transition-opacity [&_img]:group-hover:opacity-90"
+              />
               <p className="text-gray-600 text-sm leading-relaxed mb-5 max-w-xs">
                 Premium SEO, Link Building and Digital Marketing services
                 helping 500+ businesses rank higher and grow faster since 2016.
+              </p>
+              <p className="text-gray-500 text-xs leading-relaxed mb-5 max-w-xs">
+                {BRAND_OPERATES_UNDER_ENTITY}.
               </p>
               {/* Social */}
               <div className="flex items-center gap-2 mb-5">
@@ -314,21 +322,35 @@ export function Footer() {
                 </a>
               </div>
 
-              {/* Partner portal CTA — clearly labelled as for clients */}
-              <a
-                href={PORTAL_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-semibold text-gray-600 hover:text-primary-700 hover:border-primary-300 transition-colors"
-              >
-                <ExternalLink size={11} />
-                Partner &amp; Client Portal
-              </a>
+              {/* Client portal — Login / Register */}
+              <div className="flex flex-wrap items-center gap-2">
+                <a
+                  href={portalLoginUrl()}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex min-h-[40px] items-center justify-center rounded-lg border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-600 transition-colors hover:border-primary-300 hover:text-primary-700"
+                >
+                  Login
+                </a>
+                <a
+                  href={portalRegisterUrl()}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex min-h-[40px] items-center justify-center rounded-lg bg-primary-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-primary-700"
+                >
+                  Register
+                </a>
+              </div>
             </div>
 
             {/* Link columns */}
-            {Object.entries(LINKS).map(([title, links]) => (
-              <div key={title}>
+            {Object.entries(LINKS).map(([title, links], idx, arr) => (
+              <div
+                key={title}
+                className={cn(
+                  idx === arr.length - 1 && "sm:col-span-2 lg:col-span-1",
+                )}
+              >
                 <h3 className="text-gray-900 font-semibold text-sm mb-4">
                   {title}
                 </h3>
@@ -349,7 +371,7 @@ export function Footer() {
           </div>
 
           {/* Contact strip */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10 p-4 rounded-2xl bg-gray-50 border border-gray-200">
+          <div className="mb-10 grid grid-cols-1 gap-3 rounded-2xl border border-gray-200 bg-gray-50 p-4 sm:grid-cols-3 sm:gap-4">
             {[
               {
                 icon: Mail,
@@ -370,21 +392,27 @@ export function Footer() {
               <a
                 key={text}
                 href={href}
-                className="flex items-center gap-3 text-gray-600 hover:text-primary-700 transition-colors group"
+                className="group flex min-h-[48px] items-center gap-3 rounded-xl py-1 text-gray-600 transition-colors hover:text-primary-700"
               >
-                <span className="w-8 h-8 rounded-lg bg-white border border-gray-200 flex items-center justify-center shrink-0 group-hover:bg-primary-50 transition-colors">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white transition-colors group-hover:bg-primary-50">
                   <Icon size={14} />
                 </span>
-                <span className="text-sm">{text}</span>
+                <span className="min-w-0 flex-1 text-sm leading-snug">{text}</span>
               </a>
             ))}
           </div>
 
           {/* Bottom bar */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-6 border-t border-gray-200">
-            <p className="text-gray-500 text-sm">
-              &copy; {year} PouchCare. All rights reserved.
-            </p>
+            <div className="text-center sm:text-left">
+              <p className="text-gray-500 text-sm">
+                &copy; {year} {TRADING_NAME}. All rights reserved.
+              </p>
+              <p className="mt-1 text-gray-400 text-xs max-w-md">
+                {LEGAL_ENTITY_NAME} — incorporated in Bangladesh under the
+                Companies Act (Act XVIII) of 1994.
+              </p>
+            </div>
             <div className="flex items-center gap-4">
               <Link
                 to="/privacy"

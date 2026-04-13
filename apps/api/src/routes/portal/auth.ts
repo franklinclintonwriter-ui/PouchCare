@@ -67,7 +67,6 @@ router.post("/register", validate(registerSchema), async (req, res) => {
         ...rest,
         passwordHash,
         referralCode,
-        referredBy: ref || null,
         emailVerifyToken: verifyToken,
       },
     });

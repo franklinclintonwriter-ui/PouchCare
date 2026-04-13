@@ -4,8 +4,17 @@ import { ScrollReveal } from "@/components/ui/ScrollReveal";
 import { SectionLabel, SectionHeading } from "@/components/ui/SectionLabel";
 import { PageSEO } from "@/components/seo/PageSEO";
 import { cn } from "@/lib/cn";
+import {
+  BRAND_OPERATES_UNDER_ENTITY,
+  CERTIFICATE_DATE_DISPLAY,
+  CERTIFICATE_NUMBER,
+  LEGAL_ENTITY_NAME,
+  LEGAL_UPDATED,
+  REGISTERED_OFFICE_CITY,
+  TRADING_NAME,
+} from "@/lib/legalEntity";
 
-const LAST_UPDATED = "January 15, 2025";
+const LAST_UPDATED = LEGAL_UPDATED;
 
 const SECTIONS = [
   {
@@ -54,7 +63,7 @@ const SECTIONS = [
   },
   {
     title: "12. Contact Us",
-    content: `If you have questions or concerns about this Privacy Policy or our privacy practices, please contact our Data Protection Officer at: privacy@pouchcare.com, or by mail to: PouchCare, Attention: Privacy Team, Business Bay, Dubai, UAE. For EU residents, you may also lodge a complaint with your local data protection authority.`,
+    content: `If you have questions or concerns about this Privacy Policy or our privacy practices, please contact our Data Protection Officer at privacy@pouchcare.com. ${BRAND_OPERATES_UNDER_ENTITY}. Data controller: ${LEGAL_ENTITY_NAME}, incorporated in Bangladesh (Certificate of Incorporation No. ${CERTIFICATE_NUMBER}, ${CERTIFICATE_DATE_DISPLAY}, ${REGISTERED_OFFICE_CITY}). Mail: Attention Privacy Team, Business Bay, Dubai, UAE (operational correspondence). For EU residents, you may also lodge a complaint with your local data protection authority.`,
   },
 ];
 
@@ -89,7 +98,7 @@ export default function Privacy() {
     <>
       <PageSEO
         title="Privacy Policy"
-        description="PouchCare's Privacy Policy explains how we collect, use and protect your personal data. GDPR compliant. We never sell your data. Last updated January 2025."
+        description="PouchCare's Privacy Policy explains how we collect, use and protect your personal data. Data controller details for Pouch Care International Ltd. We never sell your data."
         canonical="/privacy"
       />
 
@@ -112,19 +121,26 @@ export default function Privacy() {
               <div className="glass-card p-6 sm:p-7 mb-8">
                 <p className="mb-4 text-sm leading-relaxed text-gray-600">
                   Your privacy matters to us. This Privacy Policy explains what
-                  personal information PouchCare collects, why we collect it,
-                  how we use it, and your rights regarding that data. We are
-                  committed to handling your information responsibly and in
-                  compliance with applicable data protection laws, including
-                  GDPR (EU/UK) and applicable UAE regulations.
+                  personal information we collect, why we collect it, how we use
+                  it, and your rights regarding that data.{" "}
+                  <strong className="text-gray-800">
+                    {BRAND_OPERATES_UNDER_ENTITY}.
+                  </strong>{" "}
+                  The data controller is{" "}
+                  <strong className="text-gray-800">{LEGAL_ENTITY_NAME}</strong>
+                  , a limited company incorporated in Bangladesh (Certificate of
+                  Incorporation No. {CERTIFICATE_NUMBER}, {CERTIFICATE_DATE_DISPLAY}
+                  ). We are committed to handling your information responsibly
+                  and in compliance with applicable data protection laws,
+                  including GDPR (EU/UK) and applicable UAE regulations where
+                  they apply.
                 </p>
                 <p className="mb-4 text-sm leading-relaxed text-gray-600">
                   This policy applies to all personal data collected through
                   PouchCare.com, our client portal, email communications, and
-                  any other interaction you have with PouchCare Digital
-                  Services. &quot;Personal data&quot; means any information that
-                  identifies you or could be used to identify you as an
-                  individual.
+                  any other interaction with the {TRADING_NAME} brand.
+                  &quot;Personal data&quot; means any information that identifies
+                  you or could be used to identify you as an individual.
                 </p>
                 <p className="text-sm leading-relaxed text-gray-600">
                   We do not sell, rent, or trade your personal data to third

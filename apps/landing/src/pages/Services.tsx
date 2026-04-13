@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { Link } from "react-router-dom";
 import {
   Search,
   ArrowRight,
@@ -19,14 +20,25 @@ import {
 import { PageSEO } from "@/components/seo/PageSEO";
 import { getServices } from "@/lib/api";
 import type { ServiceItem } from "@/lib/constants";
+import { mergeWithMarketingHosting } from "@/data/marketingHosting";
+import { paths } from "@/routes/paths";
 
-const CATEGORIES = ["All", "SEO", "Dev", "Design", "Content", "Ads"];
+const CATEGORIES = [
+  "All",
+  "Hosting",
+  "SEO",
+  "Dev",
+  "Design",
+  "Content",
+  "Ads",
+];
 
 const BADGE_MAP: Record<
   string,
   "sky" | "indigo" | "green" | "yellow" | "red" | "slate"
 > = {
   SEO: "sky",
+  Hosting: "slate",
   Dev: "indigo",
   Development: "indigo",
   Design: "green",
@@ -36,6 +48,7 @@ const BADGE_MAP: Record<
 
 const CATEGORY_ACCENT: Record<string, string> = {
   SEO: "from-sky-500 to-blue-600",
+  Hosting: "from-violet-500 to-purple-600",
   Dev: "from-indigo-500 to-violet-600",
   Development: "from-indigo-500 to-violet-600",
   Design: "from-emerald-500 to-teal-600",
@@ -51,7 +64,7 @@ export default function Services() {
 
   useEffect(() => {
     getServices().then((data) => {
-      setServices(data);
+      setServices(mergeWithMarketingHosting(data));
       setLoading(false);
     });
   }, []);
@@ -131,6 +144,49 @@ export default function Services() {
         </div>
       </div>
 
+      {/* Domains & hosting — cross-sell */}
+      <div className="border-b border-gray-200 bg-gradient-to-r from-violet-50/90 to-sky-50/80">
+        <div className="container-max px-4 py-6 sm:px-6 lg:px-8">
+          <ScrollReveal>
+            <div className="flex flex-col gap-4 rounded-2xl border border-violet-200/70 bg-white/95 p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-6">
+              <div className="min-w-0 text-left">
+                <p className="text-xs font-semibold uppercase tracking-wide text-violet-800">
+                  Infrastructure
+                </p>
+                <h2 className="mt-1 font-sora text-lg font-bold text-gray-900 sm:text-xl">
+                  Domains, DNS & hosting
+                </h2>
+                <p className="mt-1 max-w-xl text-sm text-gray-600">
+                  Search names, manage SSL, and pick a plan in the client portal —
+                  same mock data as{" "}
+                  <Link
+                    to="/services/hosting"
+                    className="font-medium text-primary-600 hover:underline"
+                  >
+                    domains & hosting
+                  </Link>
+                  .
+                </p>
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row sm:shrink-0">
+                <Link
+                  to="/services/hosting"
+                  className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-violet-200 bg-white px-4 text-sm font-semibold text-violet-900 transition-colors hover:bg-violet-50 touch-manipulation"
+                >
+                  Learn more
+                </Link>
+                <Link
+                  to={paths.dashboardHostingRegister}
+                  className="inline-flex min-h-[44px] items-center justify-center rounded-xl bg-violet-600 px-4 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-violet-700 touch-manipulation"
+                >
+                  Search domains
+                </Link>
+              </div>
+            </div>
+          </ScrollReveal>
+        </div>
+      </div>
+
       {/* Sticky filters */}
       <div className="sticky top-16 z-30 border-b border-gray-200 bg-white/95 backdrop-blur-xl">
         <div className="container-max px-4 sm:px-6 lg:px-8 py-3 sm:py-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
@@ -145,7 +201,7 @@ export default function Services() {
               placeholder="Search services..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-xl border border-gray-300 bg-white py-2.5 pl-9 pr-4 text-sm text-gray-900 placeholder-gray-500 transition-colors focus:border-primary-500/60 focus:outline-none focus:ring-1 focus:ring-primary-500/30"
+              className="min-h-[48px] w-full rounded-xl border border-gray-300 bg-white py-2.5 pl-9 pr-4 text-base text-gray-900 placeholder-gray-500 transition-colors focus:border-primary-500/60 focus:outline-none focus:ring-1 focus:ring-primary-500/30 sm:text-sm touch-manipulation"
             />
           </div>
           {/* Category pills */}

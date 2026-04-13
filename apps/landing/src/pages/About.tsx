@@ -20,6 +20,12 @@ import {
 } from "@/components/ui/SectionLabel";
 import { PageSEO } from "@/components/seo/PageSEO";
 import { TEAM, STATS } from "@/lib/constants";
+import {
+  BRAND_OPERATES_UNDER_ENTITY,
+  CERTIFICATE_DATE_DISPLAY,
+  CERTIFICATE_NUMBER,
+  LEGAL_ENTITY_NAME,
+} from "@/lib/legalEntity";
 
 /* ── JSON-LD: Person (Founder) ─────────────────────────────────────────────
  * Canonical description (user-verified):
@@ -206,6 +212,14 @@ export default function About() {
               it is a 60+ person team across 5 offices, serving 500+ clients in
               30+ countries.
             </SectionSub>
+            <p className="mt-6 max-w-2xl mx-auto text-center text-xs leading-relaxed text-gray-500 border border-gray-200/80 rounded-2xl bg-white/60 px-4 py-3">
+              <span className="font-semibold text-gray-700">
+                {BRAND_OPERATES_UNDER_ENTITY}.
+              </span>{" "}
+              {LEGAL_ENTITY_NAME} is incorporated in Bangladesh under the
+              Companies Act (Act XVIII) of 1994. Certificate of Incorporation
+              No. {CERTIFICATE_NUMBER} ({CERTIFICATE_DATE_DISPLAY}).
+            </p>
           </ScrollReveal>
         </div>
       </div>

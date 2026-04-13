@@ -276,3 +276,36 @@
     transform: scaleX(1);
   }
 }
+
+/* ── Print stylesheet (invoices) ──────────────────────────────────────── */
+@media print {
+  body {
+    background: white !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  header,
+  aside,
+  nav,
+  footer,
+  .print\\:hidden,
+  [data-sonner-toaster] {
+    display: none !important;
+  }
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  #invoice-document {
+    max-width: 100% !important;
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  @page {
+    size: A4;
+    margin: 12mm 16mm;
+  }
+}

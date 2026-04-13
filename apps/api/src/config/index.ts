@@ -26,7 +26,8 @@ export const config = {
   landingUrl: process.env.LANDING_URL || 'http://localhost:5173',
   managementUrl: process.env.MANAGEMENT_URL || 'http://localhost:5174',
   officeUrl: process.env.OFFICE_URL || 'http://localhost:5175',
-  portalUrl: process.env.PORTAL_URL || 'http://localhost:5176',
+  /** Client portal UI — same host as marketing (pouchcare.com) in production */
+  portalUrl: process.env.PORTAL_URL || process.env.LANDING_URL || 'http://localhost:5173',
 
   // Business rules
   commissionRate: parseFloat(process.env.COMMISSION_RATE || '0.20'),
@@ -49,10 +50,10 @@ export const CORS_ORIGINS = [
   'http://localhost:5173',
   'http://localhost:5174',
   'http://localhost:5175',
-  'http://localhost:5176',
+  'https://pouchcare.com',
+  'https://www.pouchcare.com',
   'https://pouchcare.com.bd',
   'https://www.pouchcare.com.bd',
   'https://m.pouchcare.com',
   'https://office.pouchcare.com.bd',
-  'https://my.pouchcare.com',
 ]

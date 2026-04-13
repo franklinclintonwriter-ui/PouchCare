@@ -123,7 +123,7 @@ export default function Contact() {
 
   const inputCls = (field: keyof typeof empty) =>
     cn(
-      "w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-1 transition-colors",
+      "min-h-[48px] w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base text-gray-900 placeholder-gray-500 transition-colors focus:outline-none focus:ring-1 touch-manipulation",
       errors[field]
         ? "border-red-500/60 focus:border-red-500 focus:ring-red-500/30"
         : "focus:border-primary-500/60 focus:ring-primary-500/30",
@@ -281,7 +281,10 @@ export default function Contact() {
                         placeholder="Tell us about your goals, current traffic, target keywords, and budget..."
                         value={form.message}
                         onChange={set("message")}
-                        className={cn(inputCls("message"), "resize-none")}
+                        className={cn(
+                          inputCls("message"),
+                          "min-h-[8rem] resize-none py-3",
+                        )}
                       />
                       {errors.message && (
                         <p className="mt-1 text-xs text-red-400">

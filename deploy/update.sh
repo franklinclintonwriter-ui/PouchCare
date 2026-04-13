@@ -66,14 +66,8 @@ rebuild() {
 
 rebuild "Management Portal" "apps/management"   "${HTDOCS}/m.pouchcare.com"
 rebuild "Staff Office"      "apps/office"        "${HTDOCS}/office.pouchcare.com"
-rebuild "Client Portal"     "apps/client-portal" "${HTDOCS}/my.pouchcare.com"
-
-# Landing (static)
-if [ -f "${REPO_DIR}/apps/landing/index.html" ]; then
-  cp -r "${REPO_DIR}/apps/landing/." "${HTDOCS}/pouchcare.com/"
-  chown -R ${APP_USER}:${APP_USER} "${HTDOCS}/pouchcare.com"
-  log "Landing updated"
-fi
+# Landing (marketing + future client portal routes — Vite SPA)
+rebuild "Landing" "apps/landing" "${HTDOCS}/pouchcare.com"
 
 # 5. Reload Nginx
 nginx -t && nginx -s reload
@@ -85,7 +79,7 @@ echo -e "${GREEN}${BOLD}  Update Complete ✅  $(date '+%Y-%m-%d %H:%M')${NC}"
 echo -e "${GREEN}${BOLD}══════════════════════════════════════════════════${NC}"
 echo ""
 echo "  API:     https://api.pouchcare.com/health"
-echo "  Portal:  https://m.pouchcare.com"
+echo "  Mgmt:    https://m.pouchcare.com"
 echo "  Office:  https://office.pouchcare.com"
-echo "  Client:  https://my.pouchcare.com"
+echo "  Clients: https://pouchcare.com (/my-accounts, /dashboard)"
 echo ""

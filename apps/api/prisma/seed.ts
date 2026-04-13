@@ -26,7 +26,15 @@ import crypto from "crypto";
 
 const prisma = new PrismaClient();
 
+/** Full client-area test account (see seed footer + portal orders/wallet below). */
+const TEST_PORTAL_EMAIL = "Test@pouchcare.com";
+
 const HASH = bcrypt.hashSync("Password123!", 10);
+const HASH_TEST_PORTAL = bcrypt.hashSync("Test@123", 10);
+
+function portalPasswordHashForEmail(email: string): string {
+  return email === TEST_PORTAL_EMAIL ? HASH_TEST_PORTAL : HASH;
+}
 const now = new Date();
 const daysAgo = (d: number) => new Date(now.getTime() - d * 86_400_000);
 const daysFrom = (d: number) => new Date(now.getTime() + d * 86_400_000);
@@ -49,6 +57,8 @@ const PORTAL_EMAILS = [
   "michael@example.com",
   "omar@example.com",
   "sofia@example.com",
+  TEST_PORTAL_EMAIL,
+  "referred.demo@pouchcare.com",
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -2058,16 +2068,44 @@ async function seedPortal() {
       totalOrders: 2,
       emailVerified: true,
     },
+    {
+      fullName: "PouchCare Test Client",
+      email: TEST_PORTAL_EMAIL,
+      referralCode: "REF-TEST001",
+      country: "BD",
+      status: PortalMemberStatus.ACTIVE,
+      walletBalance: 972,
+      totalDeposited: 1800,
+      totalSpent: 828,
+      totalOrders: 5,
+      emailVerified: true,
+      totalReferrals: 1,
+      totalCommissionEarned: 76,
+    },
+    {
+      fullName: "Demo Referred Client",
+      email: "referred.demo@pouchcare.com",
+      referralCode: "REF-DEMO998",
+      country: "US",
+      status: PortalMemberStatus.ACTIVE,
+      walletBalance: 50,
+      totalDeposited: 100,
+      totalSpent: 50,
+      totalOrders: 1,
+      emailVerified: true,
+      totalReferrals: 0,
+      totalCommissionEarned: 0,
+    },
   ];
 
   const portalIds: Record<string, string> = {};
   for (const m of members) {
     const pm = await prisma.portalMember.upsert({
       where: { email: m.email },
-      update: { passwordHash: HASH },
+      update: { passwordHash: portalPasswordHashForEmail(m.email) },
       create: {
         ...m,
-        passwordHash: HASH,
+        passwordHash: portalPasswordHashForEmail(m.email),
         registrationDate: daysAgo(Math.floor(Math.random() * 180)),
       } as any,
     });
@@ -2085,6 +2123,12 @@ async function seedPortal() {
     .update({
       where: { email: "michael@example.com" },
       data: { referredById: portalIds["john@example.com"] },
+    })
+    .catch(() => null);
+  await prisma.portalMember
+    .update({
+      where: { email: "referred.demo@pouchcare.com" },
+      data: { referredById: portalIds[TEST_PORTAL_EMAIL] },
     })
     .catch(() => null);
 
@@ -2154,14 +2198,84 @@ async function seedPortal() {
       orderDate: daysAgo(2),
       deadline: daysFrom(5),
     },
+    {
+      memberId: portalIds[TEST_PORTAL_EMAIL],
+      memberEmail: TEST_PORTAL_EMAIL,
+      service: "Link Building",
+      status: OrderStatus.COMPLETED,
+      amountUsd: 180,
+      quantity: 12,
+      orderDate: daysAgo(35),
+      deliveryDate: daysAgo(20),
+      rating: 4.9,
+    },
+    {
+      memberId: portalIds[TEST_PORTAL_EMAIL],
+      memberEmail: TEST_PORTAL_EMAIL,
+      service: "On-Page SEO",
+      status: OrderStatus.DELIVERED,
+      amountUsd: 220,
+      quantity: 1,
+      orderDate: daysAgo(22),
+      deadline: daysAgo(14),
+      deliveryDate: daysAgo(16),
+    },
+    {
+      memberId: portalIds[TEST_PORTAL_EMAIL],
+      memberEmail: TEST_PORTAL_EMAIL,
+      service: "Technical SEO",
+      status: OrderStatus.PROCESSING,
+      amountUsd: 340,
+      quantity: 1,
+      orderDate: daysAgo(6),
+      deadline: daysFrom(8),
+    },
+    {
+      memberId: portalIds[TEST_PORTAL_EMAIL],
+      memberEmail: TEST_PORTAL_EMAIL,
+      service: "Content Writing",
+      status: OrderStatus.PENDING,
+      amountUsd: 140,
+      quantity: 4,
+      orderDate: daysAgo(1),
+      deadline: daysFrom(7),
+    },
+    {
+      memberId: portalIds[TEST_PORTAL_EMAIL],
+      memberEmail: TEST_PORTAL_EMAIL,
+      service: "Local SEO",
+      status: OrderStatus.COMPLETED,
+      amountUsd: 200,
+      quantity: 1,
+      orderDate: daysAgo(50),
+      deliveryDate: daysAgo(40),
+      rating: 5.0,
+    },
+    {
+      memberId: portalIds["referred.demo@pouchcare.com"],
+      memberEmail: "referred.demo@pouchcare.com",
+      service: "Starter SEO Pack",
+      status: OrderStatus.COMPLETED,
+      amountUsd: 50,
+      quantity: 1,
+      orderDate: daysAgo(10),
+      deliveryDate: daysAgo(8),
+      rating: 4.6,
+    },
   ];
 
   const orderIds: string[] = [];
+  const testPortalOrderIds: string[] = [];
   for (const o of orders) {
     const order = await prisma.portalOrder
       .create({ data: o as any })
       .catch(() => null);
-    if (order) orderIds.push(order.id);
+    if (order) {
+      orderIds.push(order.id);
+      if ((o as { memberEmail?: string }).memberEmail === TEST_PORTAL_EMAIL) {
+        testPortalOrderIds.push(order.id);
+      }
+    }
   }
 
   // Wallet Transactions
@@ -2250,6 +2364,73 @@ async function seedPortal() {
       status: "Confirmed",
       transactionDate: daysAgo(25),
     },
+    {
+      memberId: portalIds[TEST_PORTAL_EMAIL],
+      type: WalletTxType.DEPOSIT,
+      amountUsd: 600,
+      balanceAfterUsd: 600,
+      status: "Confirmed",
+      paymentMethod: "USDT TRC20",
+      transactionDate: daysAgo(55),
+    },
+    {
+      memberId: portalIds[TEST_PORTAL_EMAIL],
+      type: WalletTxType.ORDER_PAYMENT,
+      amountUsd: -180,
+      balanceAfterUsd: 420,
+      status: "Confirmed",
+      transactionDate: daysAgo(35),
+    },
+    {
+      memberId: portalIds[TEST_PORTAL_EMAIL],
+      type: WalletTxType.COMMISSION_CREDIT,
+      amountUsd: 72,
+      balanceAfterUsd: 492,
+      status: "Confirmed",
+      transactionDate: daysAgo(28),
+    },
+    {
+      memberId: portalIds[TEST_PORTAL_EMAIL],
+      type: WalletTxType.DEPOSIT,
+      amountUsd: 900,
+      balanceAfterUsd: 1392,
+      status: "Confirmed",
+      paymentMethod: "Payoneer",
+      transactionDate: daysAgo(18),
+    },
+    {
+      memberId: portalIds[TEST_PORTAL_EMAIL],
+      type: WalletTxType.ORDER_PAYMENT,
+      amountUsd: -220,
+      balanceAfterUsd: 1172,
+      status: "Confirmed",
+      transactionDate: daysAgo(22),
+    },
+    {
+      memberId: portalIds[TEST_PORTAL_EMAIL],
+      type: WalletTxType.ORDER_PAYMENT,
+      amountUsd: -200,
+      balanceAfterUsd: 972,
+      status: "Confirmed",
+      transactionDate: daysAgo(50),
+    },
+    {
+      memberId: portalIds["referred.demo@pouchcare.com"],
+      type: WalletTxType.DEPOSIT,
+      amountUsd: 100,
+      balanceAfterUsd: 100,
+      status: "Confirmed",
+      paymentMethod: "USDT TRC20",
+      transactionDate: daysAgo(12),
+    },
+    {
+      memberId: portalIds["referred.demo@pouchcare.com"],
+      type: WalletTxType.ORDER_PAYMENT,
+      amountUsd: -50,
+      balanceAfterUsd: 50,
+      status: "Confirmed",
+      transactionDate: daysAgo(10),
+    },
   ];
   for (const tx of txs) {
     await prisma.walletTransaction
@@ -2289,6 +2470,37 @@ async function seedPortal() {
       .catch(() => null);
   }
 
+  if (testPortalOrderIds.length >= 2) {
+    await prisma.commission
+      .create({
+        data: {
+          earnerId: portalIds[TEST_PORTAL_EMAIL],
+          orderId: testPortalOrderIds[0],
+          referredMemberName: "Demo Referred Client",
+          orderAmountUsd: 180,
+          commissionRate: 0.2,
+          commissionAmountUsd: 36,
+          status: CommissionStatus.AVAILABLE,
+          holdReleaseDate: daysAgo(18),
+        },
+      })
+      .catch(() => null);
+    await prisma.commission
+      .create({
+        data: {
+          earnerId: portalIds[TEST_PORTAL_EMAIL],
+          orderId: testPortalOrderIds[4],
+          referredMemberName: "Referred order",
+          orderAmountUsd: 200,
+          commissionRate: 0.2,
+          commissionAmountUsd: 40,
+          status: CommissionStatus.PENDING_HOLD,
+          holdReleaseDate: daysFrom(7),
+        },
+      })
+      .catch(() => null);
+  }
+
   // Payout Request
   await prisma.payoutRequest
     .create({
@@ -2300,6 +2512,19 @@ async function seedPortal() {
         paymentDetails: "TRC20 address: TXxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
         status: PayoutStatus.PENDING,
         requestedDate: daysAgo(2),
+      },
+    })
+    .catch(() => null);
+  await prisma.payoutRequest
+    .create({
+      data: {
+        memberId: portalIds[TEST_PORTAL_EMAIL],
+        memberEmail: TEST_PORTAL_EMAIL,
+        amountUsd: 120,
+        paymentMethod: PaymentMethod.PAYONEER,
+        paymentDetails: "payoneer@client.test",
+        status: PayoutStatus.PROCESSING,
+        requestedDate: daysAgo(1),
       },
     })
     .catch(() => null);
@@ -2328,6 +2553,33 @@ async function seedPortal() {
           authorType: "client",
           content:
             "Hi, I placed an order 5 days ago and still no update. Can you check?",
+        },
+      })
+      .catch(() => null);
+  }
+
+  const testTicket = await prisma.supportTicket
+    .create({
+      data: {
+        memberId: portalIds[TEST_PORTAL_EMAIL],
+        memberEmail: TEST_PORTAL_EMAIL,
+        subject: "Question about Technical SEO order timeline",
+        status: "Open",
+        priority: "Medium",
+        assignedTo: "Md. Habibullah",
+      },
+    })
+    .catch(() => null);
+  if (testTicket) {
+    await prisma.ticketReply
+      .create({
+        data: {
+          ticketId: testTicket.id,
+          authorId: portalIds[TEST_PORTAL_EMAIL],
+          authorName: "PouchCare Test Client",
+          authorType: "client",
+          content:
+            "Can you confirm the expected delivery window for my in-progress order?",
         },
       })
       .catch(() => null);
@@ -2441,6 +2693,12 @@ async function seedSupportExpansion(
       subject: "Payment method update",
       priority: "Low",
       status: "Resolved",
+    },
+    {
+      memberEmail: TEST_PORTAL_EMAIL,
+      subject: "Invoice copy for last deposit",
+      priority: "Low",
+      status: "Open",
     },
   ];
 
@@ -2573,6 +2831,11 @@ async function seedPluginsAndApiKeys(
         name: "Md Oliullah",
       },
       { type: "portal", id: portalIds["john@example.com"], name: "John Smith" },
+      {
+        type: "portal",
+        id: portalIds[TEST_PORTAL_EMAIL],
+        name: "PouchCare Test Client",
+      },
     ];
 
     for (let i = 0; i < actCandidates.length; i++) {
@@ -2851,6 +3114,9 @@ async function main() {
   console.log("  Ops Manager:     ops@pouchcare.com  (Md. Habibullah)");
   console.log("  Branch Manager:  branch@pouchcare.com  (Zihadduzzaman — Dhaka)");
   console.log("  Portal Members:  john / alice / michael / omar @example.com");
+  console.log(
+    `  Portal (full test):  ${TEST_PORTAL_EMAIL}  /  Test@123`,
+  );
   console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 }
 

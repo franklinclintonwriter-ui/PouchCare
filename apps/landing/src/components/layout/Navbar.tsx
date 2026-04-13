@@ -3,20 +3,20 @@ import { Link, useLocation } from "react-router-dom";
 import {
   Menu,
   X,
-  ExternalLink,
   Facebook,
   Instagram,
   Linkedin,
   ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
-
-const PORTAL_URL =
-  import.meta.env.VITE_PORTAL_URL ?? "https://portal.pouchcare.com";
+import { BrandLogo } from "@/components/layout/BrandLogo";
+import { portalLoginUrl, portalRegisterUrl } from "@/lib/portal";
 
 const NAV_LINKS = [
   { label: "Home", href: "/" },
   { label: "Services", href: "/services" },
+  { label: "Hosting", href: "/services/hosting" },
+  { label: "Web→APK", href: "/services/web-to-apk" },
   { label: "Backlinks", href: "/backlinks" },
   { label: "Pricing", href: "/pricing" },
   { label: "About", href: "/about" },
@@ -95,20 +95,10 @@ export function Navbar() {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between gap-4">
           {/* Logo */}
-          <Link
-            to="/"
-            aria-label="PouchCare — Home"
-            className="flex items-center shrink-0 group"
-          >
-            <img
-              src="/pouchcare-logo-transparent.png"
-              alt="PouchCare"
-              width={160}
-              height={44}
-              className="h-10 sm:h-11 w-auto object-contain group-hover:opacity-85 transition-opacity"
-              style={{ maxWidth: 190 }}
-            />
-          </Link>
+          <BrandLogo
+            variant="nav"
+            className="group [&_img]:transition-opacity [&_img]:group-hover:opacity-90"
+          />
 
           {/* Center nav pill — desktop only */}
           <nav
@@ -133,25 +123,33 @@ export function Navbar() {
             ))}
           </nav>
 
-          {/* Right: Partner Portal (desktop) */}
-          <div className="hidden lg:flex items-center shrink-0">
+          {/* Right: Client portal — Login / Register (desktop) */}
+          <div className="hidden lg:flex items-center gap-2 shrink-0">
             <a
-              href={PORTAL_URL}
+              href={portalLoginUrl()}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-gray-600 hover:text-primary-700 border border-gray-200 rounded-xl hover:border-primary-300 hover:bg-primary-50 transition-[color,background-color,border-color] duration-150 tracking-wide uppercase"
+              className="inline-flex min-h-[40px] items-center justify-center rounded-xl border border-gray-200 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-gray-600 transition-[color,background-color,border-color] duration-150 hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700"
             >
-              Partner Portal
-              <ExternalLink size={11} />
+              Login
+            </a>
+            <a
+              href={portalRegisterUrl()}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex min-h-[40px] items-center justify-center rounded-xl bg-primary-600 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white shadow-sm transition-[background-color] duration-150 hover:bg-primary-700"
+            >
+              Register
             </a>
           </div>
 
           {/* Hamburger — mobile/tablet */}
           <button
+            type="button"
             onClick={() => setMobileOpen((o) => !o)}
             aria-expanded={mobileOpen}
             aria-label={mobileOpen ? "Close menu" : "Open menu"}
-            className="lg:hidden relative z-[60] p-2 rounded-xl text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+            className="lg:hidden relative z-[60] inline-flex h-11 min-w-[44px] items-center justify-center rounded-xl p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 touch-manipulation"
           >
             {mobileOpen ? <X size={22} /> : <Menu size={22} />}
           </button>
@@ -199,23 +197,15 @@ export function Navbar() {
             className="flex items-center justify-between px-5 shrink-0 border-b border-gray-200"
             style={{ height: "68px" }}
           >
-            <Link
-              to="/"
+            <BrandLogo
+              variant="drawer"
               onClick={() => setMobileOpen(false)}
-              aria-label="PouchCare — Home"
-              className="flex items-center"
-            >
-              <img
-                src="/pouchcare-logo-transparent.png"
-                alt="PouchCare"
-                className="h-9 w-auto object-contain"
-                style={{ maxWidth: 165 }}
-              />
-            </Link>
+            />
             <button
+              type="button"
               onClick={() => setMobileOpen(false)}
               aria-label="Close menu"
-              className="p-1.5 rounded-xl text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+              className="inline-flex h-10 min-w-[40px] items-center justify-center rounded-xl p-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 touch-manipulation"
             >
               <X size={20} />
             </button>
@@ -271,18 +261,27 @@ export function Navbar() {
               ))}
             </div>
 
-            {/* Partner Portal CTA */}
-            <a
-              href={PORTAL_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 w-full py-3 rounded-2xl text-sm font-semibold text-gray-700 border border-gray-200 hover:bg-primary-50 hover:text-primary-700 hover:border-primary-300 transition-[color,background-color,border-color] duration-150"
-            >
-              Partner Portal
-              <ExternalLink size={13} />
-            </a>
+            {/* Client portal — Login / Register */}
+            <div className="flex flex-col gap-2">
+              <a
+                href={portalLoginUrl()}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center w-full py-3 rounded-2xl text-sm font-semibold text-gray-700 border border-gray-200 hover:bg-primary-50 hover:text-primary-700 hover:border-primary-300 transition-[color,background-color,border-color] duration-150"
+              >
+                Login
+              </a>
+              <a
+                href={portalRegisterUrl()}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center w-full py-3 rounded-2xl text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 transition-[background-color] duration-150 shadow-sm"
+              >
+                Register
+              </a>
+            </div>
             <p className="text-center text-gray-500 text-xs leading-tight">
-              For PouchCare clients &amp; affiliates only
+              For PouchCare clients
             </p>
           </div>
         </div>

@@ -98,9 +98,9 @@
     {
       "type": "chrome",
       "request": "launch",
-      "name": "🌐 Client Portal (port 5176)",
-      "url": "http://localhost:5176",
-      "webRoot": "${workspaceFolder}/apps/client-portal/src",
+      "name": "🌐 Landing — pouchcare.com SPA (port 3001)",
+      "url": "http://localhost:3001",
+      "webRoot": "${workspaceFolder}/apps/landing/src",
       "presentation": { "group": "frontend", "order": 3 }
     }
   ],
@@ -112,7 +112,7 @@
         "🚀 API: Dev Server (port 7000)",
         "🖥️  Management Portal (port 5174)",
         "🏢 Staff Office (port 5175)",
-        "🌐 Client Portal (port 5176)"
+        "🌐 Landing — pouchcare.com SPA (port 3001)"
       ],
       "presentation": { "order": 1 }
     },

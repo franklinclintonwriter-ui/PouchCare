@@ -18,7 +18,7 @@ Set-Location $ProjectRoot
 
 # Kill existing Node processes on our ports
 Write-Host "🧹 Cleaning up existing processes..." -ForegroundColor Yellow
-$ports = @(7000, 3000, 5175, 5176)
+$ports = @(7000, 3000, 5175, 3001)
 foreach ($port in $ports) {
     $process = Get-NetTCPConnection -LocalPort $port -ErrorAction SilentlyContinue | 
                Select-Object -ExpandProperty OwningProcess -ErrorAction SilentlyContinue |

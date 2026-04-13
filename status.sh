@@ -54,7 +54,6 @@ if sudo systemctl is-active --quiet nginx; then
   echo "      pouchcare.com              → /home/pouchcare/htdocs/pouchcare.com/"
   echo "      m.pouchcare.com            → /home/pouchcare/htdocs/m.pouchcare.com/"
   echo "      office.pouchcare.com       → /home/pouchcare/htdocs/office.pouchcare.com/"
-  echo "      my.pouchcare.com           → /home/pouchcare/htdocs/my.pouchcare.com/"
   echo "      api.pouchcare.com          → http://127.0.0.1:7000"
 else
   echo "   ❌ Not running — sudo systemctl start nginx"
@@ -63,7 +62,7 @@ echo ""
 
 # Build sizes
 echo "📦 Build sizes:"
-for DIR in pouchcare.com m.pouchcare.com office.pouchcare.com my.pouchcare.com; do
+for DIR in pouchcare.com m.pouchcare.com office.pouchcare.com; do
   PATH="/home/pouchcare/htdocs/$DIR"
   if [ -d "$PATH" ]; then
     SIZE=$(du -sh "$PATH" 2>/dev/null | cut -f1)

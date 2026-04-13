@@ -50,5 +50,6 @@ npm run db:seed
 
 Write-Host ""
 Write-Host "Done. Staff login (Management / Office):  ceo@pouchcare.com  /  Password123!" -ForegroundColor Green
-Write-Host "Client portal:  john@example.com  /  Password123!" -ForegroundColor Green
+Write-Host "Client portal (full test data):  Test@pouchcare.com  /  Test@123" -ForegroundColor Green
+Write-Host "Client portal (demo):  john@example.com  /  Password123!" -ForegroundColor DarkGray
 Write-Host "Restart the API dev server if it is already running." -ForegroundColor Cyan
