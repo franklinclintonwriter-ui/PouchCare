@@ -10,6 +10,23 @@ import { ok, created, notFound, serverError } from "@/utils/response";
 const router = Router();
 router.use(authenticate);
 
+const invoiceStatusSchema = z.enum([
+  "UNPAID",
+  "PARTIAL",
+  "PAID",
+  "OVERDUE",
+  "REFUNDED",
+]);
+
+const expenseStatusSchema = z.enum([
+  "WAITING",
+  "SUBMITTED",
+  "APPROVED_MGR",
+  "REJECTED_MGR",
+  "ESCALATED",
+  "VERIFIED",
+]);
+
 const revenueSchema = z.object({
   month: z.string().min(1),
   year: z.number().int().min(2000).max(3000),
@@ -22,7 +39,7 @@ const createInvoiceSchema = z.object({
   clientName: z.string().min(1),
   clientEmail: z.string().email().optional(),
   amountUsd: z.number().min(0),
-  status: z.string().optional(),
+  status: invoiceStatusSchema.optional(),
   service: z.string().optional(),
   issueDate: z.string().optional(),
   dueDate: z.string().optional(),
@@ -33,7 +50,7 @@ const updateInvoiceSchema = z.object({
   clientName: z.string().min(1).optional(),
   clientEmail: z.string().email().optional(),
   amountUsd: z.number().min(0).optional(),
-  status: z.string().optional(),
+  status: invoiceStatusSchema.optional(),
   service: z.string().optional(),
   dueDate: z.string().optional(),
   notes: z.string().optional(),
@@ -47,6 +64,7 @@ const createExpenseSchema = z.object({
   branch: z.string().optional(),
   expenseDate: z.string().optional(),
   receiptUrl: z.string().optional(),
+  status: expenseStatusSchema.optional(),
   notes: z.string().optional(),
 });
 
@@ -57,6 +75,7 @@ const updateExpenseSchema = z.object({
   paidBy: z.string().optional(),
   branch: z.string().optional(),
   receiptUrl: z.string().optional(),
+  status: expenseStatusSchema.optional(),
   notes: z.string().optional(),
 });
 
@@ -118,7 +137,12 @@ router.post(
       const invoiceNumber = `INV-${String(count + 1).padStart(4, "0")}`;
       const inv = await prisma.invoice.create({
         data: {
-          clientName, clientEmail, amountUsd, status, service, notes,
+          clientName,
+          clientEmail,
+          amountUsd,
+          status: status ?? "UNPAID",
+          service,
+          notes,
           invoiceNumber,
           issueDate: new Date(issueDate || Date.now()),
           dueDate: dueDate ? new Date(dueDate) : undefined,
@@ -210,10 +234,17 @@ router.post(
   validate(createExpenseSchema),
   async (req, res) => {
     try {
-      const { title, amountUsd, category, paidBy, branch, expenseDate, receiptUrl, notes } = req.body as z.infer<typeof createExpenseSchema>;
+      const { title, amountUsd, category, paidBy, branch, expenseDate, receiptUrl, status, notes } = req.body as z.infer<typeof createExpenseSchema>;
       const exp = await prisma.expense.create({
         data: {
-          title, amountUsd, category, paidBy, branch, receiptUrl, notes,
+          title,
+          amountUsd,
+          category,
+          paidBy,
+          branch,
+          receiptUrl,
+          status: status ?? "WAITING",
+          notes,
           expenseDate: new Date(expenseDate || Date.now()),
         },
       });

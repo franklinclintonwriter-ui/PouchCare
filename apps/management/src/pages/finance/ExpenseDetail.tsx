@@ -17,10 +17,12 @@ import { usePermission } from '@/hooks/usePermission';
 import { toast } from 'sonner';
 
 const STATUS_OPTIONS = [
-  { label: 'Pending', value: 'PENDING' },
-  { label: 'Approved', value: 'APPROVED' },
-  { label: 'Rejected', value: 'REJECTED' },
-  { label: 'Paid', value: 'PAID' },
+  { label: 'Waiting', value: 'WAITING' },
+  { label: 'Submitted', value: 'SUBMITTED' },
+  { label: 'Approved', value: 'APPROVED_MGR' },
+  { label: 'Rejected', value: 'REJECTED_MGR' },
+  { label: 'Escalated', value: 'ESCALATED' },
+  { label: 'Verified', value: 'VERIFIED' },
 ];
 
 const CATEGORY_OPTIONS = [

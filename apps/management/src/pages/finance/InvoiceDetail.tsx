@@ -17,11 +17,11 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { toast } from 'sonner';
 
 const STATUS_OPTIONS = [
-  { label: 'Draft', value: 'DRAFT' },
-  { label: 'Sent', value: 'SENT' },
+  { label: 'Unpaid', value: 'UNPAID' },
+  { label: 'Partial', value: 'PARTIAL' },
   { label: 'Paid', value: 'PAID' },
   { label: 'Overdue', value: 'OVERDUE' },
-  { label: 'Cancelled', value: 'CANCELLED' },
+  { label: 'Refunded', value: 'REFUNDED' },
 ];
 
 export default function InvoiceDetail() {

@@ -75,12 +75,17 @@ export default function SalesOrderDetail() {
   const handleEditSave = async () => {
     if (!id) return;
     try {
+      const assignee = editForm.assignedTo.trim();
+      if (assignee && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(assignee)) {
+        toast.error('Assignee must be a valid staff ID (UUID)');
+        return;
+      }
       await updateOrder.mutateAsync({
         id,
         clientName: editForm.clientName.trim() || undefined,
         service: editForm.service.trim() || undefined,
         amountUsd: editForm.amountUsd ? Number(editForm.amountUsd) : undefined,
-        assignedTo: editForm.assignedTo.trim() || undefined,
+        assignedTo: assignee || undefined,
         branch: editForm.branch.trim() || undefined,
         deadline: editForm.deadline || undefined,
         deliveryLink: editForm.deliveryLink.trim() || undefined,
