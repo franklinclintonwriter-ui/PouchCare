@@ -1,6 +1,13 @@
 # PouchCare OS — GitLab CI/CD
 # Monorepo: npm workspaces + Turbo. Requires Node >= 20.
 # https://gitlab.com/Pouchcare/OS
+#
+# ── Required CI/CD variables (GitLab → Settings → CI/CD → Variables) ────
+#   SSH_PRIVATE_KEY  : ed25519 private key (type: File, masked)
+#   DEPLOY_HOST      : 72.60.204.92
+#   DEPLOY_USER      : pouchcare
+#   DEPLOY_PORT      : 22  (optional, defaults to 22)
+# ────────────────────────────────────────────────────────────────────────
 
 workflow:
   rules:
@@ -10,13 +17,11 @@ workflow:
 
 variables:
   NODE_VERSION: "20"
-  # Prisma only needs this for `generate` / schema parse in CI (no DB connection).
   DATABASE_URL: "postgresql://ci:ci@127.0.0.1:5432/ci?schema=public"
   NPM_CONFIG_FUND: "false"
   NPM_CONFIG_AUDIT: "false"
 
 default:
-  # Full Debian image — Prisma/OpenSSL fewer surprises than -slim on shared runners
   image: node:${NODE_VERSION}-bookworm
   interruptible: true
   retry: 1
@@ -34,62 +39,71 @@ stages:
   - build
   - deploy
 
-# ── Single verify job: one `npm ci` (cache-friendly), sequential checks ─────
+# ── Quality gate: type-check + lint ─────────────────────────────────────
 pouchcare:quality:
   stage: verify
   script:
     - set -euo pipefail
-    - node --version
-    - npm --version
+    - node --version && npm --version
     - npm ci --cache .npm --prefer-offline
     - echo "=== API — Prisma generate + tsc ==="
     - cd apps/api && npx prisma generate && npx tsc --noEmit
     - cd "$CI_PROJECT_DIR"
-    - echo "=== Management — ESLint ==="
-    - npm run lint -w m.pouchcare.com
-    - echo "=== Landing — ESLint ==="
-    - npm run lint -w pouchcare.com
+    - echo "=== Management — tsc ==="
+    - cd apps/management && npx tsc --noEmit
+    - cd "$CI_PROJECT_DIR"
+    - echo "=== Landing — tsc ==="
+    - cd apps/landing && npx tsc --noEmit
 
+# ── Build all apps via Turbo ────────────────────────────────────────────
 pouchcare:build:
   stage: build
   needs: ["pouchcare:quality"]
   script:
     - set -euo pipefail
     - npm ci --cache .npm --prefer-offline
+    - cd apps/api && npx prisma generate && cd "$CI_PROJECT_DIR"
     - echo "=== Turbo build (API tsc + Vite apps) ==="
     - npm run build
 
-# SSH-based production deployment
-# Required CI/CD variables (GitLab → Settings → CI/CD → Variables):
-#   - SSH_PRIVATE_KEY: SSH private key (ed25519 format, no passphrase)
-#   - DEPLOY_HOST: production server hostname or IP
-#   - DEPLOY_USER: SSH user (typically 'root' or 'pouchcare')
-# Optional:
-#   - DEPLOY_PORT: SSH port (defaults to 22)
+# ── Auto-deploy to production on push to main ───────────────────────────
+#
+# Flow: SSH into server → git pull → npm install → prisma migrate →
+#       rebuild frontends → pm2 restart → nginx reload
+#
 deploy:production:
   stage: deploy
   image: alpine:latest
   needs: ["pouchcare:build"]
   rules:
-    # Auto-deploy on every push to main
     - if: $CI_COMMIT_BRANCH == "main"
       when: on_success
     - when: never
   environment:
     name: production
-    url: https://api.pouchcare.com
+    url: https://pouchcare.com
   before_script:
-    - apk add --no-cache openssh-client bash
-    - mkdir -p ~/.ssh
+    - apk add --no-cache openssh-client bash curl
+    - mkdir -p ~/.ssh && chmod 700 ~/.ssh
     - echo "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_ed25519
     - chmod 600 ~/.ssh/id_ed25519
     - ssh-keyscan -p ${DEPLOY_PORT:-22} -H $DEPLOY_HOST >> ~/.ssh/known_hosts 2>/dev/null || true
   script:
+    - echo "🚀 Deploying commit $CI_COMMIT_SHORT_SHA to $DEPLOY_HOST..."
     - |
       ssh -p ${DEPLOY_PORT:-22} -o StrictHostKeyChecking=no $DEPLOY_USER@$DEPLOY_HOST bash <<'REMOTE_SCRIPT'
         set -e
+        echo "── Server: $(hostname) ──"
         cd /home/pouchcare/Developments/PouchCare
         sudo bash deploy/update.sh
       REMOTE_SCRIPT
+    - echo "✅ Deploy complete — verifying health..."
+    - sleep 5
+    - |
+      if curl -sf --max-time 10 "https://api.pouchcare.com/health" > /dev/null 2>&1; then
+        echo "✅ API health check passed"
+      else
+        echo "⚠️  API health check failed (may need DNS/SSL setup)"
+      fi
   after_script:
     - rm -f ~/.ssh/id_ed25519

@@ -51,60 +51,65 @@ function generateReferralCode() {
 }
 
 // POST /portal/register
-router.post("/register", authLimiter, validate(registerSchema), async (req, res) => {
-  try {
-    const { password, ref, ...rest } = req.body;
-    const exists = await prisma.portalMember.findUnique({
-      where: { email: rest.email },
-    });
-    if (exists) return conflict(res, "Email already registered");
-
-    const passwordHash = await hashPassword(password);
-    const referralCode = generateReferralCode();
-    const verifyToken = crypto.randomBytes(32).toString("hex");
-
-    const member = await prisma.portalMember.create({
-      data: {
-        ...rest,
-        passwordHash,
-        referralCode,
-        emailVerifyToken: verifyToken,
-      },
-    });
-
-    // Link referral if valid ref code provided
-    if (ref) {
-      const referrer = await prisma.portalMember.findFirst({
-        where: { referralCode: ref },
+router.post(
+  "/register",
+  authLimiter,
+  validate(registerSchema),
+  async (req, res) => {
+    try {
+      const { password, ref, ...rest } = req.body;
+      const exists = await prisma.portalMember.findUnique({
+        where: { email: rest.email },
       });
-      if (referrer) {
-        await prisma.portalMember.update({
-          where: { id: member.id },
-          data: { referredById: referrer.id },
+      if (exists) return conflict(res, "Email already registered");
+
+      const passwordHash = await hashPassword(password);
+      const referralCode = generateReferralCode();
+      const verifyToken = crypto.randomBytes(32).toString("hex");
+
+      const member = await prisma.portalMember.create({
+        data: {
+          ...rest,
+          passwordHash,
+          referralCode,
+          emailVerifyToken: verifyToken,
+        },
+      });
+
+      // Link referral if valid ref code provided
+      if (ref) {
+        const referrer = await prisma.portalMember.findFirst({
+          where: { referralCode: ref },
         });
-        await prisma.portalMember.update({
-          where: { id: referrer.id },
-          data: { totalReferrals: { increment: 1 } },
-        });
+        if (referrer) {
+          await prisma.portalMember.update({
+            where: { id: member.id },
+            data: { referredById: referrer.id },
+          });
+          await prisma.portalMember.update({
+            where: { id: referrer.id },
+            data: { totalReferrals: { increment: 1 } },
+          });
+        }
       }
+
+      await sendVerificationEmail(
+        member.email,
+        verifyToken,
+        env.PORTAL_URL,
+      ).catch((err) =>
+        console.error("[portal/register] verification email:", err),
+      );
+
+      return created(res, { ...member, message: "Verification email sent" });
+    } catch (e) {
+      if (isDbConnectionError(e))
+        return serviceUnavailable(res, DB_UNAVAILABLE_MESSAGE);
+      console.error(e);
+      return serverError(res);
     }
-
-    await sendVerificationEmail(
-      member.email,
-      verifyToken,
-      env.PORTAL_URL,
-    ).catch((err) =>
-      console.error("[portal/register] verification email:", err),
-    );
-
-    return created(res, { ...member, message: "Verification email sent" });
-  } catch (e) {
-    if (isDbConnectionError(e))
-      return serviceUnavailable(res, DB_UNAVAILABLE_MESSAGE);
-    console.error(e);
-    return serverError(res);
-  }
-});
+  },
+);
 
 // POST /portal/login
 router.post("/login", authLimiter, validate(loginSchema), async (req, res) => {
@@ -149,6 +154,7 @@ router.post("/login", authLimiter, validate(loginSchema), async (req, res) => {
   } catch (e) {
     if (isDbConnectionError(e))
       return serviceUnavailable(res, DB_UNAVAILABLE_MESSAGE);
+    console.error("[portal/login]", e);
     return serverError(res);
   }
 });
