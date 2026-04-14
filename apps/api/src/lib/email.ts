@@ -117,7 +117,13 @@ export async function sendEmail(to: string, subject: string, html: string) {
     return;
   }
   const resend = await getResend();
-  await resend.emails.send({ from: env.EMAIL_FROM, to, subject, html });
+  const result = await resend.emails.send({
+    from: env.EMAIL_FROM,
+    to,
+    subject,
+    html,
+  });
+  console.log(`[EMAIL] ${to} | ${subject} | id=${result.data?.id ?? "none"}`);
 }
 
 /** Broadcast batch: returns outcome per send (Resend missing = skipped, not failed). */
