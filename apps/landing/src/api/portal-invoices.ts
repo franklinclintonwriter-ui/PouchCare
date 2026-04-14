@@ -2,7 +2,12 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import api from "@/api/client";
 import type { PaginatedMeta } from "@/types/portalDashboard";
 
-export type InvoiceStatus = "paid" | "pending" | "overdue" | "cancelled" | "draft";
+export type InvoiceStatus =
+  | "paid"
+  | "pending"
+  | "overdue"
+  | "cancelled"
+  | "draft";
 
 export const INVOICE_STATUS_VARIANT: Record<
   InvoiceStatus,
@@ -56,7 +61,9 @@ export interface InvoiceDetail extends Invoice {
   }>;
 }
 
-function unwrapPaginated<T>(res: { data: { data: T[]; meta: PaginatedMeta } }): {
+function unwrapPaginated<T>(res: {
+  data: { data: T[]; meta: PaginatedMeta };
+}): {
   items: T[];
   meta: PaginatedMeta;
 } {
@@ -70,7 +77,7 @@ export function usePortalInvoices(page = 1, limit = 10, status?: string) {
   return useQuery({
     queryKey: ["portal", "invoices", page, limit, status ?? ""],
     queryFn: async () => {
-      const res = await api.get(`/v1/portal/invoices?${q.toString()}`);
+      const res = await api.get(`/portal/invoices?${q.toString()}`);
       return unwrapPaginated<Invoice>(res as never);
     },
   });
@@ -80,7 +87,7 @@ export function usePortalInvoice(id: string | undefined) {
   return useQuery({
     queryKey: ["portal", "invoices", id],
     queryFn: async () => {
-      const res = await api.get<InvoiceDetail>(`/v1/portal/invoices/${id}`);
+      const res = await api.get<InvoiceDetail>(`/portal/invoices/${id}`);
       return res.data as unknown as InvoiceDetail;
     },
     enabled: !!id,
@@ -90,7 +97,7 @@ export function usePortalInvoice(id: string | undefined) {
 export function useDownloadInvoicePdf() {
   return useMutation({
     mutationFn: async (id: string) => {
-      const res = await api.get(`/v1/portal/invoices/${id}/pdf`, {
+      const res = await api.get(`/portal/invoices/${id}/pdf`, {
         responseType: "blob",
       });
       const url = URL.createObjectURL(res.data);

@@ -36,7 +36,9 @@ export interface PaginatedMeta {
   totalPages: number;
 }
 
-function unwrapPaginated<T>(res: { data: { data: T[]; meta: PaginatedMeta } }): {
+function unwrapPaginated<T>(res: {
+  data: { data: T[]; meta: PaginatedMeta };
+}): {
   items: T[];
   meta: PaginatedMeta;
 } {
@@ -48,9 +50,7 @@ export function usePortalWebsites(page = 1, limit = 10) {
   return useQuery({
     queryKey: ["portal", "websites", page, limit],
     queryFn: async () => {
-      const res = await api.get(
-        `/v1/portal/websites?page=${page}&limit=${limit}`,
-      );
+      const res = await api.get(`/portal/websites?page=${page}&limit=${limit}`);
       return unwrapPaginated<PortalWebsite>(res as never);
     },
   });
@@ -60,7 +60,7 @@ export function usePortalWebsite(id: string | undefined) {
   return useQuery({
     queryKey: ["portal", "websites", id],
     queryFn: async () => {
-      const res = await api.get<PortalWebsite>(`/v1/portal/websites/${id}`);
+      const res = await api.get<PortalWebsite>(`/portal/websites/${id}`);
       return res.data as unknown as PortalWebsite;
     },
     enabled: !!id,
@@ -76,7 +76,7 @@ export function useCreateWebsite() {
       type?: string;
       platform?: string;
     }) => {
-      const res = await api.post("/v1/portal/websites", data);
+      const res = await api.post("/portal/websites", data);
       return res.data;
     },
     onSuccess: () => {
@@ -98,7 +98,7 @@ export function useUpdateWebsite() {
       type?: string;
       platform?: string;
     }) => {
-      const res = await api.patch(`/v1/portal/websites/${id}`, data);
+      const res = await api.patch(`/portal/websites/${id}`, data);
       return res.data;
     },
     onSuccess: () => {
@@ -111,7 +111,7 @@ export function useDeleteWebsite() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const res = await api.delete(`/v1/portal/websites/${id}`);
+      const res = await api.delete(`/portal/websites/${id}`);
       return res.data;
     },
     onSuccess: () => {

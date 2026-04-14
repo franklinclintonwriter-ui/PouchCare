@@ -39,7 +39,9 @@ export interface PaginatedMeta {
   totalPages: number;
 }
 
-function unwrapPaginated<T>(res: { data: { data: T[]; meta: PaginatedMeta } }): {
+function unwrapPaginated<T>(res: {
+  data: { data: T[]; meta: PaginatedMeta };
+}): {
   items: T[];
   meta: PaginatedMeta;
 } {
@@ -51,8 +53,8 @@ export function useSessions() {
   return useQuery({
     queryKey: ["portal", "sessions"],
     queryFn: async () => {
-      const res = await api.get<Session[]>("/v1/portal/sessions");
-      return (res.data as unknown) as Session[];
+      const res = await api.get<Session[]>("/portal/sessions");
+      return res.data as unknown as Session[];
     },
   });
 }
@@ -61,7 +63,7 @@ export function useRevokeSession() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (sessionId: string) => {
-      const res = await api.delete(`/v1/portal/sessions/${sessionId}`);
+      const res = await api.delete(`/portal/sessions/${sessionId}`);
       return res.data;
     },
     onSuccess: () => {
@@ -74,7 +76,7 @@ export function useRevokeAllSessions() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async () => {
-      const res = await api.delete("/v1/portal/sessions");
+      const res = await api.delete("/portal/sessions");
       return res.data;
     },
     onSuccess: () => {
@@ -88,7 +90,7 @@ export function useLoginHistory(page = 1, limit = 10) {
     queryKey: ["portal", "login-history", page, limit],
     queryFn: async () => {
       const res = await api.get(
-        `/v1/portal/login-history?page=${page}&limit=${limit}`,
+        `/portal/login-history?page=${page}&limit=${limit}`,
       );
       return unwrapPaginated<LoginEntry>(res as never);
     },
@@ -99,7 +101,7 @@ export function useSecuritySettings() {
   return useQuery({
     queryKey: ["portal", "security-settings"],
     queryFn: async () => {
-      const res = await api.get<SecuritySettings>("/v1/portal/settings");
+      const res = await api.get<SecuritySettings>("/portal/settings");
       return res.data as unknown as SecuritySettings;
     },
   });
@@ -109,7 +111,7 @@ export function useUpdateSecuritySettings() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (body: Partial<SecuritySettings>) => {
-      const res = await api.patch<SecuritySettings>("/v1/portal/settings", body);
+      const res = await api.patch<SecuritySettings>("/portal/settings", body);
       return res.data as unknown as SecuritySettings;
     },
     onSuccess: () => {

@@ -43,6 +43,12 @@ const schema = z.object({
    * instead of Cloudflare R2. Production always requires R2.
    */
   STORAGE_LOCAL_FALLBACK: z.enum(["true", "false"]).default("false"),
+
+  /** Name.com domain registrar API credentials */
+  NAMECOM_USERNAME: z.string().default(""),
+  NAMECOM_TOKEN: z.string().default(""),
+  /** https://api.name.com for production, https://api.dev.name.com for dev/test */
+  NAMECOM_API_URL: z.string().default("https://api.name.com"),
 });
 
 function parseEnv() {

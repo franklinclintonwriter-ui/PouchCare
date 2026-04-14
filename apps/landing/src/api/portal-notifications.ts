@@ -26,7 +26,9 @@ export function usePortalNotifications(page = 1, limit = 15) {
   return useQuery({
     queryKey: ["portal", "notifications", page, limit],
     queryFn: async () => {
-      const res = await api.get(`/notifications?page=${page}&limit=${limit}`);
+      const res = await api.get(
+        `/portal/notifications?page=${page}&limit=${limit}`,
+      );
       const body = res.data as unknown as NotificationsPayload;
       if (!body?.data || !body.meta) {
         return {
@@ -46,7 +48,7 @@ export function useMarkNotificationsRead() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (opts: { all?: boolean; id?: string }) => {
-      await api.post("/notifications/mark-read", opts);
+      await api.post("/portal/notifications/mark-read", opts);
     },
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["portal", "notifications"] });

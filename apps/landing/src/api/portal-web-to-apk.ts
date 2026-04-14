@@ -1,7 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "@/api/client";
 
-export type ApkJobStatus = "queued" | "processing" | "ready" | "failed" | "expired";
+export type ApkJobStatus =
+  | "queued"
+  | "processing"
+  | "ready"
+  | "failed"
+  | "expired";
 
 export interface ApkJob {
   id: string;
@@ -22,7 +27,9 @@ export interface PaginatedMeta {
   totalPages: number;
 }
 
-function unwrapPaginated<T>(res: { data: { data: T[]; meta: PaginatedMeta } }): {
+function unwrapPaginated<T>(res: {
+  data: { data: T[]; meta: PaginatedMeta };
+}): {
   items: T[];
   meta: PaginatedMeta;
 } {
@@ -35,7 +42,7 @@ export function useApkJobs(page = 1, limit = 10) {
     queryKey: ["portal", "web-to-apk", "jobs", page, limit],
     queryFn: async () => {
       const res = await api.get(
-        `/v1/portal/web-to-apk/jobs?page=${page}&limit=${limit}`,
+        `/portal/web-to-apk/jobs?page=${page}&limit=${limit}`,
       );
       return unwrapPaginated<ApkJob>(res as never);
     },
@@ -50,7 +57,7 @@ export function useCreateApkJob() {
       url: string;
       plan: string;
     }) => {
-      const res = await api.post("/v1/portal/web-to-apk/jobs", body);
+      const res = await api.post("/portal/web-to-apk/jobs", body);
       return res.data as unknown as ApkJob;
     },
     onSuccess: () => {
@@ -63,7 +70,7 @@ export function useApkJob(id: string | undefined) {
   return useQuery({
     queryKey: ["portal", "web-to-apk", "job", id],
     queryFn: async () => {
-      const res = await api.get<ApkJob>(`/v1/portal/web-to-apk/jobs/${id}`);
+      const res = await api.get<ApkJob>(`/portal/web-to-apk/jobs/${id}`);
       return res.data as unknown as ApkJob;
     },
     enabled: !!id,
@@ -82,7 +89,7 @@ export function useDeleteApkJob() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const res = await api.delete(`/v1/portal/web-to-apk/jobs/${id}`);
+      const res = await api.delete(`/portal/web-to-apk/jobs/${id}`);
       return res.data;
     },
     onSuccess: () => {

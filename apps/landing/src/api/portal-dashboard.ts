@@ -14,7 +14,9 @@ import type {
   WalletTxRow,
 } from "@/types/portalDashboard";
 
-function unwrapPaginated<T>(res: { data: { data: T[]; meta: PaginatedMeta } }): {
+function unwrapPaginated<T>(res: {
+  data: { data: T[]; meta: PaginatedMeta };
+}): {
   items: T[];
   meta: PaginatedMeta;
 } {
@@ -100,7 +102,7 @@ export function useOrderMessages(orderId: string | undefined) {
           createdAt: string;
         }>
       >(`/portal/orders/${orderId}/messages`);
-      return (res.data as unknown) as Array<{
+      return res.data as unknown as Array<{
         id: string;
         authorType: string;
         authorName: string;
@@ -153,7 +155,7 @@ export function usePublicServices() {
     queryKey: ["services", "catalog"],
     queryFn: async () => {
       const res = await api.get<ServiceCatalogItem[]>("/services");
-      return (res.data as unknown) as ServiceCatalogItem[];
+      return res.data as unknown as ServiceCatalogItem[];
     },
   });
 }
@@ -327,7 +329,7 @@ export function useUpdateProfile() {
       skype?: string;
       preferredContact?: string;
     }) => {
-      const res = await api.put<PortalProfile>("/v1/portal/me", body);
+      const res = await api.put<PortalProfile>("/portal/me", body);
       return res.data as unknown as PortalProfile;
     },
     onSuccess: (data) => {
@@ -376,7 +378,13 @@ export function useCancelOrder() {
 export function useRequestRevision() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ orderId, note }: { orderId: string; note: string }) => {
+    mutationFn: async ({
+      orderId,
+      note,
+    }: {
+      orderId: string;
+      note: string;
+    }) => {
       const res = await api.post(`/portal/orders/${orderId}/revision`, {
         note,
       });

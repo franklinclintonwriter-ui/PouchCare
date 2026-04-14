@@ -39,7 +39,9 @@ export interface DomainSearchResult {
   tld: string;
 }
 
-function unwrapPaginated<T>(res: { data: { data: T[]; meta: PaginatedMeta } }): {
+function unwrapPaginated<T>(res: {
+  data: { data: T[]; meta: PaginatedMeta };
+}): {
   items: T[];
   meta: PaginatedMeta;
 } {
@@ -52,7 +54,7 @@ export function usePortalDomains(page = 1, limit = 10) {
     queryKey: ["portal", "hosting", "domains", page, limit],
     queryFn: async () => {
       const res = await api.get(
-        `/v1/portal/hosting/domains?page=${page}&limit=${limit}`,
+        `/portal/hosting/domains?page=${page}&limit=${limit}`,
       );
       return unwrapPaginated<HostingDomain>(res as never);
     },
@@ -63,7 +65,7 @@ export function usePortalDomain(id: string | undefined) {
   return useQuery({
     queryKey: ["portal", "hosting", "domains", id],
     queryFn: async () => {
-      const res = await api.get<HostingDomain>(`/v1/portal/hosting/domains/${id}`);
+      const res = await api.get<HostingDomain>(`/portal/hosting/domains/${id}`);
       return res.data as unknown as HostingDomain;
     },
     enabled: !!id,
@@ -75,11 +77,29 @@ export function useSearchDomains(query: string) {
     queryKey: ["portal", "hosting", "search", query],
     queryFn: async () => {
       const res = await api.get<DomainSearchResult[]>(
-        `/v1/portal/hosting/search?q=${encodeURIComponent(query)}`,
+        `/portal/hosting/search?q=${encodeURIComponent(query)}`,
       );
-      return (res.data as unknown) as DomainSearchResult[];
+      return res.data as unknown as DomainSearchResult[];
     },
     enabled: query.length >= 2,
+  });
+}
+
+/**
+ * Public domain search — works without authentication.
+ * Uses the same backend endpoint (now public) but through the shared api client.
+ */
+export function usePublicDomainSearch(query: string) {
+  return useQuery({
+    queryKey: ["public", "hosting", "search", query],
+    queryFn: async () => {
+      const res = await api.get<DomainSearchResult[]>(
+        `/portal/hosting/search?q=${encodeURIComponent(query)}`,
+      );
+      return res.data as unknown as DomainSearchResult[];
+    },
+    enabled: query.length >= 2,
+    staleTime: 60_000,
   });
 }
 
@@ -92,7 +112,7 @@ export function useRegisterDomain() {
       planName: string;
       monthlyUsd: number;
     }) => {
-      const res = await api.post("/v1/portal/hosting/domains", body);
+      const res = await api.post("/portal/hosting/domains", body);
       return res.data as unknown as HostingDomain;
     },
     onSuccess: () => {
@@ -113,7 +133,7 @@ export function useUpdateDomain() {
       nameservers?: string[];
     }) => {
       const { id, ...patch } = body;
-      const res = await api.patch(`/v1/portal/hosting/domains/${id}`, patch);
+      const res = await api.patch(`/portal/hosting/domains/${id}`, patch);
       return res.data as unknown as HostingDomain;
     },
     onSuccess: (data) => {
@@ -131,7 +151,7 @@ export function useDeleteDomain() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      await api.delete(`/v1/portal/hosting/domains/${id}`);
+      await api.delete(`/portal/hosting/domains/${id}`);
     },
     onSuccess: () => {
       void qc.invalidateQueries({
@@ -151,7 +171,7 @@ export function useAddDnsRecord(domainId: string) {
       ttl: number;
     }) => {
       const res = await api.post(
-        `/v1/portal/hosting/domains/${domainId}/dns`,
+        `/portal/hosting/domains/${domainId}/dns`,
         body,
       );
       return res.data as unknown as DnsRecord;
@@ -176,7 +196,7 @@ export function useUpdateDnsRecord(domainId: string) {
     }) => {
       const { recordId, ...patch } = body;
       const res = await api.patch(
-        `/v1/portal/hosting/domains/${domainId}/dns/${recordId}`,
+        `/portal/hosting/domains/${domainId}/dns/${recordId}`,
         patch,
       );
       return res.data as unknown as DnsRecord;
@@ -193,9 +213,7 @@ export function useDeleteDnsRecord(domainId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (recordId: string) => {
-      await api.delete(
-        `/v1/portal/hosting/domains/${domainId}/dns/${recordId}`,
-      );
+      await api.delete(`/portal/hosting/domains/${domainId}/dns/${recordId}`);
     },
     onSuccess: () => {
       void qc.invalidateQueries({

@@ -26,50 +26,14 @@ import { Input } from "@/components/ui/Input";
 import { HostingPlanCard } from "@/components/hosting/HostingPlanCard";
 import { useCartStore } from "@/stores/cartStore";
 import { usePortalAuthStore } from "@/stores/portalAuthStore";
+import {
+  usePublicDomainSearch,
+  type DomainSearchResult,
+} from "@/api/portal-hosting";
 import { formatUsd } from "@/lib/format";
 import { cn } from "@/lib/cn";
 import { paths } from "@/routes/paths";
 import { toast } from "sonner";
-
-/* ── Mock TLD pricing (matches API mock) ────────────────────────────── */
-
-interface DomainSuggestion {
-  fqdn: string;
-  tld: string;
-  available: boolean;
-  pricePerYearUsd: number;
-}
-
-const TLD_PRICES: { tld: string; price: number }[] = [
-  { tld: ".com", price: 12.99 },
-  { tld: ".net", price: 11.99 },
-  { tld: ".io", price: 34.99 },
-  { tld: ".co", price: 29.99 },
-  { tld: ".dev", price: 14.99 },
-  { tld: ".org", price: 9.99 },
-  { tld: ".app", price: 19.99 },
-  { tld: ".xyz", price: 4.99 },
-];
-
-/** Deterministic-ish availability based on domain string hash. */
-function isAvailable(fqdn: string): boolean {
-  let h = 0;
-  for (let i = 0; i < fqdn.length; i++) h = (h * 31 + fqdn.charCodeAt(i)) | 0;
-  return Math.abs(h) % 3 !== 0; // ~67 % available
-}
-
-function buildSuggestions(query: string): DomainSuggestion[] {
-  const base = query
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, "")
-    .replace(/[^a-z0-9-]/g, "");
-  if (!base) return [];
-  return TLD_PRICES.map(({ tld, price }) => {
-    const fqdn = base.includes(".") ? base : `${base}${tld}`;
-    return { fqdn, tld, available: isAvailable(fqdn), pricePerYearUsd: price };
-  });
-}
 
 /* ── Hosting plans (same as ServicesHostingPage / HostingRegisterPage) ─ */
 
@@ -109,12 +73,13 @@ export default function DomainSearchPage() {
 
   const [query, setQuery] = useState("");
   const [submitted, setSubmitted] = useState("");
-  const [searching, setSearching] = useState(false);
-  const [results, setResults] = useState<DomainSuggestion[]>([]);
   const [selectedPlanId, setSelectedPlanId] = useState(DEFAULT_PLAN.id);
 
   const selectedPlan =
     HOSTING_PLANS.find((p) => p.id === selectedPlanId) ?? DEFAULT_PLAN;
+
+  const { data: results = [], isLoading: searching } =
+    usePublicDomainSearch(submitted);
 
   const runSearch = useCallback(
     (e: React.FormEvent) => {
@@ -124,18 +89,12 @@ export default function DomainSearchPage() {
         toast.error("Enter at least 2 characters (e.g. mybrand)");
         return;
       }
-      setSearching(true);
       setSubmitted(q);
-      // Simulate brief network delay
-      setTimeout(() => {
-        setResults(buildSuggestions(q));
-        setSearching(false);
-      }, 400);
     },
     [query],
   );
 
-  const handleAddToCart = (s: DomainSuggestion) => {
+  const handleAddToCart = (s: DomainSearchResult) => {
     addToCart({
       serviceId: `domain-${s.fqdn}`,
       name: `${s.fqdn} — ${selectedPlan.name} hosting`,
