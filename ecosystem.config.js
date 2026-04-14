@@ -1,12 +1,11 @@
 module.exports = {
   apps: [{
     name:        'pouchcare-api',
-    script:      'src/server.ts',
+    script:      'node_modules/.bin/tsx',
+    args:        'src/server.ts',
     cwd:         '/home/pouchcare/Developments/PouchCare/apps/api',
-    interpreter: 'node',
-    interpreter_args: '--import tsx',
-    exec_mode:   'cluster',
-    instances:   2,
+    exec_mode:   'fork',
+    instances:   1,
     autorestart: true,
     watch:       false,
     max_memory_restart: '512M',
