@@ -128,18 +128,26 @@ deploy:production:
         echo "DB synced"
 
         echo "── Restarting API ──"
-        pm2 restart pouchcare-api --update-env
-        sleep 4
+        # Kill stale processes holding the port to avoid EADDRINUSE
+        fuser -k 7000/tcp 2>/dev/null || true
+        sleep 1
+        pm2 delete pouchcare-api 2>/dev/null || true
+        pm2 start /home/pouchcare/Developments/PouchCare/ecosystem.config.js --update-env
+        sleep 5
 
         echo "── Health check ──"
-        for i in 1 2 3 4 5; do
+        for i in 1 2 3 4 5 6; do
           if curl -sf http://localhost:7000/health > /dev/null 2>&1; then
-            echo "API is healthy"
-            break
+            echo "✅ API is healthy"
+            pm2 save
+            exit 0
           fi
-          echo "   Waiting... (attempt $i/5)"
+          echo "   Waiting... (attempt $i/6)"
           sleep 3
         done
+        echo "❌ API health check failed"
+        pm2 logs pouchcare-api --lines 15 --nostream 2>/dev/null || true
+        exit 1
       REMOTE_SCRIPT
     - echo "✅ API deploy complete — verifying external health..."
     - sleep 3
