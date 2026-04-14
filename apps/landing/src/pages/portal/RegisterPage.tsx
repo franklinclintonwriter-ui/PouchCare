@@ -1,7 +1,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/Button";
 import { paths } from "@/routes/paths";
@@ -26,6 +26,7 @@ const schema = z
 type FormValues = z.infer<typeof schema>;
 
 export default function RegisterPage() {
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const ref = searchParams.get("ref") ?? undefined;
   const registerMutation = usePortalRegister();
@@ -50,6 +51,9 @@ export default function RegisterPage() {
         ref,
       });
       toast.success("Check your email to verify your account.");
+      navigate(`${paths.verifyEmail}?email=${encodeURIComponent(values.email)}`, {
+        replace: true,
+      });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not register");
     }

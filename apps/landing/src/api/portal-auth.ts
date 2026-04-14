@@ -77,6 +77,18 @@ export function useVerifyEmail() {
   });
 }
 
+export function useVerifyEmailOtp() {
+  return useMutation({
+    mutationFn: async (body: { email: string; otp: string }) => {
+      const res = await api.post<{ message: string }>("/portal/verify-email-otp", {
+        email: body.email,
+        otp: body.otp,
+      });
+      return res.data as { message: string };
+    },
+  });
+}
+
 export function useResendVerification() {
   return useMutation({
     mutationFn: async (email: string) => {

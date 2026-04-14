@@ -10,6 +10,7 @@ import { authLimiter } from "@/middleware/rateLimit";
 import prisma from "@/lib/prisma";
 import { hashPassword, comparePassword } from "@/lib/hash";
 import { signAccess, signRefresh, verifyRefresh } from "@/lib/jwt";
+import { redis } from "@/lib/redis";
 import {
   ok,
   created,
@@ -28,17 +29,26 @@ import { nanoid } from "nanoid";
 
 const router = Router();
 
+const emailSchema = z
+  .string()
+  .trim()
+  .email()
+  .transform((v) => v.toLowerCase());
+
+const OTP_TTL_SECONDS = 10 * 60;
+const OTP_MAX_ATTEMPTS = 5;
+
 const registerSchema = z.object({
-  fullName: z.string().min(2),
-  email: z.string().email(),
+  fullName: z.string().trim().min(2),
+  email: emailSchema,
   password: z.string().min(8),
-  country: z.string().optional(),
-  phone: z.string().optional(),
-  ref: z.string().optional(), // referral code
+  country: z.string().trim().optional(),
+  phone: z.string().trim().optional(),
+  ref: z.string().trim().optional(), // referral code
 });
 
 const loginSchema = z.object({
-  email: z.string().email(),
+  email: emailSchema,
   password: z.string(),
 });
 const changePasswordSchema = z.object({
@@ -50,6 +60,44 @@ function generateReferralCode() {
   return "REF-" + nanoid(8).toUpperCase();
 }
 
+function generateOtp() {
+  return crypto.randomInt(0, 1_000_000).toString().padStart(6, "0");
+}
+
+function hashOtp(otp: string) {
+  return crypto
+    .createHash("sha256")
+    .update(`${otp}:${env.JWT_SECRET}`)
+    .digest("hex");
+}
+
+async function issueVerification(member: { id: string; email: string }) {
+  const token = crypto.randomBytes(32).toString("hex");
+
+  await prisma.portalMember.update({
+    where: { id: member.id },
+    data: { emailVerifyToken: token },
+  });
+
+  let otp: string | undefined = generateOtp();
+  try {
+    await redis.setex(
+      `verify:portal:${member.email}`,
+      OTP_TTL_SECONDS,
+      JSON.stringify({
+        otpHash: hashOtp(otp),
+        attempts: 0,
+        memberId: member.id,
+      }),
+    );
+  } catch (err) {
+    otp = undefined;
+    console.error("[portal/verification] redis unavailable:", err);
+  }
+
+  await sendVerificationEmail(member.email, token, env.PORTAL_URL, otp);
+}
+
 // POST /portal/register
 router.post(
   "/register",
@@ -58,21 +106,41 @@ router.post(
   async (req, res) => {
     try {
       const { password, ref, ...rest } = req.body;
+      const email = rest.email;
+      const fullName = String(rest.fullName).trim();
+
       const exists = await prisma.portalMember.findUnique({
-        where: { email: rest.email },
+        where: { email },
       });
-      if (exists) return conflict(res, "Email already registered");
+      if (exists) {
+        if (exists.emailVerified)
+          return conflict(res, "Email already registered");
+
+        await issueVerification({ id: exists.id, email }).catch((err) =>
+          console.error("[portal/register] resend verification email:", err),
+        );
+        return ok(res, {
+          message:
+            "If the account exists and is unverified, a verification email has been sent",
+          member: {
+            id: exists.id,
+            email: exists.email,
+            fullName: exists.fullName,
+            referralCode: exists.referralCode,
+          },
+        });
+      }
 
       const passwordHash = await hashPassword(password);
       const referralCode = generateReferralCode();
-      const verifyToken = crypto.randomBytes(32).toString("hex");
 
       const member = await prisma.portalMember.create({
         data: {
           ...rest,
+          email,
+          fullName,
           passwordHash,
           referralCode,
-          emailVerifyToken: verifyToken,
         },
       });
 
@@ -93,15 +161,19 @@ router.post(
         }
       }
 
-      await sendVerificationEmail(
-        member.email,
-        verifyToken,
-        env.PORTAL_URL,
-      ).catch((err) =>
-        console.error("[portal/register] verification email:", err),
+      await issueVerification({ id: member.id, email: member.email }).catch(
+        (err) => console.error("[portal/register] verification email:", err),
       );
 
-      return created(res, { ...member, message: "Verification email sent" });
+      return created(res, {
+        message: "Verification email sent",
+        member: {
+          id: member.id,
+          email: member.email,
+          fullName: member.fullName,
+          referralCode: member.referralCode,
+        },
+      });
     } catch (e) {
       if (isDbConnectionError(e))
         return serviceUnavailable(res, DB_UNAVAILABLE_MESSAGE);
@@ -114,7 +186,8 @@ router.post(
 // POST /portal/login
 router.post("/login", authLimiter, validate(loginSchema), async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const email = req.body.email;
+    const password = req.body.password;
     const member = await prisma.portalMember.findUnique({ where: { email } });
     if (!member) return unauthorized(res, "Invalid credentials");
 
@@ -181,22 +254,83 @@ router.post(
   },
 );
 
+// POST /portal/verify-email-otp
+router.post(
+  "/verify-email-otp",
+  validate(
+    z.object({
+      email: emailSchema,
+      otp: z.string().trim().length(6),
+    }),
+  ),
+  async (req, res) => {
+    try {
+      const email = req.body.email;
+      const otp = req.body.otp;
+
+      const member = await prisma.portalMember.findUnique({ where: { email } });
+      if (!member)
+        return badRequest(res, "Invalid or expired verification code");
+
+      if (member.emailVerified) return ok(res, { message: "Email verified" });
+
+      const raw = await redis.get(`verify:portal:${email}`);
+      if (!raw) return badRequest(res, "Invalid or expired verification code");
+
+      const state = JSON.parse(raw) as {
+        otpHash: string;
+        attempts: number;
+        memberId: string;
+      };
+
+      if (state.memberId !== member.id) {
+        await redis.del(`verify:portal:${email}`);
+        return badRequest(res, "Invalid or expired verification code");
+      }
+
+      const expected = state.otpHash;
+      const got = hashOtp(otp);
+      if (expected !== got) {
+        const nextAttempts = (state.attempts ?? 0) + 1;
+        if (nextAttempts >= OTP_MAX_ATTEMPTS) {
+          await redis.del(`verify:portal:${email}`);
+          return badRequest(res, "Too many attempts. Request a new code.");
+        }
+        await redis.setex(
+          `verify:portal:${email}`,
+          OTP_TTL_SECONDS,
+          JSON.stringify({ ...state, attempts: nextAttempts }),
+        );
+        return badRequest(res, "Invalid or expired verification code");
+      }
+
+      await prisma.portalMember.update({
+        where: { id: member.id },
+        data: { emailVerified: true, emailVerifyToken: null, status: "ACTIVE" },
+      });
+      await redis.del(`verify:portal:${email}`);
+      return ok(res, { message: "Email verified successfully" });
+    } catch (e) {
+      if (isDbConnectionError(e))
+        return serviceUnavailable(res, DB_UNAVAILABLE_MESSAGE);
+      console.error("[portal/verify-email-otp]", e);
+      return serverError(res);
+    }
+  },
+);
+
 // POST /portal/resend-verification
 router.post(
   "/resend-verification",
-  validate(z.object({ email: z.string().email() })),
+  validate(z.object({ email: emailSchema })),
   async (req, res) => {
     try {
+      const email = req.body.email;
       const member = await prisma.portalMember.findUnique({
-        where: { email: req.body.email },
+        where: { email },
       });
       if (member && !member.emailVerified) {
-        const token = crypto.randomBytes(32).toString("hex");
-        await prisma.portalMember.update({
-          where: { id: member.id },
-          data: { emailVerifyToken: token },
-        });
-        await sendVerificationEmail(member.email, token, env.PORTAL_URL).catch(
+        await issueVerification({ id: member.id, email: member.email }).catch(
           (err) => console.error("[portal/resend-verification] email:", err),
         );
       }
@@ -213,11 +347,12 @@ router.post(
 // POST /portal/forgot-password
 router.post(
   "/forgot-password",
-  validate(z.object({ email: z.string().email() })),
+  validate(z.object({ email: emailSchema })),
   async (req, res) => {
     try {
+      const email = req.body.email;
       const member = await prisma.portalMember.findUnique({
-        where: { email: req.body.email },
+        where: { email },
       });
       if (member) {
         const token = crypto.randomBytes(32).toString("hex");
