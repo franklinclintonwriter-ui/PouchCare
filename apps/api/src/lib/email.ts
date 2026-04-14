@@ -155,20 +155,31 @@ export async function sendVerificationEmail(
 
   const content = [
     heading("Verify Your Account"),
-    paragraph("Welcome to <strong>PouchCare</strong>! Please verify your email address to get started."),
+    paragraph(
+      "Welcome to <strong>PouchCare</strong>! Please verify your email address to get started.",
+    ),
     otp
       ? [
           paragraph("Use this verification code:"),
           otpCodeBlock(otp),
-          paragraph(`This code expires in <strong>10 minutes</strong>. Enter it on the verification page or click the button below.`),
+          paragraph(
+            `This code expires in <strong>10 minutes</strong>. Enter it on the verification page or click the button below.`,
+          ),
         ].join("")
       : paragraph("Click the button below to verify your email address."),
     primaryButton("Verify Email Address", url),
     divider(),
-    infoBox("If you didn't create a PouchCare account, you can safely ignore this email.", "🔒"),
+    infoBox(
+      "If you didn't create a PouchCare account, you can safely ignore this email.",
+      "🔒",
+    ),
   ].join("");
 
-  await sendEmail(to, "Verify your PouchCare account", emailLayout(content, otp ? `Your code: ${otp}` : "Verify your email"));
+  await sendEmail(
+    to,
+    "Verify your PouchCare account",
+    emailLayout(content, otp ? `Your code: ${otp}` : "Verify your email"),
+  );
 }
 
 // ── Password reset email ───────────────────────────────────────────
@@ -185,24 +196,32 @@ export async function sendPasswordResetEmail(
 
   const content = [
     heading("Reset Your Password"),
-    paragraph("We received a request to reset the password for your PouchCare account. Click the button below to choose a new password."),
+    paragraph(
+      "We received a request to reset the password for your PouchCare account. Click the button below to choose a new password.",
+    ),
     primaryButton("Reset Password", url),
     divider(),
-    paragraph(`<span style="font-size:13px;color:${BRAND.muted};">This link will expire in <strong>1 hour</strong>. If you didn't request a password reset, no action is needed — your account is safe.</span>`),
+    paragraph(
+      `<span style="font-size:13px;color:${BRAND.muted};">This link will expire in <strong>1 hour</strong>. If you didn't request a password reset, no action is needed — your account is safe.</span>`,
+    ),
     infoBox("For security, this link can only be used once.", "🛡️"),
   ].join("");
 
-  await sendEmail(to, "Reset your PouchCare password", emailLayout(content, "Password reset request"));
+  await sendEmail(
+    to,
+    "Reset your PouchCare password",
+    emailLayout(content, "Password reset request"),
+  );
 }
 
 // ── Broadcast email (used by admin notifications) ──────────────────
-export function buildBroadcastEmailHtml(title: string, message: string): string {
+export function buildBroadcastEmailHtml(
+  title: string,
+  message: string,
+): string {
   const bodyHtml = escapeHtml(message).split(/\r?\n/).join("<br/>\n");
 
-  const content = [
-    heading(title),
-    paragraph(bodyHtml),
-  ].join("");
+  const content = [heading(title), paragraph(bodyHtml)].join("");
 
   return emailLayout(content, title);
 }
@@ -213,7 +232,9 @@ export const emailTemplates = {
     const url = `${baseUrl.replace(/\/$/, "")}${PORTAL_ACCOUNT_PREFIX}/verify-email?token=${token}`;
     const content = [
       heading("Verify Your Account"),
-      paragraph(`Hi <strong>${escapeHtml(name)}</strong>, welcome to PouchCare!`),
+      paragraph(
+        `Hi <strong>${escapeHtml(name)}</strong>, welcome to PouchCare!`,
+      ),
       paragraph("Click the button below to verify your email address."),
       primaryButton("Verify Email Address", url),
     ].join("");
@@ -226,9 +247,13 @@ export const emailTemplates = {
     const url = `${baseUrl.replace(/\/$/, "")}${PORTAL_ACCOUNT_PREFIX}/reset-password?token=${token}`;
     const content = [
       heading("Reset Your Password"),
-      paragraph(`Hi <strong>${escapeHtml(name)}</strong>, we received a request to reset your password.`),
+      paragraph(
+        `Hi <strong>${escapeHtml(name)}</strong>, we received a request to reset your password.`,
+      ),
       primaryButton("Reset Password", url),
-      paragraph(`<span style="font-size:13px;color:${BRAND.muted};">This link expires in 1 hour.</span>`),
+      paragraph(
+        `<span style="font-size:13px;color:${BRAND.muted};">This link expires in 1 hour.</span>`,
+      ),
     ].join("");
     return {
       subject: "Reset your PouchCare password",
