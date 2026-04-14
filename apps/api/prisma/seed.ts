@@ -43,12 +43,18 @@ const randint = (min: number, max: number) =>
   Math.floor(Math.random() * (max - min + 1)) + min;
 const chance = (p: number) => Math.random() < p;
 
-/** Core team only — demo/test staff accounts removed */
+/** All staff accounts (core team + demo staff) */
 const STAFF_EMAILS = [
   "ceo@pouchcare.com",
   "comd@pouchcare.com",
   "ops@pouchcare.com",
   "branch@pouchcare.com",
+  "hr@pouchcare.com",
+  "dev1@pouchcare.com",
+  "seo1@pouchcare.com",
+  "content1@pouchcare.com",
+  "design1@pouchcare.com",
+  "intern1@pouchcare.com",
 ];
 
 const PORTAL_EMAILS = [
@@ -135,7 +141,30 @@ async function seedCameras() {
   ];
   const angles = ["Wide 140°", "Standard 90°", "Narrow 60°", "PTZ 360°"];
 
+  // Seed VigiNvrIntegrations for branches with cameras
+  const nvrBranches = branches.filter((b) => b.name !== "London");
+  for (const b of nvrBranches) {
+    await prisma.vigiNvrIntegration
+      .create({
+        data: {
+          branchId: b.id,
+          host: `nvr-${b.name.toLowerCase().replace(/\s+/g, "-")}.local`,
+          port: 20443,
+          username: "admin",
+          passwordEncrypted: "enc:demo_password_placeholder",
+          tlsAllowInsecure: true,
+          enabled: true,
+          lastSyncAt: daysAgo(1),
+        },
+      })
+      .catch(() => null);
+  }
+
   let idx = 0;
+  const nvrMap: Record<string, string> = {};
+  const nvrRecords = await prisma.vigiNvrIntegration.findMany();
+  for (const n of nvrRecords) nvrMap[n.branchId] = n.id;
+
   for (const b of branches) {
     const count = b.name === "London" ? 2 : b.name === "Dhaka" ? 5 : 4;
     for (let i = 0; i < count; i++) {
@@ -158,6 +187,10 @@ async function seedCameras() {
           hasMotionDetect: true,
           nvrDevice: nvrs[(i + idx) % nvrs.length],
           rtspUrl: `rtsp://nvr.local/${b.id}/stream/${i + 1}`,
+          vigiIntegrationId: nvrMap[b.id] ?? undefined,
+          vigiChannel: nvrMap[b.id] ? i + 1 : undefined,
+          vigiSyncKey: nvrMap[b.id] ? `${nvrMap[b.id]}:${i + 1}` : undefined,
+          source: nvrMap[b.id] ? "vigi" : "manual",
           lastMotionAt: lastMotion,
           lastPingAt: status !== "offline" ? now : daysAgo(3),
         },
@@ -218,6 +251,78 @@ async function seedStaff() {
       exp: 4,
       salary: 2000,
       join: new Date("2020-07-01"),
+    },
+    {
+      email: "hr@pouchcare.com",
+      name: "Fatima Akter",
+      role: SystemRole.HR_MANAGER,
+      branch: "Bangladesh HQ",
+      jobRole: "HR Manager",
+      skill: "Human Resources",
+      level: "Advanced",
+      exp: 5,
+      salary: 1800,
+      join: new Date("2021-01-15"),
+    },
+    {
+      email: "dev1@pouchcare.com",
+      name: "Rakib Hasan",
+      role: SystemRole.STAFF,
+      branch: "Bangladesh HQ",
+      jobRole: "Full-Stack Developer",
+      skill: "React / Node.js",
+      level: "Advanced",
+      exp: 4,
+      salary: 1500,
+      join: new Date("2022-03-01"),
+    },
+    {
+      email: "seo1@pouchcare.com",
+      name: "Nusrat Jahan",
+      role: SystemRole.STAFF,
+      branch: "Dhaka",
+      jobRole: "SEO Specialist",
+      skill: "Link Building",
+      level: "Intermediate",
+      exp: 3,
+      salary: 1200,
+      join: new Date("2023-06-01"),
+    },
+    {
+      email: "content1@pouchcare.com",
+      name: "Tanvir Ahmed",
+      role: SystemRole.STAFF,
+      branch: "Dhaka",
+      jobRole: "Content Writer",
+      skill: "SEO Content Writing",
+      level: "Intermediate",
+      exp: 2,
+      salary: 900,
+      join: new Date("2024-01-15"),
+    },
+    {
+      email: "design1@pouchcare.com",
+      name: "Ayesha Siddika",
+      role: SystemRole.STAFF,
+      branch: "Bangladesh HQ",
+      jobRole: "UI/UX Designer",
+      skill: "Figma / Adobe XD",
+      level: "Intermediate",
+      exp: 3,
+      salary: 1100,
+      join: new Date("2023-09-01"),
+    },
+    {
+      email: "intern1@pouchcare.com",
+      name: "Mehedi Hasan",
+      role: SystemRole.INTERN,
+      branch: "Dhaka",
+      jobRole: "SEO Intern",
+      skill: "On-Page SEO",
+      level: "Beginner",
+      exp: 0.5,
+      salary: 400,
+      join: new Date("2025-11-01"),
     },
   ];
 
@@ -297,6 +402,66 @@ async function seedManagedDevices(staffIds: Record<string, string>) {
       ipAddress: "10.10.2.21",
       status: "Active",
       systemRole: "BRANCH_MANAGER",
+      branch: "Dhaka",
+    },
+    {
+      email: "hr@pouchcare.com",
+      deviceName: "HR-Laptop-01",
+      deviceType: "Laptop",
+      os: "Windows 11",
+      ipAddress: "10.10.0.20",
+      status: "Active",
+      systemRole: "HR_MANAGER",
+      branch: "Bangladesh HQ",
+    },
+    {
+      email: "dev1@pouchcare.com",
+      deviceName: "Dev-MacBook-M2",
+      deviceType: "Laptop",
+      os: "macOS",
+      ipAddress: "10.10.0.25",
+      status: "Active",
+      systemRole: "STAFF",
+      branch: "Bangladesh HQ",
+    },
+    {
+      email: "seo1@pouchcare.com",
+      deviceName: "SEO-Desk-02",
+      deviceType: "Desktop",
+      os: "Windows 11",
+      ipAddress: "10.10.2.30",
+      status: "Active",
+      systemRole: "STAFF",
+      branch: "Dhaka",
+    },
+    {
+      email: "content1@pouchcare.com",
+      deviceName: "Content-Laptop-01",
+      deviceType: "Laptop",
+      os: "Windows 11",
+      ipAddress: "10.10.2.31",
+      status: "Active",
+      systemRole: "STAFF",
+      branch: "Dhaka",
+    },
+    {
+      email: "design1@pouchcare.com",
+      deviceName: "Design-iMac-01",
+      deviceType: "Desktop",
+      os: "macOS",
+      ipAddress: "10.10.0.26",
+      status: "Active",
+      systemRole: "STAFF",
+      branch: "Bangladesh HQ",
+    },
+    {
+      email: "intern1@pouchcare.com",
+      deviceName: "Intern-Chromebook",
+      deviceType: "Laptop",
+      os: "ChromeOS",
+      ipAddress: "10.10.2.40",
+      status: "Active",
+      systemRole: "INTERN",
       branch: "Dhaka",
     },
   ];
@@ -793,6 +958,84 @@ async function seedTasks(staffIds: Record<string, string>) {
       estimatedHours: 4,
       deadline: daysFrom(7),
     },
+    {
+      title: "Build REST API for PouchCare client portal v2",
+      status: TaskStatus.IN_PROGRESS,
+      priority: Priority.HIGH,
+      category: "Dev",
+      assignedMemberId: staffIds["dev1@pouchcare.com"],
+      assignedManagerId: staffIds["ops@pouchcare.com"],
+      assignedBranch: "Bangladesh HQ",
+      estimatedHours: 40,
+      deadline: daysFrom(14),
+      progress: 60,
+      relatedClient: "PouchCare Internal",
+    },
+    {
+      title: "Guest post outreach – 30 DA40+ sites",
+      status: TaskStatus.IN_PROGRESS,
+      priority: Priority.HIGH,
+      category: "SEO",
+      assignedMemberId: staffIds["seo1@pouchcare.com"],
+      assignedManagerId: staffIds["branch@pouchcare.com"],
+      assignedBranch: "Dhaka",
+      estimatedHours: 16,
+      deadline: daysFrom(10),
+      progress: 35,
+    },
+    {
+      title: "Write 5 blog articles on web development",
+      status: TaskStatus.IN_PROGRESS,
+      priority: Priority.MEDIUM,
+      category: "Content",
+      assignedMemberId: staffIds["content1@pouchcare.com"],
+      assignedManagerId: staffIds["ops@pouchcare.com"],
+      assignedBranch: "Dhaka",
+      estimatedHours: 12,
+      deadline: daysFrom(5),
+      progress: 40,
+    },
+    {
+      title: "Design landing page mockups for new service",
+      status: TaskStatus.NOT_STARTED,
+      priority: Priority.MEDIUM,
+      category: "Design",
+      assignedMemberId: staffIds["design1@pouchcare.com"],
+      assignedManagerId: staffIds["ops@pouchcare.com"],
+      assignedBranch: "Bangladesh HQ",
+      estimatedHours: 10,
+      deadline: daysFrom(12),
+    },
+    {
+      title: "Process Q1 leave balances for all staff",
+      status: TaskStatus.DONE,
+      approvalStatus: ApprovalStatus.VERIFIED,
+      priority: Priority.MEDIUM,
+      category: "HR",
+      assignedMemberId: staffIds["hr@pouchcare.com"],
+      assignedManagerId: staffIds["ops@pouchcare.com"],
+      assignedBranch: "Bangladesh HQ",
+      estimatedHours: 3,
+      actualHours: 2.5,
+      deadline: daysAgo(5),
+      completedDate: daysAgo(6),
+      progress: 100,
+      ceoVerified: true,
+      ceoWorkRating: 4.2,
+    },
+    {
+      title: "Compile competitor backlink report",
+      status: TaskStatus.IN_PROGRESS,
+      priority: Priority.LOW,
+      category: "SEO",
+      assignedMemberId: staffIds["intern1@pouchcare.com"],
+      assignedManagerId: staffIds["seo1@pouchcare.com"],
+      assignedBranch: "Dhaka",
+      estimatedHours: 8,
+      deadline: daysFrom(7),
+      progress: 20,
+      notes: "Intern training task — supervised by Nusrat",
+    },
   ];
 
   for (const t of tasks) {
@@ -844,12 +1087,7 @@ async function seedTaskComments(staffIds: Record<string, string>) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function seedAttendance(staffIds: Record<string, string>) {
-  const staffEmails = [
-    "ceo@pouchcare.com",
-    "comd@pouchcare.com",
-    "ops@pouchcare.com",
-    "branch@pouchcare.com",
-  ];
+  const staffEmails = Object.keys(staffIds);
 
   const statuses: AttendanceStatus[] = [
     AttendanceStatus.PRESENT,
@@ -948,6 +1186,49 @@ async function seedLeaveRequests(staffIds: Record<string, string>) {
       approvedBy: "Zihadduzzaman",
       notes: "Overlaps with project deadline",
     },
+    {
+      staffMemberId: staffIds["dev1@pouchcare.com"],
+      staffName: "Rakib Hasan",
+      leaveType: LeaveType.SICK,
+      status: LeaveStatus.APPROVED,
+      startDate: daysAgo(8),
+      endDate: daysAgo(7),
+      totalDays: 2,
+      reason: "Flu recovery",
+      approvedBy: "Md. Habibullah",
+    },
+    {
+      staffMemberId: staffIds["seo1@pouchcare.com"],
+      staffName: "Nusrat Jahan",
+      leaveType: LeaveType.ANNUAL,
+      status: LeaveStatus.PENDING,
+      startDate: daysFrom(15),
+      endDate: daysFrom(19),
+      totalDays: 5,
+      reason: "Wedding ceremony",
+    },
+    {
+      staffMemberId: staffIds["hr@pouchcare.com"],
+      staffName: "Fatima Akter",
+      leaveType: LeaveType.MATERNITY,
+      status: LeaveStatus.APPROVED,
+      startDate: daysFrom(30),
+      endDate: daysFrom(120),
+      totalDays: 90,
+      reason: "Maternity leave",
+      approvedBy: "Abdullah Al Mamun",
+    },
+    {
+      staffMemberId: staffIds["intern1@pouchcare.com"],
+      staffName: "Mehedi Hasan",
+      leaveType: LeaveType.UNPAID,
+      status: LeaveStatus.APPROVED,
+      startDate: daysAgo(15),
+      endDate: daysAgo(14),
+      totalDays: 2,
+      reason: "University exam",
+      approvedBy: "Zihadduzzaman",
+    },
   ];
 
   for (const r of requests) {
@@ -1010,6 +1291,61 @@ async function seedDailyReports(staffIds: Record<string, string>) {
         "Follow up on pending outreach; start NexaShop keyword research",
       mood: "Good",
     },
+    {
+      staffMemberId: staffIds["dev1@pouchcare.com"],
+      submitterName: "Rakib Hasan",
+      submitterRole: "Full-Stack Developer",
+      branch: "Bangladesh HQ",
+      reportDate: daysAgo(1),
+      hoursWorked: 9,
+      tasksCompleted: "Built portal notification API; fixed 3 TypeScript errors in invoice page",
+      plannedTomorrow: "Implement WebSocket for real-time notifications; code review for PR#42",
+      mood: "Great",
+    },
+    {
+      staffMemberId: staffIds["seo1@pouchcare.com"],
+      submitterName: "Nusrat Jahan",
+      submitterRole: "SEO Specialist",
+      branch: "Dhaka",
+      reportDate: daysAgo(1),
+      hoursWorked: 8,
+      tasksCompleted: "Sent 20 outreach emails; secured 5 guest post placements (DA30-40)",
+      plannedTomorrow: "Follow up with 15 pending publishers; compile DA/DR report",
+      mood: "Good",
+    },
+    {
+      staffMemberId: staffIds["content1@pouchcare.com"],
+      submitterName: "Tanvir Ahmed",
+      submitterRole: "Content Writer",
+      branch: "Dhaka",
+      reportDate: daysAgo(1),
+      hoursWorked: 7.5,
+      tasksCompleted: "Wrote 2 blog articles (1500 words each); edited 1 client brief",
+      plannedTomorrow: "Write 2 more articles; proofread Bloom Beauty batch",
+      mood: "Neutral",
+    },
+    {
+      staffMemberId: staffIds["design1@pouchcare.com"],
+      submitterName: "Ayesha Siddika",
+      submitterRole: "UI/UX Designer",
+      branch: "Bangladesh HQ",
+      reportDate: daysAgo(1),
+      hoursWorked: 8,
+      tasksCompleted: "Designed 3 social media banners; created wireframe for new landing page",
+      plannedTomorrow: "Finalize landing page mockup; design email template for campaign",
+      mood: "Great",
+    },
+    {
+      staffMemberId: staffIds["hr@pouchcare.com"],
+      submitterName: "Fatima Akter",
+      submitterRole: "HR Manager",
+      branch: "Bangladesh HQ",
+      reportDate: daysAgo(1),
+      hoursWorked: 8,
+      tasksCompleted: "Reviewed 5 applications for SEO position; conducted 1 phone screening",
+      plannedTomorrow: "Schedule 2 interviews; update leave balance sheet",
+      mood: "Good",
+    },
   ];
 
   for (const r of reports) {
@@ -1033,34 +1369,16 @@ async function seedDailyReports(staffIds: Record<string, string>) {
 
 async function seedPayroll(staffIds: Record<string, string>) {
   const payrollData = [
-    {
-      email: "ceo@pouchcare.com",
-      name: "Abdullah Al Mamun",
-      role: "CEO",
-      branch: "Dubai HQ",
-      base: 0,
-    },
-    {
-      email: "comd@pouchcare.com",
-      name: "Md Oliullah",
-      role: "CO_MD",
-      branch: "Bangladesh HQ",
-      base: 0,
-    },
-    {
-      email: "ops@pouchcare.com",
-      name: "Md. Habibullah",
-      role: "OP_MANAGER",
-      branch: "Bangladesh HQ",
-      base: 2500,
-    },
-    {
-      email: "branch@pouchcare.com",
-      name: "Zihadduzzaman",
-      role: "BRANCH_MANAGER",
-      branch: "Dhaka",
-      base: 2000,
-    },
+    { email: "ceo@pouchcare.com", name: "Abdullah Al Mamun", role: "CEO", branch: "Dubai HQ", base: 0 },
+    { email: "comd@pouchcare.com", name: "Md Oliullah", role: "CO_MD", branch: "Bangladesh HQ", base: 0 },
+    { email: "ops@pouchcare.com", name: "Md. Habibullah", role: "OP_MANAGER", branch: "Bangladesh HQ", base: 2500 },
+    { email: "branch@pouchcare.com", name: "Zihadduzzaman", role: "BRANCH_MANAGER", branch: "Dhaka", base: 2000 },
+    { email: "hr@pouchcare.com", name: "Fatima Akter", role: "HR_MANAGER", branch: "Bangladesh HQ", base: 1800 },
+    { email: "dev1@pouchcare.com", name: "Rakib Hasan", role: "STAFF", branch: "Bangladesh HQ", base: 1500 },
+    { email: "seo1@pouchcare.com", name: "Nusrat Jahan", role: "STAFF", branch: "Dhaka", base: 1200 },
+    { email: "content1@pouchcare.com", name: "Tanvir Ahmed", role: "STAFF", branch: "Dhaka", base: 900 },
+    { email: "design1@pouchcare.com", name: "Ayesha Siddika", role: "STAFF", branch: "Bangladesh HQ", base: 1100 },
+    { email: "intern1@pouchcare.com", name: "Mehedi Hasan", role: "INTERN", branch: "Dhaka", base: 400 },
   ];
 
   const months = [
@@ -1115,42 +1433,16 @@ async function seedPayroll(staffIds: Record<string, string>) {
 
 async function seedPerformanceRatings(staffIds: Record<string, string>) {
   const ratings = [
-    {
-      email: "ceo@pouchcare.com",
-      name: "Abdullah Al Mamun",
-      overall: 4.9,
-      quality: 4.8,
-      comms: 4.9,
-      punct: 4.8,
-      team: 4.9,
-    },
-    {
-      email: "comd@pouchcare.com",
-      name: "Md Oliullah",
-      overall: 4.8,
-      quality: 4.9,
-      comms: 4.7,
-      punct: 4.8,
-      team: 4.8,
-    },
-    {
-      email: "ops@pouchcare.com",
-      name: "Md. Habibullah",
-      overall: 4.6,
-      quality: 4.7,
-      comms: 4.5,
-      punct: 4.6,
-      team: 4.6,
-    },
-    {
-      email: "branch@pouchcare.com",
-      name: "Zihadduzzaman",
-      overall: 4.4,
-      quality: 4.3,
-      comms: 4.5,
-      punct: 4.4,
-      team: 4.3,
-    },
+    { email: "ceo@pouchcare.com", name: "Abdullah Al Mamun", overall: 4.9, quality: 4.8, comms: 4.9, punct: 4.8, team: 4.9 },
+    { email: "comd@pouchcare.com", name: "Md Oliullah", overall: 4.8, quality: 4.9, comms: 4.7, punct: 4.8, team: 4.8 },
+    { email: "ops@pouchcare.com", name: "Md. Habibullah", overall: 4.6, quality: 4.7, comms: 4.5, punct: 4.6, team: 4.6 },
+    { email: "branch@pouchcare.com", name: "Zihadduzzaman", overall: 4.4, quality: 4.3, comms: 4.5, punct: 4.4, team: 4.3 },
+    { email: "hr@pouchcare.com", name: "Fatima Akter", overall: 4.5, quality: 4.4, comms: 4.7, punct: 4.5, team: 4.6 },
+    { email: "dev1@pouchcare.com", name: "Rakib Hasan", overall: 4.6, quality: 4.8, comms: 4.3, punct: 4.5, team: 4.4 },
+    { email: "seo1@pouchcare.com", name: "Nusrat Jahan", overall: 4.3, quality: 4.4, comms: 4.2, punct: 4.3, team: 4.5 },
+    { email: "content1@pouchcare.com", name: "Tanvir Ahmed", overall: 4.1, quality: 4.2, comms: 4.0, punct: 4.1, team: 4.2 },
+    { email: "design1@pouchcare.com", name: "Ayesha Siddika", overall: 4.4, quality: 4.6, comms: 4.3, punct: 4.2, team: 4.5 },
+    { email: "intern1@pouchcare.com", name: "Mehedi Hasan", overall: 3.8, quality: 3.7, comms: 3.9, punct: 4.0, team: 3.8 },
   ];
 
   for (const r of ratings) {
@@ -1165,7 +1457,13 @@ async function seedPerformanceRatings(staffIds: Record<string, string>) {
               ? "CO_MD"
               : r.email.includes("ops")
                 ? "OP_MANAGER"
-                : "BRANCH_MANAGER",
+                : r.email.includes("branch")
+                  ? "BRANCH_MANAGER"
+                  : r.email.includes("hr")
+                    ? "HR_MANAGER"
+                    : r.email.includes("intern")
+                      ? "INTERN"
+                      : "STAFF",
           ratedBy: "Md Oliullah",
           reviewPeriod: "Q1 2026",
           reviewQuarter: "Q1",
@@ -2015,6 +2313,17 @@ async function seedPortal() {
       emailVerified: true,
       totalReferrals: 3,
       totalCommissionEarned: 156,
+      companyName: "Smith Digital Agency",
+      companyWebsite: "https://smithdigital.com",
+      industry: "Digital Marketing",
+      addressLine1: "123 Main Street",
+      city: "New York",
+      state: "NY",
+      zip: "10001",
+      addressCountry: "US",
+      preferredContact: "email",
+      phone: "+1-555-0101",
+      whatsapp: "+1-555-0101",
     },
     {
       fullName: "Alice Nguyen",
@@ -2029,6 +2338,17 @@ async function seedPortal() {
       emailVerified: true,
       totalReferrals: 1,
       totalCommissionEarned: 48,
+      companyName: "Nguyen Media",
+      companyWebsite: "https://nguyenmedia.ca",
+      industry: "E-commerce",
+      addressLine1: "456 Bay Street",
+      city: "Toronto",
+      state: "ON",
+      zip: "M5H 2S6",
+      addressCountry: "CA",
+      preferredContact: "whatsapp",
+      phone: "+1-647-555-0202",
+      whatsapp: "+1-647-555-0202",
     },
     {
       fullName: "Michael Tan",
@@ -2043,6 +2363,17 @@ async function seedPortal() {
       emailVerified: true,
       totalReferrals: 5,
       totalCommissionEarned: 320,
+      companyName: "TanTech Solutions",
+      vatId: "SG-VAT-2024-8832",
+      companyWebsite: "https://tantech.sg",
+      industry: "Technology",
+      addressLine1: "78 Shenton Way #20-01",
+      city: "Singapore",
+      zip: "079120",
+      addressCountry: "SG",
+      preferredContact: "telegram",
+      telegram: "@michaeltan",
+      phone: "+65-9123-4567",
     },
     {
       fullName: "Sofia Rossi",
@@ -2067,6 +2398,14 @@ async function seedPortal() {
       totalSpent: 450,
       totalOrders: 2,
       emailVerified: true,
+      companyName: "Gulf SEO Pro",
+      industry: "SEO Agency",
+      addressLine1: "Business Bay, Tower 3",
+      city: "Dubai",
+      addressCountry: "AE",
+      preferredContact: "whatsapp",
+      phone: "+971-50-123-4567",
+      whatsapp: "+971-50-123-4567",
     },
     {
       fullName: "PouchCare Test Client",
@@ -2081,6 +2420,19 @@ async function seedPortal() {
       emailVerified: true,
       totalReferrals: 1,
       totalCommissionEarned: 76,
+      companyName: "PouchCare Demo Co",
+      companyWebsite: "https://demo.pouchcare.com",
+      industry: "Software",
+      addressLine1: "99 Test Avenue",
+      city: "Chittagong",
+      state: "Chittagong",
+      zip: "4000",
+      addressCountry: "BD",
+      preferredContact: "email",
+      phone: "+880-1800-000000",
+      whatsapp: "+880-1800-000000",
+      telegram: "@pouchcaretest",
+      skype: "live:pouchcaretest",
     },
     {
       fullName: "Demo Referred Client",
@@ -2635,25 +2987,39 @@ async function seedPortalExtras(portalIds: Record<string, string>) {
   const sessions = [
     {
       portalMemberId: johnId,
+      tokenHash: crypto.createHash('sha256').update('seed-session-token-1').digest('hex'),
       deviceType: 'Desktop',
       browserName: 'Chrome',
       osName: 'Windows 11',
       ipAddress: '203.0.113.10',
       country: 'BD',
       city: 'Dhaka',
+      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/124.0',
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
-      lastActivityAt: new Date(),
     },
     {
       portalMemberId: johnId,
+      tokenHash: crypto.createHash('sha256').update('seed-session-token-2').digest('hex'),
       deviceType: 'Mobile',
       browserName: 'Safari',
       osName: 'iOS 17',
       ipAddress: '203.0.113.11',
       country: 'BD',
       city: 'Chittagong',
+      userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0) Safari/605.1.15',
       expiresAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
-      lastActivityAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+    },
+    {
+      portalMemberId: aliceId ?? johnId,
+      tokenHash: crypto.createHash('sha256').update('seed-session-token-3').digest('hex'),
+      deviceType: 'Desktop',
+      browserName: 'Firefox',
+      osName: 'macOS',
+      ipAddress: '203.0.113.50',
+      country: 'CA',
+      city: 'Toronto',
+      userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15) Firefox/125.0',
+      expiresAt: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
     },
   ];
   for (const s of sessions) {
@@ -3341,6 +3707,186 @@ async function seedMisc() {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
+async function seedSystemSettings() {
+  const settings = [
+    // General
+    { key: "company.name", value: JSON.stringify("PouchCare"), type: "string", group: "general", label: "Company Name", description: "Organization display name", isPublic: true },
+    { key: "company.email", value: JSON.stringify("info@pouchcare.com"), type: "string", group: "general", label: "Contact Email", description: "Primary contact email", isPublic: true },
+    { key: "company.phone", value: JSON.stringify("+880-1700-000000"), type: "string", group: "general", label: "Contact Phone", description: "Primary phone number", isPublic: true },
+    { key: "company.currency", value: JSON.stringify("USD"), type: "string", group: "general", label: "Default Currency", description: "Default system currency" },
+    { key: "company.timezone", value: JSON.stringify("Asia/Dhaka"), type: "string", group: "general", label: "Timezone", description: "System timezone" },
+    { key: "company.logo_url", value: JSON.stringify("/images/logo.svg"), type: "string", group: "general", label: "Logo URL", description: "Path to company logo", isPublic: true },
+    // Financial
+    { key: "finance.tax_rate", value: JSON.stringify(0.05), type: "number", group: "financial", label: "Tax Rate", description: "Default tax percentage (0-1)" },
+    { key: "finance.invoice_prefix", value: JSON.stringify("INV"), type: "string", group: "financial", label: "Invoice Prefix", description: "Prefix for auto-generated invoice numbers" },
+    { key: "finance.auto_overdue_days", value: JSON.stringify(30), type: "number", group: "financial", label: "Auto Overdue Days", description: "Days before an unpaid invoice is marked overdue" },
+    { key: "finance.payment_methods", value: JSON.stringify(["Payoneer", "USDT TRC20", "Binance", "Bank Transfer", "Cash"]), type: "json", group: "financial", label: "Payment Methods", description: "Accepted payment methods" },
+    // Security
+    { key: "security.session_ttl_hours", value: JSON.stringify(168), type: "number", group: "security", label: "Session TTL (Hours)", description: "Portal session lifetime in hours" },
+    { key: "security.max_login_attempts", value: JSON.stringify(5), type: "number", group: "security", label: "Max Login Attempts", description: "Maximum failed logins before lockout" },
+    { key: "security.lockout_minutes", value: JSON.stringify(15), type: "number", group: "security", label: "Lockout Duration (Min)", description: "Account lockout duration in minutes" },
+    { key: "security.two_factor_required", value: JSON.stringify(false), type: "boolean", group: "security", label: "2FA Required", description: "Whether 2FA is mandatory for staff" },
+    { key: "security.ip_whitelist_enabled", value: JSON.stringify(false), type: "boolean", group: "security", label: "IP Whitelist Enabled", description: "Enable IP whitelist for admin panel" },
+    // Modules
+    { key: "modules.portal_enabled", value: JSON.stringify(true), type: "boolean", group: "modules", label: "Client Portal", description: "Enable the client portal" },
+    { key: "modules.crm_enabled", value: JSON.stringify(true), type: "boolean", group: "modules", label: "CRM Module", description: "Enable CRM / lead management" },
+    { key: "modules.hr_enabled", value: JSON.stringify(true), type: "boolean", group: "modules", label: "HR Module", description: "Enable HR / hiring module" },
+    { key: "modules.monitoring_enabled", value: JSON.stringify(true), type: "boolean", group: "modules", label: "Camera Monitoring", description: "Enable camera / CCTV monitoring" },
+    { key: "modules.plugins_enabled", value: JSON.stringify(true), type: "boolean", group: "modules", label: "Plugin Platform", description: "Enable plugin management" },
+    { key: "modules.tools_enabled", value: JSON.stringify(true), type: "boolean", group: "modules", label: "SEO Tools", description: "Enable SEO analysis tools" },
+    // Integrations
+    { key: "integrations.smtp_host", value: JSON.stringify("smtp.gmail.com"), type: "string", group: "integrations", label: "SMTP Host", description: "Email server hostname" },
+    { key: "integrations.smtp_port", value: JSON.stringify(587), type: "number", group: "integrations", label: "SMTP Port", description: "Email server port" },
+    { key: "integrations.whatsapp_enabled", value: JSON.stringify(false), type: "boolean", group: "integrations", label: "WhatsApp Alerts", description: "Enable WhatsApp notification integration" },
+    { key: "integrations.cloudflare_proxy", value: JSON.stringify(true), type: "boolean", group: "integrations", label: "Cloudflare Proxy", description: "Enable Cloudflare proxy on assets" },
+    // Notifications
+    { key: "notifications.email_on_order", value: JSON.stringify(true), type: "boolean", group: "notifications", label: "Email on New Order", description: "Send email when a portal order is placed" },
+    { key: "notifications.email_on_ticket", value: JSON.stringify(true), type: "boolean", group: "notifications", label: "Email on Ticket Reply", description: "Send email on support ticket replies" },
+    { key: "notifications.daily_digest", value: JSON.stringify(true), type: "boolean", group: "notifications", label: "Daily Digest", description: "Send daily summary digest to managers" },
+    // Portal
+    { key: "portal.commission_rate", value: JSON.stringify(0.20), type: "number", group: "general", label: "Commission Rate", description: "Default referral commission rate" },
+    { key: "portal.commission_hold_days", value: JSON.stringify(14), type: "number", group: "general", label: "Commission Hold Days", description: "Days to hold commission before release" },
+    { key: "portal.min_payout_usd", value: JSON.stringify(50), type: "number", group: "general", label: "Min Payout (USD)", description: "Minimum payout request amount" },
+    { key: "portal.registration_open", value: JSON.stringify(true), type: "boolean", group: "general", label: "Registration Open", description: "Allow new portal registrations", isPublic: true },
+  ];
+
+  for (const s of settings) {
+    await prisma.systemSetting
+      .upsert({
+        where: { key: s.key },
+        update: {},
+        create: { ...s, updatedBy: "System Seeder" } as any,
+      })
+      .catch(() => null);
+  }
+  console.log(`✅ System settings seeded (${settings.length} entries)`);
+}
+
+async function seedSystemAuditLogs(staffIds: Record<string, string>) {
+  const ceoId = staffIds["ceo@pouchcare.com"];
+  const opsId = staffIds["ops@pouchcare.com"];
+  const hrId = staffIds["hr@pouchcare.com"];
+
+  const logs = [
+    {
+      action: "SEED_DATABASE",
+      module: "system",
+      actorId: ceoId || "system",
+      actorName: "Abdullah Al Mamun",
+      actorRole: "CEO",
+      details: JSON.stringify({ note: "Initial seed run" }),
+      createdAt: daysAgo(90),
+    },
+    {
+      action: "UPDATE_SETTING",
+      module: "system_config",
+      actorId: ceoId || "system",
+      actorName: "Abdullah Al Mamun",
+      actorRole: "CEO",
+      details: JSON.stringify({ key: "portal.commission_rate", oldValue: 0.15, newValue: 0.20 }),
+      createdAt: daysAgo(60),
+    },
+    {
+      action: "UPDATE_SETTING",
+      module: "system_config",
+      actorId: ceoId || "system",
+      actorName: "Abdullah Al Mamun",
+      actorRole: "CEO",
+      details: JSON.stringify({ key: "security.max_login_attempts", oldValue: 10, newValue: 5 }),
+      createdAt: daysAgo(45),
+    },
+    {
+      action: "CREATE_STAFF",
+      module: "staff",
+      actorId: hrId || opsId || "system",
+      actorName: "Fatima Akter",
+      actorRole: "HR_MANAGER",
+      details: JSON.stringify({ email: "dev1@pouchcare.com", role: "STAFF" }),
+      createdAt: daysAgo(40),
+    },
+    {
+      action: "CREATE_STAFF",
+      module: "staff",
+      actorId: hrId || opsId || "system",
+      actorName: "Fatima Akter",
+      actorRole: "HR_MANAGER",
+      details: JSON.stringify({ email: "seo1@pouchcare.com", role: "STAFF" }),
+      createdAt: daysAgo(38),
+    },
+    {
+      action: "APPROVE_LEAVE",
+      module: "leave",
+      actorId: opsId || "system",
+      actorName: "Md. Habibullah",
+      actorRole: "OP_MANAGER",
+      details: JSON.stringify({ staffName: "Zihadduzzaman", leaveType: "Annual", days: 5 }),
+      createdAt: daysAgo(30),
+    },
+    {
+      action: "PROCESS_PAYOUT",
+      module: "portal",
+      actorId: opsId || "system",
+      actorName: "Md. Habibullah",
+      actorRole: "OP_MANAGER",
+      details: JSON.stringify({ memberId: "john@example.com", amountUsd: 85, method: "USDT TRC20" }),
+      createdAt: daysAgo(15),
+    },
+    {
+      action: "UPDATE_ROLE_PERMISSION",
+      module: "role_permissions",
+      actorId: ceoId || "system",
+      actorName: "Abdullah Al Mamun",
+      actorRole: "CEO",
+      details: JSON.stringify({ role: "BRANCH_MANAGER", key: "finance.access", allowed: true }),
+      createdAt: daysAgo(10),
+    },
+    {
+      action: "PUBLISH_PLUGIN",
+      module: "plugins",
+      actorId: opsId || "system",
+      actorName: "Md. Habibullah",
+      actorRole: "OP_MANAGER",
+      details: JSON.stringify({ slug: "pouchcare-seo-helper", version: "1.1.0" }),
+      createdAt: daysAgo(7),
+    },
+    {
+      action: "SUSPEND_MEMBER",
+      module: "portal",
+      actorId: ceoId || "system",
+      actorName: "Abdullah Al Mamun",
+      actorRole: "CEO",
+      details: JSON.stringify({ email: "flagged@example.com", reason: "Fraud investigation" }),
+      createdAt: daysAgo(5),
+    },
+    {
+      action: "UPDATE_SETTING",
+      module: "system_config",
+      actorId: ceoId || "system",
+      actorName: "Abdullah Al Mamun",
+      actorRole: "CEO",
+      details: JSON.stringify({ key: "modules.tools_enabled", oldValue: false, newValue: true }),
+      createdAt: daysAgo(3),
+    },
+    {
+      action: "CLEAR_CACHE",
+      module: "system",
+      actorId: opsId || "system",
+      actorName: "Md. Habibullah",
+      actorRole: "OP_MANAGER",
+      ipAddress: "10.10.0.15",
+      details: JSON.stringify({ note: "Manual cache purge after deploy" }),
+      createdAt: daysAgo(1),
+    },
+  ];
+
+  for (const log of logs) {
+    await prisma.systemAuditLog.create({ data: log as any }).catch(() => null);
+  }
+  console.log(`✅ System audit logs seeded (${logs.length} entries)`);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 async function main() {
   console.log("🌱 Seeding PouchCare database...\n");
 
@@ -3383,15 +3929,23 @@ async function main() {
   await seedPluginsAndApiKeys(staffIds, portalIds);
   await seedToolRuns(staffIds);
   await seedMisc();
+  await seedSystemSettings();
+  await seedSystemAuditLogs(staffIds);
 
   console.log("\n🎉 Seed complete!\n");
   console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
   console.log("  Login credentials (default password: Password123!)");
   console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-  console.log("  CEO:             ceo@pouchcare.com  (Abdullah Al Mamun)");
-  console.log("  MD (Co-MD):      comd@pouchcare.com  (Md Oliullah)");
-  console.log("  Ops Manager:     ops@pouchcare.com  (Md. Habibullah)");
+  console.log("  CEO:             ceo@pouchcare.com     (Abdullah Al Mamun)");
+  console.log("  MD (Co-MD):      comd@pouchcare.com    (Md Oliullah)");
+  console.log("  Ops Manager:     ops@pouchcare.com     (Md. Habibullah)");
   console.log("  Branch Manager:  branch@pouchcare.com  (Zihadduzzaman — Dhaka)");
+  console.log("  HR Manager:      hr@pouchcare.com      (Fatima Akter)");
+  console.log("  Developer:       dev1@pouchcare.com    (Rakib Hasan)");
+  console.log("  SEO Specialist:  seo1@pouchcare.com    (Nusrat Jahan)");
+  console.log("  Content Writer:  content1@pouchcare.com(Tanvir Ahmed)");
+  console.log("  Designer:        design1@pouchcare.com (Ayesha Siddika)");
+  console.log("  Intern:          intern1@pouchcare.com (Mehedi Hasan)");
   console.log("  Portal Members:  john / alice / michael / omar @example.com");
   console.log(
     `  Portal (full test):  ${TEST_PORTAL_EMAIL}  /  Test@123`,

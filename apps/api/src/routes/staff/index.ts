@@ -1,7 +1,8 @@
 import { Router } from 'express'
 import path from 'path'
 import multer from 'multer'
-import sharp from 'sharp'
+// Lazy-load sharp so the server can start even when the native binary is unavailable
+const getSharp = async () => (await import('sharp')).default
 import { z } from 'zod'
 import bcrypt from 'bcryptjs'
 import { SystemRole } from '@prisma/client'
@@ -38,6 +39,7 @@ async function processAvatarUpload(file: Express.Multer.File) {
 
   if (['image/jpeg', 'image/png', 'image/webp'].includes(file.mimetype)) {
     try {
+      const sharp = await getSharp()
       buffer = await sharp(file.buffer)
         .rotate()
         .resize(512, 512, { fit: 'cover', position: sharp.strategy.attention })

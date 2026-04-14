@@ -23,15 +23,7 @@ import type { ServiceItem } from "@/lib/constants";
 import { mergeWithMarketingHosting } from "@/data/marketingHosting";
 import { paths } from "@/routes/paths";
 
-const CATEGORIES = [
-  "All",
-  "Hosting",
-  "SEO",
-  "Dev",
-  "Design",
-  "Content",
-  "Ads",
-];
+const CATEGORIES = ["All", "Hosting", "SEO", "Dev", "Design", "Content", "Ads"];
 
 const BADGE_MAP: Record<
   string,
@@ -480,3 +472,4 @@ export default function Services() {
     </>
   );
 }
+                 
