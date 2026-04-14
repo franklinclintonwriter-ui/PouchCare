@@ -71,19 +71,25 @@ deploy:production:
   image: alpine:latest
   needs: ["pouchcare:build"]
   rules:
+    # Auto-deploy on every push to main
     - if: $CI_COMMIT_BRANCH == "main"
-      when: manual
+      when: on_success
     - when: never
   environment:
     name: production
-    url: https://pouchcare.com
+    url: https://api.pouchcare.com
   before_script:
-    - apk add --no-cache openssh-client
+    - apk add --no-cache openssh-client bash
     - mkdir -p ~/.ssh
     - echo "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_ed25519
     - chmod 600 ~/.ssh/id_ed25519
-    - ssh-keyscan -H $DEPLOY_HOST >> ~/.ssh/known_hosts 2>/dev/null || true
+    - ssh-keyscan -p ${DEPLOY_PORT:-22} -H $DEPLOY_HOST >> ~/.ssh/known_hosts 2>/dev/null || true
   script:
-    - ssh $DEPLOY_USER@$DEPLOY_HOST "cd /home/pouchcare/Developments/PouchCare && bash deploy/update.sh"
+    - |
+      ssh -p ${DEPLOY_PORT:-22} -o StrictHostKeyChecking=no $DEPLOY_USER@$DEPLOY_HOST bash <<'REMOTE_SCRIPT'
+        set -e
+        cd /home/pouchcare/Developments/PouchCare
+        sudo bash deploy/update.sh
+      REMOTE_SCRIPT
   after_script:
     - rm -f ~/.ssh/id_ed25519
