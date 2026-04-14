@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FolderKanban, Pause, CheckCircle2, Loader2, CircleDot, Plus } from 'lucide-react';
+import { FolderKanban, Pause, CheckCircle2, Loader2, CircleDot, Plus, LayoutGrid, Table2, Calendar, DollarSign, Users } from 'lucide-react';
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
 import { useCreateProject, useProjects } from '@/api/projects';
 import { PageTransition } from '@/components/ui/PageTransition';
@@ -13,13 +13,20 @@ import { Modal } from '@/components/ui/Modal';
 import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
 import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import { Pagination } from '@/components/ui/Pagination';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { Skeleton } from '@/components/ui/Skeleton';
 import type { Project } from '@/types/models';
 import { toast } from 'sonner';
 import { useCurrency } from '@/hooks/useCurrency';
 
+type ViewMode = 'table' | 'cards';
+
 export default function ProjectList() {
   const { formatCurrency } = useCurrency();
   const navigate = useNavigate();
+  const [viewMode, setViewMode] = useState<ViewMode>('table');
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const [page, setPage] = useState(1);
@@ -66,6 +73,15 @@ export default function ProjectList() {
     title: 'Projects',
     breadcrumbs: [{ label: 'Home', href: '/' }, { label: 'Projects' }],
     actions: [
+      {
+        type: 'toggle' as const,
+        value: viewMode,
+        onChange: (v: string) => setViewMode(v === 'cards' ? 'cards' : 'table'),
+        options: [
+          { value: 'table', label: 'Table', icon: Table2 },
+          { value: 'cards', label: 'Cards', icon: LayoutGrid },
+        ],
+      },
       { type: 'button' as const, label: 'New Project', icon: Plus, onClick: () => setOpenCreate(true) },
       { type: 'search' as const, placeholder: 'Search projects...', value: search, onChange: setSearch },
       {
@@ -85,7 +101,7 @@ export default function ProjectList() {
         onChange: setStatus,
       },
     ],
-  }), [search, status]);
+  }), [search, status, viewMode]);
 
   useHeaderConfig(headerConfig);
 
@@ -174,19 +190,114 @@ export default function ProjectList() {
       <div className="space-y-6">
         <StatsRow items={stats} loading={isLoading} />
 
-        <DataTable
-          columns={columns}
-          data={projects}
-          isLoading={isLoading}
-          onRowClick={(row) => navigate(`/projects/${row.id}`)}
-          sortField={sortField}
-          sortDirection={sortDir}
-          onSort={handleSort}
-          pagination={meta}
-          onPageChange={setPage}
-          emptyTitle="No projects found"
-          emptyDescription="Try adjusting your filters"
-        />
+        {viewMode === 'table' ? (
+          <DataTable
+            columns={columns}
+            data={projects}
+            isLoading={isLoading}
+            onRowClick={(row) => navigate(`/projects/${row.id}`)}
+            sortField={sortField}
+            sortDirection={sortDir}
+            onSort={handleSort}
+            pagination={meta}
+            onPageChange={setPage}
+            emptyTitle="No projects found"
+            emptyDescription="Try adjusting your filters"
+          />
+        ) : (
+          <div className="rounded-xl border border-gray-200/80 bg-white shadow-soft dark:border-gray-700/60 dark:bg-gray-800/80">
+            {isLoading ? (
+              <div className="grid gap-4 p-4 sm:grid-cols-2 lg:grid-cols-3 lg:p-5">
+                {Array.from({ length: 9 }).map((_, i) => (
+                  <Skeleton key={i} className="h-44 rounded-xl" />
+                ))}
+              </div>
+            ) : projects.length === 0 ? (
+              <EmptyState
+                icon={<FolderKanban />}
+                title="No projects found"
+                description="Try adjusting your filters"
+                className="py-12"
+              />
+            ) : (
+              <>
+                <div className="grid gap-4 p-4 sm:grid-cols-2 lg:grid-cols-3 lg:p-5">
+                  {projects.map((project) => (
+                    <Card
+                      key={project.id}
+                      hover
+                      padding="md"
+                      onClick={() => navigate(`/projects/${project.id}`)}
+                      className="min-h-[44px]"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100">
+                            {project.name}
+                          </p>
+                          <p className="mt-1 truncate text-xs text-gray-500 dark:text-gray-400">
+                            {project.clientName || 'No client'}
+                          </p>
+                        </div>
+                        <StatusBadge status={project.status} size="sm" />
+                      </div>
+
+                      <div className="mt-4">
+                        <ProgressBar value={project.progress} showLabel size="sm" />
+                      </div>
+
+                      <div className="mt-4 grid grid-cols-2 gap-3 border-t border-gray-100 pt-4 text-xs dark:border-gray-700/60">
+                        <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                          <Calendar className="h-3.5 w-3.5" aria-hidden />
+                          <span className="truncate">
+                            {project.dueDate
+                              ? new Date(project.dueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+                              : 'No due date'}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-end gap-2 text-gray-700 dark:text-gray-300">
+                          <DollarSign className="h-3.5 w-3.5 text-gray-400" aria-hidden />
+                          <span className="font-medium tabular-nums">
+                            {formatCurrency(project.budget)}
+                          </span>
+                        </div>
+                        <div className="col-span-2 flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                            <Users className="h-3.5 w-3.5" aria-hidden />
+                            <span className="text-xs">
+                              {project.teamMembers.length} member{project.teamMembers.length === 1 ? '' : 's'}
+                            </span>
+                          </div>
+                          <div className="flex -space-x-2">
+                            {project.teamMembers.slice(0, 4).map((m) => (
+                              <Avatar key={m.id} name={m.name} src={m.avatarUrl} size="xs" />
+                            ))}
+                            {project.teamMembers.length > 4 ? (
+                              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-100 text-[10px] font-medium text-gray-600 ring-2 ring-white dark:bg-gray-700 dark:text-gray-300 dark:ring-gray-800">
+                                +{project.teamMembers.length - 4}
+                              </div>
+                            ) : null}
+                          </div>
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+
+                {meta && meta.totalPages > 0 ? (
+                  <div className="border-t border-gray-100 px-4 py-3 dark:border-gray-700/60 lg:px-5">
+                    <Pagination
+                      currentPage={meta.page}
+                      totalPages={meta.totalPages}
+                      total={meta.total}
+                      onPageChange={setPage}
+                    />
+                  </div>
+                ) : null}
+              </>
+            )}
+          </div>
+        )}
 
         <Modal
           isOpen={openCreate}

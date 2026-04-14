@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ListTodo, AlertTriangle, CheckCircle2, Loader2, CircleDot, Flag, Plus, Paperclip } from 'lucide-react';
+import { ListTodo, AlertTriangle, CheckCircle2, Loader2, CircleDot, Flag, Plus, Paperclip, LayoutGrid, Table2 } from 'lucide-react';
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
 import { usePermission } from '@/hooks/usePermission';
 import { useCreateTask, useTasks, useTaskMeta, useUploadTaskAttachments } from '@/api/tasks';
@@ -15,14 +15,21 @@ import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
 import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import { Pagination } from '@/components/ui/Pagination';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { Skeleton } from '@/components/ui/Skeleton';
 import type { Task } from '@/types/models';
 import { TASK_CATEGORIES } from '@/constants/taskCategories';
 import { toast } from 'sonner';
+
+type ViewMode = 'table' | 'cards';
 
 export default function TaskList() {
   const navigate = useNavigate();
   const perm = usePermission();
   const canCreate = perm.isManager;
+  const [viewMode, setViewMode] = useState<ViewMode>('table');
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const [priority, setPriority] = useState('');
@@ -113,6 +120,15 @@ export default function TaskList() {
     title: 'Tasks',
     breadcrumbs: [{ label: 'Home', href: '/' }, { label: 'Tasks' }],
     actions: [
+      {
+        type: 'toggle' as const,
+        value: viewMode,
+        onChange: (v: string) => setViewMode(v === 'cards' ? 'cards' : 'table'),
+        options: [
+          { value: 'table', label: 'Table', icon: Table2 },
+          { value: 'cards', label: 'Cards', icon: LayoutGrid },
+        ],
+      },
       ...(canCreate
         ? [{ type: 'button' as const, label: 'New Task', icon: Plus, onClick: () => setOpenCreate(true) }]
         : []),
@@ -147,7 +163,7 @@ export default function TaskList() {
         onChange: setPriority,
       },
     ],
-  }), [search, status, priority, canCreate]);
+  }), [search, status, priority, canCreate, viewMode]);
 
   useHeaderConfig(headerConfig);
 
@@ -225,19 +241,92 @@ export default function TaskList() {
       <div className="space-y-6">
         <StatsRow items={stats} loading={isLoading} />
 
-        <DataTable
-          columns={columns}
-          data={tasks}
-          isLoading={isLoading}
-          onRowClick={(row) => navigate(`/tasks/${row.id}`)}
-          sortField={sortField}
-          sortDirection={sortDir}
-          onSort={handleSort}
-          pagination={meta}
-          onPageChange={setPage}
-          emptyTitle="No tasks found"
-          emptyDescription="Try adjusting your filters"
-        />
+        {viewMode === 'table' ? (
+          <DataTable
+            columns={columns}
+            data={tasks}
+            isLoading={isLoading}
+            onRowClick={(row) => navigate(`/tasks/${row.id}`)}
+            sortField={sortField}
+            sortDirection={sortDir}
+            onSort={handleSort}
+            pagination={meta}
+            onPageChange={setPage}
+            emptyTitle="No tasks found"
+            emptyDescription="Try adjusting your filters"
+          />
+        ) : (
+          <div className="rounded-xl border border-gray-200/80 bg-white shadow-soft dark:border-gray-700/60 dark:bg-gray-800/80">
+            {isLoading ? (
+              <div className="grid gap-4 p-4 sm:grid-cols-2 lg:grid-cols-3 lg:p-5">
+                {Array.from({ length: 9 }).map((_, i) => (
+                  <Skeleton key={i} className="h-44 rounded-xl" />
+                ))}
+              </div>
+            ) : tasks.length === 0 ? (
+              <EmptyState
+                icon={<ListTodo />}
+                title="No tasks found"
+                description="Try adjusting your filters"
+                className="py-12"
+              />
+            ) : (
+              <>
+                <div className="grid gap-4 p-4 sm:grid-cols-2 lg:grid-cols-3 lg:p-5">
+                  {tasks.map((task) => (
+                    <Card
+                      key={task.id}
+                      hover
+                      padding="md"
+                      onClick={() => navigate(`/tasks/${task.id}`)}
+                      className="min-h-[44px]"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100">
+                            {task.title}
+                          </p>
+                          <p className="mt-1 truncate text-xs text-gray-500 dark:text-gray-400">
+                            {task.projectName || 'No project'}{task.tags?.[0] ? ` · ${task.tags[0]}` : ''}
+                          </p>
+                        </div>
+                        <div className="flex shrink-0 flex-col items-end gap-1">
+                          <StatusBadge status={task.status} size="sm" />
+                          <StatusBadge status={task.priority} size="sm" />
+                        </div>
+                      </div>
+
+                      <div className="mt-4 flex items-center justify-between gap-3 border-t border-gray-100 pt-4 dark:border-gray-700/60">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <Avatar name={task.assigneeName} src={task.assigneeAvatar} size="xs" />
+                          <span className="truncate text-xs font-medium text-gray-700 dark:text-gray-300">
+                            {task.assigneeName || 'Unassigned'}
+                          </span>
+                        </div>
+                        <span className="shrink-0 text-xs text-gray-500 dark:text-gray-400 tabular-nums">
+                          {task.dueDate
+                            ? new Date(task.dueDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+                            : 'No due date'}
+                        </span>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+
+                {meta && meta.totalPages > 0 ? (
+                  <div className="border-t border-gray-100 px-4 py-3 dark:border-gray-700/60 lg:px-5">
+                    <Pagination
+                      currentPage={meta.page}
+                      totalPages={meta.totalPages}
+                      total={meta.total}
+                      onPageChange={setPage}
+                    />
+                  </div>
+                ) : null}
+              </>
+            )}
+          </div>
+        )}
 
         <Modal
           isOpen={openCreate}

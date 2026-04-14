@@ -68,7 +68,7 @@
   }
 
   .container-max {
-    @apply max-w-7xl mx-auto;
+    @apply max-w-screen-2xl mx-auto;
   }
 
   .glass-card {
@@ -146,6 +146,12 @@
   .gpu {
     transform: translateZ(0);
     backface-visibility: hidden;
+  }
+
+  @media (min-width: 1024px) {
+    .max-w-7xl {
+      max-width: 96rem;
+    }
   }
 }
 

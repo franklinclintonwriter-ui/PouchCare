@@ -28,7 +28,7 @@ function AppLayout() {
           <NotificationBridge />
         </div>
 
-        <main className="px-4 pb-[calc(env(safe-area-inset-bottom)+4.25rem)] pt-4 print:px-4 print:pb-6 print:pt-2 lg:px-6 lg:pb-6 lg:pt-5">
+        <main className="px-4 pb-[calc(env(safe-area-inset-bottom)+4.25rem)] pt-4 print:px-4 print:pb-6 print:pt-2 lg:px-6 lg:pb-6 lg:pt-5 2xl:px-8">
           <div className="content-shell space-y-4 lg:space-y-6">
             <Outlet />
           </div>

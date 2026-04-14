@@ -90,8 +90,17 @@
   /* Responsive content shell used by layouts */
   .content-shell {
     width: 100%;
-    max-width: 1480px;
+    max-width: 100%;
     margin: 0 auto;
+  }
+
+  @media (min-width: 1024px) {
+    .content-shell .max-w-4xl,
+    .content-shell .max-w-5xl,
+    .content-shell .max-w-6xl,
+    .content-shell .max-w-7xl {
+      max-width: 100% !important;
+    }
   }
 
   /* Subtle edge fade for horizontal scrolling areas (tables, chip rows) */

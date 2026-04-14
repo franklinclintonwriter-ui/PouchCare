@@ -83,7 +83,7 @@ function DataTable<T>({
   return (
     <div className="w-full">
       {/* Desktop / tablet table */}
-      <div className="edge-fade hidden max-h-[72vh] overflow-auto rounded-xl border border-gray-200/80 bg-white shadow-soft dark:border-gray-700/60 dark:bg-gray-800/80 sm:block">
+      <div className="edge-fade hidden max-h-[calc(100dvh-var(--header-height)-7rem)] overflow-auto rounded-xl border border-gray-200/80 bg-white shadow-soft dark:border-gray-700/60 dark:bg-gray-800/80 sm:block">
         <table className="min-w-[760px] w-full text-sm">
           <thead>
             <tr className="border-b border-gray-100 bg-gray-50/95 backdrop-blur-sm dark:border-gray-700/60 dark:bg-gray-800/90">

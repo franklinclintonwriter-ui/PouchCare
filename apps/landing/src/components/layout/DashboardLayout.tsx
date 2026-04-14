@@ -43,7 +43,7 @@ export function DashboardLayout() {
           className={cn(
             "px-3 pt-3 sm:px-4 sm:pt-4",
             "pb-[calc(env(safe-area-inset-bottom)+4.25rem)] lg:pb-6",
-            "lg:px-6 lg:pt-5",
+            "lg:px-6 lg:pt-5 2xl:px-8",
           )}
         >
           <motion.div
@@ -55,7 +55,7 @@ export function DashboardLayout() {
             }
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.28, ease: pageEase }}
-            className="mx-auto max-w-6xl space-y-4 sm:space-y-5 lg:space-y-6"
+            className="w-full max-w-none space-y-4 sm:space-y-5 lg:space-y-6"
           >
             <Outlet />
           </motion.div>
