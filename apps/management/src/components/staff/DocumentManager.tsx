@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo } from "react";
 import {
   FileText,
   Image,
@@ -22,16 +22,16 @@ import {
   MoreHorizontal,
   Calendar,
   ExternalLink,
-} from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
-import { Modal } from '@/components/ui/Modal';
-import { Input } from '@/components/ui/Input';
-import { Select } from '@/components/ui/Select';
-import { Textarea } from '@/components/ui/Textarea';
-import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { Skeleton } from '@/components/ui/Skeleton';
+} from "lucide-react";
+import { Card, CardContent } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
+import { Modal } from "@/components/ui/Modal";
+import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
+import { Textarea } from "@/components/ui/Textarea";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { Skeleton } from "@/components/ui/Skeleton";
 import {
   useStaffDocuments,
   useUploadDocument,
@@ -42,10 +42,10 @@ import {
   formatFileSize,
   type StaffDocument,
   type DocumentCategory,
-} from '@/api/documents';
-import { usePermission } from '@/hooks/usePermission';
-import { cn } from '@/utils/cn';
-import { toast } from 'sonner';
+} from "@/api/documents";
+import { usePermission } from "@/hooks/usePermission";
+import { cn } from "@/utils/cn";
+import { toast } from "sonner";
 
 interface DocumentManagerProps {
   staffId: string;
@@ -61,28 +61,58 @@ const CATEGORY_ICONS: Record<DocumentCategory, typeof CreditCard> = {
   other: FileQuestion,
 };
 
-const CATEGORY_COLORS: Record<DocumentCategory, { bg: string; text: string; light: string }> = {
-  identity: { bg: 'bg-blue-500', text: 'text-blue-600', light: 'bg-blue-50 dark:bg-blue-900/20' },
-  education: { bg: 'bg-purple-500', text: 'text-purple-600', light: 'bg-purple-50 dark:bg-purple-900/20' },
-  employment: { bg: 'bg-green-500', text: 'text-green-600', light: 'bg-green-50 dark:bg-green-900/20' },
-  medical: { bg: 'bg-red-500', text: 'text-red-600', light: 'bg-red-50 dark:bg-red-900/20' },
-  other: { bg: 'bg-gray-500', text: 'text-gray-600', light: 'bg-gray-50 dark:bg-gray-800' },
+const CATEGORY_COLORS: Record<
+  DocumentCategory,
+  { bg: string; text: string; light: string }
+> = {
+  identity: {
+    bg: "bg-blue-500",
+    text: "text-blue-600",
+    light: "bg-blue-50 dark:bg-blue-900/20",
+  },
+  education: {
+    bg: "bg-purple-500",
+    text: "text-purple-600",
+    light: "bg-purple-50 dark:bg-purple-900/20",
+  },
+  employment: {
+    bg: "bg-green-500",
+    text: "text-green-600",
+    light: "bg-green-50 dark:bg-green-900/20",
+  },
+  medical: {
+    bg: "bg-red-500",
+    text: "text-red-600",
+    light: "bg-red-50 dark:bg-red-900/20",
+  },
+  other: {
+    bg: "bg-gray-500",
+    text: "text-gray-600",
+    light: "bg-gray-50 dark:bg-gray-800",
+  },
 };
 
 function getFileIcon(mimeType: string) {
-  if (mimeType === 'application/pdf') return FileText;
-  if (mimeType.startsWith('image/')) return Image;
-  if (mimeType.includes('word')) return FileText;
+  if (mimeType === "application/pdf") return FileText;
+  if (mimeType.startsWith("image/")) return Image;
+  if (mimeType.includes("word")) return FileText;
   return File;
 }
 
-export function DocumentManager({ staffId, staffName, isOwnProfile }: DocumentManagerProps) {
+export function DocumentManager({
+  staffId,
+  staffName,
+  isOwnProfile,
+}: DocumentManagerProps) {
   const perm = usePermission();
-  const [selectedCategory, setSelectedCategory] = useState<DocumentCategory | null>(null);
+  const [selectedCategory, setSelectedCategory] =
+    useState<DocumentCategory | null>(null);
   const [showUpload, setShowUpload] = useState(false);
   const [deleteDoc, setDeleteDoc] = useState<StaffDocument | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [showMobileActions, setShowMobileActions] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showMobileActions, setShowMobileActions] = useState<string | null>(
+    null,
+  );
 
   const canManage = perm.isCEO || perm.isManager || !!isOwnProfile;
   const canVerify = perm.isCEO || perm.isManager;
@@ -101,14 +131,16 @@ export function DocumentManager({ staffId, staffName, isOwnProfile }: DocumentMa
   }, [documents]);
 
   const filteredDocs = useMemo(() => {
-    let docs = selectedCategory ? documentsByCategory[selectedCategory] || [] : documents;
+    let docs = selectedCategory
+      ? documentsByCategory[selectedCategory] || []
+      : documents;
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       docs = docs.filter(
         (d) =>
           d.title.toLowerCase().includes(q) ||
           d.documentType.toLowerCase().includes(q) ||
-          d.category.toLowerCase().includes(q)
+          d.category.toLowerCase().includes(q),
       );
     }
     return docs;
@@ -118,10 +150,10 @@ export function DocumentManager({ staffId, staffName, isOwnProfile }: DocumentMa
     if (!deleteDoc) return;
     try {
       await deleteDocument.mutateAsync({ staffId, docId: deleteDoc.id });
-      toast.success('Document deleted');
+      toast.success("Document deleted");
       setDeleteDoc(null);
     } catch {
-      toast.error('Failed to delete document');
+      toast.error("Failed to delete document");
     }
   };
 
@@ -134,10 +166,13 @@ export function DocumentManager({ staffId, staffName, isOwnProfile }: DocumentMa
 
   const totalDocs = documents.length;
 
-  const openDocumentViewer = useCallback((doc: StaffDocument) => {
-    const path = `/staff/${staffId}/documents/${doc.id}`;
-    window.open(path, '_blank', 'noopener,noreferrer');
-  }, [staffId]);
+  const openDocumentViewer = useCallback(
+    (doc: StaffDocument) => {
+      const path = `/staff/${staffId}/documents/${doc.id}`;
+      window.open(path, "_blank", "noopener,noreferrer");
+    },
+    [staffId],
+  );
 
   if (isLoading) {
     return (
@@ -168,19 +203,19 @@ export function DocumentManager({ staffId, staffName, isOwnProfile }: DocumentMa
               key={cat.value}
               onClick={() => setSelectedCategory(isSelected ? null : cat.value)}
               className={cn(
-                'relative flex min-h-[76px] flex-col items-center justify-center gap-1 rounded-xl border p-3 transition-all',
-                'w-full active:scale-[0.98] touch-manipulation sm:min-h-[84px]',
+                "relative flex min-h-[76px] flex-col items-center justify-center gap-1 rounded-xl border p-3 transition-all",
+                "w-full active:scale-[0.98] touch-manipulation sm:min-h-[84px]",
                 isSelected
-                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 ring-2 ring-blue-500/50'
-                  : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600'
+                  ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 ring-2 ring-blue-500/50"
+                  : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600",
               )}
             >
-              <div className={cn('rounded-lg p-1.5 sm:p-2', cat.colors.bg)}>
+              <div className={cn("rounded-lg p-1.5 sm:p-2", cat.colors.bg)}>
                 <cat.Icon className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
               </div>
               <div className="text-center">
                 <p className="text-[10px] sm:text-xs font-medium text-gray-500 dark:text-gray-400 leading-tight">
-                  {cat.label.split(' ')[0]}
+                  {cat.label.split(" ")[0]}
                 </p>
                 <p className="text-base sm:text-lg font-bold text-gray-900 dark:text-gray-100 leading-tight">
                   {cat.count}
@@ -207,18 +242,18 @@ export function DocumentManager({ staffId, staffName, isOwnProfile }: DocumentMa
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className={cn(
-              'w-full pl-10 pr-10 py-3 sm:py-2.5 text-base sm:text-sm rounded-xl border',
-              'border-gray-200 dark:border-gray-700',
-              'bg-white dark:bg-gray-800',
-              'text-gray-900 dark:text-gray-100',
-              'placeholder:text-gray-400',
-              'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent',
-              'transition-shadow'
+              "w-full pl-10 pr-10 py-3 sm:py-2.5 text-base sm:text-sm rounded-xl border",
+              "border-gray-200 dark:border-gray-700",
+              "bg-white dark:bg-gray-800",
+              "text-gray-900 dark:text-gray-100",
+              "placeholder:text-gray-400",
+              "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent",
+              "transition-shadow",
             )}
           />
           {searchQuery && (
             <button
-              onClick={() => setSearchQuery('')}
+              onClick={() => setSearchQuery("")}
               className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg active:scale-95"
             >
               <X className="h-4 w-4 text-gray-400" />
@@ -233,17 +268,22 @@ export function DocumentManager({ staffId, staffName, isOwnProfile }: DocumentMa
               <button
                 onClick={() => setSelectedCategory(null)}
                 className={cn(
-                  'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors',
+                  "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors",
                   CATEGORY_COLORS[selectedCategory].light,
-                  CATEGORY_COLORS[selectedCategory].text
+                  CATEGORY_COLORS[selectedCategory].text,
                 )}
               >
-                {DOCUMENT_CATEGORIES.find((c) => c.value === selectedCategory)?.label}
+                {
+                  DOCUMENT_CATEGORIES.find((c) => c.value === selectedCategory)
+                    ?.label
+                }
                 <X className="h-3 w-3" />
               </button>
             ) : (
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                {totalDocs === 0 ? 'No documents' : `${totalDocs} document${totalDocs !== 1 ? 's' : ''}`}
+                {totalDocs === 0
+                  ? "No documents"
+                  : `${totalDocs} document${totalDocs !== 1 ? "s" : ""}`}
               </p>
             )}
           </div>
@@ -270,18 +310,21 @@ export function DocumentManager({ staffId, staffName, isOwnProfile }: DocumentMa
               </div>
               <h3 className="font-semibold text-base sm:text-lg text-gray-900 dark:text-gray-100 mb-1">
                 {searchQuery
-                  ? 'No documents found'
+                  ? "No documents found"
                   : selectedCategory
-                  ? `No ${DOCUMENT_CATEGORIES.find((c) => c.value === selectedCategory)?.label.toLowerCase()}`
-                  : 'No documents yet'}
+                    ? `No ${DOCUMENT_CATEGORIES.find((c) => c.value === selectedCategory)?.label.toLowerCase()}`
+                    : "No documents yet"}
               </h3>
               <p className="text-sm text-gray-500 dark:text-gray-400 mb-5 max-w-[280px]">
                 {searchQuery
-                  ? 'Try a different search term'
-                  : 'Upload identity documents, educational certificates, CV and more'}
+                  ? "Try a different search term"
+                  : "Upload identity documents, educational certificates, CV and more"}
               </p>
               {canManage && !searchQuery && (
-                <Button onClick={() => setShowUpload(true)} className="h-11 px-6 rounded-xl">
+                <Button
+                  onClick={() => setShowUpload(true)}
+                  className="h-11 px-6 rounded-xl"
+                >
                   <Upload className="h-4 w-4 mr-2" />
                   Upload Document
                 </Button>
@@ -302,7 +345,9 @@ export function DocumentManager({ staffId, staffName, isOwnProfile }: DocumentMa
               staffId={staffId}
               showMobileActions={showMobileActions === doc.id}
               onToggleMobileActions={() =>
-                setShowMobileActions(showMobileActions === doc.id ? null : doc.id)
+                setShowMobileActions(
+                  showMobileActions === doc.id ? null : doc.id,
+                )
               }
             />
           ))}
@@ -318,7 +363,11 @@ export function DocumentManager({ staffId, staffName, isOwnProfile }: DocumentMa
 
       {/* Upload Modal */}
       {showUpload && (
-        <UploadModal staffId={staffId} staffName={staffName} onClose={() => setShowUpload(false)} />
+        <UploadModal
+          staffId={staffId}
+          staffName={staffName}
+          onClose={() => setShowUpload(false)}
+        />
       )}
 
       {/* Delete Confirmation */}
@@ -359,8 +408,10 @@ function DocumentCard({
 }: DocumentCardProps) {
   const Icon = getFileIcon(doc.mimeType);
   const verifyDocument = useVerifyDocument();
-  const CategoryIcon = CATEGORY_ICONS[doc.category as DocumentCategory] || FileQuestion;
-  const categoryColors = CATEGORY_COLORS[doc.category as DocumentCategory] || CATEGORY_COLORS.other;
+  const CategoryIcon =
+    CATEGORY_ICONS[doc.category as DocumentCategory] || FileQuestion;
+  const categoryColors =
+    CATEGORY_COLORS[doc.category as DocumentCategory] || CATEGORY_COLORS.other;
 
   const isExpired = doc.expiryDate && new Date(doc.expiryDate) < new Date();
   const isExpiringSoon =
@@ -371,9 +422,9 @@ function DocumentCard({
   const handleVerify = async () => {
     try {
       await verifyDocument.mutateAsync({ staffId, docId: doc.id });
-      toast.success('Document verified');
+      toast.success("Document verified");
     } catch {
-      toast.error('Failed to verify document');
+      toast.error("Failed to verify document");
     }
   };
 
@@ -397,11 +448,11 @@ function DocumentCard({
   return (
     <div
       className={cn(
-        'group relative rounded-xl border transition-all overflow-hidden',
-        'bg-white dark:bg-gray-800',
-        'border-gray-200 dark:border-gray-700',
-        'hover:shadow-lg hover:border-gray-300 dark:hover:border-gray-600',
-        'active:scale-[0.99] touch-manipulation'
+        "group relative rounded-xl border transition-all overflow-hidden",
+        "bg-white dark:bg-gray-800",
+        "border-gray-200 dark:border-gray-700",
+        "hover:shadow-lg hover:border-gray-300 dark:hover:border-gray-600",
+        "active:scale-[0.99] touch-manipulation",
       )}
     >
       <div className="flex items-stretch">
@@ -410,31 +461,37 @@ function DocumentCard({
           type="button"
           onClick={onOpenViewer}
           className={cn(
-            'relative flex-shrink-0 w-16 sm:w-20 flex items-center justify-center overflow-hidden',
-            'border-r border-gray-100 dark:border-gray-700',
-            doc.mimeType.startsWith('image/')
-              ? 'bg-gray-100 dark:bg-gray-700'
-              : doc.mimeType === 'application/pdf'
-              ? 'bg-red-50 dark:bg-red-900/20'
-              : 'bg-blue-50 dark:bg-blue-900/20'
+            "relative flex-shrink-0 w-16 sm:w-20 flex items-center justify-center overflow-hidden",
+            "border-r border-gray-100 dark:border-gray-700",
+            doc.mimeType.startsWith("image/")
+              ? "bg-gray-100 dark:bg-gray-700"
+              : doc.mimeType === "application/pdf"
+                ? "bg-red-50 dark:bg-red-900/20"
+                : "bg-blue-50 dark:bg-blue-900/20",
           )}
         >
-          {doc.mimeType.startsWith('image/') ? (
-            <img src={doc.fileUrl} alt={doc.title} className="w-full h-full object-cover min-h-[80px]" />
+          {doc.mimeType.startsWith("image/") ? (
+            <img
+              src={doc.fileUrl}
+              alt={doc.title}
+              className="w-full h-full object-cover min-h-[80px]"
+            />
           ) : (
             <Icon
               className={cn(
-                'h-6 w-6 sm:h-8 sm:w-8',
-                doc.mimeType === 'application/pdf' ? 'text-red-500' : 'text-blue-500'
+                "h-6 w-6 sm:h-8 sm:w-8",
+                doc.mimeType === "application/pdf"
+                  ? "text-red-500"
+                  : "text-blue-500",
               )}
             />
           )}
           {/* Category badge on thumbnail */}
           <div
             className={cn(
-              'absolute bottom-1 right-1 rounded-md p-1',
+              "absolute bottom-1 right-1 rounded-md p-1",
               categoryColors.bg,
-              'shadow-sm'
+              "shadow-sm",
             )}
           >
             <CategoryIcon className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-white" />
@@ -450,7 +507,7 @@ function DocumentCard({
               </h4>
               <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-0.5">
                 {DOCUMENT_TYPES[doc.category as DocumentCategory]?.find(
-                  (t) => t.value === doc.documentType
+                  (t) => t.value === doc.documentType,
                 )?.label || doc.documentType}
               </p>
             </div>
@@ -462,22 +519,27 @@ function DocumentCard({
             <span>{formatFileSize(doc.fileSize)}</span>
             <span className="hidden sm:inline">·</span>
             <span className="hidden sm:inline">
-              {new Date(doc.createdAt).toLocaleDateString('en-GB', {
-                day: 'numeric',
-                month: 'short',
-                year: 'numeric',
+              {new Date(doc.createdAt).toLocaleDateString("en-GB", {
+                day: "numeric",
+                month: "short",
+                year: "numeric",
               })}
             </span>
             {doc.expiryDate && (
               <>
                 <span className="hidden sm:inline">·</span>
-                <span className={cn('hidden sm:flex items-center gap-1', isExpired && 'text-red-500')}>
+                <span
+                  className={cn(
+                    "hidden sm:flex items-center gap-1",
+                    isExpired && "text-red-500",
+                  )}
+                >
                   <Calendar className="h-3 w-3" />
-                  {isExpired ? 'Expired' : 'Expires'}{' '}
-                  {new Date(doc.expiryDate).toLocaleDateString('en-GB', {
-                    day: 'numeric',
-                    month: 'short',
-                    year: 'numeric',
+                  {isExpired ? "Expired" : "Expires"}{" "}
+                  {new Date(doc.expiryDate).toLocaleDateString("en-GB", {
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric",
                   })}
                 </span>
               </>
@@ -486,14 +548,21 @@ function DocumentCard({
 
           {/* Desktop Actions */}
           <div className="hidden sm:flex items-center gap-1.5 mt-3 pt-3 border-t border-gray-100 dark:border-gray-700/50">
-            <Button variant="ghost" size="sm" onClick={onOpenViewer} className="h-8 text-xs">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onOpenViewer}
+              className="h-8 text-xs"
+            >
               <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
               Open
             </Button>
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => window.open(doc.fileUrl, '_blank')}
+              onClick={() =>
+                window.open(doc.fileUrl, "_blank", "noopener,noreferrer")
+              }
               className="h-8 text-xs"
             >
               <Download className="h-3.5 w-3.5 mr-1.5" />
@@ -516,6 +585,7 @@ function DocumentCard({
                 variant="ghost"
                 size="sm"
                 onClick={onDelete}
+                aria-label="Delete document"
                 className="h-8 text-xs text-red-500 hover:text-red-600 ml-auto"
               >
                 <Trash2 className="h-3.5 w-3.5" />
@@ -528,6 +598,7 @@ function DocumentCard({
         <div className="sm:hidden flex items-center pr-2">
           <button
             onClick={onToggleMobileActions}
+            aria-label="Document actions"
             className="p-3 -mr-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 active:bg-gray-100 dark:active:bg-gray-700 rounded-lg"
           >
             <MoreHorizontal className="h-5 w-5" />
@@ -552,7 +623,9 @@ function DocumentCard({
             </button>
             <button
               type="button"
-              onClick={() => window.open(doc.fileUrl, '_blank', 'noopener,noreferrer')}
+              onClick={() =>
+                window.open(doc.fileUrl, "_blank", "noopener,noreferrer")
+              }
               className="flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-700 active:scale-95 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
             >
               <Download className="h-4 w-4" />
@@ -599,15 +672,18 @@ interface UploadModalProps {
 function UploadModal({ staffId, staffName, onClose }: UploadModalProps) {
   const uploadDocument = useUploadDocument();
   const [file, setFile] = useState<File | null>(null);
-  const [category, setCategory] = useState<DocumentCategory>('identity');
-  const [documentType, setDocumentType] = useState('');
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [issueDate, setIssueDate] = useState('');
-  const [expiryDate, setExpiryDate] = useState('');
+  const [category, setCategory] = useState<DocumentCategory>("identity");
+  const [documentType, setDocumentType] = useState("");
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [issueDate, setIssueDate] = useState("");
+  const [expiryDate, setExpiryDate] = useState("");
   const [dragActive, setDragActive] = useState(false);
 
-  const documentTypeOptions = useMemo(() => DOCUMENT_TYPES[category] || [], [category]);
+  const documentTypeOptions = useMemo(
+    () => DOCUMENT_TYPES[category] || [],
+    [category],
+  );
 
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
@@ -617,11 +693,11 @@ function UploadModal({ staffId, staffName, onClose }: UploadModalProps) {
       if (droppedFile) {
         setFile(droppedFile);
         if (!title) {
-          setTitle(droppedFile.name.replace(/\.[^/.]+$/, ''));
+          setTitle(droppedFile.name.replace(/\.[^/.]+$/, ""));
         }
       }
     },
-    [title]
+    [title],
   );
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -629,14 +705,14 @@ function UploadModal({ staffId, staffName, onClose }: UploadModalProps) {
     if (selectedFile) {
       setFile(selectedFile);
       if (!title) {
-        setTitle(selectedFile.name.replace(/\.[^/.]+$/, ''));
+        setTitle(selectedFile.name.replace(/\.[^/.]+$/, ""));
       }
     }
   };
 
   const handleUpload = async () => {
     if (!file || !title || !documentType) {
-      toast.error('Please fill in all required fields');
+      toast.error("Please fill in all required fields");
       return;
     }
 
@@ -651,10 +727,12 @@ function UploadModal({ staffId, staffName, onClose }: UploadModalProps) {
         issueDate: issueDate ? new Date(issueDate).toISOString() : undefined,
         expiryDate: expiryDate ? new Date(expiryDate).toISOString() : undefined,
       });
-      toast.success('Document uploaded successfully');
+      toast.success("Document uploaded successfully");
       onClose();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to upload document');
+      toast.error(
+        err instanceof Error ? err.message : "Failed to upload document",
+      );
     }
   };
 
@@ -667,7 +745,11 @@ function UploadModal({ staffId, staffName, onClose }: UploadModalProps) {
       size="lg"
       footer={
         <div className="flex gap-2 w-full">
-          <Button variant="ghost" onClick={onClose} className="flex-1 h-12 sm:h-10 sm:flex-none rounded-xl sm:rounded-lg">
+          <Button
+            variant="ghost"
+            onClick={onClose}
+            className="flex-1 h-12 sm:h-10 sm:flex-none rounded-xl sm:rounded-lg"
+          >
             Cancel
           </Button>
           <Button
@@ -692,17 +774,21 @@ function UploadModal({ staffId, staffName, onClose }: UploadModalProps) {
           onDragLeave={() => setDragActive(false)}
           onDrop={handleDrop}
           className={cn(
-            'relative border-2 border-dashed rounded-2xl p-5 sm:p-6 text-center transition-all',
+            "relative border-2 border-dashed rounded-2xl p-5 sm:p-6 text-center transition-all",
             dragActive
-              ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 scale-[1.02]'
-              : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+              ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 scale-[1.02]"
+              : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600",
           )}
         >
           {file ? (
             <div className="flex items-center gap-3">
               <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center overflow-hidden flex-shrink-0">
-                {file.type.startsWith('image/') ? (
-                  <img src={URL.createObjectURL(file)} alt="Preview" className="w-full h-full object-cover" />
+                {file.type.startsWith("image/") ? (
+                  <img
+                    src={URL.createObjectURL(file)}
+                    alt="Preview"
+                    className="w-full h-full object-cover"
+                  />
                 ) : (
                   <FileText className="h-7 w-7 sm:h-8 sm:w-8 text-gray-400" />
                 )}
@@ -711,10 +797,13 @@ function UploadModal({ staffId, staffName, onClose }: UploadModalProps) {
                 <p className="font-medium text-sm sm:text-base text-gray-900 dark:text-gray-100 truncate">
                   {file.name}
                 </p>
-                <p className="text-xs sm:text-sm text-gray-500 mt-0.5">{formatFileSize(file.size)}</p>
+                <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
+                  {formatFileSize(file.size)}
+                </p>
               </div>
               <button
                 onClick={() => setFile(null)}
+                aria-label="Remove selected file"
                 className="p-2.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg flex-shrink-0 active:scale-95"
               >
                 <X className="h-5 w-5" />
@@ -726,10 +815,14 @@ function UploadModal({ staffId, staffName, onClose }: UploadModalProps) {
                 <Upload className="h-6 w-6 sm:h-7 sm:w-7 text-gray-400" />
               </div>
               <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mb-1">
-                <span className="text-blue-600 font-semibold">Tap to select</span>
+                <span className="text-blue-600 font-semibold">
+                  Tap to select
+                </span>
                 <span className="hidden sm:inline"> or drag and drop</span>
               </p>
-              <p className="text-xs text-gray-400">PDF, Images, Word documents · Max 10MB</p>
+              <p className="text-xs text-gray-400">
+                PDF, Images, Word documents · Max 10MB
+              </p>
               <input
                 type="file"
                 className="hidden"
@@ -756,21 +849,21 @@ function UploadModal({ staffId, staffName, onClose }: UploadModalProps) {
                   type="button"
                   onClick={() => {
                     setCategory(cat.value);
-                    setDocumentType('');
+                    setDocumentType("");
                   }}
                   className={cn(
-                    'flex flex-col items-center gap-1.5 p-3 rounded-xl border text-center transition-all flex-shrink-0',
-                    'min-w-[72px] active:scale-95',
+                    "flex flex-col items-center gap-1.5 p-3 rounded-xl border text-center transition-all flex-shrink-0",
+                    "min-w-[72px] active:scale-95",
                     isSelected
-                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 ring-2 ring-blue-500/50'
-                      : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 bg-white dark:bg-gray-800'
+                      ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20 ring-2 ring-blue-500/50"
+                      : "border-gray-200 dark:border-gray-700 hover:border-gray-300 bg-white dark:bg-gray-800",
                   )}
                 >
-                  <div className={cn('rounded-lg p-2', colors.bg)}>
+                  <div className={cn("rounded-lg p-2", colors.bg)}>
                     <Icon className="h-4 w-4 text-white" />
                   </div>
                   <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                    {cat.label.split(' ')[0]}
+                    {cat.label.split(" ")[0]}
                   </span>
                 </button>
               );
@@ -783,7 +876,10 @@ function UploadModal({ staffId, staffName, onClose }: UploadModalProps) {
           label="Document Type"
           value={documentType}
           onChange={(e) => setDocumentType(e.target.value)}
-          options={[{ label: 'Select type...', value: '' }, ...documentTypeOptions]}
+          options={[
+            { label: "Select type...", value: "" },
+            ...documentTypeOptions,
+          ]}
         />
 
         {/* Title */}

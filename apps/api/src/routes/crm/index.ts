@@ -52,6 +52,20 @@ const updateLeadSchema = z.object({
   lastContactDate: z.string().optional(),
 });
 
+const dateInputSchema = z
+  .string()
+  .trim()
+  .refine(
+    (v) => /^\d{4}-\d{2}-\d{2}$/.test(v) || Number.isFinite(Date.parse(v)),
+    "Invalid date",
+  );
+
+function parseDateInput(value: string) {
+  const v = value.trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return new Date(`${v}T12:00:00Z`);
+  return new Date(v);
+}
+
 const createOrderSchema = z.object({
   clientName: z.string().min(1).max(200),
   service: z.string().min(1).max(200).optional(),
@@ -62,7 +76,7 @@ const createOrderSchema = z.object({
   notes: z.string().max(20000).optional(),
   branch: z.string().max(120).optional(),
   assignedTo: z.string().uuid().optional(),
-  deadline: z.string().optional(),
+  deadline: dateInputSchema.optional(),
   deliveryLink: z.string().url().optional(),
 });
 
@@ -76,7 +90,7 @@ const updateOrderSchema = z.object({
   notes: z.string().max(20000).optional(),
   branch: z.string().max(120).optional(),
   assignedTo: z.string().uuid().optional(),
-  deadline: z.string().optional(),
+  deadline: dateInputSchema.optional(),
   deliveryLink: z.string().url().optional(),
 });
 
@@ -364,7 +378,9 @@ router.post(
       let branch: string | undefined = body.branch?.trim() || undefined;
       let assignedTo: string | undefined = body.assignedTo;
       let status: string | undefined = body.status?.trim() || undefined;
-      const deadline = body.deadline ? new Date(body.deadline) : undefined;
+      const deadline = body.deadline
+        ? parseDateInput(body.deadline)
+        : undefined;
       const deliveryLink = body.deliveryLink?.trim() || undefined;
       if (req.user!.role === "BRANCH_MANAGER") {
         const me = await prisma.staffMember.findUnique({
@@ -465,7 +481,7 @@ router.put(
       }
 
       if (deadline !== undefined)
-        data.deadline = deadline ? new Date(deadline) : null;
+        data.deadline = deadline ? parseDateInput(deadline) : null;
       if (deliveryLink !== undefined) data.deliveryLink = deliveryLink;
 
       const order = await prisma.salesOrder.update({

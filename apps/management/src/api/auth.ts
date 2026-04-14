@@ -1,7 +1,7 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import api from './client';
-import { useAuthStore } from '@/store/authStore';
-import { normalizeRole } from '@/utils/permissions';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import api from "./client";
+import { useAuthStore } from "@/store/authStore";
+import { normalizeRole } from "@/utils/permissions";
 import type {
   LoginRequest,
   LoginResponse,
@@ -11,13 +11,15 @@ import type {
   ResetPasswordRequest,
   StaffUser,
   PortalUser,
-} from '@/types/auth';
+} from "@/types/auth";
 
-export function normalizeStaffUser(user: StaffUser & { role?: StaffUser['systemRole'] }): StaffUser {
+export function normalizeStaffUser(
+  user: StaffUser & { role?: StaffUser["systemRole"] },
+): StaffUser {
   const normalizedRole = normalizeRole(user.systemRole ?? user.role);
   return {
     ...user,
-    systemRole: (normalizedRole ?? 'STAFF') as StaffUser['systemRole'],
+    systemRole: (normalizedRole ?? "STAFF") as StaffUser["systemRole"],
   };
 }
 
@@ -28,12 +30,19 @@ export function useStaffLogin() {
 
   return useMutation({
     mutationFn: async (data: LoginRequest) => {
-      const res = await api.post<LoginResponse>('/auth/login', data);
+      const res = await api.post<LoginResponse>("/auth/login", data);
       return res.data;
     },
     onSuccess: (data) => {
       if (data.access_token && data.user) {
-        setAuth(normalizeStaffUser(data.user as StaffUser & { role?: StaffUser['systemRole'] }), data.access_token, data.refresh_token, 'staff');
+        setAuth(
+          normalizeStaffUser(
+            data.user as StaffUser & { role?: StaffUser["systemRole"] },
+          ),
+          data.access_token,
+          data.refresh_token,
+          "staff",
+        );
       }
     },
   });
@@ -43,14 +52,16 @@ export function useStaffMe() {
   const { isAuthenticated, userType, setLoading } = useAuthStore();
 
   return useQuery({
-    queryKey: ['auth', 'me'],
+    queryKey: ["auth", "me"],
     queryFn: async () => {
-      const res = await api.get<StaffUser & { role?: StaffUser['systemRole'] }>('/staff/me');
+      const res = await api.get<StaffUser & { role?: StaffUser["systemRole"] }>(
+        "/staff/me",
+      );
       return normalizeStaffUser(res.data);
     },
-    enabled: isAuthenticated && userType === 'staff',
+    enabled: isAuthenticated && userType === "staff",
     retry: false,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 60 * 1000,
     meta: { onSettled: () => setLoading(false) },
   });
 }
@@ -65,11 +76,11 @@ export function useUpdateStaffProfile() {
       country?: string;
       portfolioUrl?: string;
     }) => {
-      const res = await api.put('/staff/me', body);
+      const res = await api.put("/staff/me", body);
       return res.data;
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['auth', 'me'] });
+      qc.invalidateQueries({ queryKey: ["auth", "me"] });
     },
   });
 }
@@ -79,18 +90,22 @@ export function useUploadStaffAvatar() {
   return useMutation({
     mutationFn: async (file: File) => {
       const form = new FormData();
-      form.append('file', file);
-      const { data } = await api.post<{ id: string; avatarUrl: string | null }>('/staff/me/avatar', form, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      form.append("file", file);
+      const { data } = await api.post<{ id: string; avatarUrl: string | null }>(
+        "/staff/me/avatar",
+        form,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        },
+      );
       return data;
     },
     onSuccess: (data) => {
       if (data?.avatarUrl) {
         useAuthStore.getState().updateUser({ avatarUrl: data.avatarUrl });
       }
-      qc.invalidateQueries({ queryKey: ['auth', 'me'] });
-      qc.invalidateQueries({ queryKey: ['staff-list'] });
+      qc.invalidateQueries({ queryKey: ["auth", "me"] });
+      qc.invalidateQueries({ queryKey: ["staff-list"] });
     },
   });
 }
@@ -99,13 +114,15 @@ export function useDeleteStaffAvatar() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async () => {
-      const { data } = await api.delete<{ avatarUrl: null }>('/staff/me/avatar');
+      const { data } = await api.delete<{ avatarUrl: null }>(
+        "/staff/me/avatar",
+      );
       return data;
     },
     onSuccess: () => {
       useAuthStore.getState().updateUser({ avatarUrl: undefined });
-      qc.invalidateQueries({ queryKey: ['auth', 'me'] });
-      qc.invalidateQueries({ queryKey: ['staff-list'] });
+      qc.invalidateQueries({ queryKey: ["auth", "me"] });
+      qc.invalidateQueries({ queryKey: ["staff-list"] });
     },
   });
 }
@@ -115,7 +132,7 @@ export function useStaffLogout() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: () => api.post('/auth/logout'),
+    mutationFn: () => api.post("/auth/logout"),
     onSettled: () => {
       logout();
       queryClient.clear();
@@ -127,11 +144,14 @@ export function useSetup2FA() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (password: string) => {
-      const res = await api.post<{ secret: string; otpauthUrl: string }>('/auth/2fa/setup', { password });
+      const res = await api.post<{ secret: string; otpauthUrl: string }>(
+        "/auth/2fa/setup",
+        { password },
+      );
       return res.data;
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['auth', 'me'] });
+      qc.invalidateQueries({ queryKey: ["auth", "me"] });
     },
   });
 }
@@ -140,19 +160,24 @@ export function useVerify2FA() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (code: string) => {
-      const res = await api.post<{ message: string }>('/auth/2fa/verify', { code });
+      const res = await api.post<{ message: string }>("/auth/2fa/verify", {
+        code,
+      });
       return res.data;
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['auth', 'me'] });
+      qc.invalidateQueries({ queryKey: ["auth", "me"] });
     },
   });
 }
 
 export function useChangeStaffPassword() {
   return useMutation({
-    mutationFn: async (payload: { currentPassword: string; newPassword: string }) => {
-      const res = await api.post<{ message: string }>('/auth/change-password', {
+    mutationFn: async (payload: {
+      currentPassword: string;
+      newPassword: string;
+    }) => {
+      const res = await api.post<{ message: string }>("/auth/change-password", {
         current_password: payload.currentPassword,
         new_password: payload.newPassword,
       });
@@ -168,12 +193,12 @@ export function usePortalLogin() {
 
   return useMutation({
     mutationFn: async (data: LoginRequest) => {
-      const res = await api.post<PortalLoginResponse>('/portal/login', data);
+      const res = await api.post<PortalLoginResponse>("/portal/login", data);
       return res.data;
     },
     onSuccess: (data) => {
       if (data.access_token && data.user) {
-        setAuth(data.user, data.access_token, data.refresh_token, 'portal');
+        setAuth(data.user, data.access_token, data.refresh_token, "portal");
       }
     },
   });
@@ -182,7 +207,15 @@ export function usePortalLogin() {
 export function usePortalRegister() {
   return useMutation({
     mutationFn: async (data: RegisterRequest) => {
-      const res = await api.post<{ message: string; member: { id: string; email: string; fullName: string; referralCode: string } }>('/portal/register', data);
+      const res = await api.post<{
+        message: string;
+        member: {
+          id: string;
+          email: string;
+          fullName: string;
+          referralCode: string;
+        };
+      }>("/portal/register", data);
       return res.data;
     },
   });
@@ -192,14 +225,14 @@ export function usePortalMe() {
   const { isAuthenticated, userType, setLoading } = useAuthStore();
 
   return useQuery({
-    queryKey: ['portal', 'me'],
+    queryKey: ["portal", "me"],
     queryFn: async () => {
-      const res = await api.get<PortalUser>('/portal/me');
+      const res = await api.get<PortalUser>("/portal/me");
       return res.data;
     },
-    enabled: isAuthenticated && userType === 'portal',
+    enabled: isAuthenticated && userType === "portal",
     retry: false,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 60 * 1000,
     meta: { onSettled: () => setLoading(false) },
   });
 }
@@ -209,7 +242,7 @@ export function usePortalLogout() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: () => api.post('/portal/logout'),
+    mutationFn: () => api.post("/portal/logout"),
     onSettled: () => {
       logout();
       queryClient.clear();
@@ -220,7 +253,9 @@ export function usePortalLogout() {
 export function useVerifyEmail() {
   return useMutation({
     mutationFn: async (token: string) => {
-      const res = await api.post<{ message: string }>('/portal/verify-email', { token });
+      const res = await api.post<{ message: string }>("/portal/verify-email", {
+        token,
+      });
       return res.data;
     },
   });
@@ -229,7 +264,10 @@ export function useVerifyEmail() {
 export function useResendVerification() {
   return useMutation({
     mutationFn: async (email: string) => {
-      const res = await api.post<{ message: string }>('/portal/resend-verification', { email });
+      const res = await api.post<{ message: string }>(
+        "/portal/resend-verification",
+        { email },
+      );
       return res.data;
     },
   });
@@ -237,11 +275,17 @@ export function useResendVerification() {
 
 export function useChangePortalPassword() {
   return useMutation({
-    mutationFn: async (payload: { currentPassword: string; newPassword: string }) => {
-      const res = await api.post<{ message: string }>('/portal/change-password', {
-        current_password: payload.currentPassword,
-        new_password: payload.newPassword,
-      });
+    mutationFn: async (payload: {
+      currentPassword: string;
+      newPassword: string;
+    }) => {
+      const res = await api.post<{ message: string }>(
+        "/portal/change-password",
+        {
+          current_password: payload.currentPassword,
+          new_password: payload.newPassword,
+        },
+      );
       return res.data;
     },
   });
@@ -251,9 +295,16 @@ export function useChangePortalPassword() {
 
 export function useForgotPassword() {
   return useMutation({
-    mutationFn: async (data: ForgotPasswordRequest & { type: 'staff' | 'portal' }) => {
-      const endpoint = data.type === 'portal' ? '/portal/forgot-password' : '/auth/forgot-password';
-      const res = await api.post<{ message: string }>(endpoint, { email: data.email });
+    mutationFn: async (
+      data: ForgotPasswordRequest & { type: "staff" | "portal" },
+    ) => {
+      const endpoint =
+        data.type === "portal"
+          ? "/portal/forgot-password"
+          : "/auth/forgot-password";
+      const res = await api.post<{ message: string }>(endpoint, {
+        email: data.email,
+      });
       return res.data;
     },
   });
@@ -261,8 +312,13 @@ export function useForgotPassword() {
 
 export function useResetPassword() {
   return useMutation({
-    mutationFn: async (data: ResetPasswordRequest & { type: 'staff' | 'portal' }) => {
-      const endpoint = data.type === 'portal' ? '/portal/reset-password' : '/auth/reset-password';
+    mutationFn: async (
+      data: ResetPasswordRequest & { type: "staff" | "portal" },
+    ) => {
+      const endpoint =
+        data.type === "portal"
+          ? "/portal/reset-password"
+          : "/auth/reset-password";
       const res = await api.post<{ message: string }>(endpoint, {
         token: data.token,
         password: data.password,

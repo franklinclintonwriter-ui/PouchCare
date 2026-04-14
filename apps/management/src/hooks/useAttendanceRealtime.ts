@@ -51,13 +51,15 @@ export function useAttendanceRealtime() {
     const connect = () => {
       if (cancelled) return;
 
-      const url = buildRealtimeWebSocketUrl(accessToken);
+      const url = buildRealtimeWebSocketUrl();
 
       try {
         const ws = new WebSocket(url);
         wsRef.current = ws;
 
         ws.onopen = () => {
+          // Authenticate via first message (token not in URL for security)
+          ws.send(JSON.stringify({ type: "auth", token: accessToken }));
           reconnectAttempt.current = 0;
           warnedMaxAttempts.current = false;
           pingRef.current = setInterval(() => {

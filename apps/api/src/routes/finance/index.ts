@@ -10,22 +10,54 @@ import { ok, created, notFound, serverError } from "@/utils/response";
 const router = Router();
 router.use(authenticate);
 
-const invoiceStatusSchema = z.enum([
-  "UNPAID",
-  "PARTIAL",
-  "PAID",
-  "OVERDUE",
-  "REFUNDED",
-]);
+function normalizeStatus(value: string) {
+  return value.trim().toUpperCase().replace(/\s+/g, "_");
+}
 
-const expenseStatusSchema = z.enum([
-  "WAITING",
-  "SUBMITTED",
-  "APPROVED_MGR",
-  "REJECTED_MGR",
-  "ESCALATED",
-  "VERIFIED",
-]);
+const invoiceStatusSchema = z
+  .string()
+  .transform(normalizeStatus)
+  .transform((v) => {
+    if (v === "DRAFT" || v === "SENT") return "UNPAID";
+    if (v === "CANCELED") return "CANCELLED";
+    if (v === "PENDING") return "UNPAID";
+    return v;
+  })
+  .refine(
+    (v) =>
+      [
+        "UNPAID",
+        "PARTIAL",
+        "PAID",
+        "OVERDUE",
+        "REFUNDED",
+        "CANCELLED",
+      ].includes(v),
+    "Invalid invoice status",
+  );
+
+const expenseStatusSchema = z
+  .string()
+  .transform(normalizeStatus)
+  .transform((v) => {
+    if (v === "PENDING") return "WAITING";
+    if (v === "APPROVED") return "APPROVED_MGR";
+    if (v === "REJECTED") return "REJECTED_MGR";
+    if (v === "PAID") return "VERIFIED";
+    return v;
+  })
+  .refine(
+    (v) =>
+      [
+        "WAITING",
+        "SUBMITTED",
+        "APPROVED_MGR",
+        "REJECTED_MGR",
+        "ESCALATED",
+        "VERIFIED",
+      ].includes(v),
+    "Invalid expense status",
+  );
 
 const revenueSchema = z.object({
   month: z.string().min(1),
@@ -132,7 +164,16 @@ router.post(
   validate(createInvoiceSchema),
   async (req, res) => {
     try {
-      const { clientName, clientEmail, amountUsd, status, service, issueDate, dueDate, notes } = req.body as z.infer<typeof createInvoiceSchema>;
+      const {
+        clientName,
+        clientEmail,
+        amountUsd,
+        status,
+        service,
+        issueDate,
+        dueDate,
+        notes,
+      } = req.body as z.infer<typeof createInvoiceSchema>;
       const count = await prisma.invoice.count();
       const invoiceNumber = `INV-${String(count + 1).padStart(4, "0")}`;
       const inv = await prisma.invoice.create({
@@ -161,7 +202,15 @@ router.put(
   validate(updateInvoiceSchema),
   async (req, res) => {
     try {
-      const { clientName, clientEmail, amountUsd, status, service, dueDate, notes } = req.body as z.infer<typeof updateInvoiceSchema>;
+      const {
+        clientName,
+        clientEmail,
+        amountUsd,
+        status,
+        service,
+        dueDate,
+        notes,
+      } = req.body as z.infer<typeof updateInvoiceSchema>;
       const data: Record<string, any> = {};
       if (clientName !== undefined) data.clientName = clientName;
       if (clientEmail !== undefined) data.clientEmail = clientEmail;
@@ -234,7 +283,17 @@ router.post(
   validate(createExpenseSchema),
   async (req, res) => {
     try {
-      const { title, amountUsd, category, paidBy, branch, expenseDate, receiptUrl, status, notes } = req.body as z.infer<typeof createExpenseSchema>;
+      const {
+        title,
+        amountUsd,
+        category,
+        paidBy,
+        branch,
+        expenseDate,
+        receiptUrl,
+        status,
+        notes,
+      } = req.body as z.infer<typeof createExpenseSchema>;
       const exp = await prisma.expense.create({
         data: {
           title,
@@ -277,7 +336,8 @@ router.put(
   validate(updateExpenseSchema),
   async (req, res) => {
     try {
-      const { title, amountUsd, category, paidBy, branch, receiptUrl, notes } = req.body as z.infer<typeof updateExpenseSchema>;
+      const { title, amountUsd, category, paidBy, branch, receiptUrl, notes } =
+        req.body as z.infer<typeof updateExpenseSchema>;
       const data: Record<string, any> = {};
       if (title !== undefined) data.title = title;
       if (amountUsd !== undefined) data.amountUsd = amountUsd;

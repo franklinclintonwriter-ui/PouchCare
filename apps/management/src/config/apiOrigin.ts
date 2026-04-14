@@ -25,18 +25,20 @@ export function getAxiosBaseURL(): string {
 /**
  * WebSocket URL for attendance realtime. Prefer `VITE_WS_URL` when the API is on another host/port.
  * Example: `ws://127.0.0.1:7000/v1/realtime`
+ *
+ * Token is sent as the first message after connection (not in the URL) to avoid
+ * leaking credentials in browser history, server logs and referrer headers.
  */
-export function buildRealtimeWebSocketUrl(accessToken: string): string {
+export function buildRealtimeWebSocketUrl(): string {
   const wsEnv = (import.meta.env.VITE_WS_URL as string | undefined)?.trim();
   if (wsEnv) {
     try {
-      const u = new URL(wsEnv);
-      u.searchParams.set("token", accessToken);
-      return u.href;
+      new URL(wsEnv); // validate
+      return wsEnv;
     } catch {
       /* fall through to same-origin */
     }
   }
   const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-  return `${protocol}//${window.location.host}/v1/realtime?token=${encodeURIComponent(accessToken)}`;
+  return `${protocol}//${window.location.host}/v1/realtime`;
 }

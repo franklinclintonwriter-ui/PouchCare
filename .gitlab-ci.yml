@@ -8,27 +8,33 @@
 #
 # ── Required CI/CD variables (GitLab → Settings → CI/CD → Variables) ────
 #   SSH_PRIVATE_KEY  : ed25519 private key (type: Variable, masked)
-#   DEPLOY_HOST      : 72.60.204.92
+#   DEPLOY_HOST      : server IP
 #   DEPLOY_USER      : pouchcare
 #   DEPLOY_PORT      : 22  (optional, defaults to 22)
 # ────────────────────────────────────────────────────────────────────────
 
 workflow:
   rules:
+    # Avoid duplicate pipelines: skip branch pipeline if an MR exists
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
+      when: never
     - if: $CI_COMMIT_BRANCH
     - if: $CI_COMMIT_TAG
 
 variables:
-  NODE_VERSION: "20"
-  DATABASE_URL: "postgresql://ci:ci@127.0.0.1:5432/ci?schema=public"
+  DATABASE_URL: "postgresql://ci:ci@localhost:5432/ci?schema=public"
   NPM_CONFIG_FUND: "false"
   NPM_CONFIG_AUDIT: "false"
 
 default:
-  image: node:${NODE_VERSION}-bookworm
+  image: node:20-bookworm
   interruptible: true
-  retry: 1
+  retry:
+    max: 1
+    when:
+      - runner_system_failure
+      - stuck_or_timeout_failure
   cache:
     key:
       files:
@@ -36,6 +42,8 @@ default:
     paths:
       - node_modules/
       - apps/api/node_modules/
+      - apps/management/node_modules/
+      - apps/landing/node_modules/
       - .npm/
 
 stages:
@@ -43,32 +51,35 @@ stages:
   - build
   - deploy
 
-# ── Quality gate: type-check + lint ─────────────────────────────────────
+# ── Quality gate: type-check ────────────────────────────────────────────
 pouchcare:quality:
   stage: verify
   script:
-    - set -euo pipefail
     - node --version && npm --version
     - npm ci --cache .npm --prefer-offline
     - echo "=== API — Prisma generate + tsc ==="
-    - cd apps/api && npx prisma generate && npx tsc --noEmit
-    - cd "$CI_PROJECT_DIR"
+    - cd apps/api && npx prisma generate && npx tsc --noEmit && cd ../..
     - echo "=== Management — tsc ==="
-    - cd apps/management && npx tsc --noEmit
-    - cd "$CI_PROJECT_DIR"
+    - cd apps/management && npx tsc --noEmit && cd ../..
     - echo "=== Landing — tsc ==="
-    - cd apps/landing && npx tsc --noEmit
+    - cd apps/landing && npx tsc --noEmit && cd ../..
+    - echo "✅ All type-checks passed"
 
 # ── Build all apps via Turbo ────────────────────────────────────────────
 pouchcare:build:
   stage: build
   needs: ["pouchcare:quality"]
   script:
-    - set -euo pipefail
     - npm ci --cache .npm --prefer-offline
-    - cd apps/api && npx prisma generate && cd "$CI_PROJECT_DIR"
+    - cd apps/api && npx prisma generate && cd ../..
     - echo "=== Turbo build (API tsc + Vite apps) ==="
-    - npm run build
+    - npx turbo run build
+  artifacts:
+    paths:
+      - apps/api/dist/
+      - apps/management/dist/
+      - apps/landing/dist/
+    expire_in: 1 hour
 
 # ── Auto-deploy API to production on push to main ───────────────────────
 #
@@ -77,7 +88,7 @@ pouchcare:build:
 #
 deploy:production:
   stage: deploy
-  image: alpine:latest
+  image: alpine:3.19
   needs: ["pouchcare:build"]
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
@@ -91,11 +102,11 @@ deploy:production:
     - mkdir -p ~/.ssh && chmod 700 ~/.ssh
     - echo "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_ed25519
     - chmod 600 ~/.ssh/id_ed25519
-    - ssh-keyscan -p ${DEPLOY_PORT:-22} -H $DEPLOY_HOST >> ~/.ssh/known_hosts 2>/dev/null || true
+    - ssh-keyscan -p "${DEPLOY_PORT:-22}" -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
   script:
-    - echo "🚀 Deploying API — commit $CI_COMMIT_SHORT_SHA to $DEPLOY_HOST..."
+    - echo "Deploying API — commit $CI_COMMIT_SHORT_SHA to $DEPLOY_HOST..."
     - |
-      ssh -p ${DEPLOY_PORT:-22} -o StrictHostKeyChecking=no $DEPLOY_USER@$DEPLOY_HOST bash <<'REMOTE_SCRIPT'
+      ssh -p "${DEPLOY_PORT:-22}" -o StrictHostKeyChecking=no "$DEPLOY_USER@$DEPLOY_HOST" bash <<'REMOTE_SCRIPT'
         set -e
         echo "── Server: $(hostname) ──"
         REPO=/home/pouchcare/Developments/PouchCare
@@ -113,7 +124,7 @@ deploy:production:
         echo "── Prisma generate + migrate ──"
         cd apps/api
         npx prisma generate
-        npx prisma db push --accept-data-loss 2>&1 || npx prisma migrate deploy 2>&1
+        npx prisma migrate deploy 2>&1 || npx prisma db push 2>&1
         echo "DB synced"
 
         echo "── Restarting API ──"
@@ -123,7 +134,7 @@ deploy:production:
         echo "── Health check ──"
         for i in 1 2 3 4 5; do
           if curl -sf http://localhost:7000/health > /dev/null 2>&1; then
-            echo "✅ API is healthy"
+            echo "API is healthy"
             break
           fi
           echo "   Waiting... (attempt $i/5)"
