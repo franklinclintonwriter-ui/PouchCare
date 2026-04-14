@@ -11,7 +11,7 @@ const schema = z.object({
   JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
   BCRYPT_ROUNDS:     z.coerce.number().default(12),
   RESEND_API_KEY:    z.string().default(''),
-  EMAIL_FROM:        z.string().default('hello@pouchcare.com'),
+  EMAIL_FROM:        z.string().default('PouchCare <no-reply@pouchcare.com>'),
   S3_BUCKET:         z.string().default(''),
   S3_REGION:         z.string().default('eu-central-1'),
   /** AWS-style names (either pair works; R2 dashboard often shows *_ID / *_ACCESS_KEY). */

@@ -1,5 +1,5 @@
 import prisma from '@/lib/prisma'
-import { sendBroadcastEmail } from '@/lib/email'
+import { sendBroadcastEmail, buildBroadcastEmailHtml } from '@/lib/email'
 
 export type BroadcastDeliverySummary = {
   attempted: number
@@ -12,18 +12,8 @@ export type BroadcastDeliverySummary = {
 const EMAIL_BATCH = 8
 const MAX_FAILURES_LOG = 25
 
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-}
-
 function buildEmailHtml(title: string, message: string): string {
-  const titleHtml = escapeHtml(title)
-  const bodyHtml = escapeHtml(message).split(/\r?\n/).join('<br />\n')
-  return `<div style="font-family:system-ui,sans-serif;line-height:1.5"><h2 style="margin:0 0 12px">${titleHtml}</h2><p style="margin:0;white-space:pre-wrap">${bodyHtml}</p></div>`
+  return buildBroadcastEmailHtml(title, message)
 }
 
 async function mapInBatches<T, R>(items: T[], batchSize: number, fn: (item: T) => Promise<R>): Promise<R[]> {
