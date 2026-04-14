@@ -80,7 +80,7 @@ export default function Services() {
     <>
       <PageSEO
         title="SEO & Digital Marketing Services"
-        description="Browse PouchCare's full range of 14+ specialist digital marketing services — SEO, link building, web development, content writing, Google Ads, and more. Transparent pricing."
+        description="Browse PouchCare's full range of 20+ specialist digital marketing services — SEO, link building, web development, content writing, Google Ads, and more. Transparent pricing."
         canonical="/services"
       />
 
@@ -103,7 +103,7 @@ export default function Services() {
           <ScrollReveal>
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-semibold mb-6">
               <Sparkles size={12} className="text-blue-500" />
-              14+ specialist services — transparent pricing, no hidden fees
+              20+ specialist services — transparent pricing, no hidden fees
             </div>
             <SectionLabel>What we offer</SectionLabel>
             <SectionHeading className="mb-4">
@@ -117,7 +117,7 @@ export default function Services() {
             {/* Trust stats row */}
             <div className="flex flex-wrap justify-center gap-8 sm:gap-14">
               {[
-                { val: "14+", label: "Specialist services" },
+                { val: "20+", label: "Specialist services" },
                 { val: "500+", label: "Clients served" },
                 { val: "30+", label: "Countries" },
                 { val: "98%", label: "Satisfaction rate" },
@@ -219,9 +219,12 @@ export default function Services() {
       <section className="section-pad">
         <div className="container-max">
           {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 sm:gap-6">
               {Array.from({ length: 12 }).map((_, i) => (
-                <div key={i} className="glass-card h-48 animate-pulse" />
+                <div
+                  key={i}
+                  className="rounded-2xl bg-white border border-gray-200 h-72 animate-pulse"
+                />
               ))}
             </div>
           ) : filtered.length === 0 ? (
@@ -246,47 +249,120 @@ export default function Services() {
                 {filtered.length} service{filtered.length !== 1 ? "s" : ""}{" "}
                 found
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
-                {filtered.map((s, i) => (
-                  <ScrollReveal key={s.name} delay={i * 35}>
-                    <div className="glass-card card-hover group flex h-full flex-col overflow-hidden">
-                      {/* Category accent bar */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 sm:gap-6">
+                {filtered.map((s, i) => {
+                  const IMAGE_MAP: Record<string, string> = {
+                    "On-Page SEO": "/images/services/on-page-seo.svg",
+                    "Link Building": "/images/services/link-building.svg",
+                    "Technical SEO": "/images/services/technical-seo.svg",
+                    "Local SEO": "/images/services/local-seo.svg",
+                    "Web Development": "/images/services/web-development.svg",
+                    "App Development": "/images/services/app-development.svg",
+                    "E-commerce Dev": "/images/services/ecommerce-dev.svg",
+                    "WordPress Dev": "/images/services/wordpress-dev.svg",
+                    "UI/UX Design": "/images/services/ui-ux-design.svg",
+                    "Video Editing": "/images/services/video-editing.svg",
+                    "Content Writing": "/images/services/content-writing.svg",
+                    Copywriting: "/images/services/copywriting.svg",
+                    "Google Ads": "/images/services/google-ads.svg",
+                    "Facebook Ads": "/images/services/facebook-ads.svg",
+                    "Domain registration":
+                      "/images/services/domain-registration.svg",
+                    "Web hosting": "/images/services/web-hosting.svg",
+                    "SSL & DNS management":
+                      "/images/services/ssl-dns-management.svg",
+                    "Social Media Marketing":
+                      "/images/services/social-media-marketing.svg",
+                    "Email Marketing": "/images/services/email-marketing.svg",
+                    "Brand Strategy": "/images/services/brand-strategy.svg",
+                    "Analytics & Reporting":
+                      "/images/services/analytics-reporting.svg",
+                    "CRO & A/B Testing": "/images/services/cro-testing.svg",
+                    "Web to APK": "/images/services/web-to-apk.svg",
+                  };
+                  const imgSrc = (s as any).image || IMAGE_MAP[s.name];
+                  const accentBg: Record<string, string> = {
+                    SEO: "from-sky-50 to-blue-50",
+                    Hosting: "from-violet-50 to-purple-50",
+                    Dev: "from-indigo-50 to-violet-50",
+                    Development: "from-indigo-50 to-violet-50",
+                    Design: "from-emerald-50 to-teal-50",
+                    Content: "from-amber-50 to-orange-50",
+                    Ads: "from-rose-50 to-pink-50",
+                  };
+                  const accentBorder: Record<string, string> = {
+                    SEO: "hover:border-sky-300",
+                    Hosting: "hover:border-violet-300",
+                    Dev: "hover:border-indigo-300",
+                    Development: "hover:border-indigo-300",
+                    Design: "hover:border-emerald-300",
+                    Content: "hover:border-amber-300",
+                    Ads: "hover:border-rose-300",
+                  };
+                  return (
+                    <ScrollReveal key={s.name} delay={i * 35}>
                       <div
-                        className={`h-1 w-full bg-gradient-to-r ${CATEGORY_ACCENT[s.category] ?? "from-gray-400 to-gray-500"}`}
-                      />
-                      <div className="flex flex-col flex-1 p-5 sm:p-6">
-                        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-gray-50 to-blue-50 border border-blue-100/80 flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform duration-200">
-                          {s.icon}
+                        className={`group flex h-full flex-col rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-soft hover:shadow-elevated transition-all duration-300 ${accentBorder[s.category] ?? "hover:border-gray-300"}`}
+                      >
+                        {/* Image area */}
+                        <div
+                          className={`relative h-36 sm:h-40 overflow-hidden bg-gradient-to-br ${accentBg[s.category] ?? "from-gray-50 to-gray-100"}`}
+                        >
+                          {imgSrc ? (
+                            <img
+                              src={imgSrc}
+                              alt={s.name}
+                              loading="lazy"
+                              className="absolute inset-0 w-full h-full object-contain p-3 group-hover:scale-105 transition-transform duration-500"
+                            />
+                          ) : (
+                            <div className="absolute inset-0 flex items-center justify-center text-4xl">
+                              {s.icon}
+                            </div>
+                          )}
+                          {/* Category accent bar */}
+                          <div
+                            className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${CATEGORY_ACCENT[s.category] ?? "from-gray-400 to-gray-500"}`}
+                          />
+                          {/* Badge */}
+                          {(s as any).badge && (
+                            <span className="absolute top-3 right-3 px-2 py-0.5 rounded-full bg-white/90 backdrop-blur-sm text-[10px] font-bold text-blue-700 border border-blue-100 shadow-sm">
+                              {(s as any).badge}
+                            </span>
+                          )}
                         </div>
-                        <div className="flex items-start justify-between gap-2 mb-2 flex-wrap">
-                          <h3 className="text-sm font-semibold leading-snug text-gray-900 transition-colors group-hover:text-blue-700">
-                            {s.name}
-                          </h3>
-                          <Badge
-                            variant={BADGE_MAP[s.category] ?? "slate"}
-                            className="shrink-0 text-[10px]"
-                          >
-                            {s.category}
-                          </Badge>
-                        </div>
-                        <p className="flex-1 text-xs leading-relaxed text-gray-600 sm:text-sm">
-                          {s.description}
-                        </p>
-                        <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-3">
-                          <span className="font-mono text-xs font-bold text-blue-700 sm:text-sm">
-                            {s.price}
-                          </span>
-                          <a
-                            href="/contact"
-                            className="flex items-center gap-1 text-xs font-semibold text-gray-400 transition-all hover:text-blue-700 hover:gap-1.5"
-                          >
-                            Get quote <ArrowRight size={11} />
-                          </a>
+                        {/* Content */}
+                        <div className="flex flex-col flex-1 p-5 sm:p-6">
+                          <div className="flex items-start justify-between gap-2 mb-2 flex-wrap">
+                            <h3 className="text-sm font-semibold leading-snug text-gray-900 transition-colors group-hover:text-blue-700">
+                              {s.name}
+                            </h3>
+                            <Badge
+                              variant={BADGE_MAP[s.category] ?? "slate"}
+                              className="shrink-0 text-[10px]"
+                            >
+                              {s.category}
+                            </Badge>
+                          </div>
+                          <p className="flex-1 text-xs leading-relaxed text-gray-600 sm:text-sm line-clamp-3">
+                            {s.description}
+                          </p>
+                          <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-3">
+                            <span className="font-mono text-xs font-bold text-blue-700 sm:text-sm">
+                              {s.price}
+                            </span>
+                            <a
+                              href="/contact"
+                              className="flex items-center gap-1 text-xs font-semibold text-gray-400 transition-all hover:text-blue-700 hover:gap-1.5 group-hover:text-blue-600"
+                            >
+                              Get quote <ArrowRight size={11} />
+                            </a>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </ScrollReveal>
-                ))}
+                    </ScrollReveal>
+                  );
+                })}
               </div>
             </>
           )}

@@ -16,6 +16,12 @@ const IMAGE_MAP: Record<string, string> = {
   "Domain registration": "/images/services/domain-registration.svg",
   "Web hosting": "/images/services/web-hosting.svg",
   "SSL & DNS management": "/images/services/ssl-dns-management.svg",
+  "Social Media Marketing": "/images/services/social-media-marketing.svg",
+  "Email Marketing": "/images/services/email-marketing.svg",
+  "Brand Strategy": "/images/services/brand-strategy.svg",
+  "Analytics & Reporting": "/images/services/analytics-reporting.svg",
+  "CRO & A/B Testing": "/images/services/cro-testing.svg",
+  "Web to APK": "/images/services/web-to-apk.svg",
 };
 
 export function ServiceIllustration({

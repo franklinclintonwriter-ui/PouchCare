@@ -382,14 +382,29 @@ function StatsBar() {
 
 // ── Services preview ──────────────────────────────────────────────────────
 
-const SERVICE_GRADIENTS = [
-  "from-sky-500/10 to-blue-600/5",
-  "from-indigo-500/10 to-purple-600/5",
-  "from-emerald-500/10 to-teal-600/5",
-  "from-orange-500/10 to-amber-600/5",
-  "from-pink-500/10 to-rose-600/5",
-  "from-violet-500/10 to-purple-600/5",
-];
+const SERVICE_ACCENT_BG: Record<string, string> = {
+  SEO: "from-sky-50 to-blue-50",
+  Dev: "from-indigo-50 to-violet-50",
+  Design: "from-emerald-50 to-teal-50",
+  Content: "from-amber-50 to-orange-50",
+  Ads: "from-rose-50 to-pink-50",
+};
+
+const SERVICE_ACCENT_BORDER: Record<string, string> = {
+  SEO: "group-hover:border-sky-300",
+  Dev: "group-hover:border-indigo-300",
+  Design: "group-hover:border-emerald-300",
+  Content: "group-hover:border-amber-300",
+  Ads: "group-hover:border-rose-300",
+};
+
+const SERVICE_ACCENT_TEXT: Record<string, string> = {
+  SEO: "text-sky-600",
+  Dev: "text-indigo-600",
+  Design: "text-emerald-600",
+  Content: "text-amber-600",
+  Ads: "text-rose-600",
+};
 
 function ServicesPreview() {
   const preview = SERVICES.slice(0, 6);
@@ -404,41 +419,76 @@ function ServicesPreview() {
               <span className="text-gradient">dominate search</span>
             </SectionHeading>
             <SectionSub className="max-w-xl mx-auto">
-              14+ specialist services covering every angle of your digital
+              20+ specialist services covering every angle of your digital
               growth — SEO, development, design, content and advertising under
               one roof.
             </SectionSub>
           </ScrollReveal>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 mb-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 mb-10">
           {preview.map((s, i) => (
             <ScrollReveal key={s.name} delay={i * 60}>
               <div
                 className={cn(
-                  "group relative rounded-2xl p-6 sm:p-7 border border-gray-200 bg-gradient-to-br overflow-hidden card-hover hover:border-blue-300 hover:shadow-[0_8px_40px_rgba(37,99,235,0.10)] shadow-soft transition-all duration-300",
-                  SERVICE_GRADIENTS[i % SERVICE_GRADIENTS.length],
+                  "group relative rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-soft hover:shadow-elevated transition-all duration-300",
+                  SERVICE_ACCENT_BORDER[s.category] ??
+                    "group-hover:border-gray-300",
                 )}
               >
-                <div className="absolute inset-0 bg-gradient-to-br from-sky-500/0 to-sky-500/0 group-hover:from-sky-500/3 group-hover:to-indigo-500/3 transition-all duration-500 pointer-events-none rounded-2xl" />
-                <div className="relative">
-                  <div className="text-3xl mb-4">{s.icon}</div>
-                  <div className="flex items-start justify-between gap-2 mb-3 flex-wrap">
-                    <h3 className="font-sora font-semibold text-slate-100 group-hover:text-sky-300 transition-colors text-base">
+                {/* Image area */}
+                <div
+                  className={cn(
+                    "relative h-40 sm:h-44 overflow-hidden bg-gradient-to-br",
+                    SERVICE_ACCENT_BG[s.category] ?? "from-gray-50 to-gray-100",
+                  )}
+                >
+                  {s.image ? (
+                    <img
+                      src={s.image}
+                      alt={s.name}
+                      loading="lazy"
+                      className="absolute inset-0 w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-500"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center text-5xl">
+                      {s.icon}
+                    </div>
+                  )}
+                  {/* Badge */}
+                  {s.badge && (
+                    <span className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-white/90 backdrop-blur-sm text-[10px] font-bold text-blue-700 border border-blue-100 shadow-sm">
+                      {s.badge}
+                    </span>
+                  )}
+                  {/* Category pill */}
+                  <span
+                    className={cn(
+                      "absolute bottom-3 left-3 px-2.5 py-1 rounded-full bg-white/90 backdrop-blur-sm text-[10px] font-semibold border border-gray-100",
+                      SERVICE_ACCENT_TEXT[s.category] ?? "text-gray-600",
+                    )}
+                  >
+                    {s.category}
+                  </span>
+                </div>
+                {/* Content */}
+                <div className="p-5 sm:p-6">
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <h3 className="font-sora font-semibold text-gray-900 group-hover:text-blue-700 transition-colors text-base leading-snug">
                       {s.name}
                     </h3>
-                    <span className="font-mono text-xs font-bold text-sky-400 bg-sky-500/10 px-2.5 py-1 rounded-lg border border-sky-500/20 shrink-0">
+                    <span className="font-mono text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100 shrink-0 whitespace-nowrap">
                       {s.price}
                     </span>
                   </div>
-                  <p className="text-slate-400 text-sm leading-relaxed mb-5">
+                  <p className="text-gray-600 text-sm leading-relaxed mb-4 line-clamp-2">
                     {s.description}
                   </p>
                   <Link
                     to="/contact"
-                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-sky-400/70 hover:text-sky-400 transition-colors group-hover:gap-2.5"
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors group-hover:gap-2.5"
                   >
                     Get a quote{" "}
-                    <ArrowRight size={11} className="transition-all" />
+                    <ArrowRight size={12} className="transition-all" />
                   </Link>
                 </div>
               </div>
@@ -451,7 +501,7 @@ function ServicesPreview() {
               to="/services"
               className="inline-flex items-center gap-2.5 px-7 py-3.5 rounded-xl font-semibold text-gray-700 border border-gray-300 hover:border-blue-400 hover:text-blue-700 hover:bg-blue-50 transition-all duration-300 group"
             >
-              View all 14+ services{" "}
+              View all 20+ services{" "}
               <ArrowRight
                 size={15}
                 className="group-hover:translate-x-1 transition-transform"
