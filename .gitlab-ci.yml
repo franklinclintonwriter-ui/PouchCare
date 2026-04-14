@@ -2,8 +2,12 @@
 # Monorepo: npm workspaces + Turbo. Requires Node >= 20.
 # https://gitlab.com/Pouchcare/OS
 #
+# Architecture:
+#   API      → deployed to server via SSH (PM2 + Nginx reverse proxy)
+#   Frontend → deployed to Cloudflare Pages (auto-deploy on push)
+#
 # ── Required CI/CD variables (GitLab → Settings → CI/CD → Variables) ────
-#   SSH_PRIVATE_KEY  : ed25519 private key (type: File, masked)
+#   SSH_PRIVATE_KEY  : ed25519 private key (type: Variable, masked)
 #   DEPLOY_HOST      : 72.60.204.92
 #   DEPLOY_USER      : pouchcare
 #   DEPLOY_PORT      : 22  (optional, defaults to 22)
@@ -66,10 +70,10 @@ pouchcare:build:
     - echo "=== Turbo build (API tsc + Vite apps) ==="
     - npm run build
 
-# ── Auto-deploy to production on push to main ───────────────────────────
+# ── Auto-deploy API to production on push to main ───────────────────────
 #
-# Flow: SSH into server → git pull → npm install → prisma migrate →
-#       rebuild frontends → pm2 restart → nginx reload
+# Frontends are deployed via Cloudflare Pages (auto-deploy on push).
+# This job only updates the API: git pull → deps → prisma migrate → pm2 restart.
 #
 deploy:production:
   stage: deploy
@@ -81,7 +85,7 @@ deploy:production:
     - when: never
   environment:
     name: production
-    url: https://pouchcare.com
+    url: https://api.pouchcare.com
   before_script:
     - apk add --no-cache openssh-client bash curl
     - mkdir -p ~/.ssh && chmod 700 ~/.ssh
@@ -89,16 +93,45 @@ deploy:production:
     - chmod 600 ~/.ssh/id_ed25519
     - ssh-keyscan -p ${DEPLOY_PORT:-22} -H $DEPLOY_HOST >> ~/.ssh/known_hosts 2>/dev/null || true
   script:
-    - echo "🚀 Deploying commit $CI_COMMIT_SHORT_SHA to $DEPLOY_HOST..."
+    - echo "🚀 Deploying API — commit $CI_COMMIT_SHORT_SHA to $DEPLOY_HOST..."
     - |
       ssh -p ${DEPLOY_PORT:-22} -o StrictHostKeyChecking=no $DEPLOY_USER@$DEPLOY_HOST bash <<'REMOTE_SCRIPT'
         set -e
         echo "── Server: $(hostname) ──"
-        cd /home/pouchcare/Developments/PouchCare
-        sudo bash deploy/update.sh
+        REPO=/home/pouchcare/Developments/PouchCare
+        cd $REPO
+
+        echo "── Pulling latest main ──"
+        git fetch origin
+        git checkout main
+        git reset --hard origin/main
+        echo "Commit: $(git log --oneline -1)"
+
+        echo "── Installing deps ──"
+        npm install --legacy-peer-deps --silent 2>&1 | tail -3
+
+        echo "── Prisma generate + migrate ──"
+        cd apps/api
+        npx prisma generate
+        npx prisma db push --accept-data-loss 2>&1 || npx prisma migrate deploy 2>&1
+        echo "DB synced"
+
+        echo "── Restarting API ──"
+        pm2 restart pouchcare-api --update-env
+        sleep 4
+
+        echo "── Health check ──"
+        for i in 1 2 3 4 5; do
+          if curl -sf http://localhost:7000/health > /dev/null 2>&1; then
+            echo "✅ API is healthy"
+            break
+          fi
+          echo "   Waiting... (attempt $i/5)"
+          sleep 3
+        done
       REMOTE_SCRIPT
-    - echo "✅ Deploy complete — verifying health..."
-    - sleep 5
+    - echo "✅ API deploy complete — verifying external health..."
+    - sleep 3
     - |
       if curl -sf --max-time 10 "https://api.pouchcare.com/health" > /dev/null 2>&1; then
         echo "✅ API health check passed"
