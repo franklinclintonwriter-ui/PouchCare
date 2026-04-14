@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, UserCheck, UserX, Building, Shield, Plus, Edit, UserMinus, RotateCcw } from 'lucide-react';
+import { Users, UserCheck, UserX, Building, Shield, Plus, Edit, UserMinus, RotateCcw, LayoutGrid, Table2 } from 'lucide-react';
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
 import { useCreateStaff, useStaffList, useStaffStats, useDeactivateStaff, useRestoreStaff } from '@/api/staff';
 import { useBranches } from '@/api/admin-resources';
@@ -15,6 +15,10 @@ import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
 import { Dropdown, type DropdownItem } from '@/components/ui/Dropdown';
+import { Card } from '@/components/ui/Card';
+import { Pagination } from '@/components/ui/Pagination';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { usePermission } from '@/hooks/usePermission';
 import type { StaffMember } from '@/types/models';
 import { toast } from 'sonner';
@@ -40,9 +44,12 @@ const roleLabel: Record<string, string> = {
   INTERN: 'Intern',
 };
 
+type StaffViewMode = 'table' | 'cards';
+
 export default function StaffList() {
   const navigate = useNavigate();
   const perm = usePermission();
+  const [viewMode, setViewMode] = useState<StaffViewMode>('table');
   const [search, setSearch] = useState('');
   const [role, setRole] = useState('');
   const [page, setPage] = useState(1);
@@ -97,7 +104,18 @@ export default function StaffList() {
     title: 'Staff',
     breadcrumbs: [{ label: 'Home', href: '/' }, { label: 'Staff' }],
     actions: [
-      { type: 'button' as const, label: 'New Staff', icon: Plus, onClick: () => setOpenCreate(true) },
+      {
+        type: 'toggle' as const,
+        value: viewMode,
+        onChange: (v: string) => setViewMode(v === 'cards' ? 'cards' : 'table'),
+        options: [
+          { value: 'table', label: 'Table', icon: Table2 },
+          { value: 'cards', label: 'Cards', icon: LayoutGrid },
+        ],
+      },
+      ...(canManageStaff
+        ? [{ type: 'button' as const, label: 'New Staff', icon: Plus, onClick: () => setOpenCreate(true) }]
+        : []),
       { type: 'search' as const, placeholder: 'Search staff...', value: search, onChange: setSearch },
       {
         type: 'filter' as const,
@@ -117,7 +135,7 @@ export default function StaffList() {
         onChange: setRole,
       },
     ],
-  }), [search, role]);
+  }), [search, role, canManageStaff, viewMode]);
 
   useHeaderConfig(headerConfig);
 
@@ -212,19 +230,107 @@ export default function StaffList() {
       <div className="space-y-6">
         <StatsRow items={stats} loading={isLoading || statsLoading} />
 
-        <DataTable
-          columns={columns}
-          data={staff}
-          isLoading={isLoading}
-          onRowClick={(row) => navigate(`/staff/${row.id}`)}
-          sortField={sortField}
-          sortDirection={sortDir}
-          onSort={handleSort}
-          pagination={meta}
-          onPageChange={setPage}
-          emptyTitle="No staff found"
-          emptyDescription="Try adjusting your search or filters"
-        />
+        {viewMode === 'table' ? (
+          <DataTable
+            columns={columns}
+            data={staff}
+            isLoading={isLoading}
+            onRowClick={(row) => navigate(`/staff/${row.id}`)}
+            sortField={sortField}
+            sortDirection={sortDir}
+            onSort={handleSort}
+            pagination={meta}
+            onPageChange={setPage}
+            emptyTitle="No staff found"
+            emptyDescription="Try adjusting your search or filters"
+          />
+        ) : (
+          <div className="rounded-xl border border-gray-200/80 bg-white shadow-soft dark:border-gray-700/60 dark:bg-gray-800/80">
+            {isLoading ? (
+              <div className="grid gap-4 p-4 sm:grid-cols-2 lg:grid-cols-3 lg:p-5">
+                {Array.from({ length: 9 }).map((_, i) => (
+                  <Skeleton key={i} className="h-44 rounded-xl" />
+                ))}
+              </div>
+            ) : staff.length === 0 ? (
+              <EmptyState
+                icon={<Users />}
+                title="No staff found"
+                description="Try adjusting your search or filters"
+                className="py-12"
+              />
+            ) : (
+              <>
+                <div className="grid gap-4 p-4 sm:grid-cols-2 lg:grid-cols-3 lg:p-5">
+                  {staff.map((m) => {
+                    const items: DropdownItem[] = [
+                      { label: 'View / Edit', icon: <Edit className="h-4 w-4" />, onClick: () => navigate(`/staff/${m.id}`) },
+                      m.isActive
+                        ? { label: 'Deactivate', icon: <UserMinus className="h-4 w-4" />, onClick: () => setConfirmDeactivate(m), variant: 'danger' as const }
+                        : { label: 'Restore', icon: <RotateCcw className="h-4 w-4" />, onClick: () => setConfirmRestore(m) },
+                    ];
+
+                    return (
+                      <Card
+                        key={m.id}
+                        hover
+                        padding="md"
+                        onClick={() => navigate(`/staff/${m.id}`)}
+                        className="min-h-[44px]"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex min-w-0 items-center gap-3">
+                            <Avatar name={m.name} src={m.avatarUrl} size="sm" />
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100">
+                                {m.name}
+                              </p>
+                              <p className="truncate text-xs text-gray-500 dark:text-gray-400">
+                                {m.email}
+                              </p>
+                            </div>
+                          </div>
+
+                          {canManageStaff ? (
+                            <div
+                              onClick={(e) => e.stopPropagation()}
+                              className="shrink-0"
+                            >
+                              <Dropdown items={items} />
+                            </div>
+                          ) : null}
+                        </div>
+
+                        <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-gray-100 pt-4 dark:border-gray-700/60">
+                          <Badge variant={roleBadgeVariant[m.systemRole] ?? 'default'} size="sm">
+                            {roleLabel[m.systemRole] ?? m.systemRole}
+                          </Badge>
+                          <Badge variant={m.isActive ? 'success' : 'danger'} size="sm" dot>
+                            {m.isActive ? 'Active' : 'Inactive'}
+                          </Badge>
+                          <span className="ml-auto truncate text-xs text-gray-600 dark:text-gray-400">
+                            {m.branch || 'No branch'}
+                          </span>
+                        </div>
+                      </Card>
+                    );
+                  })}
+                </div>
+
+                {meta && meta.totalPages > 0 ? (
+                  <div className="border-t border-gray-100 px-4 py-3 dark:border-gray-700/60 lg:px-5">
+                    <Pagination
+                      currentPage={meta.page}
+                      totalPages={meta.totalPages}
+                      total={meta.total}
+                      onPageChange={setPage}
+                    />
+                  </div>
+                ) : null}
+              </>
+            )}
+          </div>
+        )}
 
         <Modal
           isOpen={openCreate}

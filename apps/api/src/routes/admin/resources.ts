@@ -11,7 +11,7 @@ import { requirePermission } from '@/middleware/rbac'
 import { isStaffAllowed } from '@/lib/managementPermissions'
 import { resolveMonitorBranchScope } from '@/lib/monitorBranchScope'
 import { validate } from '@/middleware/validate'
-import { ok, created, notFound, serverError, forbidden } from '@/lib/response'
+import { ok, created, notFound, serverError, forbidden, conflict } from '@/lib/response'
 import { getPaginationParams, buildMeta } from '@/lib/pagination'
 import { env } from '@/config/env'
 import { branchCreateSchema, branchUpdateSchema } from '@/routes/admin/branchSchemas'
@@ -205,6 +205,26 @@ router.put('/branches/:id', requirePermission('staff.branches'), validate(branch
 
     const item = await prisma.branch.findUnique({ where: { id } })
     return ok(res, item)
+  } catch (err) { return serverError(res, err) }
+})
+
+router.delete('/branches/:id', requirePermission('staff.branches'), async (req, res) => {
+  try {
+    const { id } = req.params
+    const existing = await prisma.branch.findUnique({ where: { id } })
+    if (!existing) return notFound(res, 'Branch')
+
+    const refs = await countReferencesToBranchName(prisma, existing.name)
+    if (refs.total > 0) {
+      const parts = Object.entries(refs)
+        .filter(([k, v]) => k !== 'total' && typeof v === 'number' && v > 0)
+        .map(([k, v]) => `${k}:${v}`)
+        .join(', ')
+      return conflict(res, `Branch is in use and cannot be deleted (${parts || `total:${refs.total}`})`)
+    }
+
+    await prisma.branch.delete({ where: { id } })
+    return ok(res, { id })
   } catch (err) { return serverError(res, err) }
 })
 

@@ -192,7 +192,7 @@ export default function BranchManagement() {
 
   return (
     <PageTransition className="space-y-6">
-      <div className="mx-auto max-w-6xl space-y-6">
+      <div className="space-y-6">
         {viewMode === 'table' ? (
           <DataTable
             columns={columns}

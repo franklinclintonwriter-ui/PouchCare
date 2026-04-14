@@ -321,6 +321,20 @@ export function useUpdateBranch() {
   });
 }
 
+export function useDeleteBranch() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.delete(`/admin/branches/${id}`),
+    onSuccess: (_, id) => {
+      qc.invalidateQueries({ queryKey: ["admin-branches"] });
+      qc.invalidateQueries({ queryKey: ["admin-branch", id] });
+      qc.invalidateQueries({ queryKey: ["admin-branch-members", id] });
+      qc.invalidateQueries({ queryKey: ["staff-list"] });
+      qc.invalidateQueries({ queryKey: ["staff-leaderboard"] });
+    },
+  });
+}
+
 /** Staff member eligible to be a branch manager (for Select dropdowns). */
 export interface ManagerCandidate {
   id: string;

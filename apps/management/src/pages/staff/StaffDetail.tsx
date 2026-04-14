@@ -190,7 +190,7 @@ export default function StaffDetail() {
   if (isLoading) {
     return (
       <PageTransition>
-        <div className="mx-auto max-w-5xl space-y-6">
+        <div className="space-y-6">
           <Card padding="none" className="overflow-hidden">
             <div className="flex flex-col items-center gap-4 p-6 sm:flex-row sm:items-start sm:gap-8">
               <Skeleton className="h-24 w-24 shrink-0 rounded-full sm:h-28 sm:w-28" />
@@ -265,7 +265,7 @@ export default function StaffDetail() {
 
   return (
     <PageTransition>
-      <div className="mx-auto max-w-5xl space-y-6 sm:space-y-8">
+      <div className="space-y-6 sm:space-y-8">
         {/* Profile hero */}
         <Card
           padding="none"
