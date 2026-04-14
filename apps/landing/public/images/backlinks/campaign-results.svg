@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 260" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="480" y2="260" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0f172a"/><stop offset="1" stop-color="#1e293b"/>
+    </linearGradient>
+    <linearGradient id="bar1" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#38bdf8"/><stop offset="1" stop-color="#0ea5e9"/></linearGradient>
+    <linearGradient id="bar2" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#818cf8"/><stop offset="1" stop-color="#6366f1"/></linearGradient>
+    <linearGradient id="line1" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#38bdf8"/><stop offset="1" stop-color="#818cf8"/></linearGradient>
+    <filter id="sh"><feDropShadow dx="0" dy="4" stdDeviation="8" flood-opacity=".15"/></filter>
+    <filter id="shs"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity=".1"/></filter>
+  </defs>
+  <rect width="480" height="260" rx="14" fill="url(#bg)"/>
+
+  <text x="240" y="24" font-family="system-ui" font-size="10" fill="#38bdf8" font-weight="700" text-anchor="middle" letter-spacing="2">CAMPAIGN RESULTS — 6 MONTHS</text>
+
+  <!-- DA Growth Chart -->
+  <g filter="url(#sh)" transform="translate(20, 38)">
+    <rect width="215" height="100" rx="8" fill="#1e293b" stroke="#334155" stroke-width=".5"/>
+    <text x="14" y="20" font-family="system-ui" font-size="7" fill="#e2e8f0" font-weight="700">Domain Authority Growth</text>
+    <!-- Y axis -->
+    <text x="8" y="38" font-family="monospace" font-size="5" fill="#475569">60</text>
+    <text x="8" y="55" font-family="monospace" font-size="5" fill="#475569">40</text>
+    <text x="8" y="72" font-family="monospace" font-size="5" fill="#475569">20</text>
+    <text x="8" y="89" font-family="monospace" font-size="5" fill="#475569">0</text>
+    <line x1="20" y1="30" x2="205" y2="30" stroke="#334155" stroke-width=".3"/>
+    <line x1="20" y1="47" x2="205" y2="47" stroke="#334155" stroke-width=".3"/>
+    <line x1="20" y1="64" x2="205" y2="64" stroke="#334155" stroke-width=".3"/>
+    <line x1="20" y1="81" x2="205" y2="81" stroke="#334155" stroke-width=".3"/>
+    <!-- DA line chart -->
+    <path d="M25 75 L55 72 L85 65 L115 58 L145 48 L175 42 L200 35" stroke="url(#line1)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <circle cx="25" cy="75" r="3" fill="#38bdf8"/><text x="25" y="85" font-family="monospace" font-size="5" fill="#64748b" text-anchor="middle">18</text>
+    <circle cx="200" cy="35" r="3" fill="#818cf8"/><circle cx="200" cy="35" r="6" fill="#818cf8" opacity=".2"/><text x="200" y="31" font-family="monospace" font-size="6" fill="#818cf8" text-anchor="middle" font-weight="700">52</text>
+    <!-- X axis -->
+    <text x="25" y="95" font-family="monospace" font-size="4.5" fill="#475569" text-anchor="middle">M1</text>
+    <text x="85" y="95" font-family="monospace" font-size="4.5" fill="#475569" text-anchor="middle">M3</text>
+    <text x="145" y="95" font-family="monospace" font-size="4.5" fill="#475569" text-anchor="middle">M5</text>
+    <text x="200" y="95" font-family="monospace" font-size="4.5" fill="#475569" text-anchor="middle">M6</text>
+  </g>
+
+  <!-- Referring Domains Bar Chart -->
+  <g filter="url(#sh)" transform="translate(245, 38)">
+    <rect width="215" height="100" rx="8" fill="#1e293b" stroke="#334155" stroke-width=".5"/>
+    <text x="14" y="20" font-family="system-ui" font-size="7" fill="#e2e8f0" font-weight="700">Referring Domains</text>
+
+    <rect x="25" y="60" width="18" height="28" rx="3" fill="url(#bar1)" opacity=".5"/>
+    <text x="34" y="57" font-family="monospace" font-size="5" fill="#64748b" text-anchor="middle">43</text>
+    <text x="34" y="95" font-family="monospace" font-size="4.5" fill="#475569" text-anchor="middle">Before</text>
+
+    <rect x="55" y="44" width="18" height="44" rx="3" fill="url(#bar1)" opacity=".6"/>
+    <text x="64" y="41" font-family="monospace" font-size="5" fill="#64748b" text-anchor="middle">98</text>
+    <text x="64" y="95" font-family="monospace" font-size="4.5" fill="#475569" text-anchor="middle">M2</text>
+
+    <rect x="85" y="38" width="18" height="50" rx="3" fill="url(#bar1)" opacity=".7"/>
+    <text x="94" y="35" font-family="monospace" font-size="5" fill="#64748b" text-anchor="middle">152</text>
+    <text x="94" y="95" font-family="monospace" font-size="4.5" fill="#475569" text-anchor="middle">M3</text>
+
+    <rect x="115" y="34" width="18" height="54" rx="3" fill="url(#bar2)" opacity=".7"/>
+    <text x="124" y="31" font-family="monospace" font-size="5" fill="#64748b" text-anchor="middle">210</text>
+    <text x="124" y="95" font-family="monospace" font-size="4.5" fill="#475569" text-anchor="middle">M4</text>
+
+    <rect x="145" y="30" width="18" height="58" rx="3" fill="url(#bar2)" opacity=".8"/>
+    <text x="154" y="27" font-family="monospace" font-size="5" fill="#64748b" text-anchor="middle">285</text>
+    <text x="154" y="95" font-family="monospace" font-size="4.5" fill="#475569" text-anchor="middle">M5</text>
+
+    <rect x="175" y="26" width="18" height="62" rx="3" fill="url(#bar2)"/>
+    <text x="184" y="23" font-family="monospace" font-size="6" fill="#818cf8" text-anchor="middle" font-weight="700">347</text>
+    <text x="184" y="95" font-family="monospace" font-size="4.5" fill="#475569" text-anchor="middle">M6</text>
+  </g>
+
+  <!-- Bottom metric cards -->
+  <g transform="translate(20, 148)">
+    <g filter="url(#shs)">
+      <rect width="105" height="52" rx="8" fill="#1e293b" stroke="#334155" stroke-width=".5"/>
+      <text x="14" y="18" font-family="system-ui" font-size="6" fill="#64748b" font-weight="500">Organic Traffic</text>
+      <text x="14" y="38" font-family="system-ui" font-size="18" fill="#e2e8f0" font-weight="800">+287%</text>
+      <rect x="72" y="28" width="26" height="12" rx="4" fill="#10b981" opacity=".15"/>
+      <text x="78" y="37" font-family="system-ui" font-size="6" fill="#10b981" font-weight="700">↑</text>
+    </g>
+    <g filter="url(#shs)" transform="translate(115, 0)">
+      <rect width="105" height="52" rx="8" fill="#1e293b" stroke="#334155" stroke-width=".5"/>
+      <text x="14" y="18" font-family="system-ui" font-size="6" fill="#64748b" font-weight="500">Page 1 Keywords</text>
+      <text x="14" y="38" font-family="system-ui" font-size="18" fill="#e2e8f0" font-weight="800">58</text>
+      <text x="50" y="38" font-family="system-ui" font-size="8" fill="#475569">→ was 4</text>
+    </g>
+    <g filter="url(#shs)" transform="translate(230, 0)">
+      <rect width="105" height="52" rx="8" fill="#1e293b" stroke="#334155" stroke-width=".5"/>
+      <text x="14" y="18" font-family="system-ui" font-size="6" fill="#64748b" font-weight="500">Links Placed</text>
+      <text x="14" y="38" font-family="system-ui" font-size="18" fill="#e2e8f0" font-weight="800">284</text>
+      <text x="55" y="38" font-family="system-ui" font-size="7" fill="#38bdf8">links</text>
+    </g>
+    <g filter="url(#shs)" transform="translate(345, 0)">
+      <rect width="115" height="52" rx="8" fill="#1e293b" stroke="#334155" stroke-width=".5"/>
+      <text x="14" y="18" font-family="system-ui" font-size="6" fill="#64748b" font-weight="500">Revenue Impact</text>
+      <text x="14" y="38" font-family="system-ui" font-size="18" fill="#e2e8f0" font-weight="800">3× ROI</text>
+    </g>
+  </g>
+
+  <!-- Bottom tag -->
+  <g transform="translate(20, 214)">
+    <rect width="440" height="32" rx="8" fill="#1e293b" stroke="#334155" stroke-width=".5" filter="url(#shs)"/>
+    <text x="14" y="13" font-family="system-ui" font-size="6" fill="#64748b" font-weight="600">CAMPAIGN TYPE</text>
+    <rect x="90" y="5" width="60" height="14" rx="4" fill="#38bdf8" opacity=".15"/>
+    <text x="96" y="15" font-family="system-ui" font-size="6" fill="#38bdf8" font-weight="700">Guest Posts</text>
+    <rect x="155" y="5" width="55" height="14" rx="4" fill="#818cf8" opacity=".15"/>
+    <text x="161" y="15" font-family="system-ui" font-size="6" fill="#818cf8" font-weight="700">Niche Edits</text>
+    <text x="14" y="27" font-family="system-ui" font-size="5" fill="#475569">E-commerce Niche · UK Market · $4,200/mo budget · 6-month engagement</text>
+  </g>
+</svg>

@@ -56,12 +56,6 @@ function hashApiKey(raw: string): string {
   return crypto.createHash('sha256').update(raw).digest('hex');
 }
 
-function validateApiKeyHeader(apiKeyHeader: string | undefined): boolean {
-  if (!apiKeyHeader) return false;
-  // Validated properly in the download route
-  return true;
-}
-
 // ── Protected routes (staff JWT required) ──────────────────────────────────
 
 /** GET /v1/plugins — list all plugins (any staff) */

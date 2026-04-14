@@ -1,196 +1,115 @@
-/**
- * Mock data for Web-to-APK conversion service.
- * Replace with API calls when backend is ready.
- * @see docs/TASKS_WEB_TO_APK.md
- */
-
-export interface ApkPlan {
+export type ApkPlan = {
   id: string;
   name: string;
-  monthlyUsd: number;
   blurb: string;
-  features: string[];
+  monthlyUsd: number;
   maxConversions: number | null;
+  features: string[];
   popular?: boolean;
-}
+};
 
 export const WEB_TO_APK_PLANS: ApkPlan[] = [
   {
-    id: "free",
-    name: "Free",
-    monthlyUsd: 0,
-    blurb: "Try the service — one conversion per month, PouchCare branding included.",
-    features: [
-      "1 APK per month",
-      "PouchCare splash screen",
-      "Basic webview wrapper",
-      "Email download link",
-    ],
-    maxConversions: 1,
-  },
-  {
     id: "starter",
     name: "Starter",
-    monthlyUsd: 9,
-    blurb: "For growing businesses — remove branding and add custom icons.",
+    blurb: "Perfect for testing or small projects",
+    monthlyUsd: 0,
+    maxConversions: 1,
     features: [
-      "10 APKs per month",
-      "Remove branding",
-      "Custom app icon & name",
-      "Offline cache support",
-      "Email + dashboard download",
+      "1 APK conversion/month",
+      "Basic customization",
+      "Email support",
+      "7-day expiry",
     ],
-    maxConversions: 10,
+  },
+  {
+    id: "professional",
+    name: "Professional",
+    blurb: "For growing projects and small businesses",
+    monthlyUsd: 29,
+    maxConversions: 20,
+    features: [
+      "20 APK conversions/month",
+      "Full customization",
+      "Priority email support",
+      "30-day expiry",
+      "Custom icon & splash screen",
+    ],
     popular: true,
   },
   {
-    id: "pro",
-    name: "Pro",
-    monthlyUsd: 29,
-    blurb: "Unlimited conversions with Play Store-ready signing and push notifications.",
-    features: [
-      "Unlimited APKs",
-      "Play Store–ready signing",
-      "Push notification support",
-      "Custom splash screen",
-      "Priority processing",
-      "Dedicated support",
-    ],
+    id: "enterprise",
+    name: "Enterprise",
+    blurb: "Unlimited capacity for large teams",
+    monthlyUsd: 99,
     maxConversions: null,
+    features: [
+      "Unlimited APK conversions",
+      "Full customization",
+      "24/7 phone & email support",
+      "90-day expiry",
+      "Custom icon, splash & themes",
+      "API access",
+    ],
   },
 ];
 
 export const WEB_TO_APK_FEATURES = [
   {
     icon: "⚡",
-    title: "Instant conversion",
-    description:
-      "Paste your URL and get a downloadable APK in under 60 seconds — no code needed.",
+    title: "Blazing Fast",
+    description: "Converts your website to APK in seconds, not hours",
   },
   {
     icon: "🎨",
-    title: "Custom branding",
-    description:
-      "Set your own app icon, name, splash screen, and theme colour to match your brand.",
+    title: "Full Customization",
+    description: "Custom icons, splash screens, colors, and branding",
   },
   {
-    icon: "📶",
-    title: "Offline support",
-    description:
-      "Pages you've visited are cached locally so users stay productive without a connection.",
-  },
-  {
-    icon: "🔔",
-    title: "Push notifications",
-    description:
-      "Engage your users with native Android push notifications (Starter plan and above).",
-  },
-  {
-    icon: "🏪",
-    title: "Play Store ready",
-    description:
-      "Pro tier produces a signed, aligned APK/AAB that you can submit directly to Google Play.",
+    icon: "📱",
+    title: "Native Experience",
+    description: "Feels like a true Android app with offline support",
   },
   {
     icon: "🔒",
-    title: "Secure & private",
-    description:
-      "Your URL and generated APKs are processed in an isolated environment and never shared.",
-  },
-] as const;
-
-export const WEB_TO_APK_FAQ = [
-  {
-    q: "What kind of websites work best?",
-    a: "Progressive Web Apps (PWAs) and responsive websites work best. Complex SPAs with heavy animations may need minor adjustments.",
+    title: "Secure",
+    description: "Your code stays yours. We never store your APKs",
   },
   {
-    q: "Do I need a Google Play developer account?",
-    a: "Not for sideloading. For Play Store submission (Pro plan) you need a $25 one-time developer account.",
+    icon: "🌐",
+    title: "Universal Compatibility",
+    description: "Works with any responsive website or web app",
   },
   {
-    q: "How long does conversion take?",
-    a: "Most conversions complete in under 60 seconds. Pro-tier signed builds may take up to 3 minutes.",
-  },
-  {
-    q: "Can I update the app after generating?",
-    a: "Yes — since the app wraps your live URL, any website updates are immediately reflected. For icon/branding changes, re-generate the APK.",
-  },
-  {
-    q: "What Android versions are supported?",
-    a: "Generated APKs target Android 7.0 (API 24) and above, covering over 98% of active devices.",
-  },
-  {
-    q: "Is my website data safe?",
-    a: "We only access your public URL to verify it loads correctly. No credentials or private data are transmitted.",
-  },
-] as const;
-
-export type ApkJobStatus = "queued" | "processing" | "ready" | "failed" | "expired";
-
-export interface MockApkOrder {
-  id: string;
-  appName: string;
-  url: string;
-  plan: string;
-  status: ApkJobStatus;
-  createdAt: string;
-  completedAt: string | null;
-  apkSizeMb: number | null;
-  downloadUrl: string | null;
-}
-
-export const MOCK_APK_ORDERS: MockApkOrder[] = [
-  {
-    id: "apk-001",
-    appName: "My Shop App",
-    url: "https://myshop.example.com",
-    plan: "Starter",
-    status: "ready",
-    createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-    completedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000 + 55000).toISOString(),
-    apkSizeMb: 4.2,
-    downloadUrl: "#mock-download",
-  },
-  {
-    id: "apk-002",
-    appName: "Client Portal",
-    url: "https://portal.clientbrand.io",
-    plan: "Pro",
-    status: "ready",
-    createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-    completedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000 + 72000).toISOString(),
-    apkSizeMb: 6.8,
-    downloadUrl: "#mock-download",
-  },
-  {
-    id: "apk-003",
-    appName: "Campaign Landing",
-    url: "https://campaign-landing.net",
-    plan: "Free",
-    status: "expired",
-    createdAt: new Date(Date.now() - 40 * 24 * 60 * 60 * 1000).toISOString(),
-    completedAt: new Date(Date.now() - 40 * 24 * 60 * 60 * 1000 + 48000).toISOString(),
-    apkSizeMb: 3.1,
-    downloadUrl: null,
+    icon: "🚀",
+    title: "Auto-Updates",
+    description: "APK automatically pulls latest content from your site",
   },
 ];
 
-export const APK_STATUS_LABEL: Record<ApkJobStatus, string> = {
-  queued: "Queued",
-  processing: "Processing",
-  ready: "Ready",
-  failed: "Failed",
-  expired: "Expired",
-};
-
-export const APK_STATUS_VARIANT: Record<
-  ApkJobStatus,
-  "success" | "warning" | "error" | "neutral" | "info"
-> = {
-  ready: "success",
-  processing: "info",
-  queued: "warning",
-  failed: "error",
-  expired: "neutral",
-};
+export const WEB_TO_APK_FAQ = [
+  {
+    q: "What format should my website URL be in?",
+    a: "Just enter the full URL like https://example.com. We support any responsive website or web app.",
+  },
+  {
+    q: "Can I update the APK after creation?",
+    a: "Yes! The APK will automatically fetch the latest version of your website whenever the user opens it.",
+  },
+  {
+    q: "Do you store my APK files?",
+    a: "No, we never store your APK files. They're generated on-demand and sent directly to you.",
+  },
+  {
+    q: "Can I customize the app appearance?",
+    a: "Yes. With Professional and Enterprise plans, you can customize the app icon, splash screen, and colors.",
+  },
+  {
+    q: "What about offline support?",
+    a: "We include basic offline support. Users can access previously loaded pages when offline.",
+  },
+  {
+    q: "Can I publish to Google Play Store?",
+    a: "Yes, your generated APK can be submitted to the Google Play Store with your own developer account.",
+  },
+];

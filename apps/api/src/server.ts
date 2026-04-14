@@ -36,6 +36,12 @@ import portalWalletRouter from "@/routes/portal/wallet";
 import portalOrdersRouter from "@/routes/portal/orders";
 import portalReferralsRouter from "@/routes/portal/referrals";
 import portalCommissionsRouter from "@/routes/portal/commissions";
+import portalInvoicesRouter from "@/routes/portal/invoices";
+import portalHostingRouter from "@/routes/portal/hosting";
+import portalWebsitesRouter from "@/routes/portal/websites";
+import portalWebToApkRouter from "@/routes/portal/web-to-apk";
+import portalSecurityRouter from "@/routes/portal/security";
+import portalNotificationsRouter from "@/routes/portal/notifications";
 import adminPortalRouter from "@/routes/admin/portal";
 import adminRolePermissionsRouter from "@/routes/admin/role-permissions";
 import adminSystemConfigRouter from "@/routes/admin/system-config";
@@ -137,6 +143,12 @@ app.use(`${v1}/portal/wallet`, portalWalletRouter);
 app.use(`${v1}/portal/orders`, portalOrdersRouter);
 app.use(`${v1}/portal/referrals`, portalReferralsRouter);
 app.use(`${v1}/portal/commissions`, portalCommissionsRouter);
+app.use(`${v1}/portal/invoices`, portalInvoicesRouter);
+app.use(`${v1}/portal/hosting`, portalHostingRouter);
+app.use(`${v1}/portal/websites`, portalWebsitesRouter);
+app.use(`${v1}/portal/web-to-apk`, portalWebToApkRouter);
+app.use(`${v1}/portal/security`, portalSecurityRouter);
+app.use(`${v1}/portal/notifications`, portalNotificationsRouter);
 
 // Admin
 app.use(`${v1}/admin/portal`, adminPortalRouter);

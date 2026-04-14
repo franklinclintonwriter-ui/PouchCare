@@ -99,9 +99,10 @@ export default function Terms() {
   return (
     <>
       <PageSEO
-        title="Terms of Service"
-        description="Read PouchCare's Terms of Service. By using PouchCare.com or engaging our services you agree to these terms. Includes company registration details for Pouch Care International Ltd."
+        title="Terms of Service — PouchCare Service Agreement"
+        description="PouchCare Terms of Service govern the use of PouchCare.com and all services provided by Pouch Care International Ltd. Review refund policy, SLA, and legal obligations."
         canonical="/terms"
+        keywords="PouchCare terms of service, service agreement, refund policy, SLA, Pouch Care International Ltd, terms and conditions"
       />
 
       <div className="border-b border-gray-200 bg-white pt-[68px] pb-10">
@@ -129,8 +130,8 @@ export default function Terms() {
                   must not use our website or services.
                 </p>
                 <p className="mb-4 text-sm leading-relaxed text-gray-600">
-                  <strong className="text-gray-800">{TRADING_NAME}</strong> is the
-                  brand name under which we market our services; it operates
+                  <strong className="text-gray-800">{TRADING_NAME}</strong> is
+                  the brand name under which we market our services; it operates
                   under{" "}
                   <strong className="text-gray-800">{LEGAL_ENTITY_NAME}</strong>
                   , a limited company incorporated in Bangladesh under the{" "}

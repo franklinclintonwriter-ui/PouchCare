@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
-import { useSupportTicket, useReplySupportTicket } from "@/api/portal-dashboard";
+import { useSupportTicket, useReplySupportTicket, useCloseTicket } from "@/api/portal-dashboard";
 import { paths } from "@/routes/paths";
 import { formatDate } from "@/lib/format";
 import { DashboardPanel } from "@/components/dashboard/DashboardPanel";
@@ -13,6 +13,7 @@ export default function SupportTicketPage() {
   const { ticketId } = useParams<{ ticketId: string }>();
   const q = useSupportTicket(ticketId);
   const reply = useReplySupportTicket(ticketId ?? "");
+  const closeTicket = useCloseTicket();
   const [text, setText] = useState("");
 
   const t = q.data;
@@ -25,6 +26,17 @@ export default function SupportTicketPage() {
       toast.success("Reply sent");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to send");
+    }
+  };
+
+  const handleClose = async () => {
+    if (!ticketId || !window.confirm("Close this ticket?")) return;
+    try {
+      await closeTicket.mutateAsync(ticketId);
+      toast.success("Ticket closed");
+      q.refetch();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to close ticket");
     }
   };
 
@@ -53,9 +65,23 @@ export default function SupportTicketPage() {
                 {formatDate(t.createdAt)} · {t.priority}
               </p>
             </div>
-            <Badge className="w-fit shrink-0" variant="sky">
-              {t.status}
-            </Badge>
+            <div className="flex items-center gap-2 shrink-0">
+              <Badge className="w-fit" variant="sky">
+                {t.status}
+              </Badge>
+              {t.status !== "Closed" && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="min-h-[36px]"
+                  disabled={closeTicket.isPending}
+                  onClick={() => void handleClose()}
+                >
+                  {closeTicket.isPending ? "Closing…" : "Close ticket"}
+                </Button>
+              )}
+            </div>
           </div>
 
           <DashboardPanel title="Conversation">

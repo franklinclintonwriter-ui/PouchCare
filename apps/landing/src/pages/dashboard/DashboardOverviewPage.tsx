@@ -24,9 +24,9 @@ import {
   usePortalWallet,
   useReferralStats,
 } from "@/api/portal-dashboard";
-import { useMockHostingDomains } from "@/hooks/useMockHostingDomains";
-import { MOCK_WEBSITES } from "@/data/mockWebsites";
-import { MOCK_INVOICES } from "@/data/mockInvoices";
+import { usePortalInvoices } from "@/api/portal-invoices";
+import { usePortalWebsites } from "@/api/portal-websites";
+import { usePortalDomains } from "@/api/portal-hosting";
 import { formatUsd, formatDateShort } from "@/lib/format";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { DashboardPanel } from "@/components/dashboard/DashboardPanel";
@@ -62,13 +62,15 @@ export default function DashboardOverviewPage() {
   const wallet = usePortalWallet();
   const stats = useReferralStats();
   const recent = usePortalOrders(1, 5);
-  const domains = useMockHostingDomains();
+  const websites = usePortalWebsites(1, 100);
+  const domainsQuery = usePortalDomains(1, 100);
+  const invoicesQuery = usePortalInvoices(1, 100, 'Pending');
 
   const bal = wallet.data?.walletBalance ?? user?.walletBalance ?? 0;
-  const onlineSites = MOCK_WEBSITES.filter((w) => w.status === "online").length;
-  const pendingInvoices = MOCK_INVOICES.filter(
-    (i) => i.status === "pending" || i.status === "overdue",
-  ).length;
+  const websitesList = websites.data?.items ?? [];
+  const onlineSites = websitesList.filter((w) => w.status === "online").length;
+  const domainsList = domainsQuery.data?.items ?? [];
+  const pendingInvoices = invoicesQuery.data?.meta?.total ?? 0;
 
   return (
     <div className="space-y-5 sm:space-y-6">
@@ -113,12 +115,12 @@ export default function DashboardOverviewPage() {
         />
         <StatCard
           label="Domains"
-          value={domains.length}
+          value={domainsQuery.isLoading ? "…" : domainsList.length}
           icon={<Globe2 className="h-4 w-4" />}
         />
         <StatCard
           label="Sites online"
-          value={`${onlineSites}/${MOCK_WEBSITES.length}`}
+          value={websites.isLoading ? "…" : `${onlineSites}/${websitesList.length}`}
           icon={<Globe className="h-4 w-4" />}
         />
         <StatCard

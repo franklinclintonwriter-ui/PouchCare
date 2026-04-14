@@ -313,8 +313,21 @@ export function useUpdateProfile() {
       phone?: string;
       whatsapp?: string;
       country?: string;
+      companyName?: string;
+      vatId?: string;
+      companyWebsite?: string;
+      industry?: string;
+      addressLine1?: string;
+      addressLine2?: string;
+      city?: string;
+      state?: string;
+      zip?: string;
+      addressCountry?: string;
+      telegram?: string;
+      skype?: string;
+      preferredContact?: string;
     }) => {
-      const res = await api.put<PortalProfile>("/portal/me", body);
+      const res = await api.put<PortalProfile>("/v1/portal/me", body);
       return res.data as unknown as PortalProfile;
     },
     onSuccess: (data) => {
@@ -342,6 +355,115 @@ export function useChangePassword() {
     }) => {
       const res = await api.post("/portal/change-password", body);
       return res.data;
+    },
+  });
+}
+
+export function useCancelOrder() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (orderId: string) => {
+      const res = await api.patch(`/portal/orders/${orderId}/cancel`);
+      return res.data;
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["portal", "orders"] });
+      void qc.invalidateQueries({ queryKey: ["portal-order"] });
+    },
+  });
+}
+
+export function useRequestRevision() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ orderId, note }: { orderId: string; note: string }) => {
+      const res = await api.post(`/portal/orders/${orderId}/revision`, {
+        note,
+      });
+      return res.data;
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["portal", "orders"] });
+      void qc.invalidateQueries({ queryKey: ["portal-order"] });
+    },
+  });
+}
+
+export function useReviewOrder() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      orderId,
+      rating,
+      reviewNote,
+    }: {
+      orderId: string;
+      rating: number;
+      reviewNote?: string;
+    }) => {
+      const res = await api.post(`/portal/orders/${orderId}/review`, {
+        rating,
+        reviewNote,
+      });
+      return res.data;
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["portal", "orders"] });
+      void qc.invalidateQueries({ queryKey: ["portal-order"] });
+    },
+  });
+}
+
+export function usePortalNotifications(page = 1, limit = 20) {
+  return useQuery({
+    queryKey: ["portal", "notifications", page, limit],
+    queryFn: async () => {
+      const res = await api.get("/portal/notifications", {
+        params: { page, limit },
+      });
+      return {
+        items: res.data.data ?? [],
+        meta: res.data.meta,
+      };
+    },
+  });
+}
+
+export function useMarkNotificationRead() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const res = await api.patch(`/portal/notifications/${id}/read`);
+      return res.data;
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["portal", "notifications"] });
+    },
+  });
+}
+
+export function useMarkAllNotificationsRead() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const res = await api.patch("/portal/notifications/read-all");
+      return res.data;
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["portal", "notifications"] });
+    },
+  });
+}
+
+export function useCloseTicket() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (ticketId: string) => {
+      const res = await api.patch(`/portal/support/${ticketId}/close`);
+      return res.data;
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["portal", "support"] });
     },
   });
 }

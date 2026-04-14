@@ -31,7 +31,16 @@ sudo -u ${APP_USER} git checkout main
 sudo -u ${APP_USER} git reset --hard origin/main
 log "Code: $(git log --oneline -1)"
 
-# 2. API update
+# 2. Database backup
+info "Backing up database before migration..."
+BACKUP_DIR="/home/pouchcare/backups"
+mkdir -p "$BACKUP_DIR"
+sudo -u postgres pg_dump -U pouchcare pouchcare > "$BACKUP_DIR/pre-deploy-$(date +%Y%m%d%H%M%S).sql"
+log "Backup saved to $BACKUP_DIR"
+# Clean up backups older than 30 days
+find "$BACKUP_DIR" -name "pre-deploy-*.sql" -mtime +30 -delete
+
+# 3. API update
 info "Updating API..."
 cd "${API_DIR}"
 sudo -u ${APP_USER} npm install --legacy-peer-deps --silent
@@ -40,16 +49,22 @@ sudo -u ${APP_USER} DATABASE_URL="${DB_URL}" npx prisma migrate deploy
 sudo -u ${APP_USER} npx tsc 2>&1 | tail -2
 log "API compiled"
 
-# 3. Restart API
+# 4. Restart API
 pm2 restart pouchcare-api
 sleep 3
-if curl -sf http://127.0.0.1:7000/health > /dev/null; then
-  log "API restarted and healthy"
-else
-  warn "API not responding — check: pm2 logs pouchcare-api"
-fi
 
-# 4. Rebuild frontends
+# Verify API health with retry loop
+echo "🏥 Verifying API health..."
+for i in 1 2 3 4 5; do
+  if curl -sf http://localhost:7000/health > /dev/null 2>&1; then
+    log "API is healthy"
+    break
+  fi
+  echo "   Waiting for API to start... (attempt $i/5)"
+  sleep 3
+done
+
+# 5. Rebuild frontends
 rebuild() {
   local NAME=$1 SRC=$2 OUT=$3
   info "Building ${NAME}..."
@@ -69,7 +84,7 @@ rebuild "Staff Office"      "apps/office"        "${HTDOCS}/office.pouchcare.com
 # Landing (marketing + future client portal routes — Vite SPA)
 rebuild "Landing" "apps/landing" "${HTDOCS}/pouchcare.com"
 
-# 5. Reload Nginx
+# 6. Reload Nginx
 nginx -t && nginx -s reload
 log "Nginx reloaded"
 

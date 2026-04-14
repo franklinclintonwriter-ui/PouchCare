@@ -6,6 +6,7 @@ import {
   requirePortal,
   type AuthRequest,
 } from "@/middleware/auth";
+import { authLimiter } from "@/middleware/rateLimit";
 import prisma from "@/lib/prisma";
 import { hashPassword, comparePassword } from "@/lib/hash";
 import { signAccess, signRefresh, verifyRefresh } from "@/lib/jwt";
@@ -50,7 +51,7 @@ function generateReferralCode() {
 }
 
 // POST /portal/register
-router.post("/register", validate(registerSchema), async (req, res) => {
+router.post("/register", authLimiter, validate(registerSchema), async (req, res) => {
   try {
     const { password, ref, ...rest } = req.body;
     const exists = await prisma.portalMember.findUnique({
@@ -106,7 +107,7 @@ router.post("/register", validate(registerSchema), async (req, res) => {
 });
 
 // POST /portal/login
-router.post("/login", validate(loginSchema), async (req, res) => {
+router.post("/login", authLimiter, validate(loginSchema), async (req, res) => {
   try {
     const { email, password } = req.body;
     const member = await prisma.portalMember.findUnique({ where: { email } });

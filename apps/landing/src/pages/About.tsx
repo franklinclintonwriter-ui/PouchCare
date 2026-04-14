@@ -191,10 +191,10 @@ export default function About() {
   return (
     <>
       <PageSEO
-        title="About PouchCare — Founder Abdullah Babu & Our Story"
-        description="PouchCare was founded by Abdullah Al Mamun (Abdullah Babu), award-winning SEO strategist and South Asia's Marketing Pioneer. Learn about our 10+ year journey from a one-laptop operation in Bangladesh to a 60+ person agency across 5 global offices."
+        title="About Us — Meet Founder Abdullah Babu & the PouchCare Team"
+        description="Founded by Abdullah Al Mamun (Abdullah Babu), PouchCare grew from a one-laptop startup in Bangladesh to a 60+ person agency with 5 global offices. 10+ years of SEO excellence."
         canonical="/about"
-        keywords="PouchCare, Abdullah Babu, Abdullah Al Mamun, SEO agency founder, digital marketing agency, PouchCare about us"
+        keywords="PouchCare about, Abdullah Babu, Abdullah Al Mamun, SEO agency founder, digital marketing agency Bangladesh, PouchCare team, SEO company history"
         schema={FOUNDER_SCHEMA}
       />
 

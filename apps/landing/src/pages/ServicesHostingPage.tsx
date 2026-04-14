@@ -7,8 +7,31 @@ import {
   SectionHeading,
   SectionSub,
 } from "@/components/ui/SectionLabel";
-import { MOCK_HOSTING_PLANS } from "@/data/mockHosting";
 import { MARKETING_HOSTING_SERVICES } from "@/data/marketingHosting";
+
+const HOSTING_PLANS = [
+  {
+    id: "starter",
+    name: "Starter",
+    blurb: "Single site, email forwarding, free SSL.",
+    monthlyUsd: 6.5,
+    features: ["5 GB SSD", "Unmetered bandwidth", "Weekly backups"],
+  },
+  {
+    id: "business",
+    name: "Business Pro",
+    blurb: "Production SLA, staging, priority DNS.",
+    monthlyUsd: 24.99,
+    features: ["100 GB SSD", "500 GB transfer", "Daily backups", "Staging"],
+  },
+  {
+    id: "scale",
+    name: "Scale",
+    blurb: "High traffic, dedicated support channel.",
+    monthlyUsd: 89,
+    features: ["200 GB SSD", "Dedicated pool", "Hourly backups"],
+  },
+];
 import { paths } from "@/routes/paths";
 import { HostingPlanCard } from "@/components/hosting/HostingPlanCard";
 
@@ -116,7 +139,7 @@ export default function ServicesHostingPage() {
             </div>
           </ScrollReveal>
           <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
-            {MOCK_HOSTING_PLANS.map((plan, i) => (
+            {HOSTING_PLANS.map((plan, i) => (
               <ScrollReveal key={plan.id} delay={i * 60}>
                 <HostingPlanCard
                   plan={plan}

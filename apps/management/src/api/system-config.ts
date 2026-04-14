@@ -1,10 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from './client';
 
+export type SettingValue = string | boolean | number | object | null;
+
 export interface SystemSetting {
   id: string;
   key: string;
-  value: any;
+  value: SettingValue;
   type: 'string' | 'boolean' | 'number' | 'json';
   group: string;
   label: string | null;
@@ -39,7 +41,7 @@ export function useSystemSettings(group?: string) {
 export function useUpdateSystemSettings() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (updates: { key: string; value: any; type?: string; group?: string; label?: string; description?: string }[]) => {
+    mutationFn: async (updates: { key: string; value: SettingValue; type?: string; group?: string; label?: string; description?: string }[]) => {
       const res = await api.put('/v1/admin/system-config', { updates });
       return res.data;
     },

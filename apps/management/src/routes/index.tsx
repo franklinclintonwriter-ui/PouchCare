@@ -3,6 +3,7 @@ import type { RouteObject } from "react-router-dom";
 import { Navigate } from "react-router-dom";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { PortalLayout } from "@/components/layout/PortalLayout";
+import { LogoSpinner } from "@/components/ui/LogoSpinner";
 import { AuthGuard, GuestGuard, PermissionGuard, ManagerGuard } from "./guards";
 
 function PageLoader() {
@@ -11,9 +12,7 @@ function PageLoader() {
       className="flex items-center justify-center py-12 opacity-0 animate-fade-in"
       style={{ animationDelay: "150ms", animationFillMode: "forwards" }}
     >
-      <div className="flex flex-col items-center gap-2">
-        <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary-100 border-t-primary-500" />
-      </div>
+      <LogoSpinner size="md" />
     </div>
   );
 }

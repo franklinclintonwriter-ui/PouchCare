@@ -1,11 +1,16 @@
 import type { ReactNode } from "react";
 import { Check, Server } from "lucide-react";
-import { MOCK_HOSTING_PLANS } from "@/data/mockHosting";
 import { formatUsd } from "@/lib/format";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
 
-export type HostingPlanEntry = (typeof MOCK_HOSTING_PLANS)[number];
+export interface HostingPlanEntry {
+  id: string;
+  name: string;
+  blurb: string;
+  monthlyUsd: number;
+  features: string[];
+}
 
 type Props = {
   plan: HostingPlanEntry;

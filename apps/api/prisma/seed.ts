@@ -1346,7 +1346,7 @@ async function seedSalesOrders() {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-async function seedFinance() {
+async function seedFinance(portalIds: Record<string, string>) {
   // Invoices
   const invoices = [
     {
@@ -1540,7 +1540,7 @@ async function seedFinance() {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-async function seedAssets() {
+async function seedAssets(portalIds: Record<string, string>) {
   // Domains
   const domains = [
     {
@@ -2589,6 +2589,284 @@ async function seedPortal() {
   return { portalIds, orderIds };
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function seedPortalExtras(portalIds: Record<string, string>) {
+  const johnId = portalIds['john@example.com'];
+  const aliceId = portalIds['alice@example.com'];
+
+  if (!johnId) return;
+
+  // ApkJobs
+  const apkJobs = [
+    {
+      portalMemberId: johnId,
+      appName: 'PouchCare Mobile',
+      url: 'https://pouchcare.com',
+      plan: 'pro',
+      status: 'completed',
+      apkSizeMb: 12.4,
+      downloadUrl: 'https://cdn.pouchcare.com/apk/pouchcare-mobile-v1.0.apk',
+    },
+    {
+      portalMemberId: johnId,
+      appName: 'My Portfolio App',
+      url: 'https://john-portfolio.com',
+      plan: 'basic',
+      status: 'processing',
+      apkSizeMb: null,
+      downloadUrl: null,
+    },
+    {
+      portalMemberId: aliceId ?? johnId,
+      appName: 'Alice Blog App',
+      url: 'https://alice-blog.com',
+      plan: 'basic',
+      status: 'completed',
+      apkSizeMb: 8.7,
+      downloadUrl: 'https://cdn.pouchcare.com/apk/alice-blog-v1.0.apk',
+    },
+  ];
+  for (const job of apkJobs) {
+    await prisma.apkJob.create({ data: job }).catch(() => null);
+  }
+
+  // Portal Sessions
+  const sessions = [
+    {
+      portalMemberId: johnId,
+      deviceType: 'Desktop',
+      browserName: 'Chrome',
+      osName: 'Windows 11',
+      ipAddress: '203.0.113.10',
+      country: 'BD',
+      city: 'Dhaka',
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+      lastActivityAt: new Date(),
+    },
+    {
+      portalMemberId: johnId,
+      deviceType: 'Mobile',
+      browserName: 'Safari',
+      osName: 'iOS 17',
+      ipAddress: '203.0.113.11',
+      country: 'BD',
+      city: 'Chittagong',
+      expiresAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+      lastActivityAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+    },
+  ];
+  for (const s of sessions) {
+    await prisma.portalSession.create({ data: s }).catch(() => null);
+  }
+
+  // Portal Login Logs
+  const loginLogs = [
+    {
+      portalMemberId: johnId,
+      email: 'john@example.com',
+      ipAddress: '203.0.113.10',
+      country: 'BD',
+      city: 'Dhaka',
+      deviceType: 'Desktop',
+      browserName: 'Chrome',
+      osName: 'Windows 11',
+      status: 'success',
+    },
+    {
+      portalMemberId: johnId,
+      email: 'john@example.com',
+      ipAddress: '198.51.100.5',
+      country: 'US',
+      city: 'New York',
+      deviceType: 'Desktop',
+      browserName: 'Firefox',
+      osName: 'macOS',
+      status: 'success',
+    },
+    {
+      portalMemberId: johnId,
+      email: 'john@example.com',
+      ipAddress: '192.0.2.99',
+      country: 'RU',
+      city: 'Moscow',
+      deviceType: 'Desktop',
+      browserName: 'Chrome',
+      osName: 'Linux',
+      status: 'failed',
+      failureReason: 'Invalid password',
+    },
+    {
+      portalMemberId: aliceId ?? johnId,
+      email: 'alice@example.com',
+      ipAddress: '203.0.113.50',
+      country: 'AE',
+      city: 'Dubai',
+      deviceType: 'Mobile',
+      browserName: 'Safari',
+      osName: 'iOS 17',
+      status: 'success',
+    },
+  ];
+  for (const log of loginLogs) {
+    await prisma.portalLoginLog.create({ data: log }).catch(() => null);
+  }
+
+  // Portal-linked invoices
+  const invoices = [
+    {
+      invoiceNumber: 'INV-P001',
+      clientName: 'John Doe',
+      clientEmail: 'john@example.com',
+      portalMemberId: johnId,
+      service: 'Link Building (50x DA40+)',
+      status: 'Paid',
+      paymentMethod: 'Wallet',
+      amountUsd: 750,
+      amountBdt: 93000,
+      issueDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+      dueDate: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000),
+      paidDate: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000),
+    },
+    {
+      invoiceNumber: 'INV-P002',
+      clientName: 'John Doe',
+      clientEmail: 'john@example.com',
+      portalMemberId: johnId,
+      service: 'Web Development',
+      status: 'Pending',
+      amountUsd: 2500,
+      amountBdt: 310000,
+      issueDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+      dueDate: new Date(Date.now() + 25 * 24 * 60 * 60 * 1000),
+    },
+    {
+      invoiceNumber: 'INV-P003',
+      clientName: 'Alice Smith',
+      clientEmail: 'alice@example.com',
+      portalMemberId: aliceId ?? johnId,
+      service: 'Monthly SEO Package',
+      status: 'Paid',
+      paymentMethod: 'Bank Transfer',
+      amountUsd: 500,
+      amountBdt: 62000,
+      issueDate: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000),
+      dueDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+      paidDate: new Date(Date.now() - 35 * 24 * 60 * 60 * 1000),
+    },
+    {
+      invoiceNumber: 'INV-P004',
+      clientName: 'John Doe',
+      clientEmail: 'john@example.com',
+      portalMemberId: johnId,
+      service: 'Content Writing (10 articles)',
+      status: 'Overdue',
+      amountUsd: 350,
+      amountBdt: 43400,
+      issueDate: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000),
+      dueDate: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000),
+    },
+  ];
+  for (const inv of invoices) {
+    await prisma.invoice.upsert({
+      where: { invoiceNumber: inv.invoiceNumber },
+      update: {},
+      create: inv as any,
+    }).catch(() => null);
+  }
+
+  // Portal-linked domains
+  const portalDomains = [
+    {
+      domainName: 'johndoe-seo.com',
+      status: 'Active',
+      registrar: 'Namecheap',
+      portalMemberId: johnId,
+      expiryDate: new Date(Date.now() + 300 * 24 * 60 * 60 * 1000),
+      registrationDate: new Date(Date.now() - 65 * 24 * 60 * 60 * 1000),
+      annualRenewalCost: 12.99,
+      sslStatus: 'Valid',
+      niche: 'SEO',
+    },
+    {
+      domainName: 'john-portfolio.dev',
+      status: 'Active',
+      registrar: 'GoDaddy',
+      portalMemberId: johnId,
+      expiryDate: new Date(Date.now() + 200 * 24 * 60 * 60 * 1000),
+      registrationDate: new Date(Date.now() - 120 * 24 * 60 * 60 * 1000),
+      annualRenewalCost: 15.99,
+      sslStatus: 'Valid',
+      niche: 'Portfolio',
+    },
+    {
+      domainName: 'alice-blog.com',
+      status: 'Active',
+      registrar: 'Namecheap',
+      portalMemberId: aliceId ?? johnId,
+      expiryDate: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000),
+      registrationDate: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000),
+      annualRenewalCost: 10.99,
+      sslStatus: 'Valid',
+      niche: 'Blog',
+    },
+  ];
+  for (const d of portalDomains) {
+    await prisma.domain.create({ data: d as any }).catch(() => null);
+  }
+
+  // Portal-linked websites
+  const portalWebsites = [
+    {
+      name: 'JohnDoe SEO Agency',
+      url: 'https://johndoe-seo.com',
+      type: 'Business',
+      status: 'Live',
+      platform: 'WordPress',
+      hostedOn: 'Server-01',
+      domainLinked: 'johndoe-seo.com',
+      portalMemberId: johnId,
+      monthlyTraffic: 2500,
+      daScore: 28,
+      sslStatus: 'Valid',
+      lastUpdated: new Date(),
+    },
+    {
+      name: 'John Portfolio',
+      url: 'https://john-portfolio.dev',
+      type: 'Portfolio',
+      status: 'Live',
+      platform: 'React',
+      hostedOn: 'Vercel',
+      domainLinked: 'john-portfolio.dev',
+      portalMemberId: johnId,
+      monthlyTraffic: 800,
+      daScore: 12,
+      sslStatus: 'Valid',
+      lastUpdated: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+    },
+    {
+      name: 'Alice Blog',
+      url: 'https://alice-blog.com',
+      type: 'Blog',
+      status: 'Live',
+      platform: 'WordPress',
+      hostedOn: 'Server-02',
+      domainLinked: 'alice-blog.com',
+      portalMemberId: aliceId ?? johnId,
+      monthlyTraffic: 1200,
+      daScore: 18,
+      sslStatus: 'Valid',
+      lastUpdated: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+    },
+  ];
+  for (const w of portalWebsites) {
+    await prisma.website.create({ data: w as any }).catch(() => null);
+  }
+
+  console.log('✅ Portal extras (APK jobs, sessions, login logs) seeded');
+}
+
 async function seedNotifications(
   staffIds: Record<string, string>,
   portalIds: Record<string, string>,
@@ -3093,12 +3371,13 @@ async function main() {
   await seedPerformanceRatings(staffIds);
   await seedCrm(staffIds);
   await seedSalesOrders();
-  await seedFinance();
-  await seedAssets();
   await seedHR();
   await seedStaffDocuments(staffIds);
   await seedRolePermissions();
   const { portalIds } = await seedPortal();
+  await seedFinance(portalIds);
+  await seedAssets(portalIds);
+  await seedPortalExtras(portalIds);
   await seedNotifications(staffIds, portalIds);
   await seedSupportExpansion(staffIds, portalIds);
   await seedPluginsAndApiKeys(staffIds, portalIds);

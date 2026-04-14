@@ -157,8 +157,8 @@ export default function Services() {
                   Domains, DNS & hosting
                 </h2>
                 <p className="mt-1 max-w-xl text-sm text-gray-600">
-                  Search names, manage SSL, and pick a plan in the client portal —
-                  same mock data as{" "}
+                  Search names, manage SSL, and pick a plan in the client portal
+                  — learn more at{" "}
                   <Link
                     to="/services/hosting"
                     className="font-medium text-primary-600 hover:underline"

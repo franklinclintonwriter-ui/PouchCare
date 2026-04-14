@@ -291,7 +291,19 @@ export type DepositRecord = {
   transactionDate: string;
 };
 
-function mapDeposit(raw: any): DepositRecord {
+interface RawDeposit {
+  id: string;
+  memberId: string;
+  member?: { fullName?: string; email?: string } | null;
+  amountUsd?: number | null;
+  paymentMethod?: string | null;
+  proofUrl?: string | null;
+  status?: string | null;
+  transactionDate?: string | null;
+  createdAt?: string | null;
+}
+
+function mapDeposit(raw: RawDeposit): DepositRecord {
   return {
     id: raw.id,
     memberId: raw.memberId,

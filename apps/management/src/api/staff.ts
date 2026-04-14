@@ -182,10 +182,31 @@ export type UpdateStaffInput = {
   id: string;
   name?: string;
   email?: string;
-  phone?: string;
-  branch?: string;
-  jobRole?: string;
-  salary?: number;
+  systemRole?: string;
+  status?: string;
+  phone?: string | null;
+  branch?: string | null;
+  jobRole?: string | null;
+  primarySkill?: string | null;
+  skillLevel?: string | null;
+  secondarySkills?: string | null;
+  toolsKnown?: string | null;
+  yearsExperience?: number | null;
+  employmentType?: string | null;
+  salary?: number | null;
+  email2?: string | null;
+  whatsapp?: string | null;
+  address?: string | null;
+  country?: string | null;
+  nidPassport?: string | null;
+  emergencyContact?: string | null;
+  joinDate?: string | null;
+  terminationDate?: string | null;
+  exitReason?: string | null;
+  portfolioUrl?: string | null;
+  linkedinUrl?: string | null;
+  githubUrl?: string | null;
+  certifications?: string | null;
 };
 
 export function useCreateStaff() {

@@ -8,6 +8,8 @@ import { useCurrency } from '@/hooks/useCurrency';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { TrendingUp, Target, Calendar, Zap } from 'lucide-react';
 
+const MONTH_SHORT = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
 export default function Forecast() {
   const { formatCurrency, symbol, convert } = useCurrency();
   const { data: months, isLoading: revenueLoading } = useRevenue();
@@ -19,7 +21,7 @@ export default function Forecast() {
 
   const chartData = useMemo(() => {
     const historical = revenueData.map(m => ({
-      month: typeof m.month === 'number' ? `${m.month}` : m.month,
+      month: typeof m.month === 'number' ? (MONTH_SHORT[m.month] ?? `${m.month}`) : m.month,
       actual: m.revenue as number | null,
       projected: null as number | null,
     }));

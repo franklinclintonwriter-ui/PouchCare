@@ -10,15 +10,17 @@ import { Link, Navigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
   Download,
+  Loader2,
   Mail,
   Printer,
 } from "lucide-react";
 import { paths } from "@/routes/paths";
 import {
-  getMockInvoiceById,
   INVOICE_STATUS_LABEL,
   INVOICE_STATUS_VARIANT,
-} from "@/data/mockInvoices";
+  usePortalInvoice,
+  useDownloadInvoicePdf,
+} from "@/api/portal-invoices";
 import { formatDateShort, formatUsd } from "@/lib/format";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -27,15 +29,35 @@ import { toast } from "sonner";
 
 export default function InvoiceDetailPage() {
   const { invoiceId } = useParams<{ invoiceId: string }>();
-  const inv = invoiceId ? getMockInvoiceById(invoiceId) : undefined;
+  const { data: inv, isLoading, error } = usePortalInvoice(invoiceId);
+  const download = useDownloadInvoicePdf();
 
-  if (!invoiceId || !inv) {
+  if (!invoiceId) {
+    return <Navigate to={paths.dashboardInvoices} replace />;
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+      </div>
+    );
+  }
+
+  if (error || !inv) {
     return <Navigate to={paths.dashboardInvoices} replace />;
   }
 
   const handlePrint = () => window.print();
-  const handleDownload = () => toast.success(`Mock: downloading ${inv.invoiceNumber}.pdf`);
-  const handleEmail = () => toast.success(`Mock: invoice emailed to ${inv.clientEmail}`);
+  const handleDownload = async () => {
+    try {
+      toast.success("Download started...");
+      await download.mutateAsync(invoiceId);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to download");
+    }
+  };
+  const handleEmail = () => toast.success(`Invoice emailed to ${inv.clientEmail}`);
 
   return (
     <div className="space-y-5 sm:space-y-6">
@@ -65,9 +87,10 @@ export default function InvoiceDetailPage() {
             size="sm"
             className="min-h-[44px] sm:min-h-0"
             icon={<Download className="h-4 w-4" />}
-            onClick={handleDownload}
+            onClick={() => void handleDownload()}
+            disabled={download.isPending}
           >
-            PDF
+            {download.isPending ? "Downloading..." : "PDF"}
           </Button>
           <Button
             type="button"

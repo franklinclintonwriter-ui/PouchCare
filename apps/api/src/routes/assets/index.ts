@@ -36,7 +36,7 @@ router.get('/domains', requireStaff, async (req, res) => {
       prisma.domain.count({ where }),
     ])
     return ok(res, domains, buildMeta(total, page, limit))
-  } catch (err) { serverError(res, err) }
+  } catch (err) { return serverError(res, err) }
 })
 
 router.post('/domains', requireRoles(...SENIOR_ROLES as any), async (req, res) => {
@@ -49,7 +49,7 @@ router.post('/domains', requireRoles(...SENIOR_ROLES as any), async (req, res) =
       },
     })
     return created(res, domain)
-  } catch (err) { serverError(res, err) }
+  } catch (err) { return serverError(res, err) }
 })
 
 router.get('/domains/:id', requireStaff, async (req, res) => {
@@ -57,21 +57,21 @@ router.get('/domains/:id', requireStaff, async (req, res) => {
     const domain = await prisma.domain.findUnique({ where: { id: req.params.id } })
     if (!domain) return notFound(res)
     return ok(res, domain)
-  } catch (err) { serverError(res, err) }
+  } catch (err) { return serverError(res, err) }
 })
 
 router.put('/domains/:id', requireRoles(...SENIOR_ROLES as any), async (req, res) => {
   try {
     const domain = await prisma.domain.update({ where: { id: req.params.id }, data: req.body })
     return ok(res, domain)
-  } catch (err) { serverError(res, err) }
+  } catch (err) { return serverError(res, err) }
 })
 
 router.delete('/domains/:id', requireRoles(...SENIOR_ROLES as any), async (req, res) => {
   try {
     await prisma.domain.delete({ where: { id: req.params.id } })
     return ok(res, { message: 'Domain deleted' })
-  } catch (err) { serverError(res, err) }
+  } catch (err) { return serverError(res, err) }
 })
 
 // ── SERVERS ──
@@ -79,14 +79,14 @@ router.get('/servers', requireStaff, async (req, res) => {
   try {
     const servers = await prisma.server.findMany({ orderBy: { name: 'asc' } })
     return ok(res, servers)
-  } catch (err) { serverError(res, err) }
+  } catch (err) { return serverError(res, err) }
 })
 
 router.post('/servers', requireRoles(...SENIOR_ROLES as any), async (req, res) => {
   try {
     const server = await prisma.server.create({ data: req.body })
     return created(res, server)
-  } catch (err) { serverError(res, err) }
+  } catch (err) { return serverError(res, err) }
 })
 
 router.get('/servers/:id', requireStaff, async (req, res) => {
@@ -94,21 +94,21 @@ router.get('/servers/:id', requireStaff, async (req, res) => {
     const server = await prisma.server.findUnique({ where: { id: req.params.id } })
     if (!server) return notFound(res)
     return ok(res, server)
-  } catch (err) { serverError(res, err) }
+  } catch (err) { return serverError(res, err) }
 })
 
 router.put('/servers/:id', requireRoles(...SENIOR_ROLES as any), async (req, res) => {
   try {
     const server = await prisma.server.update({ where: { id: req.params.id }, data: req.body })
     return ok(res, server)
-  } catch (err) { serverError(res, err) }
+  } catch (err) { return serverError(res, err) }
 })
 
 router.delete('/servers/:id', requireRoles(...SENIOR_ROLES as any), async (req, res) => {
   try {
     await prisma.server.delete({ where: { id: req.params.id } })
     return ok(res, { message: 'Server deleted' })
-  } catch (err) { serverError(res, err) }
+  } catch (err) { return serverError(res, err) }
 })
 
 // ── WEBSITES ──
@@ -116,14 +116,14 @@ router.get('/websites', requireStaff, async (req, res) => {
   try {
     const websites = await prisma.website.findMany({ orderBy: { name: 'asc' } })
     return ok(res, websites)
-  } catch (err) { serverError(res, err) }
+  } catch (err) { return serverError(res, err) }
 })
 
 router.post('/websites', requireRoles(...SENIOR_ROLES as any), async (req, res) => {
   try {
     const website = await prisma.website.create({ data: req.body })
     return created(res, website)
-  } catch (err) { serverError(res, err) }
+  } catch (err) { return serverError(res, err) }
 })
 
 router.get('/websites/:id', requireStaff, async (req, res) => {
@@ -131,21 +131,21 @@ router.get('/websites/:id', requireStaff, async (req, res) => {
     const website = await prisma.website.findUnique({ where: { id: req.params.id } })
     if (!website) return notFound(res)
     return ok(res, website)
-  } catch (err) { serverError(res, err) }
+  } catch (err) { return serverError(res, err) }
 })
 
 router.put('/websites/:id', requireRoles(...SENIOR_ROLES as any), async (req, res) => {
   try {
     const website = await prisma.website.update({ where: { id: req.params.id }, data: req.body })
     return ok(res, website)
-  } catch (err) { serverError(res, err) }
+  } catch (err) { return serverError(res, err) }
 })
 
 router.delete('/websites/:id', requireRoles(...SENIOR_ROLES as any), async (req, res) => {
   try {
     await prisma.website.delete({ where: { id: req.params.id } })
     return ok(res, { message: 'Website deleted' })
-  } catch (err) { serverError(res, err) }
+  } catch (err) { return serverError(res, err) }
 })
 
 // ── CAMERA DEVICES (CCTV) ──

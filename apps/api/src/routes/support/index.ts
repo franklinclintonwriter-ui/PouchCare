@@ -39,7 +39,7 @@ router.get('/tickets', requireAuth, async (req, res) => {
       prisma.supportTicket.count({ where }),
     ])
     return ok(res, tickets, buildMeta(total, page, limit))
-  } catch (err) { serverError(res, err) }
+  } catch (err) { return serverError(res, err) }
 })
 
 router.get('/tickets/:id', requireAuth, async (req, res) => {
@@ -51,7 +51,7 @@ router.get('/tickets/:id', requireAuth, async (req, res) => {
     if (!ticket) return notFound(res)
     if (req.user?.type === 'portal' && ticket.memberId !== req.user.id) return forbidden(res)
     return ok(res, ticket)
-  } catch (err) { serverError(res, err) }
+  } catch (err) { return serverError(res, err) }
 })
 
 router.post("/tickets", validate(ticketSchema), async (req, res) => {
@@ -87,7 +87,7 @@ router.post("/tickets", validate(ticketSchema), async (req, res) => {
       },
     })
     return created(res, ticket)
-  } catch (err) { serverError(res, err) }
+  } catch (err) { return serverError(res, err) }
 })
 
 router.post('/tickets/:id/reply', requireAuth, async (req, res) => {
@@ -113,7 +113,7 @@ router.post('/tickets/:id/reply', requireAuth, async (req, res) => {
       data: { status: req.user?.type === 'staff' ? 'In Progress' : 'Open', updatedAt: new Date() },
     })
     return created(res, reply)
-  } catch (err) { serverError(res, err) }
+  } catch (err) { return serverError(res, err) }
 })
 
 router.put('/tickets/:id', requireStaff, async (req, res) => {
@@ -123,7 +123,24 @@ router.put('/tickets/:id', requireStaff, async (req, res) => {
       data: { status: req.body.status, assignedTo: req.body.assignedTo },
     })
     return ok(res, ticket)
-  } catch (err) { serverError(res, err) }
+  } catch (err) { return serverError(res, err) }
+})
+
+// PATCH /support/tickets/:id/close — Close a ticket (portal member)
+router.patch('/tickets/:id/close', requireAuth, async (req, res) => {
+  try {
+    const ticket = await prisma.supportTicket.findUnique({
+      where: { id: req.params.id },
+    })
+    if (!ticket) return notFound(res, 'Ticket')
+    // Portal members can only close their own tickets
+    if (req.user?.type === 'portal' && ticket.memberId !== req.user.id) return forbidden(res)
+    const updated = await prisma.supportTicket.update({
+      where: { id: req.params.id },
+      data: { status: 'Closed' },
+    })
+    return ok(res, updated)
+  } catch (err) { return serverError(res, err) }
 })
 
 // DELETE /tickets/:id — Staff only, delete ticket and all replies
@@ -142,7 +159,7 @@ router.delete('/tickets/:id', requireStaff, async (req, res) => {
     ])
 
     return ok(res, { message: 'Ticket deleted successfully' })
-  } catch (err) { serverError(res, err) }
+  } catch (err) { return serverError(res, err) }
 })
 
 export default router

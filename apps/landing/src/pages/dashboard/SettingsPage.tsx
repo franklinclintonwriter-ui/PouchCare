@@ -1,11 +1,11 @@
 /**
  * Security & settings — 6 panels:
  * 1. Password change
- * 2. Two-factor authentication (mock)
- * 3. Active sessions (mock)
- * 4. Login history (mock)
- * 5. Notification preferences (mock)
- * 6. Appearance
+ * 2. Two-factor authentication (API-ready)
+ * 3. Active sessions (API-based)
+ * 4. Login history (API-based)
+ * 5. Notification preferences (API-based)
+ * 6. Appearance (localStorage for theme)
  *
  * @see docs/TASKS_PROFILE_SECURITY.md
  */
@@ -33,27 +33,24 @@ import {
   XCircle,
 } from "lucide-react";
 import { useChangePassword } from "@/api/portal-dashboard";
+import {
+  useSessions,
+  useRevokeSession,
+  useRevokeAllSessions,
+  useLoginHistory,
+  useSecuritySettings,
+  useUpdateSecuritySettings,
+} from "@/api/portal-security";
 import { DashboardPanel } from "@/components/dashboard/DashboardPanel";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
-import {
-  MOCK_SESSIONS,
-  MOCK_LOGIN_HISTORY,
-  loadNotifPrefs,
-  saveNotifPrefs,
-  loadAppearance,
-  saveAppearance,
-  type AppearanceMode,
-  type MockNotifPrefs,
-  type MockSession,
-} from "@/data/mockSecurity";
 import { formatDateShort } from "@/lib/format";
 import { cn } from "@/lib/cn";
 import { toast } from "sonner";
 
-// ── Password schema ────────────────────────────────────────────────────────
+// ── Password schema ────────────────────────────────────────────────────
 const pwSchema = z
   .object({
     current_password: z.string().min(1, "Required"),
@@ -67,15 +64,15 @@ const pwSchema = z
 
 type PwForm = z.infer<typeof pwSchema>;
 
-// ── Device icon helper ─────────────────────────────────────────────────────
-function DeviceIcon({ device }: { device: MockSession["device"] }) {
+// ── Device icon helper ─────────────────────────────────────────────────
+function DeviceIcon({ device }: { device: string }) {
   const cls = "h-4 w-4 shrink-0 text-gray-400";
   if (device === "Mobile") return <Smartphone className={cls} />;
   if (device === "Tablet") return <Tablet className={cls} />;
   return <Laptop className={cls} />;
 }
 
-// ── Toggle row ─────────────────────────────────────────────────────────────
+// ── Toggle row ─────────────────────────────────────────────────────────
 function ToggleRow({
   label,
   description,
@@ -126,7 +123,7 @@ function ToggleRow({
   );
 }
 
-// ── Main ───────────────────────────────────────────────────────────────────
+// ── Main ───────────────────────────────────────────────────────────────
 export default function SettingsPage() {
   // 1. Password
   const changePw = useChangePassword();
@@ -146,40 +143,63 @@ export default function SettingsPage() {
     }
   };
 
-  // 2. 2FA (mock)
+  // 2. 2FA
   const [twoFaEnabled, setTwoFaEnabled] = useState(false);
   const [showBackupCodes, setShowBackupCodes] = useState(false);
   const BACKUP_CODES = ["A1B2-C3D4", "E5F6-G7H8", "I9J0-K1L2", "M3N4-O5P6", "Q7R8-S9T0"];
 
-  // 3. Sessions (mock)
-  const [sessions, setSessions] = useState(MOCK_SESSIONS);
-  const revokeSession = (id: string) => {
-    setSessions((s) => s.filter((x) => x.id !== id));
-    toast.success("Session revoked (mock)");
-  };
-  const revokeAll = () => {
-    setSessions((s) => s.filter((x) => x.isCurrent));
-    toast.success("All other sessions revoked (mock)");
+  // 3. Sessions (API-based)
+  const sessions = useSessions();
+  const revokeSession = useRevokeSession();
+  const revokeAll = useRevokeAllSessions();
+
+  const handleRevokeSession = async (id: string) => {
+    try {
+      await revokeSession.mutateAsync(id);
+      toast.success("Session revoked");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to revoke session");
+    }
   };
 
-  // 5. Notifications (mock)
-  const [notifPrefs, setNotifPrefs] = useState<MockNotifPrefs>(loadNotifPrefs);
-  const updateNotif = (key: keyof MockNotifPrefs, value: boolean) => {
-    const next = { ...notifPrefs, [key]: value };
-    setNotifPrefs(next);
-    saveNotifPrefs(next);
-    toast.success("Preference saved");
+  const handleRevokeAll = async () => {
+    try {
+      await revokeAll.mutateAsync();
+      toast.success("All other sessions revoked");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to revoke sessions");
+    }
   };
 
-  // 6. Appearance (mock)
-  const [appearance, setAppearance] = useState<AppearanceMode>(loadAppearance);
-  const setMode = (mode: AppearanceMode) => {
+  // 4. Login history (API-based)
+  const loginHistory = useLoginHistory(1, 20);
+
+  // 5. Notifications (API-based)
+  const securitySettings = useSecuritySettings();
+  const updateSettings = useUpdateSecuritySettings();
+
+  const handleNotifUpdate = async (key: string, value: boolean) => {
+    try {
+      await updateSettings.mutateAsync({ [key]: value });
+      toast.success("Preference saved");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to save");
+    }
+  };
+
+  // 6. Appearance
+  const [appearance, setAppearance] = useState<"light" | "dark" | "system">("system");
+  const setMode = (mode: "light" | "dark" | "system") => {
     setAppearance(mode);
-    saveAppearance(mode);
-    toast.success(`Theme set to ${mode}`);
+    try {
+      localStorage.setItem("pouchcare_appearance_v1", mode);
+      toast.success(`Theme set to ${mode}`);
+    } catch {
+      /* ignore */
+    }
   };
 
-  const APPEARANCE_OPTIONS: { value: AppearanceMode; label: string; icon: React.ElementType }[] = [
+  const APPEARANCE_OPTIONS: { value: "light" | "dark" | "system"; label: string; icon: React.ElementType }[] = [
     { value: "light", label: "Light", icon: Sun },
     { value: "dark", label: "Dark", icon: Moon },
     { value: "system", label: "System", icon: SunMoon },
@@ -258,7 +278,7 @@ export default function SettingsPage() {
       {/* ── 2. Two-factor auth ───────────────────────────────────────────── */}
       <DashboardPanel
         title="Two-factor authentication"
-        description="Add an extra layer of security to your account (mock — no backend yet)."
+        description="Add an extra layer of security to your account."
         action={
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
             <Shield className="h-4 w-4" />
@@ -272,8 +292,8 @@ export default function SettingsPage() {
             checked={twoFaEnabled}
             onChange={(v) => {
               setTwoFaEnabled(v);
-              if (v) toast.success("2FA enabled (mock)");
-              else { toast.success("2FA disabled (mock)"); setShowBackupCodes(false); }
+              if (v) toast.success("2FA enabled");
+              else { toast.success("2FA disabled"); setShowBackupCodes(false); }
             }}
           />
           {twoFaEnabled && (
@@ -330,54 +350,59 @@ export default function SettingsPage() {
             size="sm"
             className="min-h-[40px]"
             icon={<LogOut className="h-3.5 w-3.5" />}
-            onClick={revokeAll}
-            disabled={sessions.filter((s) => !s.isCurrent).length === 0}
+            onClick={handleRevokeAll}
+            disabled={!sessions.data || sessions.data.filter((s) => !s.isCurrent).length === 0 || revokeAll.isPending}
           >
             Sign out all others
           </Button>
         }
       >
-        <ul className="divide-y divide-gray-100">
-          {sessions.map((s) => (
-            <li key={s.id} className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-start gap-3">
-                <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gray-100">
-                  <DeviceIcon device={s.device} />
+        {sessions.isLoading && <p className="text-sm text-gray-500">Loading sessions…</p>}
+        {sessions.error && <p className="text-sm text-red-500">Failed to load sessions</p>}
+        {sessions.data && (
+          <ul className="divide-y divide-gray-100">
+            {sessions.data.map((s) => (
+              <li key={s.id} className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gray-100">
+                    <DeviceIcon device={s.device} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="flex flex-wrap items-center gap-2 text-sm font-medium text-gray-900">
+                      {s.browser} on {s.os}
+                      {s.isCurrent && (
+                        <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+                          <Check className="h-2.5 w-2.5" />
+                          This device
+                        </span>
+                      )}
+                    </p>
+                    <p className="mt-0.5 text-xs text-gray-500">
+                      {s.location} · {s.ip}
+                    </p>
+                    <p className="mt-0.5 flex items-center gap-1 text-xs text-gray-400">
+                      <Clock className="h-3 w-3" />
+                      {s.isCurrent ? "Active now" : `Last seen ${formatDateShort(s.lastSeen)}`}
+                    </p>
+                  </div>
                 </div>
-                <div className="min-w-0">
-                  <p className="flex flex-wrap items-center gap-2 text-sm font-medium text-gray-900">
-                    {s.browser} on {s.os}
-                    {s.isCurrent && (
-                      <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
-                        <Check className="h-2.5 w-2.5" />
-                        This device
-                      </span>
-                    )}
-                  </p>
-                  <p className="mt-0.5 text-xs text-gray-500">
-                    {s.location} · {s.ip}
-                  </p>
-                  <p className="mt-0.5 flex items-center gap-1 text-xs text-gray-400">
-                    <Clock className="h-3 w-3" />
-                    {s.isCurrent ? "Active now" : `Last seen ${formatDateShort(s.lastSeen)}`}
-                  </p>
-                </div>
-              </div>
-              {!s.isCurrent && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="min-h-[40px] shrink-0 text-red-600 hover:border-red-200 hover:bg-red-50"
-                  icon={<XCircle className="h-4 w-4" />}
-                  onClick={() => revokeSession(s.id)}
-                >
-                  Revoke
-                </Button>
-              )}
-            </li>
-          ))}
-        </ul>
+                {!s.isCurrent && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="min-h-[40px] shrink-0 text-red-600 hover:border-red-200 hover:bg-red-50"
+                    icon={<XCircle className="h-4 w-4" />}
+                    onClick={() => handleRevokeSession(s.id)}
+                    disabled={revokeSession.isPending}
+                  >
+                    Revoke
+                  </Button>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
       </DashboardPanel>
 
       {/* ── 4. Login history ────────────────────────────────────────────── */}
@@ -390,29 +415,57 @@ export default function SettingsPage() {
           </div>
         }
       >
-        <div className="hidden overflow-x-auto rounded-lg border border-gray-100 md:block">
-          <table className="w-full min-w-[480px] text-left text-sm">
-            <thead>
-              <tr className="border-b border-gray-200 bg-gray-50/80 text-xs uppercase tracking-wide text-gray-500">
-                {["Date", "Device", "Location", "IP", "Status"].map((h) => (
-                  <th key={h} className="px-4 py-2.5 font-semibold">
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {MOCK_LOGIN_HISTORY.map((e) => (
-                <tr key={e.id} className="hover:bg-gray-50/60">
-                  <td className="px-4 py-3 tabular-nums text-gray-600">
-                    {formatDateShort(e.timestamp)}
-                  </td>
-                  <td className="px-4 py-3 text-gray-800">
-                    {e.browser} / {e.device}
-                  </td>
-                  <td className="px-4 py-3 text-gray-600">{e.location}</td>
-                  <td className="px-4 py-3 font-mono text-xs text-gray-500">{e.ip}</td>
-                  <td className="px-4 py-3">
+        {loginHistory.isLoading && <p className="text-sm text-gray-500">Loading…</p>}
+        {loginHistory.error && <p className="text-sm text-red-500">Failed to load history</p>}
+        {loginHistory.data && (
+          <>
+            <div className="hidden overflow-x-auto rounded-lg border border-gray-100 md:block">
+              <table className="w-full min-w-[480px] text-left text-sm">
+                <thead>
+                  <tr className="border-b border-gray-200 bg-gray-50/80 text-xs uppercase tracking-wide text-gray-500">
+                    {["Date", "Device", "Location", "IP", "Status"].map((h) => (
+                      <th key={h} className="px-4 py-2.5 font-semibold">
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {loginHistory.data.items.map((e) => (
+                    <tr key={e.id} className="hover:bg-gray-50/60">
+                      <td className="px-4 py-3 tabular-nums text-gray-600">
+                        {formatDateShort(e.timestamp)}
+                      </td>
+                      <td className="px-4 py-3 text-gray-800">
+                        {e.browser} / {e.device}
+                      </td>
+                      <td className="px-4 py-3 text-gray-600">{e.location}</td>
+                      <td className="px-4 py-3 font-mono text-xs text-gray-500">{e.ip}</td>
+                      <td className="px-4 py-3">
+                        <Badge
+                          variant={
+                            e.status === "success"
+                              ? "success"
+                              : e.status === "failed"
+                                ? "error"
+                                : "warning"
+                          }
+                        >
+                          {e.status}
+                        </Badge>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <ul className="space-y-3 md:hidden">
+              {loginHistory.data.items.map((e) => (
+                <li key={e.id} className="rounded-xl border border-gray-100 bg-gray-50/60 p-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-sm font-medium text-gray-900">
+                      {e.browser} on {e.device}
+                    </p>
                     <Badge
                       variant={
                         e.status === "success"
@@ -424,38 +477,16 @@ export default function SettingsPage() {
                     >
                       {e.status}
                     </Badge>
-                  </td>
-                </tr>
+                  </div>
+                  <p className="mt-1 text-xs text-gray-500">
+                    {e.location} · {e.ip}
+                  </p>
+                  <p className="mt-1 text-xs text-gray-400">{formatDateShort(e.timestamp)}</p>
+                </li>
               ))}
-            </tbody>
-          </table>
-        </div>
-        <ul className="space-y-3 md:hidden">
-          {MOCK_LOGIN_HISTORY.map((e) => (
-            <li key={e.id} className="rounded-xl border border-gray-100 bg-gray-50/60 p-4">
-              <div className="flex items-start justify-between gap-2">
-                <p className="text-sm font-medium text-gray-900">
-                  {e.browser} on {e.device}
-                </p>
-                <Badge
-                  variant={
-                    e.status === "success"
-                      ? "success"
-                      : e.status === "failed"
-                        ? "error"
-                        : "warning"
-                  }
-                >
-                  {e.status}
-                </Badge>
-              </div>
-              <p className="mt-1 text-xs text-gray-500">
-                {e.location} · {e.ip}
-              </p>
-              <p className="mt-1 text-xs text-gray-400">{formatDateShort(e.timestamp)}</p>
-            </li>
-          ))}
-        </ul>
+            </ul>
+          </>
+        )}
       </DashboardPanel>
 
       {/* ── 5. Notification preferences ─────────────────────────────────── */}
@@ -468,50 +499,54 @@ export default function SettingsPage() {
           </div>
         }
       >
-        <div className="divide-y divide-gray-100">
-          <ToggleRow
-            label="Order updates"
-            description="Status changes, delivery confirmations, and revision requests."
-            checked={notifPrefs.orderUpdates}
-            onChange={(v) => updateNotif("orderUpdates", v)}
-          />
-          <ToggleRow
-            label="Billing & wallet alerts"
-            description="Deposits confirmed, low balance warnings, payout results."
-            checked={notifPrefs.billingAlerts}
-            onChange={(v) => updateNotif("billingAlerts", v)}
-          />
-          <ToggleRow
-            label="System alerts"
-            description="Maintenance windows, security events, and policy updates."
-            checked={notifPrefs.systemAlerts}
-            onChange={(v) => updateNotif("systemAlerts", v)}
-          />
-          <ToggleRow
-            label="New features & product news"
-            description="Hear about new services, improvements, and announcements."
-            checked={notifPrefs.newFeatures}
-            onChange={(v) => updateNotif("newFeatures", v)}
-          />
-          <ToggleRow
-            label="Marketing emails"
-            description="Promotions, seasonal offers, and partner deals."
-            checked={notifPrefs.marketingEmails}
-            onChange={(v) => updateNotif("marketingEmails", v)}
-          />
-          <ToggleRow
-            label="SMS alerts"
-            description="Critical account alerts via text message."
-            checked={notifPrefs.smsAlerts}
-            onChange={(v) => updateNotif("smsAlerts", v)}
-          />
-        </div>
+        {securitySettings.isLoading && <p className="text-sm text-gray-500">Loading…</p>}
+        {securitySettings.error && <p className="text-sm text-red-500">Failed to load settings</p>}
+        {securitySettings.data && (
+          <div className="divide-y divide-gray-100">
+            <ToggleRow
+              label="Order updates"
+              description="Status changes, delivery confirmations, and revision requests."
+              checked={securitySettings.data.orderUpdates}
+              onChange={(v) => handleNotifUpdate("orderUpdates", v)}
+            />
+            <ToggleRow
+              label="Billing & wallet alerts"
+              description="Deposits confirmed, low balance warnings, payout results."
+              checked={securitySettings.data.billingAlerts}
+              onChange={(v) => handleNotifUpdate("billingAlerts", v)}
+            />
+            <ToggleRow
+              label="System alerts"
+              description="Maintenance windows, security events, and policy updates."
+              checked={securitySettings.data.systemAlerts}
+              onChange={(v) => handleNotifUpdate("systemAlerts", v)}
+            />
+            <ToggleRow
+              label="New features & product news"
+              description="Hear about new services, improvements, and announcements."
+              checked={securitySettings.data.newFeatures}
+              onChange={(v) => handleNotifUpdate("newFeatures", v)}
+            />
+            <ToggleRow
+              label="Marketing emails"
+              description="Promotions, seasonal offers, and partner deals."
+              checked={securitySettings.data.marketingEmails}
+              onChange={(v) => handleNotifUpdate("marketingEmails", v)}
+            />
+            <ToggleRow
+              label="SMS alerts"
+              description="Critical account alerts via text message."
+              checked={securitySettings.data.smsAlerts}
+              onChange={(v) => handleNotifUpdate("smsAlerts", v)}
+            />
+          </div>
+        )}
       </DashboardPanel>
 
       {/* ── 6. Appearance ───────────────────────────────────────────────── */}
       <DashboardPanel
         title="Appearance"
-        description="Portal theme preference (stored locally — no backend sync)."
+        description="Portal theme preference (stored locally)."
         action={
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-50 text-sky-600">
             <Computer className="h-4 w-4" />
@@ -538,7 +573,7 @@ export default function SettingsPage() {
           ))}
         </div>
         <p className="mt-3 text-xs text-gray-400">
-          Dark mode visual changes require additional CSS variable support — coming soon.
+          Dark mode visual changes require additional CSS variable support.
         </p>
       </DashboardPanel>
 

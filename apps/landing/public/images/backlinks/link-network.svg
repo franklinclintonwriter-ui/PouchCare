@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 300" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="480" y2="300" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0f172a"/><stop offset="1" stop-color="#1e293b"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#38bdf8"/><stop offset="1" stop-color="#818cf8"/>
+    </linearGradient>
+    <filter id="sh"><feDropShadow dx="0" dy="4" stdDeviation="8" flood-opacity=".15"/></filter>
+    <filter id="shs"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity=".1"/></filter>
+  </defs>
+  <rect width="480" height="300" rx="14" fill="url(#bg)"/>
+
+  <!-- Title -->
+  <text x="240" y="28" font-family="system-ui" font-size="12" fill="#38bdf8" font-weight="700" text-anchor="middle" letter-spacing="2">GUEST POST PLACEMENTS</text>
+
+  <!-- Network visualization -->
+  <!-- Central site node -->
+  <g filter="url(#sh)" transform="translate(200, 100)">
+    <circle cx="40" cy="40" r="38" fill="#1e293b" stroke="#38bdf8" stroke-width="2"/>
+    <text x="40" y="36" font-family="system-ui" font-size="8" fill="#94a3b8" text-anchor="middle" font-weight="600">YOUR SITE</text>
+    <text x="40" y="50" font-family="system-ui" font-size="14" fill="#38bdf8" text-anchor="middle" font-weight="800">DA 58</text>
+  </g>
+
+  <!-- Publisher nodes with connecting lines -->
+  <!-- Top-left: Forbes-like -->
+  <line x1="215" y1="115" x2="90" y2="65" stroke="#38bdf8" stroke-width="1.5" opacity=".3" stroke-dasharray="4 3"/>
+  <g filter="url(#shs)" transform="translate(35, 40)">
+    <rect width="95" height="46" rx="8" fill="#1e293b" stroke="#334155" stroke-width=".8"/>
+    <circle cx="18" cy="23" r="10" fill="#10b981" opacity=".15"/>
+    <text x="18" y="27" font-family="system-ui" font-size="10" fill="#10b981" text-anchor="middle" font-weight="800">✓</text>
+    <text x="34" y="19" font-family="monospace" font-size="7" fill="#e2e8f0" font-weight="600">techblog.io</text>
+    <text x="34" y="32" font-family="system-ui" font-size="7" fill="#38bdf8" font-weight="700">DA 62</text>
+    <text x="34" y="42" font-family="system-ui" font-size="5" fill="#475569">12K organic/mo</text>
+  </g>
+
+  <!-- Top-right: Business site -->
+  <line x1="265" y1="115" x2="390" y2="65" stroke="#818cf8" stroke-width="1.5" opacity=".3" stroke-dasharray="4 3"/>
+  <g filter="url(#shs)" transform="translate(345, 40)">
+    <rect width="105" height="46" rx="8" fill="#1e293b" stroke="#334155" stroke-width=".8"/>
+    <circle cx="18" cy="23" r="10" fill="#10b981" opacity=".15"/>
+    <text x="18" y="27" font-family="system-ui" font-size="10" fill="#10b981" text-anchor="middle" font-weight="800">✓</text>
+    <text x="34" y="19" font-family="monospace" font-size="7" fill="#e2e8f0" font-weight="600">biznews.com</text>
+    <text x="34" y="32" font-family="system-ui" font-size="7" fill="#818cf8" font-weight="700">DA 55</text>
+    <text x="34" y="42" font-family="system-ui" font-size="5" fill="#475569">28K organic/mo</text>
+  </g>
+
+  <!-- Bottom-left -->
+  <line x1="215" y1="155" x2="85" y2="210" stroke="#38bdf8" stroke-width="1.5" opacity=".3" stroke-dasharray="4 3"/>
+  <g filter="url(#shs)" transform="translate(30, 190)">
+    <rect width="100" height="46" rx="8" fill="#1e293b" stroke="#334155" stroke-width=".8"/>
+    <circle cx="18" cy="23" r="10" fill="#10b981" opacity=".15"/>
+    <text x="18" y="27" font-family="system-ui" font-size="10" fill="#10b981" text-anchor="middle" font-weight="800">✓</text>
+    <text x="34" y="19" font-family="monospace" font-size="7" fill="#e2e8f0" font-weight="600">devhub.net</text>
+    <text x="34" y="32" font-family="system-ui" font-size="7" fill="#38bdf8" font-weight="700">DA 48</text>
+    <text x="34" y="42" font-family="system-ui" font-size="5" fill="#475569">8K organic/mo</text>
+  </g>
+
+  <!-- Bottom-right -->
+  <line x1="265" y1="155" x2="395" y2="210" stroke="#818cf8" stroke-width="1.5" opacity=".3" stroke-dasharray="4 3"/>
+  <g filter="url(#shs)" transform="translate(350, 190)">
+    <rect width="105" height="46" rx="8" fill="#1e293b" stroke="#334155" stroke-width=".8"/>
+    <circle cx="18" cy="23" r="10" fill="#10b981" opacity=".15"/>
+    <text x="18" y="27" font-family="system-ui" font-size="10" fill="#10b981" text-anchor="middle" font-weight="800">✓</text>
+    <text x="34" y="19" font-family="monospace" font-size="7" fill="#e2e8f0" font-weight="600">startups.co</text>
+    <text x="34" y="32" font-family="system-ui" font-size="7" fill="#818cf8" font-weight="700">DA 41</text>
+    <text x="34" y="42" font-family="system-ui" font-size="5" fill="#475569">15K organic/mo</text>
+  </g>
+
+  <!-- Right side: Niche edit -->
+  <line x1="275" y1="140" x2="355" y2="140" stroke="#f59e0b" stroke-width="1.5" opacity=".4" stroke-dasharray="4 3"/>
+  <g filter="url(#shs)" transform="translate(355, 120)">
+    <rect width="100" height="40" rx="8" fill="#1e293b" stroke="#f59e0b" stroke-width=".8" opacity=".6"/>
+    <text x="12" y="17" font-family="system-ui" font-size="6" fill="#f59e0b" font-weight="700">NICHE EDIT</text>
+    <text x="12" y="30" font-family="monospace" font-size="7" fill="#e2e8f0" font-weight="600">saasweekly.io</text>
+    <text x="72" y="30" font-family="system-ui" font-size="7" fill="#f59e0b" font-weight="700">DA 38</text>
+  </g>
+
+  <!-- Bottom stats bar -->
+  <g filter="url(#sh)" transform="translate(30, 252)">
+    <rect width="420" height="36" rx="8" fill="#1e293b" stroke="#334155" stroke-width=".5"/>
+    <g transform="translate(15, 10)">
+      <circle cx="4" cy="8" r="3" fill="#10b981"/>
+      <text x="12" y="12" font-family="system-ui" font-size="7" fill="#94a3b8">42 links placed</text>
+    </g>
+    <g transform="translate(120, 10)">
+      <circle cx="4" cy="8" r="3" fill="#38bdf8"/>
+      <text x="12" y="12" font-family="system-ui" font-size="7" fill="#94a3b8">Avg DA 47</text>
+    </g>
+    <g transform="translate(210, 10)">
+      <circle cx="4" cy="8" r="3" fill="#818cf8"/>
+      <text x="12" y="12" font-family="system-ui" font-size="7" fill="#94a3b8">100% indexed</text>
+    </g>
+    <g transform="translate(310, 10)">
+      <circle cx="4" cy="8" r="3" fill="#f59e0b"/>
+      <text x="12" y="12" font-family="system-ui" font-size="7" fill="#94a3b8">5-day avg delivery</text>
+    </g>
+  </g>
+</svg>

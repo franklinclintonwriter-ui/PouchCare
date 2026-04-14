@@ -1,0 +1,140 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="400" y2="300" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#faf5ff"/><stop offset="1" stop-color="#f3e8ff"/>
+    </linearGradient>
+    <linearGradient id="srv" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#1e293b"/><stop offset="1" stop-color="#0f172a"/>
+    </linearGradient>
+    <filter id="sh"><feDropShadow dx="0" dy="4" stdDeviation="6" flood-opacity=".12"/></filter>
+    <filter id="glow"><feGaussianBlur stdDeviation="3"/></filter>
+  </defs>
+  <rect width="400" height="300" rx="12" fill="url(#bg)"/>
+  <!-- Server rack -->
+  <g filter="url(#sh)" transform="translate(30, 25)">
+    <rect width="120" height="230" rx="8" fill="url(#srv)"/>
+    <!-- Server unit 1 -->
+    <rect x="8" y="12" width="104" height="42" rx="4" fill="#1e293b" stroke="#334155" stroke-width=".8"/>
+    <circle cx="20" cy="28" r="3.5" fill="#10b981"/><circle cx="20" cy="28" r="2" fill="#34d399" opacity=".8"/>
+    <circle cx="30" cy="28" r="3.5" fill="#10b981"/><circle cx="30" cy="28" r="2" fill="#34d399" opacity=".8"/>
+    <circle cx="40" cy="28" r="3.5" fill="#3b82f6"/>
+    <rect x="56" y="20" width="48" height="4" rx="2" fill="#334155"/>
+    <rect x="56" y="28" width="48" height="4" rx="2" fill="#334155"/>
+    <rect x="56" y="36" width="36" height="4" rx="2" fill="#334155"/>
+    <text x="56" y="46" font-family="monospace" font-size="4" fill="#64748b">SSD NVMe 1TB</text>
+    <!-- Server unit 2 -->
+    <rect x="8" y="60" width="104" height="42" rx="4" fill="#1e293b" stroke="#334155" stroke-width=".8"/>
+    <circle cx="20" cy="76" r="3.5" fill="#10b981"/><circle cx="20" cy="76" r="2" fill="#34d399" opacity=".8"/>
+    <circle cx="30" cy="76" r="3.5" fill="#10b981"/><circle cx="30" cy="76" r="2" fill="#34d399" opacity=".8"/>
+    <circle cx="40" cy="76" r="3.5" fill="#f59e0b"/>
+    <rect x="56" y="68" width="48" height="4" rx="2" fill="#334155"/>
+    <rect x="56" y="76" width="48" height="4" rx="2" fill="#334155"/>
+    <rect x="56" y="84" width="30" height="4" rx="2" fill="#334155"/>
+    <text x="56" y="94" font-family="monospace" font-size="4" fill="#64748b">32 GB RAM</text>
+    <!-- Server unit 3 -->
+    <rect x="8" y="108" width="104" height="42" rx="4" fill="#1e293b" stroke="#334155" stroke-width=".8"/>
+    <circle cx="20" cy="124" r="3.5" fill="#10b981"/><circle cx="20" cy="124" r="2" fill="#34d399" opacity=".8"/>
+    <circle cx="30" cy="124" r="3.5" fill="#10b981"/><circle cx="30" cy="124" r="2" fill="#34d399" opacity=".8"/>
+    <circle cx="40" cy="124" r="3.5" fill="#10b981"/>
+    <rect x="56" y="116" width="48" height="4" rx="2" fill="#334155"/>
+    <rect x="56" y="124" width="48" height="4" rx="2" fill="#334155"/>
+    <rect x="56" y="132" width="44" height="4" rx="2" fill="#334155"/>
+    <text x="56" y="142" font-family="monospace" font-size="4" fill="#64748b">8-Core CPU</text>
+    <!-- Server unit 4 -->
+    <rect x="8" y="156" width="104" height="42" rx="4" fill="#1e293b" stroke="#334155" stroke-width=".8"/>
+    <circle cx="20" cy="172" r="3.5" fill="#10b981"/><circle cx="20" cy="172" r="2" fill="#34d399" opacity=".8"/>
+    <circle cx="30" cy="172" r="3.5" fill="#3b82f6"/>
+    <circle cx="40" cy="172" r="3.5" fill="#3b82f6"/>
+    <rect x="56" y="164" width="48" height="4" rx="2" fill="#334155"/>
+    <rect x="56" y="172" width="40" height="4" rx="2" fill="#334155"/>
+    <text x="56" y="190" font-family="monospace" font-size="4" fill="#64748b">CDN Edge</text>
+    <!-- Bottom ventilation -->
+    <rect x="8" y="204" width="104" height="20" rx="4" fill="#1e293b" stroke="#334155" stroke-width=".8"/>
+    <line x1="20" y1="210" x2="100" y2="210" stroke="#334155" stroke-width=".8"/>
+    <line x1="20" y1="214" x2="100" y2="214" stroke="#334155" stroke-width=".8"/>
+    <line x1="20" y1="218" x2="100" y2="218" stroke="#334155" stroke-width=".8"/>
+  </g>
+  <!-- Uptime gauge -->
+  <g filter="url(#sh)" transform="translate(170, 25)">
+    <rect width="100" height="85" rx="10" fill="white"/>
+    <text x="50" y="18" font-family="system-ui" font-size="7" fill="#64748b" font-weight="600" text-anchor="middle">UPTIME</text>
+    <text x="50" y="48" font-family="system-ui" font-size="22" fill="#10b981" font-weight="800" text-anchor="middle">99.9%</text>
+    <text x="50" y="62" font-family="system-ui" font-size="7" fill="#64748b" text-anchor="middle">SLA Guaranteed</text>
+    <!-- Mini bar chart -->
+    <g transform="translate(15, 68)">
+      <rect x="0" width="4" height="10" rx="1" fill="#d1fae5" y="0"/>
+      <rect x="6" width="4" height="10" rx="1" fill="#d1fae5" y="0"/>
+      <rect x="12" width="4" height="10" rx="1" fill="#d1fae5" y="0"/>
+      <rect x="18" width="4" height="10" rx="1" fill="#d1fae5" y="0"/>
+      <rect x="24" width="4" height="10" rx="1" fill="#d1fae5" y="0"/>
+      <rect x="30" width="4" height="10" rx="1" fill="#d1fae5" y="0"/>
+      <rect x="36" width="4" height="10" rx="1" fill="#d1fae5" y="0"/>
+      <rect x="42" width="4" height="10" rx="1" fill="#d1fae5" y="0"/>
+      <rect x="48" width="4" height="10" rx="1" fill="#d1fae5" y="0"/>
+      <rect x="54" width="4" height="10" rx="1" fill="#d1fae5" y="0"/>
+      <rect x="60" width="4" height="10" rx="1" fill="#10b981" y="0"/>
+    </g>
+  </g>
+  <!-- Features card -->
+  <g filter="url(#sh)" transform="translate(170, 120)">
+    <rect width="200" height="85" rx="10" fill="white"/>
+    <text x="14" y="20" font-family="system-ui" font-size="8" fill="#1e293b" font-weight="700">Hosting Features</text>
+    <g transform="translate(14, 30)">
+      <rect width="5" height="5" rx="2" fill="#8b5cf6"/>
+      <text x="10" y="5" font-family="system-ui" font-size="7" fill="#374151">Free SSL certificates</text>
+    </g>
+    <g transform="translate(14, 42)">
+      <rect width="5" height="5" rx="2" fill="#8b5cf6"/>
+      <text x="10" y="5" font-family="system-ui" font-size="7" fill="#374151">One-click WordPress installs</text>
+    </g>
+    <g transform="translate(14, 54)">
+      <rect width="5" height="5" rx="2" fill="#8b5cf6"/>
+      <text x="10" y="5" font-family="system-ui" font-size="7" fill="#374151">Daily backups &amp; snapshots</text>
+    </g>
+    <g transform="translate(14, 66)">
+      <rect width="5" height="5" rx="2" fill="#8b5cf6"/>
+      <text x="10" y="5" font-family="system-ui" font-size="7" fill="#374151">Global CDN &amp; DDoS protection</text>
+    </g>
+  </g>
+  <!-- Connection lines from servers to globe icons -->
+  <g opacity=".25">
+    <line x1="150" y1="60" x2="170" y2="55" stroke="#8b5cf6" stroke-width="1.5" stroke-dasharray="4 3"/>
+    <line x1="150" y1="110" x2="170" y2="140" stroke="#8b5cf6" stroke-width="1.5" stroke-dasharray="4 3"/>
+    <line x1="150" y1="160" x2="170" y2="180" stroke="#8b5cf6" stroke-width="1.5" stroke-dasharray="4 3"/>
+  </g>
+  <!-- Pricing cards -->
+  <g filter="url(#sh)" transform="translate(170, 215)">
+    <rect width="60" height="65" rx="6" fill="white" stroke="#e2e8f0" stroke-width=".5"/>
+    <text x="30" y="16" font-family="system-ui" font-size="7" fill="#64748b" font-weight="600" text-anchor="middle">Shared</text>
+    <text x="30" y="36" font-family="system-ui" font-size="14" fill="#7c3aed" font-weight="800" text-anchor="middle">$6</text>
+    <text x="30" y="46" font-family="system-ui" font-size="6" fill="#94a3b8" text-anchor="middle">/month</text>
+    <rect x="10" y="50" width="40" height="12" rx="4" fill="#f5f3ff" stroke="#c4b5fd" stroke-width=".5"/>
+    <text x="30" y="59" font-family="system-ui" font-size="6" fill="#7c3aed" font-weight="600" text-anchor="middle">10 GB</text>
+  </g>
+  <g filter="url(#sh)" transform="translate(240, 215)">
+    <rect width="60" height="65" rx="6" fill="#8b5cf6"/>
+    <text x="30" y="16" font-family="system-ui" font-size="7" fill="#e9d5ff" font-weight="600" text-anchor="middle">VPS</text>
+    <text x="30" y="36" font-family="system-ui" font-size="14" fill="white" font-weight="800" text-anchor="middle">$24</text>
+    <text x="30" y="46" font-family="system-ui" font-size="6" fill="#ddd6fe" text-anchor="middle">/month</text>
+    <rect x="10" y="50" width="40" height="12" rx="4" fill="rgba(255,255,255,.2)"/>
+    <text x="30" y="59" font-family="system-ui" font-size="6" fill="white" font-weight="600" text-anchor="middle">100 GB</text>
+  </g>
+  <g filter="url(#sh)" transform="translate(310, 215)">
+    <rect width="60" height="65" rx="6" fill="white" stroke="#e2e8f0" stroke-width=".5"/>
+    <text x="30" y="16" font-family="system-ui" font-size="7" fill="#64748b" font-weight="600" text-anchor="middle">Dedicated</text>
+    <text x="30" y="36" font-family="system-ui" font-size="14" fill="#7c3aed" font-weight="800" text-anchor="middle">$89</text>
+    <text x="30" y="46" font-family="system-ui" font-size="6" fill="#94a3b8" text-anchor="middle">/month</text>
+    <rect x="10" y="50" width="40" height="12" rx="4" fill="#f5f3ff" stroke="#c4b5fd" stroke-width=".5"/>
+    <text x="30" y="59" font-family="system-ui" font-size="6" fill="#7c3aed" font-weight="600" text-anchor="middle">1 TB</text>
+  </g>
+  <!-- Performance badge -->
+  <g filter="url(#sh)" transform="translate(282, 28)">
+    <rect width="90" height="80" rx="10" fill="white"/>
+    <text x="45" y="18" font-family="system-ui" font-size="7" fill="#64748b" font-weight="600" text-anchor="middle">SPEED</text>
+    <!-- Speedometer -->
+    <path d="M25 55 A25 25 0 0 1 65 55" stroke="#e2e8f0" stroke-width="6" fill="none" stroke-linecap="round"/>
+    <path d="M25 55 A25 25 0 0 1 60 35" stroke="#8b5cf6" stroke-width="6" fill="none" stroke-linecap="round"/>
+    <text x="45" y="60" font-family="system-ui" font-size="10" fill="#1e293b" font-weight="700" text-anchor="middle">Fast</text>
+    <text x="45" y="72" font-family="system-ui" font-size="6" fill="#64748b" text-anchor="middle">LiteSpeed Server</text>
+  </g>
+</svg>

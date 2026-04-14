@@ -1,6 +1,6 @@
 /**
  * Public marketing catalog entries for domains & hosting (merged into `/services`).
- * Plans stay in `mockHosting.ts` (`MOCK_HOSTING_PLANS`) — single source for portal + marketing.
+ * Hosting plans are now inlined in HostingRegisterPage.tsx and ServicesHostingPage.tsx.
  *
  * @see docs/UI_MARKETING_SEO_SERVICES.md
  */

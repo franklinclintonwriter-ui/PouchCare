@@ -36,14 +36,14 @@ router.get('/positions', hr, async (req, res) => {
       include: { _count: { select: { jobApplications: true } } },
     })
     return ok(res, positions)
-  } catch (err) { serverError(res, err) }
+  } catch (err) { return serverError(res, err) }
 })
 
 router.post('/positions', hr, validate(positionCreateSchema), async (req, res) => {
   try {
     const pos = await prisma.jobPosition.create({ data: req.body })
     return created(res, pos)
-  } catch (err) { serverError(res, err) }
+  } catch (err) { return serverError(res, err) }
 })
 
 router.get('/positions/:id', hr, async (req, res) => {
@@ -54,14 +54,14 @@ router.get('/positions/:id', hr, async (req, res) => {
     })
     if (!pos) return notFound(res)
     return ok(res, pos)
-  } catch (err) { serverError(res, err) }
+  } catch (err) { return serverError(res, err) }
 })
 
 router.put('/positions/:id', hr, validate(positionUpdateSchema), async (req, res) => {
   try {
     const pos = await prisma.jobPosition.update({ where: { id: req.params.id }, data: req.body })
     return ok(res, pos)
-  } catch (err) { serverError(res, err) }
+  } catch (err) { return serverError(res, err) }
 })
 
 router.delete('/positions/:id', hr, async (req, res) => {
@@ -72,7 +72,7 @@ router.delete('/positions/:id', hr, async (req, res) => {
     }
     await prisma.jobPosition.delete({ where: { id: req.params.id } })
     return ok(res, { message: 'Position deleted' })
-  } catch (err) { serverError(res, err) }
+  } catch (err) { return serverError(res, err) }
 })
 
 // ── APPLICATION SCHEMAS ──
@@ -125,7 +125,7 @@ router.get('/applications', hr, async (req, res) => {
       prisma.jobApplication.count({ where }),
     ])
     return ok(res, apps, buildMeta(total, page, limit))
-  } catch (err) { serverError(res, err) }
+  } catch (err) { return serverError(res, err) }
 })
 
 router.post('/applications', validate(applicationCreateSchema), async (req, res) => {
@@ -140,7 +140,7 @@ router.post('/applications', validate(applicationCreateSchema), async (req, res)
       data: { applications: { increment: 1 } },
     })
     return created(res, app)
-  } catch (err) { serverError(res, err) }
+  } catch (err) { return serverError(res, err) }
 })
 
 router.get('/applications/:id', hr, async (req, res) => {
@@ -151,14 +151,14 @@ router.get('/applications/:id', hr, async (req, res) => {
     })
     if (!app) return notFound(res)
     return ok(res, app)
-  } catch (err) { serverError(res, err) }
+  } catch (err) { return serverError(res, err) }
 })
 
 router.put('/applications/:id', hr, validate(applicationUpdateSchema), async (req, res) => {
   try {
     const app = await prisma.jobApplication.update({ where: { id: req.params.id }, data: req.body })
     return ok(res, app)
-  } catch (err) { serverError(res, err) }
+  } catch (err) { return serverError(res, err) }
 })
 
 router.delete('/applications/:id', hr, async (req, res) => {
@@ -171,7 +171,7 @@ router.delete('/applications/:id', hr, async (req, res) => {
       data: { applications: { decrement: 1 } },
     })
     return ok(res, { message: 'Application deleted' })
-  } catch (err) { serverError(res, err) }
+  } catch (err) { return serverError(res, err) }
 })
 
 // ── PERFORMANCE SCHEMAS ──
@@ -208,7 +208,7 @@ router.get('/performance', hr, async (req, res) => {
       prisma.performanceRating.count({ where }),
     ])
     return ok(res, ratings, buildMeta(total, page, limit))
-  } catch (err) { serverError(res, err) }
+  } catch (err) { return serverError(res, err) }
 })
 
 router.post('/performance', hr, validate(performanceCreateSchema), async (req, res) => {
@@ -226,7 +226,7 @@ router.post('/performance', hr, validate(performanceCreateSchema), async (req, r
       },
     })
     return created(res, rating)
-  } catch (err) { serverError(res, err) }
+  } catch (err) { return serverError(res, err) }
 })
 
 router.get('/performance/:id', hr, async (req, res) => {
@@ -234,21 +234,21 @@ router.get('/performance/:id', hr, async (req, res) => {
     const rating = await prisma.performanceRating.findUnique({ where: { id: req.params.id } })
     if (!rating) return notFound(res)
     return ok(res, rating)
-  } catch (err) { serverError(res, err) }
+  } catch (err) { return serverError(res, err) }
 })
 
 router.put('/performance/:id', hr, validate(performanceUpdateSchema), async (req, res) => {
   try {
     const rating = await prisma.performanceRating.update({ where: { id: req.params.id }, data: req.body })
     return ok(res, rating)
-  } catch (err) { serverError(res, err) }
+  } catch (err) { return serverError(res, err) }
 })
 
 router.delete('/performance/:id', hr, async (req, res) => {
   try {
     await prisma.performanceRating.delete({ where: { id: req.params.id } })
     return ok(res, { message: 'Rating deleted' })
-  } catch (err) { serverError(res, err) }
+  } catch (err) { return serverError(res, err) }
 })
 
 export default router

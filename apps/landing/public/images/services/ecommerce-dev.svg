@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="400" y2="300" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#eef2ff"/><stop offset="1" stop-color="#fef3c7"/>
+    </linearGradient>
+    <filter id="sh"><feDropShadow dx="0" dy="4" stdDeviation="6" flood-opacity=".12"/></filter>
+  </defs>
+  <rect width="400" height="300" rx="12" fill="url(#bg)"/>
+  <!-- Storefront browser -->
+  <g filter="url(#sh)">
+    <rect x="30" y="30" width="260" height="200" rx="10" fill="white"/>
+    <rect x="30" y="30" width="260" height="26" rx="10" fill="#f8fafc"/>
+    <rect x="30" y="48" width="260" height="8" fill="#f8fafc"/>
+    <circle cx="46" cy="43" r="4" fill="#fca5a5"/>
+    <circle cx="58" cy="43" r="4" fill="#fde68a"/>
+    <circle cx="70" cy="43" r="4" fill="#86efac"/>
+    <rect x="90" y="39" width="120" height="8" rx="4" fill="#e2e8f0"/>
+    <!-- Product grid -->
+    <rect x="42" y="66" width="72" height="72" rx="8" fill="#f1f5f9"/>
+    <rect x="50" y="72" width="56" height="38" rx="4" fill="#c7d2fe" opacity=".5"/>
+    <text x="66" y="96" font-family="system-ui" font-size="16" text-anchor="middle">👟</text>
+    <text x="50" y="122" font-family="system-ui" font-size="7" fill="#1e293b" font-weight="600">Running Shoe</text>
+    <text x="50" y="132" font-family="system-ui" font-size="8" fill="#6366f1" font-weight="700">$129.00</text>
+    <rect x="126" y="66" width="72" height="72" rx="8" fill="#f1f5f9"/>
+    <rect x="134" y="72" width="56" height="38" rx="4" fill="#fbcfe8" opacity=".5"/>
+    <text x="150" y="96" font-family="system-ui" font-size="16" text-anchor="middle">👜</text>
+    <text x="134" y="122" font-family="system-ui" font-size="7" fill="#1e293b" font-weight="600">Leather Bag</text>
+    <text x="134" y="132" font-family="system-ui" font-size="8" fill="#6366f1" font-weight="700">$89.00</text>
+    <rect x="210" y="66" width="72" height="72" rx="8" fill="#f1f5f9"/>
+    <rect x="218" y="72" width="56" height="38" rx="4" fill="#d9f99d" opacity=".5"/>
+    <text x="234" y="96" font-family="system-ui" font-size="16" text-anchor="middle">⌚</text>
+    <text x="218" y="122" font-family="system-ui" font-size="7" fill="#1e293b" font-weight="600">Smart Watch</text>
+    <text x="218" y="132" font-family="system-ui" font-size="8" fill="#6366f1" font-weight="700">$299.00</text>
+    <!-- Add to cart buttons -->
+    <rect x="42" y="146" width="72" height="18" rx="6" fill="#6366f1"/>
+    <text x="56" y="158" font-family="system-ui" font-size="7" fill="white" font-weight="600">Add to Cart</text>
+    <rect x="126" y="146" width="72" height="18" rx="6" fill="#6366f1"/>
+    <text x="140" y="158" font-family="system-ui" font-size="7" fill="white" font-weight="600">Add to Cart</text>
+    <rect x="210" y="146" width="72" height="18" rx="6" fill="#6366f1"/>
+    <text x="224" y="158" font-family="system-ui" font-size="7" fill="white" font-weight="600">Add to Cart</text>
+    <!-- Stats row -->
+    <rect x="42" y="178" width="120" height="40" rx="8" fill="#f8fafc"/>
+    <text x="52" y="196" font-family="system-ui" font-size="8" fill="#64748b">Revenue</text>
+    <text x="52" y="212" font-family="system-ui" font-size="12" fill="#10b981" font-weight="800">$47,280</text>
+    <text x="120" y="212" font-family="system-ui" font-size="7" fill="#10b981">↑ 23%</text>
+  </g>
+  <!-- Shopping cart icon -->
+  <g filter="url(#sh)" transform="translate(300, 50)">
+    <circle cx="40" cy="40" r="36" fill="white"/>
+    <circle cx="40" cy="40" r="30" fill="#eef2ff"/>
+    <path d="M24 28h6l4 20h24l4-14H34" stroke="#6366f1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="38" cy="54" r="3" fill="#6366f1"/>
+    <circle cx="54" cy="54" r="3" fill="#6366f1"/>
+    <circle cx="56" cy="24" r="8" fill="#ef4444"/>
+    <text x="56" y="28" text-anchor="middle" font-family="system-ui" font-size="8" fill="white" font-weight="700">3</text>
+  </g>
+  <!-- Payment methods -->
+  <g filter="url(#sh)" transform="translate(300, 140)">
+    <rect width="80" height="44" rx="8" fill="white"/>
+    <text x="10" y="16" font-family="system-ui" font-size="7" fill="#64748b" font-weight="500">Payments</text>
+    <text x="10" y="34" font-family="system-ui" font-size="12">💳 🏦 📱</text>
+  </g>
+  <!-- Conversion badge -->
+  <g filter="url(#sh)" transform="translate(300, 200)">
+    <rect width="80" height="44" rx="8" fill="white"/>
+    <text x="10" y="16" font-family="system-ui" font-size="7" fill="#64748b" font-weight="500">Conversion</text>
+    <text x="10" y="36" font-family="system-ui" font-size="16" fill="#10b981" font-weight="800">4.8%</text>
+    <text x="50" y="36" font-family="system-ui" font-size="7" fill="#10b981">↑ 1.2%</text>
+  </g>
+  <!-- Platform logos -->
+  <g transform="translate(30, 252)">
+    <rect width="70" height="26" rx="8" fill="white" filter="url(#sh)"/>
+    <text x="10" y="18" font-family="system-ui" font-size="8" fill="#7c3aed" font-weight="600">Shopify</text>
+  </g>
+  <g transform="translate(110, 252)">
+    <rect width="90" height="26" rx="8" fill="white" filter="url(#sh)"/>
+    <text x="10" y="18" font-family="system-ui" font-size="8" fill="#6366f1" font-weight="600">WooCommerce</text>
+  </g>
+  <g transform="translate(210, 252)">
+    <rect width="65" height="26" rx="8" fill="white" filter="url(#sh)"/>
+    <text x="10" y="18" font-family="system-ui" font-size="8" fill="#6366f1" font-weight="600">Custom</text>
+  </g>
+</svg>

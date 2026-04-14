@@ -257,18 +257,21 @@ export default function TaskList() {
                 onClick={async () => {
                   if (!title.trim()) return toast.error('Title is required');
                   try {
-                    const payload: Record<string, unknown> = {
+                    const payload = {
                       title: title.trim(),
                       priority: taskPriority,
                       notes: description.trim() || undefined,
                       deadline: dueDate || undefined,
+                    } as const;
+                    const finalPayload = {
+                      ...payload,
+                      ...(category && { category }),
+                      ...(selectedBranchName && { assignedBranch: selectedBranchName }),
+                      ...(assignedManagerId && { assignedManagerId }),
+                      ...(assignedMemberId && { assignedMemberId }),
                     };
-                    if (category) payload.category = category;
-                    if (selectedBranchName) payload.assignedBranch = selectedBranchName;
-                    if (assignedManagerId) payload.assignedManagerId = assignedManagerId;
-                    if (assignedMemberId) payload.assignedMemberId = assignedMemberId;
 
-                    const created = await createTask.mutateAsync(payload);
+                    const created = await createTask.mutateAsync(finalPayload);
                     const taskId = created?.id;
                     if (taskId && pendingFiles.length > 0) {
                       await uploadAttachments.mutateAsync({ taskId, files: pendingFiles });

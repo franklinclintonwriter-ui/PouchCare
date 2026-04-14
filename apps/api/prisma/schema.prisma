@@ -550,6 +550,8 @@ model Invoice {
   projectReference String?   @map("project_reference")
   invoiceUrl       String?   @map("invoice_url")
   notes            String?
+  portalMemberId   String?   @map("portal_member_id")
+  portalMember     PortalMember? @relation(fields: [portalMemberId], references: [id])
   createdAt        DateTime  @default(now()) @map("created_at")
 
   @@map("invoices")
@@ -735,6 +737,8 @@ model Domain {
   hostingServer     String?   @map("hosting_server")
   sslStatus         String?   @map("ssl_status")
   notes             String?
+  portalMemberId   String?   @map("portal_member_id")
+  portalMember     PortalMember? @relation(fields: [portalMemberId], references: [id])
   createdAt         DateTime  @default(now()) @map("created_at")
 
   @@map("domains")
@@ -775,6 +779,8 @@ model Website {
   lastUpdated     DateTime? @map("last_updated")
   renewalDate     DateTime? @map("renewal_date")
   notes           String?
+  portalMemberId   String?   @map("portal_member_id")
+  portalMember     PortalMember? @relation(fields: [portalMemberId], references: [id])
   createdAt       DateTime  @default(now()) @map("created_at")
 
   @@map("websites")
@@ -851,6 +857,21 @@ model PortalMember {
   refreshToken          String?            @map("refresh_token")
   registrationDate      DateTime           @default(now()) @map("registration_date")
   lastLoginDate         DateTime?          @map("last_login_date")
+  // Extended profile fields
+  companyName           String?            @map("company_name")
+  vatId                 String?            @map("vat_id")
+  companyWebsite        String?            @map("company_website")
+  industry              String?
+  addressLine1          String?            @map("address_line_1")
+  addressLine2          String?            @map("address_line_2")
+  city                  String?
+  state                 String?
+  zip                   String?
+  addressCountry        String?            @map("address_country")
+  telegram              String?
+  skype                 String?
+  preferredContact      String?            @map("preferred_contact")
+  preferences           Json?              @default("{}")
   createdAt             DateTime           @default(now()) @map("created_at")
   updatedAt             DateTime           @updatedAt @map("updated_at")
 
@@ -861,6 +882,12 @@ model PortalMember {
   walletTx          WalletTransaction[]
   commissionsEarned Commission[]        @relation("CommissionEarner")
   payoutRequests    PayoutRequest[]
+  apkJobs           ApkJob[]
+  sessions          PortalSession[]
+  loginLogs         PortalLoginLog[]
+  invoices          Invoice[]
+  domains           Domain[]
+  websites          Website[]
 
   @@map("portal_members")
 }
@@ -950,6 +977,69 @@ model PayoutRequest {
   member         PortalMember  @relation(fields: [memberId], references: [id])
 
   @@map("payout_requests")
+}
+
+model ApkJob {
+  id              String       @id @default(cuid())
+  portalMemberId  String       @map("portal_member_id")
+  portalMember    PortalMember @relation(fields: [portalMemberId], references: [id], onDelete: Cascade)
+  appName         String       @map("app_name")
+  url             String
+  plan            String       @default("free")
+  status          String       @default("queued") // queued, processing, ready, failed, expired
+  apkSizeMb       Float?       @map("apk_size_mb")
+  downloadUrl     String?      @map("download_url")
+  errorMessage    String?      @map("error_message")
+  expiresAt       DateTime?    @map("expires_at")
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+
+  @@index([portalMemberId])
+  @@index([status])
+  @@map("apk_jobs")
+}
+
+model PortalSession {
+  id              String       @id @default(cuid())
+  portalMemberId  String       @map("portal_member_id")
+  portalMember    PortalMember @relation(fields: [portalMemberId], references: [id], onDelete: Cascade)
+  tokenHash       String       @map("token_hash")
+  userAgent       String?      @map("user_agent")
+  ipAddress       String?      @map("ip_address")
+  country         String?
+  city            String?
+  deviceType      String?      @map("device_type") // desktop, mobile, tablet
+  browserName     String?      @map("browser_name")
+  osName          String?      @map("os_name")
+  createdAt       DateTime     @default(now()) @map("created_at")
+  lastActivityAt  DateTime     @updatedAt @map("last_activity_at")
+  expiresAt       DateTime     @map("expires_at")
+  revokedAt       DateTime?    @map("revoked_at")
+
+  @@index([portalMemberId])
+  @@index([expiresAt])
+  @@map("portal_sessions")
+}
+
+model PortalLoginLog {
+  id              String   @id @default(cuid())
+  portalMemberId  String   @map("portal_member_id")
+  portalMember    PortalMember @relation(fields: [portalMemberId], references: [id], onDelete: Cascade)
+  email           String
+  ipAddress       String?  @map("ip_address")
+  userAgent       String?  @map("user_agent")
+  country         String?
+  city            String?
+  deviceType      String?  @map("device_type")
+  browserName     String?  @map("browser_name")
+  osName          String?  @map("os_name")
+  status          String   @default("success") // success, failed, suspicious
+  failureReason   String?  @map("failure_reason")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@index([portalMemberId])
+  @@index([createdAt(sort: Desc)])
+  @@map("portal_login_logs")
 }
 
 model Notification {

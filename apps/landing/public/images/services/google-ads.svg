@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="400" y2="300" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#fff1f2"/><stop offset="1" stop-color="#ffe4e6"/>
+    </linearGradient>
+    <filter id="sh"><feDropShadow dx="0" dy="4" stdDeviation="6" flood-opacity=".12"/></filter>
+  </defs>
+  <rect width="400" height="300" rx="12" fill="url(#bg)"/>
+  <!-- Google search result ad -->
+  <g filter="url(#sh)">
+    <rect x="30" y="25" width="250" height="140" rx="10" fill="white"/>
+    <!-- Search bar -->
+    <rect x="42" y="38" width="226" height="28" rx="14" fill="#f1f5f9" stroke="#e2e8f0" stroke-width="1"/>
+    <text x="56" y="56" font-family="system-ui" font-size="9" fill="#64748b">best seo agency near me</text>
+    <circle cx="250" cy="52" r="10" fill="#4285f4"/>
+    <text x="250" y="56" text-anchor="middle" font-family="system-ui" font-size="10" fill="white">🔍</text>
+    <!-- Ad result -->
+    <rect x="42" y="76" width="226" height="74" rx="6" fill="#fefce8" stroke="#fde68a" stroke-width="1"/>
+    <rect x="50" y="84" width="22" height="12" rx="3" fill="#f59e0b"/>
+    <text x="54" y="93" font-family="system-ui" font-size="7" fill="white" font-weight="700">Ad</text>
+    <text x="78" y="93" font-family="system-ui" font-size="7" fill="#10b981">pouchcare.com</text>
+    <text x="50" y="108" font-family="system-ui" font-size="9" fill="#1a0dab" font-weight="700">PouchCare — #1 SEO Agency | Free Audit</text>
+    <text x="50" y="122" font-family="system-ui" font-size="7" fill="#374151">Premium SEO, link building &amp; digital marketing.</text>
+    <text x="50" y="134" font-family="system-ui" font-size="7" fill="#374151">500+ clients. No contracts. Get a free proposal →</text>
+    <!-- Sitelinks -->
+    <text x="50" y="146" font-family="system-ui" font-size="7" fill="#1a0dab" text-decoration="underline">Services</text>
+    <text x="100" y="146" font-family="system-ui" font-size="7" fill="#1a0dab" text-decoration="underline">Pricing</text>
+    <text x="140" y="146" font-family="system-ui" font-size="7" fill="#1a0dab" text-decoration="underline">Case Studies</text>
+    <text x="206" y="146" font-family="system-ui" font-size="7" fill="#1a0dab" text-decoration="underline">Contact</text>
+  </g>
+  <!-- Analytics dashboard -->
+  <g filter="url(#sh)" transform="translate(295, 25)">
+    <rect width="85" height="100" rx="8" fill="white"/>
+    <text x="10" y="18" font-family="system-ui" font-size="7" fill="#64748b" font-weight="600">Campaign</text>
+    <!-- Bar chart -->
+    <rect x="12" y="72" width="10" height="18" rx="2" fill="#f43f5e" opacity=".3"/>
+    <rect x="26" y="60" width="10" height="30" rx="2" fill="#f43f5e" opacity=".4"/>
+    <rect x="40" y="50" width="10" height="40" rx="2" fill="#f43f5e" opacity=".5"/>
+    <rect x="54" y="38" width="10" height="52" rx="2" fill="#f43f5e" opacity=".7"/>
+    <rect x="68" y="28" width="10" height="62" rx="2" fill="#f43f5e"/>
+    <text x="68" y="24" font-family="system-ui" font-size="6" fill="#10b981" font-weight="600">↑ ROI</text>
+  </g>
+  <!-- Metrics cards -->
+  <g filter="url(#sh)" transform="translate(30, 180)">
+    <rect width="110" height="50" rx="8" fill="white"/>
+    <text x="12" y="18" font-family="system-ui" font-size="7" fill="#64748b" font-weight="500">Click-through Rate</text>
+    <text x="12" y="40" font-family="system-ui" font-size="18" fill="#f43f5e" font-weight="900">8.7%</text>
+    <text x="60" y="40" font-family="system-ui" font-size="7" fill="#10b981" font-weight="700">↑ 312%</text>
+  </g>
+  <g filter="url(#sh)" transform="translate(150, 180)">
+    <rect width="110" height="50" rx="8" fill="white"/>
+    <text x="12" y="18" font-family="system-ui" font-size="7" fill="#64748b" font-weight="500">Cost per Click</text>
+    <text x="12" y="40" font-family="system-ui" font-size="18" fill="#1e293b" font-weight="900">$0.42</text>
+    <text x="60" y="40" font-family="system-ui" font-size="7" fill="#10b981" font-weight="700">↓ 58%</text>
+  </g>
+  <g filter="url(#sh)" transform="translate(270, 180)">
+    <rect width="110" height="50" rx="8" fill="white"/>
+    <text x="12" y="18" font-family="system-ui" font-size="7" fill="#64748b" font-weight="500">Conversions</text>
+    <text x="12" y="40" font-family="system-ui" font-size="18" fill="#10b981" font-weight="900">847</text>
+    <text x="55" y="40" font-family="system-ui" font-size="7" fill="#10b981" font-weight="700">this month</text>
+  </g>
+  <!-- ROAS badge -->
+  <g filter="url(#sh)" transform="translate(30, 245)">
+    <rect width="120" height="36" rx="8" fill="#f43f5e"/>
+    <text x="14" y="16" font-family="system-ui" font-size="7" fill="white" opacity=".8">Return on Ad Spend</text>
+    <text x="14" y="30" font-family="system-ui" font-size="12" fill="white" font-weight="900">5.2x ROAS</text>
+  </g>
+  <!-- Certified badge -->
+  <g filter="url(#sh)" transform="translate(295, 140)">
+    <rect width="85" height="30" rx="8" fill="white"/>
+    <text x="10" y="20" font-family="system-ui" font-size="8" fill="#4285f4" font-weight="700">🏅 Google</text>
+    <text x="62" y="20" font-family="system-ui" font-size="7" fill="#64748b">Partner</text>
+  </g>
+  <!-- Keyword chips -->
+  <g transform="translate(170, 252)">
+    <rect width="60" height="22" rx="6" fill="white" filter="url(#sh)"/>
+    <text x="8" y="15" font-family="system-ui" font-size="7" fill="#f43f5e" font-weight="600">Search</text>
+  </g>
+  <g transform="translate(240, 252)">
+    <rect width="60" height="22" rx="6" fill="white" filter="url(#sh)"/>
+    <text x="8" y="15" font-family="system-ui" font-size="7" fill="#f43f5e" font-weight="600">Display</text>
+  </g>
+  <g transform="translate(310, 252)">
+    <rect width="70" height="22" rx="6" fill="white" filter="url(#sh)"/>
+    <text x="8" y="15" font-family="system-ui" font-size="7" fill="#f43f5e" font-weight="600">Shopping</text>
+  </g>
+</svg>

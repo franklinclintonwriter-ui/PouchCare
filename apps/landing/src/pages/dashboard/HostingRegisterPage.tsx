@@ -1,17 +1,12 @@
 /**
- * Mock domain search + hosting plan picker. Wire to registrar API later.
+ * Domain search + hosting plan picker. Wire to registrar API.
  * @see HOSTING_PORTAL.md — keep forms and grids responsive (1 col → 2 → 3).
  */
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Globe2, Loader2, Search } from "lucide-react";
 import { paths } from "@/routes/paths";
-import {
-  MOCK_HOSTING_PLANS,
-  mockDomainSearchSuggestions,
-  type DomainSearchSuggestion,
-} from "@/data/mockHosting";
-import { addHostingDomainFromMockCheckout } from "@/data/mockHostingStore";
+import { useSearchDomains, useRegisterDomain } from "@/api/portal-hosting";
 import { formatUsd } from "@/lib/format";
 import { DashboardPanel } from "@/components/dashboard/DashboardPanel";
 import { HostingPlanCard } from "@/components/hosting/HostingPlanCard";
@@ -21,23 +16,46 @@ import { Label } from "@/components/ui/Label";
 import { toast } from "sonner";
 import { cn } from "@/lib/cn";
 
+const HOSTING_PLANS = [
+  {
+    id: "starter",
+    name: "Starter",
+    blurb: "Single site, email forwarding, free SSL.",
+    monthlyUsd: 6.5,
+    features: ["5 GB SSD", "Unmetered bandwidth", "Weekly backups"],
+  },
+  {
+    id: "business",
+    name: "Business Pro",
+    blurb: "Production SLA, staging, priority DNS.",
+    monthlyUsd: 24.99,
+    features: ["100 GB SSD", "500 GB transfer", "Daily backups", "Staging"],
+  },
+  {
+    id: "scale",
+    name: "Scale",
+    blurb: "High traffic, dedicated support channel.",
+    monthlyUsd: 89,
+    features: ["200 GB SSD", "Dedicated pool", "Hourly backups"],
+  },
+];
+
 const DEFAULT_PLAN =
-  MOCK_HOSTING_PLANS[1] ?? MOCK_HOSTING_PLANS[0]!;
+  HOSTING_PLANS[1] ?? HOSTING_PLANS[0]!;
 
 export default function HostingRegisterPage() {
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const [submitted, setSubmitted] = useState("");
-  const [busy, setBusy] = useState(false);
   const [checkoutPlanId, setCheckoutPlanId] = useState<string>(DEFAULT_PLAN.id);
 
   const selectedPlan =
-    MOCK_HOSTING_PLANS.find((p) => p.id === checkoutPlanId) ?? DEFAULT_PLAN;
+    HOSTING_PLANS.find((p) => p.id === checkoutPlanId) ?? DEFAULT_PLAN;
 
-  const suggestions = useMemo(
-    () => (submitted ? mockDomainSearchSuggestions(submitted) : []),
-    [submitted],
-  );
+  const { data: suggestions = [], isLoading: searchLoading } =
+    useSearchDomains(submitted);
+
+  const registerMutation = useRegisterDomain();
 
   const runSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,26 +64,21 @@ export default function HostingRegisterPage() {
       toast.error("Enter at least 2 characters (e.g. mybrand)");
       return;
     }
-    setBusy(true);
-    window.setTimeout(() => {
-      setSubmitted(q);
-      setBusy(false);
-      toast.success("Mock results loaded");
-    }, 400);
+    setSubmitted(q);
   };
 
-  const addDomainToPortfolio = (s: DomainSearchSuggestion) => {
-    if (!s.available) return;
+  const addDomainToPortfolio = async (fqdn: string) => {
     try {
-      const row = addHostingDomainFromMockCheckout({
-        fqdn: s.fqdn,
-        planMonthlyUsd: selectedPlan.monthlyUsd,
+      await registerMutation.mutateAsync({
+        fqdn,
+        planId: checkoutPlanId,
         planName: selectedPlan.name,
+        monthlyUsd: selectedPlan.monthlyUsd,
       });
-      toast.success(`Added ${s.fqdn} (${selectedPlan.name})`);
-      navigate(paths.dashboardHostingDomain(row.id));
+      toast.success(`Registered ${fqdn} (${selectedPlan.name})`);
+      navigate(paths.dashboardHosting);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not add domain");
+      toast.error(err instanceof Error ? err.message : "Could not register domain");
     }
   };
 
@@ -95,10 +108,10 @@ export default function HostingRegisterPage() {
           <Button
             type="submit"
             variant="primary"
-            disabled={busy}
+            disabled={searchLoading}
             className="min-h-[48px] w-full shrink-0 px-6 sm:w-auto sm:min-h-[44px]"
             icon={
-              busy ? (
+              searchLoading ? (
                 <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
               ) : (
                 <Search className="h-4 w-4" aria-hidden />
@@ -129,7 +142,7 @@ export default function HostingRegisterPage() {
                   </span>
                 </div>
                 <p className="mt-2 text-xs text-gray-500 sm:text-sm">
-                  {s.available ? "Available (mock)" : "Taken (mock)"}
+                  {s.available ? "Available" : "Taken"}
                 </p>
                 <p className="mt-3 text-lg font-bold tabular-nums text-gray-900">
                   {formatUsd(s.pricePerYearUsd)}
@@ -143,11 +156,11 @@ export default function HostingRegisterPage() {
                   type="button"
                   variant={s.available ? "primary" : "outline"}
                   size="sm"
-                  disabled={!s.available}
+                  disabled={!s.available || registerMutation.isPending}
                   className="mt-4 w-full min-h-[44px] sm:min-h-0"
-                  onClick={() => addDomainToPortfolio(s)}
+                  onClick={() => addDomainToPortfolio(s.fqdn)}
                 >
-                  {s.available ? "Add to cart" : "Unavailable"}
+                  {s.available ? "Register & host" : "Unavailable"}
                 </Button>
               </li>
             ))}
@@ -156,7 +169,7 @@ export default function HostingRegisterPage() {
 
         {!submitted && (
           <p className="mt-6 text-center text-sm text-gray-500">
-            Enter a name and tap Search to see mock suggestions.
+            Enter a name and tap Search to check availability.
           </p>
         )}
       </DashboardPanel>
@@ -166,7 +179,7 @@ export default function HostingRegisterPage() {
         description="Pair a domain with managed hosting (mock pricing). The selected plan is used when you add a domain from search."
       >
         <ul className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          {MOCK_HOSTING_PLANS.map((plan, i) => (
+          {HOSTING_PLANS.map((plan, i) => (
             <HostingPlanCard
               key={plan.id}
               plan={plan}
@@ -177,7 +190,7 @@ export default function HostingRegisterPage() {
               )}
               onSelectPlan={(p) => {
                 setCheckoutPlanId(p.id);
-                toast.message(`Mock checkout will use ${p.name}`);
+                toast.message(`Using ${p.name} plan`);
               }}
             />
           ))}

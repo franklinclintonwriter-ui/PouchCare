@@ -24,7 +24,7 @@ router.get('/', requireAuth, async (req, res) => {
     ])
     const unreadCount = await prisma.notification.count({ where: { ...where, read: false } })
     return ok(res, notifications, { ...buildMeta(total, page, limit), unreadCount })
-  } catch (err) { serverError(res, err) }
+  } catch (err) { return serverError(res, err) }
 })
 
 router.post('/mark-read', requireAuth, async (req, res) => {
@@ -39,7 +39,7 @@ router.post('/mark-read', requireAuth, async (req, res) => {
       await prisma.notification.update({ where: { id }, data: { read: true } })
     }
     return ok(res, { message: 'Marked as read' })
-  } catch (err) { serverError(res, err) }
+  } catch (err) { return serverError(res, err) }
 })
 
 // DELETE /notifications/:id — Delete a single notification
@@ -52,7 +52,7 @@ router.delete('/:id', requireAuth, async (req, res) => {
     }
     await prisma.notification.delete({ where: { id: req.params.id } })
     return ok(res, { message: 'Notification deleted' })
-  } catch (err) { serverError(res, err) }
+  } catch (err) { return serverError(res, err) }
 })
 
 // DELETE /notifications — Delete all read notifications for user
@@ -66,7 +66,7 @@ router.delete('/', requireAuth, async (req, res) => {
       },
     })
     return ok(res, { message: `${result.count} notifications deleted` })
-  } catch (err) { serverError(res, err) }
+  } catch (err) { return serverError(res, err) }
 })
 
 // Helper to create notifications (used internally)

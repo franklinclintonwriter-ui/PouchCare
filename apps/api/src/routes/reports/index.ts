@@ -36,7 +36,7 @@ router.get('/daily', requireStaff, async (req: AuthRequest, res) => {
       prisma.dailyReport.count({ where }),
     ])
     return ok(res, reports, buildMeta(total, page, limit))
-  } catch (err) { serverError(res, err) }
+  } catch (err) { return serverError(res, err) }
 })
 
 // POST /v1/reports/daily
@@ -70,7 +70,7 @@ router.post('/daily', requireStaff, validate(submitSchema), async (req, res) => 
       },
     })
     return created(res, report)
-  } catch (err) { serverError(res, err) }
+  } catch (err) { return serverError(res, err) }
 })
 
 // GET /v1/reports/daily/:id
@@ -86,7 +86,7 @@ router.get('/daily/:id', requireStaff, async (req: AuthRequest, res) => {
       if (!okScope) return notFound(res)
     }
     return ok(res, report)
-  } catch (err) { serverError(res, err) }
+  } catch (err) { return serverError(res, err) }
 })
 
 // DELETE /v1/reports/daily/:id
@@ -102,7 +102,7 @@ router.delete('/daily/:id', requireRoles(...MANAGER_ROLES as any), async (req: A
     if (!okScope) return forbidden(res, 'Cannot delete this report')
     await prisma.dailyReport.delete({ where: { id: req.params.id } })
     return ok(res, { message: 'Report deleted' })
-  } catch (err) { serverError(res, err) }
+  } catch (err) { return serverError(res, err) }
 })
 
 // PUT /v1/reports/daily/:id/review
@@ -121,7 +121,7 @@ router.put('/daily/:id/review', requireRoles(...MANAGER_ROLES as any), async (re
       data: { managerReviewNote: req.body.note, status: 'Reviewed' },
     })
     return ok(res, updated)
-  } catch (err) { serverError(res, err) }
+  } catch (err) { return serverError(res, err) }
 })
 
 export default router

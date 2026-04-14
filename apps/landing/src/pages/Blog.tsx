@@ -64,9 +64,10 @@ export default function Blog() {
   return (
     <>
       <PageSEO
-        title="SEO Blog — Insights & Guides"
-        description="Practical SEO guides, link building strategies, and case studies written by PouchCare's active specialist team. No fluff, no content farms — just tactics that work."
+        title="SEO Blog — Expert Guides, Case Studies & Link Building Tips"
+        description="Read actionable SEO guides, link building strategies, and real case studies from PouchCare's specialist team. Updated weekly with tactics that drive measurable results."
         canonical="/blog"
+        keywords="SEO blog, SEO guides, link building tips, SEO case studies, SEO strategies, digital marketing blog, PouchCare blog"
       />
 
       {/* Sub-header */}

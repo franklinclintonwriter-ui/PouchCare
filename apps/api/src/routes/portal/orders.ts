@@ -89,15 +89,79 @@ router.post('/', async (req, res) => {
   } catch (e: any) { return serverError(res, e.message) }
 })
 
-// POST /portal/orders/:id/revision
+// PATCH /portal/orders/:id/cancel — Cancel a pending order
+router.patch('/:id/cancel', async (req, res) => {
+  try {
+    const order = await prisma.portalOrder.findFirst({
+      where: { id: req.params.id, memberId: req.user!.id },
+    })
+    if (!order) return notFound(res, 'Order')
+    if (order.status !== OrderStatus.PENDING && order.status !== OrderStatus.PROCESSING) {
+      return badRequest(res, 'Only pending or processing orders can be cancelled')
+    }
+    const updated = await prisma.portalOrder.update({
+      where: { id: req.params.id },
+      data: { status: OrderStatus.CANCELLED },
+    })
+    return ok(res, updated)
+  } catch (e) {
+    console.error('[portal/orders/cancel]', e)
+    return serverError(res)
+  }
+})
+
+// POST /portal/orders/:id/revision — Request a revision
 router.post('/:id/revision', async (req, res) => {
   try {
-    const order = await prisma.portalOrder.findFirst({ where: { id: req.params.id, memberId: req.user!.id } })
-    if (!order) return notFound(res)
-    if (order.status !== OrderStatus.DELIVERED) return badRequest(res, 'Can only request revision on delivered orders')
-    const updated = await prisma.portalOrder.update({ where: { id: req.params.id }, data: { status: OrderStatus.REVISION_REQUESTED, revisionCount: { increment: 1 } } })
+    const order = await prisma.portalOrder.findFirst({
+      where: { id: req.params.id, memberId: req.user!.id },
+    })
+    if (!order) return notFound(res, 'Order')
+    if (order.status !== OrderStatus.DELIVERED && order.status !== OrderStatus.COMPLETED) {
+      return badRequest(res, 'Revisions can only be requested for delivered/completed orders')
+    }
+    const { note } = req.body
+    const updated = await prisma.portalOrder.update({
+      where: { id: req.params.id },
+      data: {
+        status: OrderStatus.REVISION_REQUESTED,
+        revisionCount: { increment: 1 },
+        revisionNote: note || null,
+      },
+    })
     return ok(res, updated)
-  } catch { return serverError(res) }
+  } catch (e) {
+    console.error('[portal/orders/revision]', e)
+    return serverError(res)
+  }
+})
+
+// POST /portal/orders/:id/review — Rate and review an order
+router.post('/:id/review', async (req, res) => {
+  try {
+    const order = await prisma.portalOrder.findFirst({
+      where: { id: req.params.id, memberId: req.user!.id },
+    })
+    if (!order) return notFound(res, 'Order')
+    if (order.status !== OrderStatus.DELIVERED && order.status !== OrderStatus.COMPLETED) {
+      return badRequest(res, 'Only delivered/completed orders can be reviewed')
+    }
+    const { rating, reviewNote } = req.body
+    if (!rating || rating < 1 || rating > 5) {
+      return badRequest(res, 'Rating must be between 1 and 5')
+    }
+    const updated = await prisma.portalOrder.update({
+      where: { id: req.params.id },
+      data: {
+        rating: parseFloat(rating),
+        reviewNote: reviewNote || null,
+      },
+    })
+    return ok(res, updated)
+  } catch (e) {
+    console.error('[portal/orders/review]', e)
+    return serverError(res)
+  }
 })
 
 // GET /portal/orders/:id/messages

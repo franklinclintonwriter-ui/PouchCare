@@ -3,6 +3,7 @@ import { useRoutes } from 'react-router-dom';
 import { routes } from '@/routes';
 import { useThemeStore } from '@/store/themeStore';
 import { useAuthStore } from '@/store/authStore';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { CommandPalette } from '@/components/shared/CommandPalette';
 import { useAttendanceRealtime } from '@/hooks/useAttendanceRealtime';
 import api from '@/api/client';
@@ -73,9 +74,11 @@ export default function App() {
   const element = useRoutes(routes);
 
   return (
-    <>
-      {element}
-      <CommandPalette />
-    </>
+    <ErrorBoundary>
+      <>
+        {element}
+        <CommandPalette />
+      </>
+    </ErrorBoundary>
   );
 }

@@ -71,7 +71,7 @@ router.get('/', requireStaff, async (req, res) => {
     }
 
     return ok(res, { results, query: q })
-  } catch (err) { serverError(res, err) }
+  } catch (err) { return serverError(res, err) }
 })
 
 export default router

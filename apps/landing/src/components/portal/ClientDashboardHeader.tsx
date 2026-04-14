@@ -266,6 +266,15 @@ export function ClientDashboardHeader() {
                     })
                   )}
                 </div>
+                {items.length > 0 && (
+                  <Link
+                    to={paths.dashboardNotifications}
+                    onClick={() => setNotifOpen(false)}
+                    className="block border-t border-gray-100/80 px-3 py-2 text-center text-xs font-medium text-primary-600 transition-colors duration-200 hover:bg-primary-50/50"
+                  >
+                    View all notifications
+                  </Link>
+                )}
                 </motion.div>
               )}
             </AnimatePresence>

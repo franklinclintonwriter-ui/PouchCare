@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Toggle } from '@/components/ui/Toggle';
-import { useSystemSettings, useUpdateSystemSettings, useSystemAuditLogs } from '@/api/system-config';
+import { useSystemSettings, useUpdateSystemSettings, useSystemAuditLogs, type SettingValue } from '@/api/system-config';
 import { toast } from 'sonner';
 
 export default function SystemConfig() {
@@ -15,11 +15,11 @@ export default function SystemConfig() {
   const { data: settings, isLoading } = useSystemSettings();
   const updateMutation = useUpdateSystemSettings();
 
-  const [localState, setLocalState] = useState<Record<string, any>>({});
+  const [localState, setLocalState] = useState<Record<string, SettingValue>>({});
 
   useEffect(() => {
     if (settings) {
-      const state: Record<string, any> = {};
+      const state: Record<string, SettingValue> = {};
       settings.forEach((s) => {
         state[s.key] = s.value;
       });
@@ -42,7 +42,7 @@ export default function SystemConfig() {
     if (!settings) return;
 
     // find what changed in this group
-    const updates: any[] = [];
+    const updates: { key: string; value: SettingValue; type: string; group: string }[] = [];
     settings.filter(s => s.group === group).forEach(s => {
       if (localState[s.key] !== s.value) {
         updates.push({
@@ -71,7 +71,7 @@ export default function SystemConfig() {
     }
   };
 
-  const handleUpdate = (key: string, value: any) => {
+  const handleUpdate = (key: string, value: SettingValue) => {
     setLocalState(prev => ({ ...prev, [key]: value }));
   };
 
@@ -116,22 +116,22 @@ export default function SystemConfig() {
               <CardContent className="space-y-4">
                 <Input
                   label="Company Name"
-                  value={localState['company_name'] || ''}
+                  value={String(localState['company_name'] || '')}
                   onChange={(e) => handleUpdate('company_name', e.target.value)}
                 />
                 <Input
                   label="Support Email"
-                  value={localState['support_email'] || ''}
+                  value={String(localState['support_email'] || '')}
                   onChange={(e) => handleUpdate('support_email', e.target.value)}
                 />
                 <Input
                   label="Support Phone"
-                  value={localState['support_phone'] || ''}
+                  value={String(localState['support_phone'] || '')}
                   onChange={(e) => handleUpdate('support_phone', e.target.value)}
                 />
                 <Input
                   label="Default Timezone"
-                  value={localState['default_timezone'] || 'UTC'}
+                  value={String(localState['default_timezone'] || 'UTC')}
                   onChange={(e) => handleUpdate('default_timezone', e.target.value)}
                 />
                 <div className="flex justify-end pt-4">
@@ -152,19 +152,19 @@ export default function SystemConfig() {
                 <Input
                   type="number"
                   label="Global Default Commission Rate (%)"
-                  value={localState['commission_rate'] || 20}
+                  value={Number(localState['commission_rate'] ?? 20)}
                   onChange={(e) => handleUpdate('commission_rate', Number(e.target.value))}
                 />
                 <Input
                   type="number"
                   label="Commission Hold Period (Days)"
-                  value={localState['commission_hold_days'] || 14}
+                  value={Number(localState['commission_hold_days'] ?? 14)}
                   onChange={(e) => handleUpdate('commission_hold_days', Number(e.target.value))}
                 />
                 <Input
                   type="number"
                   label="Minimum Payout Threshold (USD)"
-                  value={localState['min_payout_threshold'] || 50}
+                  value={Number(localState['min_payout_threshold'] ?? 50)}
                   onChange={(e) => handleUpdate('min_payout_threshold', Number(e.target.value))}
                 />
                 <div className="flex items-center justify-between border-t border-gray-100 pt-4 dark:border-gray-800">
@@ -173,7 +173,7 @@ export default function SystemConfig() {
                     <p className="text-sm text-gray-500">Allow USDT/Binance for payouts</p>
                   </div>
                   <Toggle
-                    checked={localState['crypto_payments_enabled'] ?? true}
+                    checked={Boolean(localState['crypto_payments_enabled'] ?? true)}
                     onChange={(v) => handleUpdate('crypto_payments_enabled', v)}
                   />
                 </div>
@@ -198,20 +198,20 @@ export default function SystemConfig() {
                     <p className="text-sm text-gray-500">Force all staff to use Two-Factor Authentication</p>
                   </div>
                   <Toggle
-                    checked={localState['force_2fa'] ?? false}
+                    checked={Boolean(localState['force_2fa'] ?? false)}
                     onChange={(v) => handleUpdate('force_2fa', v)}
                   />
                 </div>
                 <Input
                   type="number"
                   label="Session Timeout (Minutes)"
-                  value={localState['session_timeout'] || 120}
+                  value={Number(localState['session_timeout'] ?? 120)}
                   onChange={(e) => handleUpdate('session_timeout', Number(e.target.value))}
                 />
                 <Input
                   label="Whitelisted Office IPs (Comma separated)"
                   placeholder="e.g. 192.168.1.1, 10.0.0.1"
-                  value={localState['whitelisted_ips'] || ''}
+                  value={String(localState['whitelisted_ips'] || '')}
                   onChange={(e) => handleUpdate('whitelisted_ips', e.target.value)}
                 />
                 <div className="flex justify-end pt-4">
@@ -242,7 +242,7 @@ export default function SystemConfig() {
                       <p className="text-sm text-gray-500">{mod.desc}</p>
                     </div>
                     <Toggle
-                      checked={localState[mod.key] ?? true}
+                      checked={Boolean(localState[mod.key] ?? true)}
                       onChange={(v) => handleUpdate(mod.key, v)}
                     />
                   </div>
@@ -264,23 +264,23 @@ export default function SystemConfig() {
               <CardContent className="space-y-4">
                 <Input
                   label="SMTP Host"
-                  value={localState['smtp_host'] || ''}
+                  value={String(localState['smtp_host'] || '')}
                   onChange={(e) => handleUpdate('smtp_host', e.target.value)}
                 />
                 <Input
                   label="SMTP User"
-                  value={localState['smtp_user'] || ''}
+                  value={String(localState['smtp_user'] || '')}
                   onChange={(e) => handleUpdate('smtp_user', e.target.value)}
                 />
                 <Input
                   type="password"
                   label="SMTP Password"
-                  value={localState['smtp_pass'] || ''}
+                  value={String(localState['smtp_pass'] || '')}
                   onChange={(e) => handleUpdate('smtp_pass', e.target.value)}
                 />
                 <Input
                   label="WhatsApp API Key"
-                  value={localState['whatsapp_api_key'] || ''}
+                  value={String(localState['whatsapp_api_key'] || '')}
                   onChange={(e) => handleUpdate('whatsapp_api_key', e.target.value)}
                 />
                 <div className="flex justify-end pt-4">

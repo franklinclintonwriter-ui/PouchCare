@@ -46,7 +46,7 @@ router.get('/', bc, async (req, res) => {
       prisma.broadcast.count({ where }),
     ])
     return ok(res, broadcasts, buildMeta(total, page, limit))
-  } catch (err) { serverError(res, err) }
+  } catch (err) { return serverError(res, err) }
 })
 
 router.get('/:id', bc, async (req, res) => {
@@ -54,7 +54,7 @@ router.get('/:id', bc, async (req, res) => {
     const broadcast = await prisma.broadcast.findUnique({ where: { id: req.params.id } })
     if (!broadcast) return notFound(res)
     return ok(res, broadcast)
-  } catch (err) { serverError(res, err) }
+  } catch (err) { return serverError(res, err) }
 })
 
 router.delete('/:id', bc, async (req, res) => {
@@ -63,7 +63,7 @@ router.delete('/:id', bc, async (req, res) => {
     if (!existing) return notFound(res)
     await prisma.broadcast.delete({ where: { id: req.params.id } })
     return ok(res, { message: 'Broadcast deleted' })
-  } catch (err) { serverError(res, err) }
+  } catch (err) { return serverError(res, err) }
 })
 
 // PUT /:id — Update broadcast (title, message, isUrgent only - audience/channel cannot be changed after creation)
@@ -89,7 +89,7 @@ router.put('/:id', bc, validate(updateSchema), async (req, res) => {
       data: updateData,
     })
     return ok(res, broadcast)
-  } catch (err) { serverError(res, err) }
+  } catch (err) { return serverError(res, err) }
 })
 
 router.post('/', bc, validate(schema), async (req, res) => {
@@ -148,7 +148,7 @@ router.post('/', bc, validate(schema), async (req, res) => {
     }
 
     return created(res, broadcast)
-  } catch (err) { serverError(res, err) }
+  } catch (err) { return serverError(res, err) }
 })
 
 export default router

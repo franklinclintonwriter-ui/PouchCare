@@ -1,7 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
 /**
- * E2E tests hit the Vite dev server (default port 3000 in apps/management) and expect the API
+ * E2E tests hit the Vite dev server (port 3001 in apps/management) and expect the API
  * reachable via the Vite proxy (apps/api, default PORT from apps/api/.env e.g. 7000).
  * Start both before running: `npm run dev:api` and `npm run dev:mgmt` (or rely on webServer below).
  */
@@ -13,14 +13,14 @@ export default defineConfig({
   reporter: 'list',
   use: {
     ...devices['Desktop Chrome'],
-    baseURL: process.env.E2E_BASE_URL ?? 'http://localhost:3000',
+    baseURL: process.env.E2E_BASE_URL ?? 'http://localhost:3001',
     trace: 'on-first-retry',
   },
   webServer: process.env.E2E_NO_SERVER
     ? undefined
     : {
         command: 'npm run dev --workspace=m.pouchcare.com',
-        url: 'http://localhost:3000',
+        url: 'http://localhost:3001',
         reuseExistingServer: true,
         timeout: 120_000,
       },

@@ -2,10 +2,9 @@
  * Enhanced client profile — 6 sections:
  * Identity · Contact · Company · Address · Account info · Linked services
  *
- * Live fields: usePortalMe() (fullName, email, phone, whatsapp, country).
- * Mock fields: company, address, extra contacts — stored in sessionStorage via mockProfile.ts.
+ * All fields now use API: usePortalMe() + useUpdateProfile()
  */
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -26,7 +25,7 @@ import { usePortalMe } from "@/api/portal-auth";
 import { useUpdateProfile } from "@/api/portal-dashboard";
 import { usePortalWallet } from "@/api/portal-dashboard";
 import { usePortalOrders } from "@/api/portal-dashboard";
-import { useMockHostingDomains } from "@/hooks/useMockHostingDomains";
+import { usePortalDomains } from "@/api/portal-hosting";
 import { DashboardPanel } from "@/components/dashboard/DashboardPanel";
 import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
@@ -37,11 +36,7 @@ import { formatUsd, formatDateShort } from "@/lib/format";
 import {
   COUNTRIES,
   INDUSTRIES,
-  loadMockProfile,
-  saveMockProfile,
-  type MockCompanyInfo,
-  type MockAddress,
-} from "@/data/mockProfile";
+} from "@/data/constants";
 import { toast } from "sonner";
 import { cn } from "@/lib/cn";
 
@@ -61,17 +56,17 @@ const contactSchema = z.object({
 const companySchema = z.object({
   companyName: z.string().optional(),
   vatId: z.string().optional(),
-  website: z.string().optional(),
+  companyWebsite: z.string().optional(),
   industry: z.string().optional(),
 });
 
 const addressSchema = z.object({
-  line1: z.string().optional(),
-  line2: z.string().optional(),
+  addressLine1: z.string().optional(),
+  addressLine2: z.string().optional(),
   city: z.string().optional(),
   state: z.string().optional(),
   zip: z.string().optional(),
-  country: z.string().optional(),
+  addressCountry: z.string().optional(),
 });
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -106,15 +101,13 @@ export default function ProfilePage() {
   const update = useUpdateProfile();
   const wallet = usePortalWallet();
   const orders = usePortalOrders(1, 1);
-  const domains = useMockHostingDomains();
-
-  const stored = useRef(loadMockProfile());
+  const domainsQuery = usePortalDomains(1, 100);
 
   // Avatar state (mock — no real upload endpoint)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
-  // ── Identity form ──────────────────────────────────────────────────────
+  // ── Identity form ──────────────────────────────────────────────────
   const identity = useForm<IdentityForm>({ resolver: zodResolver(identitySchema) });
   useEffect(() => {
     if (me.data) identity.reset({ fullName: me.data.fullName });
@@ -129,18 +122,17 @@ export default function ProfilePage() {
     }
   };
 
-  // ── Contact form ───────────────────────────────────────────────────────
+  // ── Contact form ───────────────────────────────────────────────────
   const contact = useForm<ContactForm>({ resolver: zodResolver(contactSchema) });
   useEffect(() => {
     const d = me.data;
-    const s = stored.current.contacts;
     if (d) {
       contact.reset({
         phone: d.phone ?? "",
         whatsapp: d.whatsapp ?? "",
-        telegram: s.telegram,
-        skype: s.skype,
-        preferredContact: s.preferredContact,
+        telegram: d.telegram ?? "",
+        skype: d.skype ?? "",
+        preferredContact: d.preferredContact ?? "email",
       });
     }
   }, [me.data]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -150,43 +142,74 @@ export default function ProfilePage() {
       await update.mutateAsync({
         phone: v.phone || undefined,
         whatsapp: v.whatsapp || undefined,
+        telegram: v.telegram || undefined,
+        skype: v.skype || undefined,
+        preferredContact: v.preferredContact || undefined,
       });
-      saveMockProfile({
-        contacts: {
-          telegram: v.telegram ?? "",
-          skype: v.skype ?? "",
-          preferredContact: v.preferredContact ?? "email",
-        },
-      });
-      stored.current = loadMockProfile();
       toast.success("Contact info saved");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Update failed");
     }
   };
 
-  // ── Company form ───────────────────────────────────────────────────────
+  // ── Company form ───────────────────────────────────────────────────
   const company = useForm<CompanyForm>({ resolver: zodResolver(companySchema) });
   useEffect(() => {
-    company.reset(stored.current.company);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    const d = me.data;
+    if (d) {
+      company.reset({
+        companyName: d.companyName ?? "",
+        vatId: d.vatId ?? "",
+        companyWebsite: d.companyWebsite ?? "",
+        industry: d.industry ?? "",
+      });
+    }
+  }, [me.data]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const saveCompany = (v: CompanyForm) => {
-    saveMockProfile({ company: v as MockCompanyInfo });
-    stored.current = loadMockProfile();
-    toast.success("Company info saved (mock)");
+  const saveCompany = async (v: CompanyForm) => {
+    try {
+      await update.mutateAsync({
+        companyName: v.companyName || undefined,
+        vatId: v.vatId || undefined,
+        companyWebsite: v.companyWebsite || undefined,
+        industry: v.industry || undefined,
+      });
+      toast.success("Company info saved");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Update failed");
+    }
   };
 
-  // ── Address form ───────────────────────────────────────────────────────
+  // ── Address form ───────────────────────────────────────────────────
   const address = useForm<AddressForm>({ resolver: zodResolver(addressSchema) });
   useEffect(() => {
-    address.reset(stored.current.address);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    const d = me.data;
+    if (d) {
+      address.reset({
+        addressLine1: d.addressLine1 ?? "",
+        addressLine2: d.addressLine2 ?? "",
+        city: d.city ?? "",
+        state: d.state ?? "",
+        zip: d.zip ?? "",
+        addressCountry: d.addressCountry ?? "",
+      });
+    }
+  }, [me.data]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const saveAddress = (v: AddressForm) => {
-    saveMockProfile({ address: v as MockAddress });
-    stored.current = loadMockProfile();
-    toast.success("Address saved (mock)");
+  const saveAddress = async (v: AddressForm) => {
+    try {
+      await update.mutateAsync({
+        addressLine1: v.addressLine1 || undefined,
+        addressLine2: v.addressLine2 || undefined,
+        city: v.city || undefined,
+        state: v.state || undefined,
+        zip: v.zip || undefined,
+        addressCountry: v.addressCountry || undefined,
+      });
+      toast.success("Address saved");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Update failed");
+    }
   };
 
   const copyToClipboard = (text: string, label: string) => {
@@ -405,13 +428,13 @@ export default function ProfilePage() {
             />
           </div>
           <div>
-            <Label htmlFor="website">Website</Label>
+            <Label htmlFor="companyWebsite">Website</Label>
             <Input
-              id="website"
+              id="companyWebsite"
               type="url"
               placeholder="https://example.com"
               className="mt-1 min-h-[44px]"
-              {...company.register("website")}
+              {...company.register("companyWebsite")}
             />
           </div>
           <div className="sm:col-span-2">
@@ -433,6 +456,7 @@ export default function ProfilePage() {
             <Button
               type="submit"
               variant="primary"
+              disabled={update.isPending}
               className="min-h-[44px] w-full sm:w-auto"
             >
               Save company info
@@ -452,21 +476,21 @@ export default function ProfilePage() {
           className="grid grid-cols-1 gap-4 sm:grid-cols-2"
         >
           <div className="sm:col-span-2">
-            <Label htmlFor="line1">Address line 1</Label>
+            <Label htmlFor="addressLine1">Address line 1</Label>
             <Input
-              id="line1"
+              id="addressLine1"
               placeholder="123 Main St"
               className="mt-1 min-h-[44px]"
-              {...address.register("line1")}
+              {...address.register("addressLine1")}
             />
           </div>
           <div className="sm:col-span-2">
-            <Label htmlFor="line2">Address line 2</Label>
+            <Label htmlFor="addressLine2">Address line 2</Label>
             <Input
-              id="line2"
+              id="addressLine2"
               placeholder="Apt, suite, etc."
               className="mt-1 min-h-[44px]"
-              {...address.register("line2")}
+              {...address.register("addressLine2")}
             />
           </div>
           <div>
@@ -494,11 +518,11 @@ export default function ProfilePage() {
             />
           </div>
           <div>
-            <Label htmlFor="country">Country</Label>
+            <Label htmlFor="addressCountry">Country</Label>
             <select
-              id="country"
+              id="addressCountry"
               className="mt-1 min-h-[44px] w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/40"
-              {...address.register("country")}
+              {...address.register("addressCountry")}
             >
               <option value="">Select country…</option>
               {COUNTRIES.map((c) => (
@@ -512,6 +536,7 @@ export default function ProfilePage() {
             <Button
               type="submit"
               variant="primary"
+              disabled={update.isPending}
               className="min-h-[44px] w-full sm:w-auto"
             >
               Save address
@@ -589,7 +614,7 @@ export default function ProfilePage() {
             <div>
               <p className="text-xs font-medium text-gray-500">Domains</p>
               <p className="text-xl font-bold tabular-nums text-gray-900">
-                {domains.length}
+                {domainsQuery.isLoading ? "…" : (domainsQuery.data?.items.length ?? 0)}
               </p>
             </div>
           </div>

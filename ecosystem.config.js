@@ -5,17 +5,19 @@ module.exports = {
     cwd:         '/home/pouchcare/Developments/PouchCare/apps/api',
     interpreter: 'node',
     interpreter_args: '--import tsx',
-    exec_mode:   'fork',
-    instances:   1,
+    exec_mode:   'cluster',
+    instances:   2,
     autorestart: true,
     watch:       false,
     max_memory_restart: '512M',
+    min_uptime:  '10s',
+    max_restarts: 10,
     env: {
       NODE_ENV:   'production',
       PORT:       '7000',
     },
     out_file:   '/home/pouchcare/logs/api-out.log',
     error_file: '/home/pouchcare/logs/api-err.log',
-    log_date_format: 'YYYY-MM-DD HH:mm:ss',
+    log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
   }]
 }

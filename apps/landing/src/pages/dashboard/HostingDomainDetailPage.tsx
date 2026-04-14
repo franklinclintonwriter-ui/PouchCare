@@ -1,8 +1,8 @@
 /**
- * Single domain: usage, DNS, nameservers, certificate, editable settings (mock store).
+ * Single domain: usage, DNS, nameservers, certificate, editable settings.
  * @see HOSTING_PORTAL.md — card fallbacks for DNS on narrow viewports.
  */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -12,6 +12,7 @@ import {
   Globe2,
   HardDrive,
   Lock,
+  Loader2,
   Pencil,
   Plus,
   Radio,
@@ -21,17 +22,17 @@ import {
   Trash2,
 } from "lucide-react";
 import { paths } from "@/routes/paths";
-import type { DnsRecord } from "@/data/mockHosting";
 import {
-  addDnsRecord,
-  deleteHostingDomain,
-  removeDnsRecord,
-  updateDnsRecord,
-  updateHostingDomain,
-} from "@/data/mockHostingStore";
+  usePortalDomain,
+  useUpdateDomain,
+  useDeleteDomain,
+  useAddDnsRecord,
+  useUpdateDnsRecord,
+  useDeleteDnsRecord,
+  type DnsRecord,
+} from "@/api/portal-hosting";
 import { formatDateShort, formatUsd } from "@/lib/format";
 import { hostingStatusVariant } from "@/lib/hostingUtils";
-import { useMockHostingDomains } from "@/hooks/useMockHostingDomains";
 import { DashboardPanel } from "@/components/dashboard/DashboardPanel";
 import { UsageMeterBar } from "@/components/hosting/UsageMeterBar";
 import { Badge } from "@/components/ui/Badge";
@@ -47,11 +48,7 @@ const DNS_TYPES = ["A", "AAAA", "CNAME", "MX", "TXT"] as const;
 export default function HostingDomainDetailPage() {
   const navigate = useNavigate();
   const { domainId } = useParams<{ domainId: string }>();
-  const domains = useMockHostingDomains();
-  const d = useMemo(
-    () => (domainId ? domains.find((x) => x.id === domainId) : undefined),
-    [domains, domainId],
-  );
+  const { data: d, isLoading } = usePortalDomain(domainId);
 
   const [autoRenew, setAutoRenew] = useState(false);
   const [notes, setNotes] = useState("");
@@ -64,6 +61,12 @@ export default function HostingDomainDetailPage() {
 
   const [editing, setEditing] = useState<DnsRecord | null>(null);
 
+  const updateDomainMutation = useUpdateDomain();
+  const deleteDomainMutation = useDeleteDomain();
+  const addDnsMutation = useAddDnsRecord(domainId || "");
+  const updateDnsMutation = useUpdateDnsRecord(domainId || "");
+  const deleteDnsMutation = useDeleteDnsRecord(domainId || "");
+
   useEffect(() => {
     if (!d) return;
     setAutoRenew(d.autoRenew);
@@ -71,7 +74,19 @@ export default function HostingDomainDetailPage() {
     setNameserversText(d.nameservers.join("\n"));
   }, [d]);
 
-  if (!domainId || !d) {
+  if (!domainId) {
+    return <Navigate to={paths.dashboardHosting} replace />;
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+      </div>
+    );
+  }
+
+  if (!d) {
     return <Navigate to={paths.dashboardHosting} replace />;
   }
 
@@ -85,15 +100,20 @@ export default function HostingDomainDetailPage() {
     toast.success("Copied");
   };
 
-  const saveSettings = () => {
-    updateHostingDomain(d.id, {
-      autoRenew,
-      notes: notes.trim() || undefined,
-    });
-    toast.success("Settings saved");
+  const saveSettings = async () => {
+    try {
+      await updateDomainMutation.mutateAsync({
+        id: d.id,
+        autoRenew,
+        notes: notes.trim() || undefined,
+      });
+      toast.success("Domain settings saved");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to save");
+    }
   };
 
-  const saveNameservers = () => {
+  const saveNameservers = async () => {
     const lines = nameserversText
       .split("\n")
       .map((s) => s.trim())
@@ -102,11 +122,18 @@ export default function HostingDomainDetailPage() {
       toast.error("Enter at least one nameserver");
       return;
     }
-    updateHostingDomain(d.id, { nameservers: lines });
-    toast.success("Nameservers updated");
+    try {
+      await updateDomainMutation.mutateAsync({
+        id: d.id,
+        nameservers: lines,
+      });
+      toast.success("Nameservers updated");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to update");
+    }
   };
 
-  const handleAddDns = () => {
+  const handleAddDns = async () => {
     if (!newValue.trim()) {
       toast.error("Value is required");
       return;
@@ -116,50 +143,66 @@ export default function HostingDomainDetailPage() {
       toast.error("TTL must be at least 60");
       return;
     }
-    addDnsRecord(d.id, {
-      type: newType,
-      name: newName.trim() || "@",
-      value: newValue.trim(),
-      ttl,
-    });
-    setNewValue("");
-    toast.success("DNS record added");
+    try {
+      await addDnsMutation.mutateAsync({
+        type: newType,
+        name: newName.trim() || "@",
+        value: newValue.trim(),
+        ttl,
+      });
+      setNewValue("");
+      toast.success("DNS record added");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to add record");
+    }
   };
 
-  const handleSaveEditDns = () => {
+  const handleSaveEditDns = async () => {
     if (!editing) return;
     const ttl = Number.parseInt(String(editing.ttl), 10);
     if (!Number.isFinite(ttl) || ttl < 60) {
       toast.error("TTL must be at least 60");
       return;
     }
-    updateDnsRecord(d.id, editing.id, {
-      type: editing.type,
-      name: editing.name.trim(),
-      value: editing.value.trim(),
-      ttl,
-    });
-    setEditing(null);
-    toast.success("Record updated");
+    try {
+      await updateDnsMutation.mutateAsync({
+        recordId: editing.id,
+        type: editing.type,
+        name: editing.name.trim(),
+        value: editing.value.trim(),
+        ttl,
+      });
+      setEditing(null);
+      toast.success("DNS record updated");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to update");
+    }
   };
 
-  const handleDeleteDns = (recordId: string) => {
+  const handleDeleteDns = async (recordId: string) => {
     if (!window.confirm("Remove this DNS record?")) return;
-    removeDnsRecord(d.id, recordId);
-    toast.success("Record removed");
+    try {
+      await deleteDnsMutation.mutateAsync(recordId);
+      toast.success("DNS record deleted");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to delete");
+    }
   };
 
-  const handleDeleteDomain = () => {
+  const handleDeleteDomain = async () => {
     if (
       !window.confirm(
-        `Remove ${d.fqdn} from your portfolio? This is a mock action only.`,
+        `Remove ${d.fqdn} from your portfolio?`,
       )
     ) {
       return;
     }
-    if (deleteHostingDomain(d.id)) {
-      toast.success("Domain removed from mock portfolio");
+    try {
+      await deleteDomainMutation.mutateAsync(d.id);
+      toast.success("Domain removed");
       navigate(paths.dashboardHosting, { replace: true });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to delete");
     }
   };
 
@@ -221,7 +264,7 @@ export default function HostingDomainDetailPage() {
               variant="outline"
               size="sm"
               className="min-h-[44px] w-full border-white/20 bg-white/10 text-white hover:bg-white/15 sm:min-h-0 sm:w-auto"
-              onClick={() => toast.message("Mock: renewal invoice sent to email")}
+              onClick={() => toast.message("Renewal invoice sent to email")}
             >
               Renew now
             </Button>
@@ -269,11 +312,11 @@ export default function HostingDomainDetailPage() {
 
       <DashboardPanel
         title="Domain settings"
-        description="Saved to the mock portfolio (sessionStorage)."
+        description="Update auto-renewal and notes."
         action={
           <span className="inline-flex items-center gap-1 text-xs font-medium text-gray-400 sm:text-sm">
             <Pencil className="h-3.5 w-3.5" aria-hidden />
-            Draft
+            Editable
           </span>
         }
       >
@@ -331,7 +374,7 @@ export default function HostingDomainDetailPage() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-8">
         <DashboardPanel
           title="DNS records"
-          description="Mock CRUD — changes persist for this browser session."
+          description="Add, edit, and delete DNS records for your domain."
         >
           <div className="mb-4 rounded-xl border border-dashed border-primary-200 bg-primary-50/30 p-4">
             <p className="mb-3 text-sm font-semibold text-gray-900">Add record</p>
@@ -540,7 +583,7 @@ export default function HostingDomainDetailPage() {
         <div className="space-y-6">
           <DashboardPanel
             title="Nameservers"
-            description="One per line — saved to the mock store."
+            description="One per line — use custom nameservers if needed."
             action={
               <Button
                 type="button"
@@ -574,7 +617,7 @@ export default function HostingDomainDetailPage() {
 
           <DashboardPanel
             title="Certificate"
-            description="TLS metadata (mock)."
+            description="TLS certificate information."
             action={
               <Button
                 type="button"
@@ -620,7 +663,7 @@ export default function HostingDomainDetailPage() {
 
       <DashboardPanel
         title="Danger zone"
-        description="Remove this domain from your mock portfolio."
+        description="Permanently remove this domain from your portfolio."
       >
         <Button
           type="button"

@@ -218,24 +218,24 @@ export function Footer() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(WEBSITE_SCHEMA) }}
       />
       <footer className="bg-white border-t border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 sm:pt-16 pb-6 sm:pb-8">
           {/* Top grid */}
-          <div className="mb-12 grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-6 lg:gap-8">
+          <div className="mb-8 sm:mb-12 grid grid-cols-2 gap-6 sm:grid-cols-2 lg:grid-cols-6 lg:gap-8">
             {/* Brand col — spans 2 on lg */}
-            <div className="sm:col-span-2 lg:col-span-2">
+            <div className="col-span-2 lg:col-span-2">
               <BrandLogo
                 variant="footer"
                 className="mb-4 group [&_img]:transition-opacity [&_img]:group-hover:opacity-90"
               />
-              <p className="text-gray-600 text-sm leading-relaxed mb-5 max-w-xs">
+              <p className="text-gray-600 text-xs sm:text-sm leading-relaxed mb-4 sm:mb-5 max-w-xs">
                 Premium SEO, Link Building and Digital Marketing services
                 helping 500+ businesses rank higher and grow faster since 2016.
               </p>
-              <p className="text-gray-500 text-xs leading-relaxed mb-5 max-w-xs">
+              <p className="text-gray-500 text-[10px] sm:text-xs leading-relaxed mb-4 sm:mb-5 max-w-xs">
                 {BRAND_OPERATES_UNDER_ENTITY}.
               </p>
               {/* Social */}
-              <div className="flex items-center gap-2 mb-5">
+              <div className="flex items-center gap-1.5 sm:gap-2 mb-4 sm:mb-5">
                 {SOCIAL.map(({ icon: Icon, href, label }) => (
                   <a
                     key={label}
@@ -243,14 +243,14 @@ export function Footer() {
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label={label}
-                    className="w-8 h-8 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-500 hover:text-primary-600 hover:bg-primary-50 transition-colors"
+                    className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-500 hover:text-primary-600 hover:bg-primary-50 transition-colors"
                   >
                     <Icon size={15} />
                   </a>
                 ))}
               </div>
               {/* Review platform badges */}
-              <div className="flex flex-wrap items-center gap-2 mb-4">
+              <div className="hidden sm:flex flex-wrap items-center gap-2 mb-4">
                 <a
                   href="https://trustpilot.com/review/pouchcare.com"
                   target="_blank"
@@ -323,7 +323,7 @@ export function Footer() {
               </div>
 
               {/* Client portal — Login / Register */}
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2 mt-1 sm:mt-0">
                 <a
                   href={portalLoginUrl()}
                   target="_blank"
@@ -351,15 +351,15 @@ export function Footer() {
                   idx === arr.length - 1 && "sm:col-span-2 lg:col-span-1",
                 )}
               >
-                <h3 className="text-gray-900 font-semibold text-sm mb-4">
+                <h3 className="text-gray-900 font-semibold text-xs sm:text-sm mb-2.5 sm:mb-4">
                   {title}
                 </h3>
-                <ul className="space-y-2.5">
+                <ul className="space-y-1.5 sm:space-y-2.5">
                   {links.map((link) => (
                     <li key={link.label}>
                       <Link
                         to={link.href}
-                        className="text-gray-600 text-sm hover:text-primary-700 transition-colors"
+                        className="text-gray-600 text-xs sm:text-sm hover:text-primary-700 transition-colors"
                       >
                         {link.label}
                       </Link>
@@ -371,7 +371,7 @@ export function Footer() {
           </div>
 
           {/* Contact strip */}
-          <div className="mb-10 grid grid-cols-1 gap-3 rounded-2xl border border-gray-200 bg-gray-50 p-4 sm:grid-cols-3 sm:gap-4">
+          <div className="mb-6 sm:mb-10 grid grid-cols-1 gap-2 sm:gap-3 rounded-xl sm:rounded-2xl border border-gray-200 bg-gray-50 p-3 sm:p-4 sm:grid-cols-3">
             {[
               {
                 icon: Mail,
@@ -392,43 +392,42 @@ export function Footer() {
               <a
                 key={text}
                 href={href}
-                className="group flex min-h-[48px] items-center gap-3 rounded-xl py-1 text-gray-600 transition-colors hover:text-primary-700"
+                className="group flex min-h-[40px] sm:min-h-[48px] items-center gap-2.5 sm:gap-3 rounded-xl py-1 text-gray-600 transition-colors hover:text-primary-700"
               >
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white transition-colors group-hover:bg-primary-50">
-                  <Icon size={14} />
+                <span className="flex h-8 w-8 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white transition-colors group-hover:bg-primary-50">
+                  <Icon size={13} />
                 </span>
-                <span className="min-w-0 flex-1 text-sm leading-snug">{text}</span>
+                <span className="min-w-0 flex-1 text-xs sm:text-sm leading-snug">
+                  {text}
+                </span>
               </a>
             ))}
           </div>
 
           {/* Bottom bar */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-6 border-t border-gray-200">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-3 pt-4 sm:pt-6 border-t border-gray-200">
             <div className="text-center sm:text-left">
-              <p className="text-gray-500 text-sm">
+              <p className="text-gray-500 text-xs sm:text-sm">
                 &copy; {year} {TRADING_NAME}. All rights reserved.
               </p>
-              <p className="mt-1 text-gray-400 text-xs max-w-md">
+              <p className="mt-0.5 sm:mt-1 text-gray-400 text-[10px] sm:text-xs max-w-md">
                 {LEGAL_ENTITY_NAME} — incorporated in Bangladesh under the
                 Companies Act (Act XVIII) of 1994.
               </p>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3 sm:gap-4">
               <Link
                 to="/privacy"
-                className="text-gray-500 text-sm hover:text-primary-700 transition-colors"
+                className="text-gray-500 text-xs sm:text-sm hover:text-primary-700 transition-colors"
               >
                 Privacy
               </Link>
               <Link
                 to="/terms"
-                className="text-gray-500 text-sm hover:text-primary-700 transition-colors"
+                className="text-gray-500 text-xs sm:text-sm hover:text-primary-700 transition-colors"
               >
                 Terms
               </Link>
-              <span className="text-gray-500 text-xs">
-                Made with ♥ for growth
-              </span>
             </div>
           </div>
         </div>

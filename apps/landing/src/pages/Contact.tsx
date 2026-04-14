@@ -132,9 +132,10 @@ export default function Contact() {
   return (
     <>
       <PageSEO
-        title="Contact Us — Get a Free SEO Audit"
-        description="Get in touch with PouchCare for a free SEO audit and custom growth proposal. We reply within 4 business hours. Offices in Dubai, London, Dhaka, Karachi & Lahore."
+        title="Contact PouchCare — Free SEO Audit & Growth Proposal"
+        description="Request a free SEO audit and custom growth proposal. We reply within 4 business hours. Offices in Dubai, London, Dhaka, Karachi & Lahore. Email, phone, or live chat."
         canonical="/contact"
+        keywords="contact PouchCare, free SEO audit, SEO consultation, digital marketing proposal, PouchCare offices, get in touch"
       />
 
       {/* Sub-header */}

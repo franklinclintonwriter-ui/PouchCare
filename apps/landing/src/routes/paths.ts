@@ -26,4 +26,5 @@ export const paths = {
   dashboardInvoice: (id: string) => `/dashboard/invoices/${id}`,
   dashboardWebsites: "/dashboard/websites",
   dashboardWebsite: (id: string) => `/dashboard/websites/${id}`,
+  dashboardNotifications: "/dashboard/notifications",
 } as const;

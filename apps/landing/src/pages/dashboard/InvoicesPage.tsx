@@ -7,16 +7,18 @@ import { Link } from "react-router-dom";
 import {
   Download,
   Eye,
+  Loader2,
   Search,
 } from "lucide-react";
 import { paths } from "@/routes/paths";
 import {
-  MOCK_INVOICES,
   INVOICE_STATUS_LABEL,
   INVOICE_STATUS_VARIANT,
   type InvoiceStatus,
-  type MockInvoice,
-} from "@/data/mockInvoices";
+  type Invoice,
+  usePortalInvoices,
+  useDownloadInvoicePdf,
+} from "@/api/portal-invoices";
 import { formatDateShort, formatUsd } from "@/lib/format";
 import { DashboardPanel } from "@/components/dashboard/DashboardPanel";
 import { Badge } from "@/components/ui/Badge";
@@ -35,26 +37,44 @@ const STATUS_TABS: { label: string; value: InvoiceStatus | "all" }[] = [
 export default function InvoicesPage() {
   const [filter, setFilter] = useState<InvoiceStatus | "all">("all");
   const [search, setSearch] = useState("");
+  const [page] = useState(1);
+
+  const { data: invoicesData, isLoading, error } = usePortalInvoices(
+    page,
+    50,
+    filter !== "all" ? filter : undefined,
+  );
+  const download = useDownloadInvoicePdf();
+
+  const handleDownload = async (invoiceId: string) => {
+    try {
+      toast.success("Download started...");
+      await download.mutateAsync(invoiceId);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to download");
+    }
+  };
 
   const filtered = useMemo(() => {
-    let list = MOCK_INVOICES;
-    if (filter !== "all") list = list.filter((i) => i.status === filter);
+    if (!invoicesData) return [];
+    let list = invoicesData.items;
     const q = search.trim().toLowerCase();
     if (q) {
-      list = list.filter(
-        (i) =>
-          i.invoiceNumber.toLowerCase().includes(q) ||
-          i.lineItems.some((li) => li.description.toLowerCase().includes(q)),
-      );
+      list = list.filter((i) => i.invoiceNumber.toLowerCase().includes(q));
     }
     return list;
-  }, [filter, search]);
+  }, [invoicesData, search]);
 
   const totals = useMemo(() => {
-    const paid = MOCK_INVOICES.filter((i) => i.status === "paid").reduce((s, i) => s + i.total, 0);
-    const pending = MOCK_INVOICES.filter((i) => i.status === "pending" || i.status === "overdue").reduce((s, i) => s + i.total, 0);
-    return { paid, pending, count: MOCK_INVOICES.length };
-  }, []);
+    if (!invoicesData) return { paid: 0, pending: 0, count: 0 };
+    const paid = invoicesData.items
+      .filter((i) => i.status === "paid")
+      .reduce((s, i) => s + i.total, 0);
+    const pending = invoicesData.items
+      .filter((i) => i.status === "pending" || i.status === "overdue")
+      .reduce((s, i) => s + i.total, 0);
+    return { paid, pending, count: invoicesData.meta.total || invoicesData.items.length };
+  }, [invoicesData]);
 
   return (
     <div className="space-y-5 sm:space-y-6">
@@ -120,7 +140,15 @@ export default function InvoicesPage() {
         </div>
 
         {/* Results */}
-        {filtered.length === 0 ? (
+        {isLoading ? (
+          <div className="flex items-center justify-center py-10">
+            <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+          </div>
+        ) : error ? (
+          <p className="py-10 text-center text-sm text-red-600">
+            Failed to load invoices. Please try again.
+          </p>
+        ) : filtered.length === 0 ? (
           <p className="py-10 text-center text-sm text-gray-500">
             No invoices match your filter.
           </p>
@@ -129,7 +157,7 @@ export default function InvoicesPage() {
             {/* Mobile cards */}
             <ul className="mt-4 space-y-3 md:hidden">
               {filtered.map((inv) => (
-                <InvoiceCard key={inv.id} inv={inv} />
+                <InvoiceCard key={inv.id} inv={inv} onDownload={handleDownload} downloading={download.isPending} />
               ))}
             </ul>
 
@@ -174,8 +202,9 @@ export default function InvoicesPage() {
                           </Link>
                           <button
                             type="button"
-                            onClick={() => toast.success(`Mock: downloading ${inv.invoiceNumber}.pdf`)}
-                            className="inline-flex h-8 items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                            onClick={() => void handleDownload(inv.id)}
+                            disabled={download.isPending}
+                            className="inline-flex h-8 items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
                           >
                             <Download className="h-3.5 w-3.5" />
                           </button>
@@ -193,15 +222,14 @@ export default function InvoicesPage() {
   );
 }
 
-function InvoiceCard({ inv }: { inv: MockInvoice }) {
+function InvoiceCard({ inv, onDownload, downloading }: { inv: Invoice; onDownload: (id: string) => void; downloading?: boolean }) {
   return (
     <li className="rounded-2xl border border-gray-200/90 bg-white p-4 shadow-sm">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="font-mono text-sm font-bold text-gray-900">{inv.invoiceNumber}</p>
           <p className="mt-0.5 truncate text-xs text-gray-500">
-            {inv.lineItems[0]?.description ?? "—"}
-            {inv.lineItems.length > 1 && ` +${inv.lineItems.length - 1} more`}
+            {inv.relatedOrderId ?? "—"}
           </p>
         </div>
         <Badge variant={INVOICE_STATUS_VARIANT[inv.status]}>
@@ -232,8 +260,9 @@ function InvoiceCard({ inv }: { inv: MockInvoice }) {
         </Link>
         <button
           type="button"
-          onClick={() => toast.success(`Mock: downloading ${inv.invoiceNumber}.pdf`)}
-          className="flex min-h-[44px] w-12 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 transition-colors"
+          onClick={() => void onDownload(inv.id)}
+          disabled={downloading}
+          className="flex min-h-[44px] w-12 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 transition-colors disabled:opacity-50"
           aria-label="Download PDF"
         >
           <Download className="h-4 w-4" />

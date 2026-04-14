@@ -7,13 +7,14 @@ import {
   Activity,
   ArrowUpRight,
   Globe2,
+  Loader2,
   Lock,
   Server,
   Shield,
 } from "lucide-react";
 import { paths } from "@/routes/paths";
 import { formatDateShort, formatUsd } from "@/lib/format";
-import { useMockHostingDomains } from "@/hooks/useMockHostingDomains";
+import { usePortalDomains } from "@/api/portal-hosting";
 import { hostingStatusVariant } from "@/lib/hostingUtils";
 import { DashboardPanel } from "@/components/dashboard/DashboardPanel";
 import { StatCard } from "@/components/dashboard/StatCard";
@@ -22,7 +23,8 @@ import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
 
 export default function HostingOverviewPage() {
-  const domains = useMockHostingDomains();
+  const { data: domainsData, isLoading } = usePortalDomains(1, 100);
+  const domains = domainsData?.items ?? [];
   const activeCount = domains.filter((d) => d.status === "active").length;
   const sslOk = domains.filter(
     (d) => d.status === "active" && new Date(d.sslExpiresAt) > new Date(),
@@ -61,7 +63,7 @@ export default function HostingOverviewPage() {
               >
                 Register & search
               </Link>{" "}
-              to find new names (mock data for now).
+              to find new names.
             </p>
           </div>
           <Button
@@ -117,9 +119,15 @@ export default function HostingOverviewPage() {
           </Link>
         }
       >
-        {/* Mobile / small tablet: stacked cards */}
-        <ul className="grid grid-cols-1 gap-3 md:hidden">
-          {domains.map((d) => (
+        {isLoading ? (
+          <div className="flex items-center justify-center py-10">
+            <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+          </div>
+        ) : (
+          <>
+            {/* Mobile / small tablet: stacked cards */}
+            <ul className="grid grid-cols-1 gap-3 md:hidden">
+              {domains.map((d) => (
             <li key={d.id}>
               <Link
                 to={paths.dashboardHostingDomain(d.id)}
@@ -164,11 +172,11 @@ export default function HostingOverviewPage() {
                 </span>
               </Link>
             </li>
-          ))}
-        </ul>
+              ))}
+            </ul>
 
-        {/* md+: data table */}
-        <div className="hidden overflow-x-auto rounded-xl border border-gray-100 md:block">
+            {/* md+: data table */}
+            <div className="hidden overflow-x-auto rounded-xl border border-gray-100 md:block">
           <table className="w-full min-w-[640px] text-left text-sm">
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50/80 text-xs uppercase tracking-wide text-gray-500">
@@ -237,7 +245,9 @@ export default function HostingOverviewPage() {
               ))}
             </tbody>
           </table>
-        </div>
+            </div>
+          </>
+        )}
       </DashboardPanel>
     </div>
   );

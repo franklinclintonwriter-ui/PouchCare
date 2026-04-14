@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="400" y2="300" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#fff7ed"/><stop offset="1" stop-color="#fef3c7"/>
+    </linearGradient>
+    <filter id="sh"><feDropShadow dx="0" dy="4" stdDeviation="6" flood-opacity=".12"/></filter>
+  </defs>
+  <rect width="400" height="300" rx="12" fill="url(#bg)"/>
+  <!-- Sales page mockup -->
+  <g filter="url(#sh)">
+    <rect x="50" y="25" width="200" height="250" rx="10" fill="white"/>
+    <!-- Headline -->
+    <rect x="66" y="42" width="168" height="14" rx="4" fill="#ea580c" opacity=".1"/>
+    <text x="150" y="53" text-anchor="middle" font-family="system-ui" font-size="11" fill="#9a3412" font-weight="900">Stop Losing Customers.</text>
+    <text x="150" y="70" text-anchor="middle" font-family="system-ui" font-size="9" fill="#c2410c" font-weight="700">Start Converting Today.</text>
+    <!-- Subheadline -->
+    <rect x="70" y="80" width="160" height="4" rx="2" fill="#d6d3d1"/>
+    <rect x="80" y="90" width="140" height="4" rx="2" fill="#d6d3d1"/>
+    <!-- CTA button -->
+    <rect x="80" y="106" width="140" height="30" rx="10" fill="#ea580c"/>
+    <text x="150" y="125" text-anchor="middle" font-family="system-ui" font-size="10" fill="white" font-weight="800">Get Started Now →</text>
+    <!-- Social proof -->
+    <g transform="translate(86, 146)">
+      <circle r="8" cx="8" cy="8" fill="#fef3c7"/>
+      <circle r="8" cx="22" cy="8" fill="#fed7aa"/>
+      <circle r="8" cx="36" cy="8" fill="#fdba74"/>
+      <text x="50" y="12" font-family="system-ui" font-size="7" fill="#78716c">2,400+ happy customers</text>
+    </g>
+    <!-- Benefits list -->
+    <g transform="translate(74, 172)">
+      <text font-family="system-ui" font-size="8" fill="#10b981">✓</text>
+      <text x="14" font-family="system-ui" font-size="7" fill="#374151">Increase conversions by 340%</text>
+    </g>
+    <g transform="translate(74, 188)">
+      <text font-family="system-ui" font-size="8" fill="#10b981">✓</text>
+      <text x="14" font-family="system-ui" font-size="7" fill="#374151">Reduce bounce rate instantly</text>
+    </g>
+    <g transform="translate(74, 204)">
+      <text font-family="system-ui" font-size="8" fill="#10b981">✓</text>
+      <text x="14" font-family="system-ui" font-size="7" fill="#374151">30-day money back guarantee</text>
+    </g>
+    <!-- Testimonial -->
+    <rect x="70" y="222" width="160" height="40" rx="6" fill="#fef3c7" opacity=".5"/>
+    <text x="78" y="238" font-family="system-ui" font-size="7" fill="#78716c" font-style="italic">"This copy tripled our sales</text>
+    <text x="78" y="250" font-family="system-ui" font-size="7" fill="#78716c" font-style="italic"> in the first week."</text>
+    <text x="78" y="260" font-family="system-ui" font-size="6" fill="#92400e" font-weight="600">— Mike R., Founder</text>
+  </g>
+  <!-- Megaphone -->
+  <g filter="url(#sh)" transform="translate(270, 30)">
+    <circle cx="40" cy="40" r="38" fill="white"/>
+    <circle cx="40" cy="40" r="32" fill="#fff7ed"/>
+    <g transform="translate(20, 20)">
+      <path d="M8 18h6l14-10v28L14 26H8a4 4 0 0 1-4-4v-0a4 4 0 0 1 4-4z" fill="#ea580c"/>
+      <path d="M28 8v28" stroke="#ea580c" stroke-width="3" stroke-linecap="round"/>
+      <path d="M32 14l6-4M32 22h6M32 30l6 4" stroke="#f97316" stroke-width="2" stroke-linecap="round"/>
+    </g>
+  </g>
+  <!-- Conversion metrics -->
+  <g filter="url(#sh)" transform="translate(270, 125)">
+    <rect width="110" height="55" rx="8" fill="white"/>
+    <text x="12" y="18" font-family="system-ui" font-size="7" fill="#64748b" font-weight="500">Conversion Rate</text>
+    <text x="12" y="42" font-family="system-ui" font-size="22" fill="#ea580c" font-weight="900">12.4%</text>
+    <text x="75" y="42" font-family="system-ui" font-size="8" fill="#10b981" font-weight="700">↑ 340%</text>
+  </g>
+  <!-- Email sequence -->
+  <g filter="url(#sh)" transform="translate(270, 196)">
+    <rect width="110" height="80" rx="8" fill="white"/>
+    <text x="12" y="18" font-family="system-ui" font-size="7" fill="#64748b" font-weight="600">Email Sequence</text>
+    <rect x="12" y="26" width="86" height="14" rx="4" fill="#fef3c7" stroke="#fde68a" stroke-width="1"/>
+    <text x="18" y="36" font-family="system-ui" font-size="7" fill="#92400e">Day 1: Welcome ✉️</text>
+    <rect x="12" y="44" width="86" height="14" rx="4" fill="#fef3c7" stroke="#fde68a" stroke-width="1"/>
+    <text x="18" y="54" font-family="system-ui" font-size="7" fill="#92400e">Day 3: Value ⭐</text>
+    <rect x="12" y="62" width="86" height="14" rx="4" fill="#fed7aa" stroke="#fdba74" stroke-width="1"/>
+    <text x="18" y="72" font-family="system-ui" font-size="7" fill="#9a3412" font-weight="600">Day 7: Close 🎯</text>
+  </g>
+</svg>
