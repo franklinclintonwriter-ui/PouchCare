@@ -60,6 +60,8 @@ import {
 assertProductionStorageOrExit();
 
 const app = express();
+// Behind Nginx reverse proxy — trust the first proxy so req.ip / X-Forwarded-For works correctly
+app.set("trust proxy", 1);
 const httpServer = createServer(app);
 
 // ── Security ──────────────────────────────────────────
