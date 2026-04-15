@@ -7,12 +7,13 @@
 #   Frontend → deployed to Cloudflare Pages (auto-deploy on push)
 #
 # ── Required CI/CD variables (GitLab → Settings → CI/CD → Variables) ────
-#   SSH_PRIVATE_KEY        : ed25519 private key for EC2 (type: Variable, masked)
+#   SSH_PRIVATE_KEY        : ed25519 private key for EC2 (type: File)
 #   DEPLOY_HOST            : EC2 server IP (52.220.231.110)
 #   DEPLOY_USER            : ubuntu
 #   DEPLOY_PORT            : 22  (optional, defaults to 22)
-#   CLOUDFLARE_API_TOKEN   : Cloudflare API token with Pages:Edit permission (masked)
-#   CLOUDFLARE_ACCOUNT_ID  : Cloudflare account ID (masked)
+#   CLOUDFLARE_API_KEY     : Cloudflare Global API Key (masked)
+#   CLOUDFLARE_EMAIL       : pouchcareofficial@gmail.com
+#   CLOUDFLARE_ACCOUNT_ID  : 6433fd63b2b296d6e9d0d03b366c246e
 # ────────────────────────────────────────────────────────────────────────
 
 workflow:
@@ -28,9 +29,8 @@ variables:
   DATABASE_URL: "postgresql://ci:ci@localhost:5432/ci?schema=public"
   NPM_CONFIG_FUND: "false"
   NPM_CONFIG_AUDIT: "false"
-  # Wrangler reads these automatically for Cloudflare Pages deploys
-  CLOUDFLARE_API_TOKEN: "$CLOUDFLARE_API_TOKEN"
-  CLOUDFLARE_ACCOUNT_ID: "$CLOUDFLARE_ACCOUNT_ID"
+  # Wrangler uses CLOUDFLARE_API_KEY + CLOUDFLARE_EMAIL (Global API Key auth)
+  # or CLOUDFLARE_API_TOKEN (API token auth) — set in GitLab CI/CD Variables
 
 default:
   image: node:20-bookworm
@@ -108,7 +108,7 @@ deploy:landing:
     - echo "VITE_API_URL=https://api.pouchcare.com/v1" > .env.local
     - npm install --legacy-peer-deps --silent
     - npm run build
-    - npx wrangler pages deploy dist --project-name pouchcare --branch main --commit-dirty=true
+    - npx wrangler pages deploy dist --project-name pouchcare --branch main --commit-dirty=true --create-project 2>/dev/null || npx wrangler pages deploy dist --project-name pouchcare --branch main --commit-dirty=true
     - echo "✅ Landing deployed"
 
 deploy:management:
@@ -127,7 +127,7 @@ deploy:management:
     - echo "VITE_API_URL=https://api.pouchcare.com/v1" > .env.local
     - npm install --legacy-peer-deps --silent
     - npm run build
-    - npx wrangler pages deploy dist --project-name pouchcare-management --branch main --commit-dirty=true
+    - npx wrangler pages deploy dist --project-name pouchcare-management --branch main --commit-dirty=true --create-project 2>/dev/null || npx wrangler pages deploy dist --project-name pouchcare-management --branch main --commit-dirty=true
     - echo "✅ Management deployed"
 
 # ── Auto-deploy API to production on push to main ───────────────────────
