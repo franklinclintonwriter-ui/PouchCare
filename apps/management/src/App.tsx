@@ -1,14 +1,14 @@
-import { useEffect } from 'react';
-import { useRoutes } from 'react-router-dom';
-import { routes } from '@/routes';
-import { useThemeStore } from '@/store/themeStore';
-import { useAuthStore } from '@/store/authStore';
-import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { CommandPalette } from '@/components/shared/CommandPalette';
-import { useAttendanceRealtime } from '@/hooks/useAttendanceRealtime';
-import api from '@/api/client';
-import { normalizeStaffUser } from '@/api/auth';
-import type { StaffUser, PortalUser } from '@/types/auth';
+import { useEffect } from "react";
+import { useRoutes } from "react-router-dom";
+import { routes } from "@/routes";
+import { useThemeStore } from "@/store/themeStore";
+import { useAuthStore } from "@/store/authStore";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { CommandPalette } from "@/components/shared/CommandPalette";
+import { useAttendanceRealtime } from "@/hooks/useAttendanceRealtime";
+import api from "@/api/client";
+import { normalizeStaffUser } from "@/api/auth";
+import type { StaffUser, PortalUser } from "@/types/auth";
 
 export default function App() {
   useAttendanceRealtime();
@@ -17,10 +17,10 @@ export default function App() {
 
   useEffect(() => {
     const root = document.documentElement;
-    if (theme === 'dark') {
-      root.classList.add('dark');
+    if (theme === "dark") {
+      root.classList.add("dark");
     } else {
-      root.classList.remove('dark');
+      root.classList.remove("dark");
     }
   }, [theme]);
 
@@ -30,13 +30,13 @@ export default function App() {
       return;
     }
 
-    if (userType === 'portal') {
+    if (userType === "portal") {
       if (user) {
         setLoading(false);
         return;
       }
       api
-        .get('/portal/me')
+        .get("/portal/me")
         .then((res) => {
           useAuthStore.getState().setUser(res.data as PortalUser);
         })
@@ -49,25 +49,23 @@ export default function App() {
       return;
     }
 
-    // Staff: login payload may omit permissions — always hydrate from /staff/me until present
+    // Staff: login payload now includes permissions — fall back to /staff/me only when absent
     const staff = user as StaffUser | null;
     if (staff?.permissions) {
       setLoading(false);
       return;
     }
 
-    setLoading(true);
+    // Hydrate from /staff/me without blocking navigation
+    setLoading(false);
     api
-      .get('/staff/me')
+      .get("/staff/me")
       .then((res) => {
         const data = res.data as StaffUser;
         useAuthStore.getState().setUser(normalizeStaffUser(data));
       })
       .catch(() => {
         useAuthStore.getState().logout();
-      })
-      .finally(() => {
-        setLoading(false);
       });
   }, [isAuthenticated, userType, user, setLoading]);
 
