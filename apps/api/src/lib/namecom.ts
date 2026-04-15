@@ -2,7 +2,7 @@ import { env } from "@/config/env";
 
 const BASE = env.NAMECOM_API_URL.replace(/\/+$/, "");
 
-function headers(): HeadersInit {
+function headers(): Record<string, string> {
   const encoded = Buffer.from(
     `${env.NAMECOM_USERNAME}:${env.NAMECOM_TOKEN}`,
   ).toString("base64");
