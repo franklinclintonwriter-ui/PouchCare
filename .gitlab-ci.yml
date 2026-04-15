@@ -105,7 +105,7 @@ deploy:landing:
   script:
     - echo "Deploying landing → Cloudflare Pages (pouchcare)..."
     - cd apps/landing
-    - echo "VITE_API_URL=https://api.pouchcare.com/v1" > .env.local
+    - echo "VITE_API_URL=https://api.pouchcare.com" > .env.local
     - npm install --legacy-peer-deps --silent
     - npm run build
     - npx wrangler pages deploy dist --project-name pouchcare --branch main --commit-dirty=true --create-project 2>/dev/null || npx wrangler pages deploy dist --project-name pouchcare --branch main --commit-dirty=true
@@ -124,7 +124,7 @@ deploy:management:
   script:
     - echo "Deploying management → Cloudflare Pages (pouchcare-management)..."
     - cd apps/management
-    - echo "VITE_API_URL=https://api.pouchcare.com/v1" > .env.local
+    - echo "VITE_API_URL=https://api.pouchcare.com" > .env.local
     - npm install --legacy-peer-deps --silent
     - npm run build
     - npx wrangler pages deploy dist --project-name pouchcare-management --branch main --commit-dirty=true --create-project 2>/dev/null || npx wrangler pages deploy dist --project-name pouchcare-management --branch main --commit-dirty=true
