@@ -4,7 +4,7 @@ module.exports = {
       name: "pouchcare-api",
       script: "node_modules/.bin/tsx",
       args: "src/server.ts",
-      cwd: "/home/pouchcare/Developments/PouchCare/apps/api",
+      cwd: "/home/pouchcare-api/Developments/PouchCare/apps/api",
       exec_mode: "fork",
       instances: 1,
       autorestart: true,

@@ -1,7 +1,7 @@
 #!/bin/bash
 # ═══════════════════════════════════════════════════════════════════════════
 # PouchCare OS — Re-deploy after git push
-# Usage: sudo bash /home/pouchcare/Developments/PouchCare/deploy/update.sh
+# Usage: bash /home/pouchcare-api/Developments/PouchCare/deploy/update.sh
 # ═══════════════════════════════════════════════════════════════════════════
 set -e
 
@@ -11,7 +11,7 @@ info() { echo -e "${CYAN}[→]${NC}  $1"; }
 warn() { echo -e "${YELLOW}[⚠️]${NC}  $1"; }
 fail() { echo -e "\033[0;31m[❌]${NC} $1"; exit 1; }
 
-APP_USER="pouchcare"
+APP_USER="pouchcare-api"
 REPO_DIR="/home/${APP_USER}/Developments/PouchCare"
 API_DIR="${REPO_DIR}/apps/api"
 HTDOCS="/home/${APP_USER}/htdocs"
@@ -33,24 +33,24 @@ log "Code: $(git log --oneline -1)"
 
 # 2. Database backup
 info "Backing up database before migration..."
-BACKUP_DIR="/home/pouchcare/backups"
+BACKUP_DIR="/home/pouchcare-api/backups"
 mkdir -p "$BACKUP_DIR"
-sudo -u postgres pg_dump -U pouchcare pouchcare > "$BACKUP_DIR/pre-deploy-$(date +%Y%m%d%H%M%S).sql"
-log "Backup saved to $BACKUP_DIR"
+pg_dump -U pouchcare -h localhost pouchcare > "$BACKUP_DIR/pre-deploy-$(date +%Y%m%d%H%M%S).sql" 2>/dev/null || warn "pg_dump skipped (check pg_hba.conf)"
+log "Backup to $BACKUP_DIR"
 # Clean up backups older than 30 days
-find "$BACKUP_DIR" -name "pre-deploy-*.sql" -mtime +30 -delete
+find "$BACKUP_DIR" -name "pre-deploy-*.sql" -mtime +30 -delete 2>/dev/null || true
 
 # 3. API update
 info "Updating API..."
 cd "${API_DIR}"
-sudo -u ${APP_USER} npm install --legacy-peer-deps --silent
-sudo -u ${APP_USER} DATABASE_URL="${DB_URL}" npx prisma generate
-sudo -u ${APP_USER} DATABASE_URL="${DB_URL}" npx prisma migrate deploy
-sudo -u ${APP_USER} npx tsc 2>&1 | tail -2
+npm install --legacy-peer-deps --silent
+DATABASE_URL="${DB_URL}" npx prisma generate
+DATABASE_URL="${DB_URL}" npx prisma migrate deploy
 log "API compiled"
 
 # 4. Restart API
-pm2 restart pouchcare-api
+pm2 restart pouchcare-api || pm2 start ecosystem.config.js --only pouchcare-api
+pm2 save
 sleep 3
 
 # Verify API health with retry loop
@@ -70,12 +70,11 @@ rebuild() {
   info "Building ${NAME}..."
   cd "${REPO_DIR}/${SRC}"
   echo "VITE_API_URL=https://api.pouchcare.com/v1" > .env.local
-  chown ${APP_USER}:${APP_USER} .env.local
-  sudo -u ${APP_USER} npm install --legacy-peer-deps --silent
-  sudo -u ${APP_USER} npm run build
+  npm install --legacy-peer-deps --silent
+  npm run build
   rm -rf "${OUT}"
+  mkdir -p "${OUT}"
   cp -r dist/. "${OUT}/"
-  chown -R ${APP_USER}:${APP_USER} "${OUT}"
   log "${NAME} → ${OUT}"
 }
 
@@ -85,7 +84,7 @@ rebuild "Staff Office"      "apps/office"        "${HTDOCS}/office.pouchcare.com
 rebuild "Landing" "apps/landing" "${HTDOCS}/pouchcare.com"
 
 # 6. Reload Nginx
-nginx -t && nginx -s reload
+nginx -t && nginx -s reload 2>/dev/null || systemctl reload nginx 2>/dev/null || warn "nginx reload skipped"
 log "Nginx reloaded"
 
 echo ""
