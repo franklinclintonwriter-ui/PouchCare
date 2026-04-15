@@ -1,0 +1,3 @@
+# Cloudflare Pages — PouchCare Management Portal
+name = "pouchcare-management"
+pages_build_output_dir = "dist"
