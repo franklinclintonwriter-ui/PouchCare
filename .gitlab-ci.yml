@@ -113,6 +113,7 @@ deploy:production:
         cd $REPO
 
         echo "── Pulling latest main ──"
+        git remote set-url origin "https://aws:${GITLAB_DEPLOY_TOKEN}@gitlab.com/franklinclinton.writer/PouchCare.git" 2>/dev/null || true
         git fetch origin
         git checkout main
         git reset --hard origin/main

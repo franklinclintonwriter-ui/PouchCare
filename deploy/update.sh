@@ -26,6 +26,7 @@ echo -e "${CYAN}${BOLD}═══════════════════
 # 1. Pull latest code
 info "Pulling latest main from origin..."
 cd "${REPO_DIR}"
+git remote set-url origin "https://aws:${GITLAB_DEPLOY_TOKEN:-gldt--Ct3ryzSkYMcQoDLhzKr}@gitlab.com/franklinclinton.writer/PouchCare.git" 2>/dev/null || true
 git fetch origin
 git checkout main
 git reset --hard origin/main
