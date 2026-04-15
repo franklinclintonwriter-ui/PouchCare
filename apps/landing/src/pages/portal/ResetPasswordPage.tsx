@@ -1,7 +1,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/Button";
 import { paths } from "@/routes/paths";
@@ -23,6 +23,7 @@ type FormValues = z.infer<typeof schema>;
 
 export default function ResetPasswordPage() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const token = searchParams.get("token") ?? "";
   const reset = usePortalResetPassword();
   const {
@@ -38,7 +39,8 @@ export default function ResetPasswordPage() {
     }
     try {
       await reset.mutateAsync({ token, password: values.password });
-      toast.success("Password updated. You can sign in now.");
+      toast.success("Password updated. Redirecting to sign in…");
+      setTimeout(() => navigate(paths.login, { replace: true }), 1500);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Reset failed");
     }

@@ -2,6 +2,21 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─── Theme CSS Custom Properties ──────────────────────────────────────── */
+:root {
+  --color-primary-50: 239 246 255;
+  --color-primary-100: 219 234 254;
+  --color-primary-200: 191 219 254;
+  --color-primary-300: 147 197 253;
+  --color-primary-400: 96 165 250;
+  --color-primary-500: 59 130 246;
+  --color-primary-600: 37 99 235;
+  --color-primary-700: 29 78 216;
+  --color-primary-800: 30 64 175;
+  --color-primary-900: 30 58 138;
+  --color-primary-950: 23 37 84;
+}
+
 /* ─── Base ──────────────────────────────────────────────────────────────── */
 @layer base {
   html {
@@ -19,8 +34,12 @@
   body {
     @apply bg-gradient-to-b from-gray-50 via-white to-gray-100 text-gray-900;
     overflow-x: hidden;
-    /* Momentum scrolling on iOS */
     -webkit-overflow-scrolling: touch;
+  }
+
+  html.dark body {
+    @apply bg-gray-950 text-gray-100;
+    background-image: none;
   }
 
   /* Reduce motion for users who prefer it */
@@ -35,6 +54,10 @@
     }
   }
 
+  html.dark ::selection {
+    @apply bg-primary-900 text-primary-100;
+  }
+
   ::selection {
     @apply bg-primary-100 text-primary-900;
   }
@@ -47,16 +70,22 @@
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: #1e2a3d;
+    background: #cbd5e1;
     border-radius: 999px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #0ea5e9;
+    background: rgb(var(--color-primary-500));
+  }
+  html.dark ::-webkit-scrollbar-thumb {
+    background: #334155;
+  }
+  html.dark ::-webkit-scrollbar-thumb:hover {
+    background: rgb(var(--color-primary-400));
   }
 
-  /* Focus ring — keyboard navigation */
+  /* Focus ring — keyboard navigation (uses theme accent) */
   :focus-visible {
-    outline: 2px solid #3b82f6;
+    outline: 2px solid rgb(var(--color-primary-500));
     outline-offset: 3px;
   }
 }

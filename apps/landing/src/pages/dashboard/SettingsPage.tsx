@@ -1,15 +1,14 @@
 /**
- * Security & settings — 6 panels:
- * 1. Password change
- * 2. Two-factor authentication (API-ready)
+ * Security & settings — 7 panels:
+ * 1. Password change (with strength indicator)
+ * 2. Two-factor authentication (coming soon)
  * 3. Active sessions (API-based)
  * 4. Login history (API-based)
  * 5. Notification preferences (API-based)
- * 6. Appearance (localStorage for theme)
- *
- * @see docs/TASKS_PROFILE_SECURITY.md
+ * 6. Appearance (theme mode + accent color picker)
+ * 7. Danger zone (with confirmation dialog)
  */
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -17,13 +16,14 @@ import {
   Bell,
   Check,
   Clock,
-  Computer,
   Eye,
   EyeOff,
+  Info,
   KeyRound,
   Laptop,
   LogOut,
   Moon,
+  Palette,
   Shield,
   Smartphone,
   Sun,
@@ -46,11 +46,16 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { formatDateShort } from "@/lib/format";
 import { cn } from "@/lib/cn";
 import { toast } from "sonner";
+import {
+  useThemeStore,
+  ACCENT_OPTIONS,
+  type ThemeMode,
+} from "@/stores/themeStore";
 
-// ── Password schema ────────────────────────────────────────────────────
 const pwSchema = z
   .object({
     current_password: z.string().min(1, "Required"),
@@ -64,7 +69,6 @@ const pwSchema = z
 
 type PwForm = z.infer<typeof pwSchema>;
 
-// ── Device icon helper ─────────────────────────────────────────────────
 function DeviceIcon({ device }: { device: string }) {
   const cls = "h-4 w-4 shrink-0 text-gray-400";
   if (device === "Mobile") return <Smartphone className={cls} />;
@@ -72,7 +76,6 @@ function DeviceIcon({ device }: { device: string }) {
   return <Laptop className={cls} />;
 }
 
-// ── Toggle row ─────────────────────────────────────────────────────────
 function ToggleRow({
   label,
   description,
@@ -100,16 +103,20 @@ function ToggleRow({
       tabIndex={0}
     >
       <span>
-        <span className="block text-sm font-medium text-gray-900">{label}</span>
+        <span className="block text-sm font-medium text-gray-900 dark:text-gray-100">
+          {label}
+        </span>
         {description && (
-          <span className="mt-0.5 block text-xs text-gray-500">{description}</span>
+          <span className="mt-0.5 block text-xs text-gray-500 dark:text-gray-400">
+            {description}
+          </span>
         )}
       </span>
       <span
         aria-hidden
         className={cn(
           "relative mt-0.5 inline-flex h-6 w-11 shrink-0 items-center rounded-full border-2 border-transparent transition-colors duration-200",
-          checked ? "bg-primary-600" : "bg-gray-200",
+          checked ? "bg-primary-600" : "bg-gray-200 dark:bg-gray-700",
         )}
       >
         <span
@@ -123,12 +130,88 @@ function ToggleRow({
   );
 }
 
-// ── Main ───────────────────────────────────────────────────────────────
+function PasswordStrength({ password }: { password: string }) {
+  const { score, label, color } = useMemo(() => {
+    if (!password) return { score: 0, label: "", color: "" };
+    let s = 0;
+    if (password.length >= 8) s++;
+    if (password.length >= 12) s++;
+    if (/[a-z]/.test(password) && /[A-Z]/.test(password)) s++;
+    if (/\d/.test(password)) s++;
+    if (/[^a-zA-Z0-9]/.test(password)) s++;
+
+    if (s <= 1) return { score: 1, label: "Weak", color: "bg-red-500" };
+    if (s <= 2) return { score: 2, label: "Fair", color: "bg-amber-500" };
+    if (s <= 3) return { score: 3, label: "Good", color: "bg-yellow-500" };
+    if (s <= 4) return { score: 4, label: "Strong", color: "bg-emerald-500" };
+    return { score: 5, label: "Very strong", color: "bg-emerald-600" };
+  }, [password]);
+
+  if (!password) return null;
+
+  return (
+    <div className="mt-2 space-y-1">
+      <div className="flex gap-1">
+        {[1, 2, 3, 4, 5].map((i) => (
+          <div
+            key={i}
+            className={cn(
+              "h-1.5 flex-1 rounded-full transition-colors",
+              i <= score ? color : "bg-gray-200 dark:bg-gray-700",
+            )}
+          />
+        ))}
+      </div>
+      <p
+        className={cn(
+          "text-xs font-medium",
+          score <= 1
+            ? "text-red-600"
+            : score <= 2
+              ? "text-amber-600"
+              : score <= 3
+                ? "text-yellow-600"
+                : "text-emerald-600",
+        )}
+      >
+        {label}
+      </p>
+    </div>
+  );
+}
+
+const MODE_OPTIONS: {
+  value: ThemeMode;
+  label: string;
+  icon: React.ElementType;
+  desc: string;
+}[] = [
+  { value: "light", label: "Light", icon: Sun, desc: "Clean, bright interface" },
+  { value: "dark", label: "Dark", icon: Moon, desc: "Easy on the eyes" },
+  { value: "system", label: "System", icon: SunMoon, desc: "Match your device" },
+];
+
+function ListSkeleton({ rows = 3 }: { rows?: number }) {
+  return (
+    <div className="space-y-4">
+      {Array.from({ length: rows }).map((_, i) => (
+        <div key={i} className="flex items-center gap-3">
+          <div className="h-9 w-9 animate-pulse rounded-xl bg-gray-200 dark:bg-gray-700" />
+          <div className="flex-1 space-y-2">
+            <div className="h-3 w-2/3 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
+            <div className="h-2 w-1/2 animate-pulse rounded bg-gray-100 dark:bg-gray-800" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function SettingsPage() {
-  // 1. Password
   const changePw = useChangePassword();
   const [showPw, setShowPw] = useState<Record<string, boolean>>({});
   const pwForm = useForm<PwForm>({ resolver: zodResolver(pwSchema) });
+  const watchNewPw = pwForm.watch("new_password") ?? "";
 
   const onSubmitPw = async (v: PwForm) => {
     try {
@@ -143,12 +226,6 @@ export default function SettingsPage() {
     }
   };
 
-  // 2. 2FA
-  const [twoFaEnabled, setTwoFaEnabled] = useState(false);
-  const [showBackupCodes, setShowBackupCodes] = useState(false);
-  const BACKUP_CODES = ["A1B2-C3D4", "E5F6-G7H8", "I9J0-K1L2", "M3N4-O5P6", "Q7R8-S9T0"];
-
-  // 3. Sessions (API-based)
   const sessions = useSessions();
   const revokeSession = useRevokeSession();
   const revokeAll = useRevokeAllSessions();
@@ -171,10 +248,8 @@ export default function SettingsPage() {
     }
   };
 
-  // 4. Login history (API-based)
   const loginHistory = useLoginHistory(1, 20);
 
-  // 5. Notifications (API-based)
   const securitySettings = useSecuritySettings();
   const updateSettings = useUpdateSecuritySettings();
 
@@ -187,40 +262,30 @@ export default function SettingsPage() {
     }
   };
 
-  // 6. Appearance
-  const [appearance, setAppearance] = useState<"light" | "dark" | "system">("system");
-  const setMode = (mode: "light" | "dark" | "system") => {
-    setAppearance(mode);
-    try {
-      localStorage.setItem("pouchcare_appearance_v1", mode);
-      toast.success(`Theme set to ${mode}`);
-    } catch {
-      /* ignore */
-    }
-  };
+  const themeMode = useThemeStore((s) => s.mode);
+  const themeAccent = useThemeStore((s) => s.accent);
+  const setMode = useThemeStore((s) => s.setMode);
+  const setAccent = useThemeStore((s) => s.setAccent);
 
-  const APPEARANCE_OPTIONS: { value: "light" | "dark" | "system"; label: string; icon: React.ElementType }[] = [
-    { value: "light", label: "Light", icon: Sun },
-    { value: "dark", label: "Dark", icon: Moon },
-    { value: "system", label: "System", icon: SunMoon },
-  ];
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
 
   return (
     <div className="space-y-5 sm:space-y-6">
-      {/* Page header */}
       <div>
-        <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">Security & Settings</h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100 sm:text-2xl">
+          Security & Settings
+        </h1>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
           Manage your password, two-factor auth, active sessions, and preferences.
         </p>
       </div>
 
-      {/* ── 1. Password ─────────────────────────────────────────────────── */}
+      {/* 1. Password */}
       <DashboardPanel
         title="Password"
         description="Change the password you use to sign in."
         action={
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary-50 text-primary-600">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary-50 text-primary-600 dark:bg-primary-950/50 dark:text-primary-400">
             <KeyRound className="h-4 w-4" />
           </div>
         }
@@ -255,6 +320,7 @@ export default function SettingsPage() {
                   {showPw[id] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
+              {id === "new_password" && <PasswordStrength password={watchNewPw} />}
               {pwForm.formState.errors[id] && (
                 <p className="mt-1 text-xs text-red-600">
                   {pwForm.formState.errors[id]?.message}
@@ -275,71 +341,40 @@ export default function SettingsPage() {
         </form>
       </DashboardPanel>
 
-      {/* ── 2. Two-factor auth ───────────────────────────────────────────── */}
+      {/* 2. Two-factor authentication — Coming soon */}
       <DashboardPanel
         title="Two-factor authentication"
         description="Add an extra layer of security to your account."
         action={
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
-            <Shield className="h-4 w-4" />
+          <div className="flex items-center gap-2">
+            <Badge variant="info">Coming soon</Badge>
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400">
+              <Shield className="h-4 w-4" />
+            </div>
           </div>
         }
       >
-        <div className="space-y-4">
-          <ToggleRow
-            label="Enable authenticator app"
-            description="Scan the QR code with Google Authenticator or Authy."
-            checked={twoFaEnabled}
-            onChange={(v) => {
-              setTwoFaEnabled(v);
-              if (v) toast.success("2FA enabled");
-              else { toast.success("2FA disabled"); setShowBackupCodes(false); }
-            }}
-          />
-          {twoFaEnabled && (
-            <div className="rounded-xl border border-emerald-100 bg-emerald-50/50 p-4">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-                {/* Mock QR code placeholder */}
-                <div className="flex h-28 w-28 shrink-0 items-center justify-center rounded-xl border-2 border-dashed border-emerald-200 bg-white text-xs text-gray-400">
-                  QR code
-                </div>
-                <div className="space-y-2 text-sm">
-                  <p className="font-medium text-gray-900">Scan with your authenticator app</p>
-                  <p className="text-gray-500">
-                    Manual key:{" "}
-                    <code className="rounded bg-gray-100 px-1.5 py-0.5 font-mono text-xs text-gray-800">
-                      JBSWY3DPEHPK3PXP
-                    </code>
-                  </p>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="min-h-[40px]"
-                    onClick={() => setShowBackupCodes((v) => !v)}
-                  >
-                    {showBackupCodes ? "Hide" : "Show"} backup codes
-                  </Button>
-                  {showBackupCodes && (
-                    <div className="grid grid-cols-2 gap-1.5 pt-1 sm:grid-cols-3 md:grid-cols-5">
-                      {BACKUP_CODES.map((c) => (
-                        <code
-                          key={c}
-                          className="rounded bg-gray-100 px-2 py-1 text-center font-mono text-xs text-gray-800"
-                        >
-                          {c}
-                        </code>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
+        <div className="rounded-xl border border-primary-200/60 bg-primary-50/50 p-5 dark:border-primary-800/40 dark:bg-primary-950/30">
+          <div className="flex gap-3">
+            <Info className="mt-0.5 h-5 w-5 shrink-0 text-primary-600 dark:text-primary-400" />
+            <div className="space-y-2 text-sm">
+              <p className="font-medium text-gray-900 dark:text-gray-100">
+                Two-factor authentication is under development
+              </p>
+              <p className="text-gray-600 dark:text-gray-400">
+                When available, you'll be able to secure your account with an authenticator app
+                (Google Authenticator, Authy, etc.) for an extra layer of protection beyond your
+                password. You'll receive backup codes in case you lose access to your device.
+              </p>
+              <p className="text-gray-500 dark:text-gray-500">
+                We'll notify you when 2FA is ready to enable.
+              </p>
             </div>
-          )}
+          </div>
         </div>
       </DashboardPanel>
 
-      {/* ── 3. Active sessions ───────────────────────────────────────────── */}
+      {/* 3. Active sessions */}
       <DashboardPanel
         title="Active sessions"
         description="Devices currently signed in to your account."
@@ -357,27 +392,27 @@ export default function SettingsPage() {
           </Button>
         }
       >
-        {sessions.isLoading && <p className="text-sm text-gray-500">Loading sessions…</p>}
+        {sessions.isLoading && <ListSkeleton rows={3} />}
         {sessions.error && <p className="text-sm text-red-500">Failed to load sessions</p>}
         {sessions.data && (
-          <ul className="divide-y divide-gray-100">
+          <ul className="divide-y divide-gray-100 dark:divide-gray-800">
             {sessions.data.map((s) => (
               <li key={s.id} className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-start gap-3">
-                  <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gray-100">
+                  <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gray-100 dark:bg-gray-800">
                     <DeviceIcon device={s.device} />
                   </div>
                   <div className="min-w-0">
-                    <p className="flex flex-wrap items-center gap-2 text-sm font-medium text-gray-900">
+                    <p className="flex flex-wrap items-center gap-2 text-sm font-medium text-gray-900 dark:text-gray-100">
                       {s.browser} on {s.os}
                       {s.isCurrent && (
-                        <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+                        <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300">
                           <Check className="h-2.5 w-2.5" />
                           This device
                         </span>
                       )}
                     </p>
-                    <p className="mt-0.5 text-xs text-gray-500">
+                    <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
                       {s.location} · {s.ip}
                     </p>
                     <p className="mt-0.5 flex items-center gap-1 text-xs text-gray-400">
@@ -405,50 +440,44 @@ export default function SettingsPage() {
         )}
       </DashboardPanel>
 
-      {/* ── 4. Login history ────────────────────────────────────────────── */}
+      {/* 4. Login history */}
       <DashboardPanel
         title="Login history"
         description="Recent sign-in activity on your account."
         action={
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 text-amber-600 dark:bg-amber-950/50 dark:text-amber-400">
             <Clock className="h-4 w-4" />
           </div>
         }
       >
-        {loginHistory.isLoading && <p className="text-sm text-gray-500">Loading…</p>}
+        {loginHistory.isLoading && <ListSkeleton rows={4} />}
         {loginHistory.error && <p className="text-sm text-red-500">Failed to load history</p>}
         {loginHistory.data && (
           <>
-            <div className="hidden overflow-x-auto rounded-lg border border-gray-100 md:block">
+            <div className="hidden overflow-x-auto rounded-lg border border-gray-100 dark:border-gray-800 md:block">
               <table className="w-full min-w-[480px] text-left text-sm">
                 <thead>
-                  <tr className="border-b border-gray-200 bg-gray-50/80 text-xs uppercase tracking-wide text-gray-500">
+                  <tr className="border-b border-gray-200 bg-gray-50/80 text-xs uppercase tracking-wide text-gray-500 dark:border-gray-700 dark:bg-gray-800/50">
                     {["Date", "Device", "Location", "IP", "Status"].map((h) => (
-                      <th key={h} className="px-4 py-2.5 font-semibold">
-                        {h}
-                      </th>
+                      <th key={h} className="px-4 py-2.5 font-semibold">{h}</th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                   {loginHistory.data.items.map((e) => (
-                    <tr key={e.id} className="hover:bg-gray-50/60">
-                      <td className="px-4 py-3 tabular-nums text-gray-600">
+                    <tr key={e.id} className="hover:bg-gray-50/60 dark:hover:bg-gray-800/40">
+                      <td className="px-4 py-3 tabular-nums text-gray-600 dark:text-gray-400">
                         {formatDateShort(e.timestamp)}
                       </td>
-                      <td className="px-4 py-3 text-gray-800">
+                      <td className="px-4 py-3 text-gray-800 dark:text-gray-200">
                         {e.browser} / {e.device}
                       </td>
-                      <td className="px-4 py-3 text-gray-600">{e.location}</td>
+                      <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{e.location}</td>
                       <td className="px-4 py-3 font-mono text-xs text-gray-500">{e.ip}</td>
                       <td className="px-4 py-3">
                         <Badge
                           variant={
-                            e.status === "success"
-                              ? "success"
-                              : e.status === "failed"
-                                ? "error"
-                                : "warning"
+                            e.status === "success" ? "success" : e.status === "failed" ? "error" : "warning"
                           }
                         >
                           {e.status}
@@ -461,26 +490,20 @@ export default function SettingsPage() {
             </div>
             <ul className="space-y-3 md:hidden">
               {loginHistory.data.items.map((e) => (
-                <li key={e.id} className="rounded-xl border border-gray-100 bg-gray-50/60 p-4">
+                <li key={e.id} className="rounded-xl border border-gray-100 bg-gray-50/60 p-4 dark:border-gray-800 dark:bg-gray-800/40">
                   <div className="flex items-start justify-between gap-2">
-                    <p className="text-sm font-medium text-gray-900">
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                       {e.browser} on {e.device}
                     </p>
                     <Badge
                       variant={
-                        e.status === "success"
-                          ? "success"
-                          : e.status === "failed"
-                            ? "error"
-                            : "warning"
+                        e.status === "success" ? "success" : e.status === "failed" ? "error" : "warning"
                       }
                     >
                       {e.status}
                     </Badge>
                   </div>
-                  <p className="mt-1 text-xs text-gray-500">
-                    {e.location} · {e.ip}
-                  </p>
+                  <p className="mt-1 text-xs text-gray-500">{e.location} · {e.ip}</p>
                   <p className="mt-1 text-xs text-gray-400">{formatDateShort(e.timestamp)}</p>
                 </li>
               ))}
@@ -489,20 +512,20 @@ export default function SettingsPage() {
         )}
       </DashboardPanel>
 
-      {/* ── 5. Notification preferences ─────────────────────────────────── */}
+      {/* 5. Notification preferences */}
       <DashboardPanel
         title="Notifications"
         description="Choose when and how PouchCare contacts you."
         action={
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-50 text-violet-600">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-50 text-violet-600 dark:bg-violet-950/50 dark:text-violet-400">
             <Bell className="h-4 w-4" />
           </div>
         }
       >
-        {securitySettings.isLoading && <p className="text-sm text-gray-500">Loading…</p>}
+        {securitySettings.isLoading && <ListSkeleton rows={6} />}
         {securitySettings.error && <p className="text-sm text-red-500">Failed to load settings</p>}
         {securitySettings.data && (
-          <div className="divide-y divide-gray-100">
+          <div className="divide-y divide-gray-100 dark:divide-gray-800">
             <ToggleRow
               label="Order updates"
               description="Status changes, delivery confirmations, and revision requests."
@@ -543,55 +566,157 @@ export default function SettingsPage() {
         )}
       </DashboardPanel>
 
-      {/* ── 6. Appearance ───────────────────────────────────────────────── */}
+      {/* 6. Appearance — Mode + Accent color */}
       <DashboardPanel
         title="Appearance"
-        description="Portal theme preference (stored locally)."
+        description="Customize how your portal looks. Changes apply instantly."
         action={
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-50 text-sky-600">
-            <Computer className="h-4 w-4" />
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-50 text-sky-600 dark:bg-sky-950/50 dark:text-sky-400">
+            <Palette className="h-4 w-4" />
           </div>
         }
       >
-        <div className="grid grid-cols-3 gap-3 sm:max-w-sm">
-          {APPEARANCE_OPTIONS.map(({ value, label, icon: Icon }) => (
-            <button
-              key={value}
-              type="button"
-              onClick={() => setMode(value)}
-              className={cn(
-                "flex flex-col items-center gap-2 rounded-xl border px-3 py-4 text-sm font-medium transition-all",
-                appearance === value
-                  ? "border-primary-400 bg-primary-50 text-primary-700 ring-2 ring-primary-400/30"
-                  : "border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50",
-              )}
-              aria-pressed={appearance === value}
-            >
-              <Icon className="h-5 w-5" />
-              {label}
-            </button>
-          ))}
+        <div className="space-y-6">
+          {/* Mode selector */}
+          <div>
+            <p className="mb-3 text-sm font-medium text-gray-700 dark:text-gray-300">Theme mode</p>
+            <div className="grid grid-cols-3 gap-3 sm:max-w-md">
+              {MODE_OPTIONS.map(({ value, label, icon: Icon, desc }) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setMode(value)}
+                  className={cn(
+                    "group flex flex-col items-center gap-2 rounded-xl border px-3 py-4 text-center transition-all",
+                    themeMode === value
+                      ? "border-primary-400 bg-primary-50 ring-2 ring-primary-400/30 dark:border-primary-600 dark:bg-primary-950/40 dark:ring-primary-600/30"
+                      : "border-gray-200 hover:border-gray-300 hover:bg-gray-50 dark:border-gray-700 dark:hover:border-gray-600 dark:hover:bg-gray-800",
+                  )}
+                  aria-pressed={themeMode === value}
+                >
+                  <div
+                    className={cn(
+                      "flex h-10 w-10 items-center justify-center rounded-lg transition-colors",
+                      themeMode === value
+                        ? "bg-primary-100 text-primary-700 dark:bg-primary-900/50 dark:text-primary-300"
+                        : "bg-gray-100 text-gray-500 group-hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400",
+                    )}
+                  >
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <span
+                    className={cn(
+                      "text-sm font-semibold",
+                      themeMode === value
+                        ? "text-primary-700 dark:text-primary-300"
+                        : "text-gray-700 dark:text-gray-300",
+                    )}
+                  >
+                    {label}
+                  </span>
+                  <span className="text-[11px] text-gray-500 dark:text-gray-400">{desc}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Accent color picker */}
+          <div>
+            <p className="mb-3 text-sm font-medium text-gray-700 dark:text-gray-300">Accent color</p>
+            <div className="flex flex-wrap gap-3">
+              {ACCENT_OPTIONS.map(({ value, label, hex }) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setAccent(value)}
+                  className={cn(
+                    "group relative flex h-11 w-11 items-center justify-center rounded-full transition-all sm:h-12 sm:w-12",
+                    themeAccent === value
+                      ? "ring-2 ring-offset-2 ring-offset-white dark:ring-offset-gray-900"
+                      : "hover:scale-110",
+                  )}
+                  style={themeAccent === value ? { "--tw-ring-color": hex } as React.CSSProperties : undefined}
+                  aria-pressed={themeAccent === value}
+                  aria-label={label}
+                  title={label}
+                >
+                  <span
+                    className="block h-8 w-8 rounded-full shadow-sm transition-transform sm:h-9 sm:w-9"
+                    style={{ backgroundColor: hex }}
+                  />
+                  {themeAccent === value && (
+                    <Check className="absolute h-4 w-4 text-white drop-shadow-md" />
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Live preview */}
+          <div>
+            <p className="mb-3 text-sm font-medium text-gray-700 dark:text-gray-300">Preview</p>
+            <div className="rounded-xl border border-gray-200/80 bg-gray-50/60 p-4 dark:border-gray-800 dark:bg-gray-800/40">
+              <div className="flex flex-wrap items-center gap-3">
+                <Button type="button" variant="primary" size="sm">
+                  Primary button
+                </Button>
+                <Button type="button" variant="outline" size="sm">
+                  Outline
+                </Button>
+                <Badge variant="sky">Badge</Badge>
+                <Badge variant="success">Active</Badge>
+                <span className="rounded-lg bg-primary-100 px-3 py-1.5 text-xs font-semibold text-primary-800 dark:bg-primary-900/50 dark:text-primary-200">
+                  Accent tag
+                </span>
+              </div>
+              <div className="mt-3 flex gap-2">
+                <div className="h-2 flex-1 rounded-full bg-primary-500" />
+                <div className="h-2 w-1/3 rounded-full bg-primary-200 dark:bg-primary-800" />
+              </div>
+            </div>
+          </div>
         </div>
-        <p className="mt-3 text-xs text-gray-400">
-          Dark mode visual changes require additional CSS variable support.
-        </p>
       </DashboardPanel>
 
-      {/* ── Danger zone ─────────────────────────────────────────────────── */}
+      {/* 7. Danger zone */}
       <DashboardPanel
         title="Danger zone"
         description="Irreversible account actions."
       >
-        <Button
-          type="button"
-          variant="danger"
-          className="min-h-[44px] w-full sm:w-auto"
-          icon={<Trash2 className="h-4 w-4" />}
-          onClick={() => toast.error("Account deletion requires contacting support — this is a safety guard.")}
-        >
-          Delete account
-        </Button>
+        <div className="rounded-xl border border-red-200 bg-red-50 p-5 dark:border-red-900/50 dark:bg-red-950/30">
+          <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+            <div>
+              <p className="font-semibold text-gray-900 dark:text-gray-100">Delete account</p>
+              <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                Permanently remove your account and all associated data. This action cannot be undone.
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="danger"
+              className="min-h-[44px] w-full shrink-0 whitespace-nowrap sm:w-auto"
+              icon={<Trash2 className="h-4 w-4" />}
+              onClick={() => setDeleteConfirm(true)}
+            >
+              Delete account
+            </Button>
+          </div>
+        </div>
       </DashboardPanel>
+
+      <ConfirmDialog
+        open={deleteConfirm}
+        title="Delete your account?"
+        description="This will permanently delete your account and all data including orders, wallet balance, domains, and websites. This action cannot be undone. To proceed, contact support."
+        confirmLabel="I understand"
+        cancelLabel="Keep account"
+        variant="danger"
+        onConfirm={() => {
+          setDeleteConfirm(false);
+          toast.error("Account deletion requires contacting support — this is a safety guard.");
+        }}
+        onCancel={() => setDeleteConfirm(false)}
+      />
     </div>
   );
 }

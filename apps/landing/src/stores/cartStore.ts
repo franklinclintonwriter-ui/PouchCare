@@ -53,6 +53,6 @@ export const useCartStore = create<CartState>()(
         set({ lines: get().lines.filter((l) => l.serviceId !== serviceId) }),
       clear: () => set({ lines: [] }),
     }),
-    { name: "pouchcare-portal-cart" },
+    { name: "pouchcare-portal-cart", version: 1 },
   ),
 );

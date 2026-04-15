@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/Button";
@@ -10,8 +10,6 @@ import {
 } from "@/api/portal-auth";
 import { cn } from "@/lib/cn";
 import { accountInputClass } from "@/lib/ui";
-
-const attempted = new Set<string>();
 
 export default function VerifyEmailPage() {
   const [searchParams] = useSearchParams();
@@ -25,13 +23,13 @@ export default function VerifyEmailPage() {
   );
   const [email, setEmail] = useState(emailParam);
   const [otp, setOtp] = useState("");
-
-  const canOtpVerify = useMemo(() => !token, [token]);
+  const [otpError, setOtpError] = useState("");
+  const attemptedRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!token) return;
-    if (attempted.has(token)) return;
-    attempted.add(token);
+    if (attemptedRef.current === token) return;
+    attemptedRef.current = token;
     setStatus("loading");
     void mutateAsync(token)
       .then(() => {
@@ -62,7 +60,7 @@ export default function VerifyEmailPage() {
     );
   }
 
-  if (!token && canOtpVerify) {
+  if (!token) {
     return (
       <div>
         <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">
@@ -71,18 +69,24 @@ export default function VerifyEmailPage() {
         <p className="mt-2 text-sm leading-relaxed text-gray-600">
           Enter the 6-digit code sent to your email.
         </p>
+        {otpError && (
+          <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+            {otpError}
+          </p>
+        )}
         <form
           className="mt-8 space-y-4"
           onSubmit={(e) => {
             e.preventDefault();
+            setOtpError("");
             const emailTrimmed = email.trim();
             const otpTrimmed = otp.trim();
             if (!emailTrimmed) {
-              toast.error("Enter your email");
+              setOtpError("Enter your email");
               return;
             }
             if (otpTrimmed.length !== 6) {
-              toast.error("Enter the 6-digit code");
+              setOtpError("Enter the 6-digit code");
               return;
             }
             setStatus("loading");
@@ -93,10 +97,10 @@ export default function VerifyEmailPage() {
                 toast.success("Email verified");
               })
               .catch((err: unknown) => {
-                setStatus("err");
-                toast.error(
-                  err instanceof Error ? err.message : "Verification failed",
-                );
+                setStatus("idle");
+                const msg = err instanceof Error ? err.message : "Verification failed";
+                setOtpError(msg);
+                toast.error(msg);
               });
           }}
         >
@@ -176,24 +180,6 @@ export default function VerifyEmailPage() {
             </Button>
           </Link>
         </form>
-      </div>
-    );
-  }
-
-  if (!token) {
-    return (
-      <div>
-        <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">
-          Verify email
-        </h1>
-        <p className="mt-2 text-sm leading-relaxed text-gray-600">
-          Missing verification link. Open the link from your email.
-        </p>
-        <Link to={paths.login} className="mt-6 block w-full sm:max-w-xs">
-          <Button type="button" fullWidth className="touch-manipulation">
-            Sign in
-          </Button>
-        </Link>
       </div>
     );
   }

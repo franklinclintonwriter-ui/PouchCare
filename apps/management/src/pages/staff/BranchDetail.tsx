@@ -5,6 +5,7 @@ import {
   Building2,
   Calendar,
   CalendarClock,
+  Cctv,
   ClipboardList,
   Clock,
   FileText,
@@ -180,6 +181,13 @@ export default function BranchDetail() {
             placeholder: "Search team members…",
             value: memberSearch,
             onChange: onMemberSearchChange,
+          },
+          {
+            type: "button" as const,
+            label: "Cameras",
+            icon: Cctv,
+            variant: "outline" as const,
+            onClick: () => navigate(`/monitor/${branchId}`),
           },
           {
             type: "button" as const,

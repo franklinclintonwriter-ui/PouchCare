@@ -2,7 +2,6 @@ import { useParams, Link } from "react-router-dom";
 import { useState } from "react";
 import { ArrowLeft, Star, XCircle, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
-import { useQueryClient } from "@tanstack/react-query";
 import {
   usePortalOrder,
   useOrderMessages,
@@ -19,7 +18,6 @@ import { Badge } from "@/components/ui/Badge";
 
 export default function OrderDetailPage() {
   const { orderId } = useParams<{ orderId: string }>();
-  const queryClient = useQueryClient();
   const order = usePortalOrder(orderId);
   const messages = useOrderMessages(orderId);
   const postMsg = usePostOrderMessage(orderId ?? "");
@@ -47,7 +45,6 @@ export default function OrderDetailPage() {
     try {
       await cancelOrder.mutateAsync(orderId ?? "");
       toast.success("Order cancelled successfully");
-      queryClient.invalidateQueries({ queryKey: ["portal-order", orderId] });
     } catch (error) {
       toast.error("Failed to cancel order");
     }
@@ -63,7 +60,6 @@ export default function OrderDetailPage() {
       toast.success("Revision request submitted");
       setRevisionNote("");
       setIsRevisionFormOpen(false);
-      queryClient.invalidateQueries({ queryKey: ["portal-order", orderId] });
     } catch (error) {
       toast.error("Failed to request revision");
     }
@@ -84,7 +80,6 @@ export default function OrderDetailPage() {
       setReviewRating(0);
       setReviewText("");
       setIsReviewFormOpen(false);
-      queryClient.invalidateQueries({ queryKey: ["portal-order", orderId] });
     } catch (error) {
       toast.error("Failed to submit review");
     }
@@ -95,7 +90,7 @@ export default function OrderDetailPage() {
       <div className="flex flex-wrap items-center gap-3">
         <Link
           to={paths.dashboardOrders}
-          className="inline-flex min-h-[44px] items-center gap-1 rounded-lg px-1 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+          className="inline-flex min-h-[44px] items-center gap-1 rounded-lg px-1 text-sm font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to orders
@@ -103,7 +98,7 @@ export default function OrderDetailPage() {
       </div>
 
       {order.isLoading ? (
-        <p className="text-sm text-gray-500">Loading…</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">Loading…</p>
       ) : order.isError || !o ? (
         <p className="text-sm text-red-600">Order not found.</p>
       ) : (
@@ -117,34 +112,34 @@ export default function OrderDetailPage() {
           >
             <dl className="grid gap-3 sm:grid-cols-2">
               <div>
-                <dt className="text-xs font-medium uppercase text-gray-500">
+                <dt className="text-xs font-medium uppercase text-gray-500 dark:text-gray-400">
                   Amount
                 </dt>
-                <dd className="text-lg font-semibold text-gray-900">
+                <dd className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                   {formatUsd(o.amountUsd)}
                 </dd>
               </div>
               <div>
-                <dt className="text-xs font-medium uppercase text-gray-500">
+                <dt className="text-xs font-medium uppercase text-gray-500 dark:text-gray-400">
                   Placed
                 </dt>
-                <dd className="text-gray-800">{formatDate(o.orderDate)}</dd>
+                <dd className="text-gray-800 dark:text-gray-200">{formatDate(o.orderDate)}</dd>
               </div>
               {o.deliveryDate && (
                 <div>
-                  <dt className="text-xs font-medium uppercase text-gray-500">
+                  <dt className="text-xs font-medium uppercase text-gray-500 dark:text-gray-400">
                     Delivered
                   </dt>
-                  <dd className="text-gray-800">
+                  <dd className="text-gray-800 dark:text-gray-200">
                     {formatDate(o.deliveryDate)}
                   </dd>
                 </div>
               )}
               <div>
-                <dt className="text-xs font-medium uppercase text-gray-500">
+                <dt className="text-xs font-medium uppercase text-gray-500 dark:text-gray-400">
                   Payment
                 </dt>
-                <dd className="text-gray-800">{o.paymentStatus ?? "—"}</dd>
+                <dd className="text-gray-800 dark:text-gray-200">{o.paymentStatus ?? "—"}</dd>
               </div>
             </dl>
           </DashboardPanel>
@@ -186,7 +181,7 @@ export default function OrderDetailPage() {
                     onChange={(e) => setRevisionNote(e.target.value)}
                     placeholder="Describe what changes you'd like to see…"
                     rows={4}
-                    className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm text-gray-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/25"
+                    className="w-full rounded-xl border border-gray-300 dark:border-gray-600 px-3 py-2.5 text-sm text-gray-900 dark:text-gray-100 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/25 dark:bg-gray-800"
                   />
                   <div className="flex gap-2">
                     <Button
@@ -214,7 +209,7 @@ export default function OrderDetailPage() {
           {/* Rate & Review Section */}
           {(o.status === "DELIVERED" || o.status === "COMPLETED") && (
             <DashboardPanel title="Rate & Review">
-              {(o as any).rating ? (
+              {o.rating ? (
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
                     <div className="flex gap-1">
@@ -222,20 +217,20 @@ export default function OrderDetailPage() {
                         <Star
                           key={star}
                           className={`h-5 w-5 ${
-                            star <= (o as any).rating
+                            star <= (o.rating ?? 0)
                               ? "fill-yellow-400 text-yellow-400"
                               : "text-gray-300"
                           }`}
                         />
                       ))}
                     </div>
-                    <span className="text-sm font-medium text-gray-700">
-                      {(o as any).rating}/5
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      {o.rating}/5
                     </span>
                   </div>
-                  {(o as any).reviewNote && (
-                    <p className="text-sm text-gray-700 whitespace-pre-wrap">
-                      {(o as any).reviewNote}
+                  {o.reviewNote && (
+                    <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                      {o.reviewNote}
                     </p>
                   )}
                 </div>
@@ -254,7 +249,7 @@ export default function OrderDetailPage() {
                   ) : (
                     <div className="space-y-4">
                       <div>
-                        <label className="mb-2 block text-sm font-medium text-gray-700">
+                        <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                           Rating
                         </label>
                         <div className="flex gap-2">
@@ -277,7 +272,7 @@ export default function OrderDetailPage() {
                         </div>
                       </div>
                       <div>
-                        <label className="mb-2 block text-sm font-medium text-gray-700">
+                        <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                           Review (optional)
                         </label>
                         <textarea
@@ -285,7 +280,7 @@ export default function OrderDetailPage() {
                           onChange={(e) => setReviewText(e.target.value)}
                           placeholder="Share your thoughts about this order…"
                           rows={3}
-                          className="w-full rounded-xl border border-gray-300 px-3 py-2.5 text-sm text-gray-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/25"
+                          className="w-full rounded-xl border border-gray-300 dark:border-gray-600 px-3 py-2.5 text-sm text-gray-900 dark:text-gray-100 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/25 dark:bg-gray-800"
                         />
                       </div>
                       <div className="flex gap-2">
@@ -319,21 +314,21 @@ export default function OrderDetailPage() {
             title="Messages"
             description="Chat with the team about this order."
           >
-            <div className="mb-4 max-h-72 space-y-3 overflow-y-auto rounded-xl bg-gray-50 p-3">
+            <div className="mb-4 max-h-72 space-y-3 overflow-y-auto rounded-xl bg-gray-50 dark:bg-gray-800/50 p-3">
               {messages.isLoading ? (
-                <p className="text-sm text-gray-500">Loading messages…</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Loading messages…</p>
               ) : !messages.data?.length ? (
-                <p className="text-sm text-gray-500">No messages yet.</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">No messages yet.</p>
               ) : (
                 messages.data.map((m) => (
                   <div
                     key={m.id}
-                    className="rounded-lg border border-gray-100 bg-white p-3 text-sm shadow-sm"
+                    className="rounded-lg border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 p-3 text-sm shadow-sm"
                   >
-                    <p className="text-xs font-medium text-gray-500">
+                    <p className="text-xs font-medium text-gray-500 dark:text-gray-400">
                       {m.authorName} · {formatDate(m.createdAt)}
                     </p>
-                    <p className="mt-1 whitespace-pre-wrap text-gray-800">
+                    <p className="mt-1 whitespace-pre-wrap text-gray-800 dark:text-gray-200">
                       {m.content}
                     </p>
                   </div>
@@ -346,7 +341,7 @@ export default function OrderDetailPage() {
                 onChange={(e) => setText(e.target.value)}
                 placeholder="Write a message…"
                 rows={3}
-                className="min-h-[5.5rem] flex-1 rounded-xl border border-gray-300 px-3 py-2.5 text-sm text-gray-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/25"
+                className="min-h-[5.5rem] flex-1 rounded-xl border border-gray-300 dark:border-gray-600 px-3 py-2.5 text-sm text-gray-900 dark:text-gray-100 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/25 dark:bg-gray-800"
               />
               <Button
                 type="button"

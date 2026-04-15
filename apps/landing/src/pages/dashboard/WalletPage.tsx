@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { toast } from "sonner";
 import {
   usePortalWallet,
   usePortalWalletTransactions,
@@ -30,14 +31,22 @@ export default function WalletPage() {
 
   const submitDeposit = async () => {
     const n = parseFloat(amount);
-    if (!Number.isFinite(n) || n <= 0) return;
-    await deposit.mutateAsync({
-      amountUsd: n,
-      paymentMethod: method,
-      proofUrl: proofUrl.trim() || undefined,
-    });
-    setAmount("");
-    setProofUrl("");
+    if (!Number.isFinite(n) || n <= 0) {
+      toast.error("Enter a valid amount");
+      return;
+    }
+    try {
+      await deposit.mutateAsync({
+        amountUsd: n,
+        paymentMethod: method,
+        proofUrl: proofUrl.trim() || undefined,
+      });
+      setAmount("");
+      setProofUrl("");
+      toast.success("Deposit request submitted");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to submit deposit");
+    }
   };
 
   return (
@@ -63,26 +72,28 @@ export default function WalletPage() {
       >
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div>
-            <label className="block text-xs font-medium text-gray-600">
+            <label htmlFor="deposit-amount" className="block text-xs font-medium text-gray-600 dark:text-gray-400">
               Amount (USD)
             </label>
             <input
+              id="deposit-amount"
               type="number"
               min={1}
               step="0.01"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="mt-1 min-h-[44px] w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm"
+              className="mt-1 min-h-[44px] w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2.5 text-sm dark:bg-gray-800 dark:text-gray-100"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600">
+            <label htmlFor="deposit-method" className="block text-xs font-medium text-gray-600 dark:text-gray-400">
               Method
             </label>
             <select
+              id="deposit-method"
               value={method}
               onChange={(e) => setMethod(e.target.value)}
-              className="mt-1 min-h-[44px] w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm"
+              className="mt-1 min-h-[44px] w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2.5 text-sm dark:bg-gray-800 dark:text-gray-100"
             >
               {PAY_METHODS.map((m) => (
                 <option key={m.value} value={m.value}>
@@ -92,15 +103,16 @@ export default function WalletPage() {
             </select>
           </div>
           <div className="sm:col-span-2">
-            <label className="block text-xs font-medium text-gray-600">
+            <label htmlFor="deposit-proof" className="block text-xs font-medium text-gray-600 dark:text-gray-400">
               Proof URL (optional)
             </label>
             <input
+              id="deposit-proof"
               type="url"
               value={proofUrl}
               onChange={(e) => setProofUrl(e.target.value)}
               placeholder="https://…"
-              className="mt-1 min-h-[44px] w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm"
+              className="mt-1 min-h-[44px] w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2.5 text-sm dark:bg-gray-800 dark:text-gray-100"
             />
           </div>
         </div>
@@ -116,9 +128,11 @@ export default function WalletPage() {
 
       <DashboardPanel title="Transactions">
         {txs.isLoading ? (
-          <p className="text-sm text-gray-500">Loading…</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Loading…</p>
+        ) : txs.isError ? (
+          <p className="text-sm text-red-600">Failed to load transactions.</p>
         ) : !txs.data?.items.length ? (
-          <p className="text-sm text-gray-500">No transactions yet.</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">No transactions yet.</p>
         ) : (
           <NarrowWide
             narrow={
@@ -126,17 +140,17 @@ export default function WalletPage() {
                 {txs.data.items.map((t) => (
                   <li
                     key={t.id}
-                    className="rounded-2xl border border-gray-200/90 bg-gray-50/40 p-4 shadow-sm"
+                    className="rounded-2xl border border-gray-200/90 dark:border-gray-700 bg-gray-50/40 dark:bg-gray-800/50 p-4 shadow-sm"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <p className="text-sm font-medium text-gray-900">
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                           {t.type.replace(/_/g, " ")}
                         </p>
-                        <p className="mt-0.5 text-xs text-gray-500">
+                        <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
                           {formatDate(t.transactionDate)}
                         </p>
-                        <p className="mt-2 text-xs text-gray-600">
+                        <p className="mt-2 text-xs text-gray-600 dark:text-gray-400">
                           Status: {t.status}
                         </p>
                       </div>
@@ -155,10 +169,10 @@ export default function WalletPage() {
               </ul>
             }
             wide={
-              <div className="overflow-x-auto rounded-xl border border-gray-100">
+              <div className="overflow-x-auto rounded-xl border border-gray-100 dark:border-gray-800">
                 <table className="w-full min-w-[600px] text-left text-sm">
                   <thead>
-                    <tr className="border-b border-gray-200 bg-gray-50/80 text-xs uppercase text-gray-500">
+                    <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-800/50 text-xs uppercase text-gray-500 dark:text-gray-400">
                       <th className="px-4 py-3 font-medium">Date</th>
                       <th className="px-4 py-3 font-medium">Type</th>
                       <th className="px-4 py-3 font-medium">Status</th>
@@ -167,10 +181,10 @@ export default function WalletPage() {
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100">
+                  <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                     {txs.data.items.map((t) => (
                       <tr key={t.id}>
-                        <td className="px-4 py-2.5 text-gray-600">
+                        <td className="px-4 py-2.5 text-gray-600 dark:text-gray-400">
                           {formatDate(t.transactionDate)}
                         </td>
                         <td className="px-4 py-2.5">

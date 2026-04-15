@@ -370,7 +370,6 @@ export function useCancelOrder() {
     },
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["portal", "orders"] });
-      void qc.invalidateQueries({ queryKey: ["portal-order"] });
     },
   });
 }
@@ -392,7 +391,6 @@ export function useRequestRevision() {
     },
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["portal", "orders"] });
-      void qc.invalidateQueries({ queryKey: ["portal-order"] });
     },
   });
 }
@@ -417,48 +415,6 @@ export function useReviewOrder() {
     },
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["portal", "orders"] });
-      void qc.invalidateQueries({ queryKey: ["portal-order"] });
-    },
-  });
-}
-
-export function usePortalNotifications(page = 1, limit = 20) {
-  return useQuery({
-    queryKey: ["portal", "notifications", page, limit],
-    queryFn: async () => {
-      const res = await api.get("/portal/notifications", {
-        params: { page, limit },
-      });
-      return {
-        items: res.data.data ?? [],
-        meta: res.data.meta,
-      };
-    },
-  });
-}
-
-export function useMarkNotificationRead() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: string) => {
-      const res = await api.patch(`/portal/notifications/${id}/read`);
-      return res.data;
-    },
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ["portal", "notifications"] });
-    },
-  });
-}
-
-export function useMarkAllNotificationsRead() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async () => {
-      const res = await api.patch("/portal/notifications/read-all");
-      return res.data;
-    },
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ["portal", "notifications"] });
     },
   });
 }

@@ -33,7 +33,7 @@ const variantStyles: Record<Variant, string> = {
   warning: 'bg-amber-50 text-amber-700 border-amber-200',
   error: 'bg-red-50 text-red-700 border-red-200',
   info: 'bg-sky-50 text-sky-700 border-sky-200',
-  neutral: 'bg-gray-100 text-gray-600 border-gray-200',
+  neutral: 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700',
 };
 
 export function Badge({ children, variant = 'sky', className }: BadgeProps) {

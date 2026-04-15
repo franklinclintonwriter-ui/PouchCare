@@ -80,6 +80,8 @@ export function Sheet({
               ref={panelRef}
               role="dialog"
               aria-modal="true"
+              aria-labelledby={title ? "sheet-title" : undefined}
+              aria-describedby={description ? "sheet-desc" : undefined}
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
@@ -90,16 +92,16 @@ export function Sheet({
               )}
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-gray-200" />
+              <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-gray-200 dark:bg-gray-700" />
 
               {(title || description) && (
                 <div className="flex items-start justify-between gap-3 px-4 pb-2 pt-3 sm:px-5">
                   <div className="min-w-0">
                     {title && (
-                      <h2 className={ui.headingLg}>{title}</h2>
+                      <h2 id="sheet-title" className={ui.headingLg}>{title}</h2>
                     )}
                     {description && (
-                      <p className={cn("mt-1", ui.description)}>{description}</p>
+                      <p id="sheet-desc" className={cn("mt-1", ui.description)}>{description}</p>
                     )}
                   </div>
                   <button
@@ -107,7 +109,7 @@ export function Sheet({
                     onClick={onClose}
                     aria-label="Close"
                     className={cn(
-                      "shrink-0 rounded-xl p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700",
+                      "shrink-0 rounded-xl p-2 text-gray-400 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-300",
                       ui.focusRing,
                     )}
                   >
@@ -121,7 +123,7 @@ export function Sheet({
               </div>
 
               {footer && (
-                <div className="border-t border-gray-100 px-4 py-3 sm:px-5">
+                <div className="border-t border-gray-100 dark:border-gray-800 px-4 py-3 sm:px-5">
                   {footer}
                 </div>
               )}

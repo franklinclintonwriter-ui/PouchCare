@@ -90,7 +90,7 @@ function Hero() {
           className="font-sora font-bold leading-[1.05] tracking-tight mb-7 animate-fade-up animation-delay-100"
           style={{ fontSize: "clamp(2.8rem, 7vw, 5.5rem)" }}
         >
-          <span className="text-slate-50">Rank Higher.</span>{" "}
+          <span className="text-slate-900">Rank Higher.</span>{" "}
           <span
             style={{
               background:
@@ -105,7 +105,7 @@ function Hero() {
             Build Faster.
           </span>
           <br />
-          <span className="text-slate-50">Grow </span>
+          <span className="text-slate-900">Grow </span>
           <span
             style={{
               background: "linear-gradient(135deg, #818cf8 0%, #38bdf8 100%)",
@@ -119,7 +119,7 @@ function Hero() {
         </h1>
 
         <p
-          className="text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed animate-fade-up animation-delay-200"
+          className="text-slate-600 max-w-2xl mx-auto mb-10 leading-relaxed animate-fade-up animation-delay-200"
           style={{ fontSize: "clamp(1rem, 2vw, 1.2rem)" }}
         >
           Premium SEO, link building, web development and digital marketing

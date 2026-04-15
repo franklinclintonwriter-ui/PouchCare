@@ -49,16 +49,16 @@ function JobTableRow({ job, onDelete }: { job: any; onDelete?: () => void }) {
   const currentJob = jobDetail.data || job;
 
   return (
-    <tr className="hover:bg-gray-50/60">
-      <td className="px-4 py-3 font-medium text-gray-900">{currentJob.appName}</td>
-      <td className="max-w-[160px] truncate px-4 py-3 font-mono text-xs text-gray-500">
+    <tr className="hover:bg-gray-50/60 dark:hover:bg-gray-800">
+      <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-100">{currentJob.appName}</td>
+      <td className="max-w-[160px] truncate px-4 py-3 font-mono text-xs text-gray-500 dark:text-gray-400">
         {currentJob.url}
       </td>
-      <td className="px-4 py-3 text-gray-700">{currentJob.plan}</td>
-      <td className="px-4 py-3 tabular-nums text-gray-500">
+      <td className="px-4 py-3 text-gray-700 dark:text-gray-300">{currentJob.plan}</td>
+      <td className="px-4 py-3 tabular-nums text-gray-500 dark:text-gray-400">
         {currentJob.apkSizeMb ? `${currentJob.apkSizeMb} MB` : "—"}
       </td>
-      <td className="px-4 py-3 tabular-nums text-gray-500">
+      <td className="px-4 py-3 tabular-nums text-gray-500 dark:text-gray-400">
         {formatDateShort(currentJob.createdAt)}
       </td>
       <td className="px-4 py-3">{statusBadge(currentJob.status)}</td>
@@ -99,14 +99,14 @@ function JobMobileCard({ job, onDelete }: { job: any; onDelete?: () => void }) {
   const currentJob = jobDetail.data || job;
 
   return (
-    <li className="rounded-xl border border-gray-100 bg-gray-50/60 p-4">
+    <li className="rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50/60 dark:bg-gray-800/50 p-4">
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary-100">
             <Smartphone className="h-4 w-4 text-primary-700" />
           </div>
           <div className="min-w-0">
-            <p className="truncate font-semibold text-gray-900">{currentJob.appName}</p>
+            <p className="truncate font-semibold text-gray-900 dark:text-gray-100">{currentJob.appName}</p>
             <p className="truncate font-mono text-[11px] text-gray-400">{currentJob.url}</p>
           </div>
         </div>
@@ -115,17 +115,17 @@ function JobMobileCard({ job, onDelete }: { job: any; onDelete?: () => void }) {
       <dl className="mt-3 grid grid-cols-2 gap-2 text-xs">
         <div>
           <dt className="text-gray-400">Plan</dt>
-          <dd className="font-medium text-gray-700">{currentJob.plan}</dd>
+          <dd className="font-medium text-gray-700 dark:text-gray-300">{currentJob.plan}</dd>
         </div>
         <div>
           <dt className="text-gray-400">Size</dt>
-          <dd className="font-medium text-gray-700">
+          <dd className="font-medium text-gray-700 dark:text-gray-300">
             {currentJob.apkSizeMb ? `${currentJob.apkSizeMb} MB` : "—"}
           </dd>
         </div>
         <div>
           <dt className="text-gray-400">Created</dt>
-          <dd className="tabular-nums text-gray-700">{formatDateShort(currentJob.createdAt)}</dd>
+          <dd className="tabular-nums text-gray-700 dark:text-gray-300">{formatDateShort(currentJob.createdAt)}</dd>
         </div>
       </dl>
       <div className="mt-3 flex gap-2">
@@ -209,14 +209,14 @@ export default function WebToApkPage() {
       {/* Page header */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">Web → APK</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100 sm:text-2xl">Web → APK</h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             Convert any website or PWA into a downloadable Android APK.{" "}
             <Link
               to="/services/web-to-apk"
               className="font-medium text-primary-600 hover:underline"
             >
-              Learn more →
+              Learn more
             </Link>
           </p>
         </div>
@@ -244,7 +244,7 @@ export default function WebToApkPage() {
                 disabled={createJob.isPending}
                 required
               />
-              <p className="mt-1 text-xs text-gray-500">
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                 Must be publicly accessible. HTTPS recommended.
               </p>
             </div>
@@ -266,7 +266,7 @@ export default function WebToApkPage() {
                 id="apk-plan"
                 value={planId}
                 onChange={(e) => setPlanId(e.target.value)}
-                className="mt-1 min-h-[48px] w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/40"
+                className="mt-1 min-h-[48px] w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/40 dark:bg-gray-900 dark:text-gray-100"
                 disabled={createJob.isPending}
               >
                 {WEB_TO_APK_PLANS.map((p: typeof WEB_TO_APK_PLANS[0]) => (
@@ -286,7 +286,7 @@ export default function WebToApkPage() {
             </p>
             <ul className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
               {selectedPlan.features.slice(0, 4).map((f: string) => (
-                <li key={f} className="flex items-center gap-2 text-xs text-gray-700">
+                <li key={f} className="flex items-center gap-2 text-xs text-gray-700 dark:text-gray-300">
                   <Check className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
                   {f}
                 </li>
@@ -330,23 +330,23 @@ export default function WebToApkPage() {
         }
       >
         {jobs.isLoading && (
-          <p className="py-8 text-center text-sm text-gray-500">Loading conversions…</p>
+          <p className="py-8 text-center text-sm text-gray-500 dark:text-gray-400">Loading conversions…</p>
         )}
         {jobs.error && (
           <p className="py-8 text-center text-sm text-red-500">Failed to load conversions</p>
         )}
         {!jobs.isLoading && !jobs.error && jobs.data?.items.length === 0 && (
-          <p className="py-8 text-center text-sm text-gray-500">
+          <p className="py-8 text-center text-sm text-gray-500 dark:text-gray-400">
             No conversions yet. Fill in the form above to get started.
           </p>
         )}
         {!jobs.isLoading && !jobs.error && jobs.data?.items && jobs.data.items.length > 0 && (
           <>
             {/* Desktop table */}
-            <div className="hidden overflow-x-auto rounded-lg border border-gray-100 md:block">
+            <div className="hidden overflow-x-auto rounded-lg border border-gray-100 dark:border-gray-800 md:block">
               <table className="w-full min-w-[560px] text-left text-sm">
                 <thead>
-                  <tr className="border-b border-gray-200 bg-gray-50/80 text-xs uppercase tracking-wide text-gray-500">
+                  <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-800/50 text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
                     {["App name", "URL", "Plan", "Size", "Created", "Status", ""].map((h) => (
                       <th key={h} className="px-4 py-2.5 font-semibold">
                         {h}
@@ -354,7 +354,7 @@ export default function WebToApkPage() {
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                   {jobs.data.items.map((o) => (
                     <JobTableRow
                       key={o.id}
@@ -388,17 +388,17 @@ export default function WebToApkPage() {
         <div className="flex items-start gap-3">
           <Smartphone className="mt-0.5 h-5 w-5 shrink-0 text-primary-600" />
           <div>
-            <p className="text-sm font-semibold text-gray-900">
+            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
               Need Play Store signing or unlimited builds?
             </p>
-            <p className="mt-0.5 text-sm text-gray-600">
+            <p className="mt-0.5 text-sm text-gray-600 dark:text-gray-400">
               Upgrade to Pro — signed APKs, unlimited conversions, priority queue.
             </p>
           </div>
         </div>
         <Link
           to="/services/web-to-apk"
-          className="inline-flex min-h-[44px] shrink-0 items-center justify-center gap-1.5 rounded-lg border border-primary-300 bg-white px-4 text-sm font-semibold text-primary-700 shadow-sm hover:bg-primary-50 transition-colors"
+          className="inline-flex min-h-[44px] shrink-0 items-center justify-center gap-1.5 rounded-lg border border-primary-300 bg-white dark:bg-gray-900 px-4 text-sm font-semibold text-primary-700 shadow-sm hover:bg-primary-50 transition-colors"
         >
           View plans
           <ExternalLink className="h-3.5 w-3.5" />

@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "@/api/client";
+import type { PaginatedMeta } from "@/types/portalDashboard";
 
 export type WebsiteStatus = "online" | "degraded" | "offline" | "maintenance";
 
@@ -27,13 +28,6 @@ export interface PortalWebsite {
   linkedDomainId: string | null;
   type?: string;
   platform?: string;
-}
-
-export interface PaginatedMeta {
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
 }
 
 function unwrapPaginated<T>(res: {

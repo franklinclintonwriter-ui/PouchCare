@@ -18,3 +18,13 @@ export function formatDateShort(iso: string | Date): string {
   const d = typeof iso === "string" ? new Date(iso) : iso;
   return new Intl.DateTimeFormat("en-US", { dateStyle: "medium" }).format(d);
 }
+
+export function orderStatusVariant(
+  status: string,
+): "green" | "yellow" | "sky" | "red" {
+  const u = status.toUpperCase();
+  if (u === "COMPLETED" || u === "DELIVERED") return "green";
+  if (u === "PROCESSING" || u === "PENDING") return "yellow";
+  if (u === "CANCELLED" || u === "REFUNDED") return "red";
+  return "sky";
+}

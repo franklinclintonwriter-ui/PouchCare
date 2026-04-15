@@ -65,7 +65,7 @@ export default function InvoiceDetailPage() {
       <div className="flex flex-col gap-3 print:hidden sm:flex-row sm:items-center sm:justify-between">
         <Link
           to={paths.dashboardInvoices}
-          className="inline-flex min-h-[44px] items-center gap-1 text-sm font-medium text-gray-600 hover:text-gray-900 sm:min-h-0"
+          className="inline-flex min-h-[44px] items-center gap-1 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 sm:min-h-0"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to invoices
@@ -109,29 +109,29 @@ export default function InvoiceDetailPage() {
       <div
         id="invoice-document"
         className={cn(
-          "rounded-2xl border border-gray-200 bg-white shadow-sm",
+          "rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm",
           "p-5 sm:p-8 md:p-10 lg:p-12",
           "print:rounded-none print:border-0 print:p-0 print:shadow-none",
         )}
       >
         {/* Header row */}
-        <div className="flex flex-col gap-6 border-b border-gray-200 pb-6 sm:flex-row sm:items-start sm:justify-between print:flex-row print:pb-4">
+        <div className="flex flex-col gap-6 border-b border-gray-200 dark:border-gray-700 pb-6 sm:flex-row sm:items-start sm:justify-between print:flex-row print:pb-4">
           <div>
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-600 text-lg font-bold text-white print:h-8 print:w-8 print:text-base">
               P
             </div>
-            <p className="mt-3 text-lg font-bold text-gray-900 print:text-base">
+            <p className="mt-3 text-lg font-bold text-gray-900 dark:text-gray-100 print:text-base">
               {inv.companyName}
             </p>
-            <p className="mt-1 max-w-[260px] whitespace-pre-line text-xs text-gray-500 print:text-[10px]">
+            <p className="mt-1 max-w-[260px] whitespace-pre-line text-xs text-gray-500 dark:text-gray-400 print:text-[10px]">
               {inv.companyAddress}
             </p>
-            <p className="mt-1 text-xs text-gray-500 print:text-[10px]">
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 print:text-[10px]">
               {inv.companyEmail} · {inv.companyPhone}
             </p>
           </div>
           <div className="text-left sm:text-right print:text-right">
-            <h1 className="text-2xl font-extrabold tracking-tight text-gray-900 sm:text-3xl print:text-xl">
+            <h1 className="text-2xl font-extrabold tracking-tight text-gray-900 dark:text-gray-100 sm:text-3xl print:text-xl">
               INVOICE
             </h1>
             <p className="mt-1 font-mono text-sm font-semibold text-primary-700 print:text-xs">
@@ -151,9 +151,9 @@ export default function InvoiceDetailPage() {
             <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">
               Bill to
             </p>
-            <p className="mt-1 font-semibold text-gray-900 print:text-sm">{inv.clientName}</p>
-            <p className="text-xs text-gray-500 print:text-[10px]">{inv.clientEmail}</p>
-            <p className="mt-0.5 max-w-[260px] whitespace-pre-line text-xs text-gray-500 print:text-[10px]">
+            <p className="mt-1 font-semibold text-gray-900 dark:text-gray-100 print:text-sm">{inv.clientName}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 print:text-[10px]">{inv.clientEmail}</p>
+            <p className="mt-0.5 max-w-[260px] whitespace-pre-line text-xs text-gray-500 dark:text-gray-400 print:text-[10px]">
               {inv.clientAddress}
             </p>
           </div>
@@ -162,13 +162,13 @@ export default function InvoiceDetailPage() {
               <dt className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">
                 Issue date
               </dt>
-              <dd className="mt-0.5 tabular-nums text-gray-800">{formatDateShort(inv.issueDate)}</dd>
+              <dd className="mt-0.5 tabular-nums text-gray-800 dark:text-gray-200">{formatDateShort(inv.issueDate)}</dd>
             </div>
             <div>
               <dt className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">
                 Due date
               </dt>
-              <dd className="mt-0.5 tabular-nums text-gray-800">{formatDateShort(inv.dueDate)}</dd>
+              <dd className="mt-0.5 tabular-nums text-gray-800 dark:text-gray-200">{formatDateShort(inv.dueDate)}</dd>
             </div>
             {inv.paidDate && (
               <div>
@@ -183,7 +183,7 @@ export default function InvoiceDetailPage() {
                 <dt className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">
                   Payment method
                 </dt>
-                <dd className="mt-0.5 text-gray-800">{inv.paymentMethod}</dd>
+                <dd className="mt-0.5 text-gray-800 dark:text-gray-200">{inv.paymentMethod}</dd>
               </div>
             )}
           </dl>
@@ -193,7 +193,7 @@ export default function InvoiceDetailPage() {
         <div className="mt-8 overflow-x-auto print:mt-6">
           <table className="w-full text-left text-sm">
             <thead>
-              <tr className="border-b-2 border-gray-900 text-xs uppercase tracking-wide text-gray-500 print:text-[9px]">
+              <tr className="border-b-2 border-gray-900 text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 print:text-[9px]">
                 <th className="pb-2 pr-4 font-semibold">Description</th>
                 <th className="pb-2 pr-4 text-center font-semibold">Qty</th>
                 <th className="pb-2 pr-4 text-right font-semibold">Unit price</th>
@@ -202,11 +202,11 @@ export default function InvoiceDetailPage() {
             </thead>
             <tbody>
               {inv.lineItems.map((li) => (
-                <tr key={li.id} className="border-b border-gray-100 print:text-xs">
-                  <td className="py-3 pr-4 text-gray-800 print:py-2">{li.description}</td>
-                  <td className="py-3 pr-4 text-center tabular-nums text-gray-600 print:py-2">{li.quantity}</td>
-                  <td className="py-3 pr-4 text-right tabular-nums text-gray-600 print:py-2">{formatUsd(li.unitPrice)}</td>
-                  <td className="py-3 text-right font-medium tabular-nums text-gray-900 print:py-2">{formatUsd(li.total)}</td>
+                <tr key={li.id} className="border-b border-gray-100 dark:border-gray-800 print:text-xs">
+                  <td className="py-3 pr-4 text-gray-800 dark:text-gray-200 print:py-2">{li.description}</td>
+                  <td className="py-3 pr-4 text-center tabular-nums text-gray-600 dark:text-gray-400 print:py-2">{li.quantity}</td>
+                  <td className="py-3 pr-4 text-right tabular-nums text-gray-600 dark:text-gray-400 print:py-2">{formatUsd(li.unitPrice)}</td>
+                  <td className="py-3 text-right font-medium tabular-nums text-gray-900 dark:text-gray-100 print:py-2">{formatUsd(li.total)}</td>
                 </tr>
               ))}
             </tbody>
@@ -216,17 +216,17 @@ export default function InvoiceDetailPage() {
         {/* Totals */}
         <div className="mt-4 flex justify-end print:mt-3">
           <dl className="w-full max-w-[240px] space-y-1.5 text-sm print:max-w-[200px] print:text-xs">
-            <div className="flex justify-between text-gray-600">
+            <div className="flex justify-between text-gray-600 dark:text-gray-400">
               <dt>Subtotal</dt>
               <dd className="tabular-nums">{formatUsd(inv.subtotal)}</dd>
             </div>
             {inv.tax > 0 && (
-              <div className="flex justify-between text-gray-600">
+              <div className="flex justify-between text-gray-600 dark:text-gray-400">
                 <dt>Tax</dt>
                 <dd className="tabular-nums">{formatUsd(inv.tax)}</dd>
               </div>
             )}
-            <div className="flex justify-between border-t-2 border-gray-900 pt-2 text-base font-bold text-gray-900 print:text-sm">
+            <div className="flex justify-between border-t-2 border-gray-900 pt-2 text-base font-bold text-gray-900 dark:text-gray-100 print:text-sm">
               <dt>Total</dt>
               <dd className="tabular-nums">{formatUsd(inv.total)}</dd>
             </div>
@@ -235,7 +235,7 @@ export default function InvoiceDetailPage() {
 
         {/* Notes */}
         {inv.notes && (
-          <div className="mt-8 rounded-xl border border-gray-100 bg-gray-50/60 p-4 text-sm text-gray-600 print:mt-6 print:rounded-none print:border-gray-200 print:bg-transparent print:p-3 print:text-xs">
+          <div className="mt-8 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50/60 dark:bg-gray-800/50 p-4 text-sm text-gray-600 dark:text-gray-400 print:mt-6 print:rounded-none print:border-gray-200 print:bg-transparent print:p-3 print:text-xs">
             <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-gray-400">
               Notes
             </p>

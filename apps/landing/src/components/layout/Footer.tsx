@@ -23,6 +23,7 @@ const LINKS = {
   Services: [
     { label: "SEO Services", href: "/services" },
     { label: "Domains & hosting", href: "/services/hosting" },
+    { label: "Domain Search", href: "/services/hosting/search" },
     { label: "Web → Android APK", href: "/services/web-to-apk" },
     { label: "Link Building", href: "/backlinks" },
     { label: "Web Development", href: "/services" },

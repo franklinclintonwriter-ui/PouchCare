@@ -50,14 +50,14 @@ export default function OrdersPage() {
     <div className="space-y-5 sm:space-y-6">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">Orders</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100 sm:text-2xl">Orders</h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             Track and manage all your service orders.
           </p>
         </div>
         <Link
           to={paths.dashboardServices}
-          className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-700 shadow-sm transition-colors hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700 sm:min-h-0"
+          className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300 shadow-sm transition-colors hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700 sm:min-h-0"
         >
           New order
         </Link>
@@ -79,7 +79,7 @@ export default function OrdersPage() {
                   "whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-semibold capitalize transition-colors",
                   filter === t
                     ? "bg-primary-100 text-primary-800"
-                    : "text-gray-500 hover:bg-gray-100 hover:text-gray-800",
+                    : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-800 dark:hover:text-gray-100",
                 )}
               >
                 {t}
@@ -100,11 +100,11 @@ export default function OrdersPage() {
 
         {/* Content */}
         {isLoading ? (
-          <p className="py-6 text-sm text-gray-500">Loading orders…</p>
+          <p className="py-6 text-sm text-gray-500 dark:text-gray-400">Loading orders…</p>
         ) : isError ? (
           <p className="py-6 text-sm text-red-600">Could not load orders.</p>
         ) : filtered.length === 0 ? (
-          <p className="py-10 text-center text-sm text-gray-500">
+          <p className="py-10 text-center text-sm text-gray-500 dark:text-gray-400">
             {data?.items.length === 0
               ? "No orders yet."
               : "No orders match your filter."}
@@ -116,40 +116,40 @@ export default function OrdersPage() {
                 {filtered.map((o) => (
                   <li
                     key={o.id}
-                    className="rounded-2xl border border-gray-200/90 bg-white p-4 shadow-sm"
+                    className="rounded-2xl border border-gray-200/90 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 shadow-sm"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0 flex-1">
                         <Link
                           to={paths.dashboardOrder(o.id)}
-                          className="font-medium text-gray-900 hover:text-primary-700"
+                          className="font-medium text-gray-900 dark:text-gray-100 hover:text-primary-700"
                         >
                           {o.serviceName ?? o.service}
                         </Link>
-                        <p className="mt-0.5 font-mono text-xs text-gray-500">#{o.orderId}</p>
+                        <p className="mt-0.5 font-mono text-xs text-gray-500 dark:text-gray-400">#{o.orderId}</p>
                       </div>
                       <Badge variant={statusVariant(o.status)}>
                         {o.status.replace(/_/g, " ")}
                       </Badge>
                     </div>
-                    <div className="mt-3 flex items-center justify-between gap-2 border-t border-gray-100 pt-3 text-sm">
-                      <span className="tabular-nums text-gray-600">
+                    <div className="mt-3 flex items-center justify-between gap-2 border-t border-gray-100 dark:border-gray-800 pt-3 text-sm">
+                      <span className="tabular-nums text-gray-600 dark:text-gray-400">
                         {formatDateShort(o.orderDate)}
                       </span>
-                      <span className="font-semibold tabular-nums text-gray-900">
+                      <span className="font-semibold tabular-nums text-gray-900 dark:text-gray-100">
                         {formatUsd(o.amountUsd)}
                       </span>
                     </div>
                     <div className="mt-3 flex gap-2">
                       <Link
                         to={paths.dashboardOrder(o.id)}
-                        className="flex min-h-[44px] flex-1 items-center justify-center rounded-xl border border-gray-200 bg-white text-sm font-medium text-primary-700 transition-colors hover:bg-primary-50/80"
+                        className="flex min-h-[44px] flex-1 items-center justify-center rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm font-medium text-primary-700 transition-colors hover:bg-primary-50/80"
                       >
                         Details
                       </Link>
                       <Link
                         to={paths.dashboardInvoices}
-                        className="flex min-h-[44px] w-12 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-500 transition-colors hover:bg-gray-50"
+                        className="flex min-h-[44px] w-12 items-center justify-center rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800"
                         aria-label="View invoice"
                       >
                         <FileText className="h-4 w-4" />
@@ -160,10 +160,10 @@ export default function OrdersPage() {
               </ul>
             }
             wide={
-              <div className="mt-4 overflow-x-auto rounded-xl border border-gray-100">
+              <div className="mt-4 overflow-x-auto rounded-xl border border-gray-100 dark:border-gray-800">
                 <table className="w-full min-w-[700px] text-left text-sm">
                   <thead>
-                    <tr className="border-b border-gray-200 bg-gray-50/80 text-xs uppercase tracking-wide text-gray-500">
+                    <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-800/50 text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
                       <th className="px-4 py-2.5 font-semibold">Order</th>
                       <th className="px-4 py-2.5 font-semibold">Service</th>
                       <th className="px-4 py-2.5 font-semibold">Status</th>
@@ -172,10 +172,10 @@ export default function OrdersPage() {
                       <th className="px-4 py-2.5 text-right font-semibold">Invoice</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100">
+                  <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                     {filtered.map((o) => (
-                      <tr key={o.id} className="hover:bg-gray-50/80">
-                        <td className="px-4 py-3 font-mono text-gray-900">#{o.orderId}</td>
+                      <tr key={o.id} className="hover:bg-gray-50/80 dark:hover:bg-gray-800/50">
+                        <td className="px-4 py-3 font-mono text-gray-900 dark:text-gray-100">#{o.orderId}</td>
                         <td className="px-4 py-3">
                           <Link
                             to={paths.dashboardOrder(o.id)}
@@ -189,16 +189,16 @@ export default function OrdersPage() {
                             {o.status.replace(/_/g, " ")}
                           </Badge>
                         </td>
-                        <td className="px-4 py-3 tabular-nums text-gray-600">
+                        <td className="px-4 py-3 tabular-nums text-gray-600 dark:text-gray-400">
                           {formatDateShort(o.orderDate)}
                         </td>
-                        <td className="px-4 py-3 text-right font-medium tabular-nums text-gray-900">
+                        <td className="px-4 py-3 text-right font-medium tabular-nums text-gray-900 dark:text-gray-100">
                           {formatUsd(o.amountUsd)}
                         </td>
                         <td className="px-4 py-3 text-right">
                           <Link
                             to={paths.dashboardInvoices}
-                            className="inline-flex h-8 items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 text-xs font-medium text-gray-600 hover:bg-gray-50"
+                            className="inline-flex h-8 items-center gap-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-2.5 text-xs font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
                           >
                             <FileText className="h-3.5 w-3.5" />
                             Invoice

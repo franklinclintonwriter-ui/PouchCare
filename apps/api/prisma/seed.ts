@@ -69,52 +69,38 @@ const PORTAL_EMAILS = [
 
 // ─────────────────────────────────────────────────────────────────────────────
 
+const BRANCH_NAME = "PouchCare - Digital Marketing";
+
 async function seedBranches() {
-  const data = [
-    {
-      name: "Dubai HQ",
-      country: "UAE",
-      city: "Dubai",
-      type: "HQ",
-      status: "Active",
-      branchManager: "Abdullah Al Mamun",
-      staffCount: 2,
+  // Remove any leftover demo branches that no longer exist
+  await prisma.branch.deleteMany({
+    where: {
+      name: {
+        in: ["Dubai HQ", "Bangladesh HQ", "Dhaka", "London"],
+      },
     },
-    {
-      name: "Bangladesh HQ",
+  });
+
+  await prisma.branch.upsert({
+    where: { name: BRANCH_NAME },
+    update: {
       country: "Bangladesh",
-      city: "Chittagong",
-      type: "HQ",
+      city: "Phulpur, Mymensingh",
+      type: "Branch",
       status: "Active",
-      branchManager: "Md. Habibullah",
-      staffCount: 4,
+      branchManager: "Zihadujjaman",
+      staffCount: 7,
     },
-    {
-      name: "Dhaka",
+    create: {
+      name: BRANCH_NAME,
       country: "Bangladesh",
-      city: "Dhaka",
-      type: "Regional",
+      city: "Phulpur, Mymensingh",
+      type: "Branch",
       status: "Active",
-      branchManager: "Zihadduzzaman",
-      staffCount: 8,
+      branchManager: "Zihadujjaman",
+      staffCount: 7,
     },
-    {
-      name: "London",
-      country: "UK",
-      city: "London",
-      type: "Sales",
-      status: "Active",
-      branchManager: "",
-      staffCount: 2,
-    },
-  ];
-  for (const b of data) {
-    await prisma.branch.upsert({
-      where: { name: b.name },
-      update: {},
-      create: b,
-    });
-  }
+  });
   console.log("✅ Branches seeded");
 }
 
@@ -122,93 +108,128 @@ async function seedCameras() {
   await prisma.vigiNvrIntegration.deleteMany({});
   await prisma.cameraDevice.deleteMany({});
 
-  const branches = await prisma.branch.findMany({ orderBy: { name: "asc" } });
-  const locations = [
-    "Main Entrance",
-    "Reception",
-    "Server Room",
-    "Office Floor",
-    "Parking Lot",
-    "Meeting Room A",
-    "Warehouse",
-    "Fire Exit",
-  ];
-  const nvrs = [
-    "Hikvision DS-9632NI-I8",
-    "Dahua NVR5216-4KS2",
-    "Axis S3016",
-    "Synology NVR1218",
-  ];
-  const angles = ["Wide 140°", "Standard 90°", "Narrow 60°", "PTZ 360°"];
-
-  // Seed VigiNvrIntegrations for branches with cameras
-  const nvrBranches = branches.filter((b) => b.name !== "London");
-  for (const b of nvrBranches) {
-    await prisma.vigiNvrIntegration
-      .create({
-        data: {
-          branchId: b.id,
-          host: `nvr-${b.name.toLowerCase().replace(/\s+/g, "-")}.local`,
-          port: 20443,
-          username: "admin",
-          passwordEncrypted: "enc:demo_password_placeholder",
-          tlsAllowInsecure: true,
-          enabled: true,
-          lastSyncAt: daysAgo(1),
-        },
-      })
-      .catch(() => null);
+  const branch = await prisma.branch.findFirst({
+    where: { name: BRANCH_NAME },
+  });
+  if (!branch) {
+    console.warn("⚠️  Branch not found — skipping cameras");
+    return;
   }
 
-  let idx = 0;
-  const nvrMap: Record<string, string> = {};
-  const nvrRecords = await prisma.vigiNvrIntegration.findMany();
-  for (const n of nvrRecords) nvrMap[n.branchId] = n.id;
+  // ── Vigi NVR integration for Phulpur Mymensingh branch ─────────────────────
+  // TP-Link VIGI NVR — update host/credentials to match the real device on-site
+  const nvr = await prisma.vigiNvrIntegration.create({
+    data: {
+      branchId: branch.id,
+      host: "192.168.1.100", // ← replace with actual NVR IP on the Phulpur LAN
+      port: 20443,
+      username: "admin",
+      passwordEncrypted: "enc:CHANGE_ME", // ← update via the Vigi Integration UI
+      tlsAllowInsecure: true,
+      enabled: true,
+      lastSyncAt: null,
+    },
+  });
 
-  for (const b of branches) {
-    const count = b.name === "London" ? 2 : b.name === "Dhaka" ? 5 : 4;
-    for (let i = 0; i < count; i++) {
-      idx++;
-      const mod = idx % 5;
-      const status =
-        mod === 0 ? "offline" : mod === 1 || mod === 2 ? "recording" : "online";
-      const lastMotion = status !== "offline" ? daysAgo((idx * 7) % 48) : null;
-      await prisma.cameraDevice.create({
-        data: {
-          branchId: b.id,
-          branchName: b.name,
-          label: `CAM-${String(i + 1).padStart(2, "0")}`,
-          location: locations[(i + idx) % locations.length],
-          status,
-          resolution: i % 2 === 0 ? "1080p" : "4K",
-          fps: [15, 25, 30][idx % 3],
-          angle: angles[idx % angles.length],
-          hasAudio: idx % 3 === 0,
-          hasMotionDetect: true,
-          nvrDevice: nvrs[(i + idx) % nvrs.length],
-          rtspUrl: `rtsp://nvr.local/${b.id}/stream/${i + 1}`,
-          vigiIntegrationId: nvrMap[b.id] ?? undefined,
-          vigiChannel: nvrMap[b.id] ? i + 1 : undefined,
-          vigiSyncKey: nvrMap[b.id] ? `${nvrMap[b.id]}:${i + 1}` : undefined,
-          source: nvrMap[b.id] ? "vigi" : "manual",
-          lastMotionAt: lastMotion,
-          lastPingAt: status !== "offline" ? now : daysAgo(3),
-        },
-      });
-    }
+  // ── Camera channels ────────────────────────────────────────────────────────
+  const cameras = [
+    {
+      label: "CAM-01",
+      location: "Main Entrance",
+      resolution: "4K",
+      fps: 25,
+      angle: "Wide 140°",
+      hasAudio: true,
+      status: "recording",
+    },
+    {
+      label: "CAM-02",
+      location: "Reception",
+      resolution: "1080p",
+      fps: 25,
+      angle: "Standard 90°",
+      hasAudio: true,
+      status: "recording",
+    },
+    {
+      label: "CAM-03",
+      location: "Office Floor",
+      resolution: "1080p",
+      fps: 25,
+      angle: "Wide 140°",
+      hasAudio: false,
+      status: "online",
+    },
+    {
+      label: "CAM-04",
+      location: "Server Room",
+      resolution: "4K",
+      fps: 30,
+      angle: "Narrow 60°",
+      hasAudio: false,
+      status: "recording",
+    },
+    {
+      label: "CAM-05",
+      location: "Parking / Outside",
+      resolution: "4K",
+      fps: 15,
+      angle: "PTZ 360°",
+      hasAudio: false,
+      status: "online",
+    },
+    {
+      label: "CAM-06",
+      location: "Meeting Room",
+      resolution: "1080p",
+      fps: 25,
+      angle: "Standard 90°",
+      hasAudio: true,
+      status: "online",
+    },
+  ] as const;
+
+  for (let i = 0; i < cameras.length; i++) {
+    const c = cameras[i];
+    await prisma.cameraDevice.create({
+      data: {
+        branchId: branch.id,
+        branchName: branch.name,
+        label: c.label,
+        location: c.location,
+        status: c.status,
+        resolution: c.resolution,
+        fps: c.fps,
+        angle: c.angle,
+        hasAudio: c.hasAudio,
+        hasMotionDetect: true,
+        nvrDevice: "TP-Link VIGI NVR1104H-4P",
+        rtspUrl: `rtsp://192.168.1.100:554/stream${i + 1}`,
+        vigiIntegrationId: nvr.id,
+        vigiChannel: i + 1,
+        vigiSyncKey: `${nvr.id}:${i + 1}`,
+        source: "vigi",
+        lastMotionAt: c.status !== "offline" ? daysAgo(i) : null,
+        lastPingAt: c.status !== "offline" ? now : daysAgo(3),
+      },
+    });
   }
-  console.log("✅ Camera devices seeded");
+  console.log(
+    "✅ Camera devices & Vigi integration seeded for Phulpur Mymensingh",
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function seedStaff() {
+  // ── Higher-role staff (company-wide, not tied to one branch) ──────────────
+  // Abdullah Al Mamun = CEO | Oliullah Mithu = Co-MD | Habib Sourov = Op Manager
   const members = [
     {
       email: "ceo@pouchcare.com",
       name: "Abdullah Al Mamun",
       role: SystemRole.CEO,
-      branch: "Dubai HQ",
+      branch: "Company — Global",
       jobRole: "Chief Executive Officer",
       skill: "Strategy & Growth",
       level: "Expert",
@@ -218,10 +239,10 @@ async function seedStaff() {
     },
     {
       email: "comd@pouchcare.com",
-      name: "Md Oliullah",
+      name: "Md. Oliullah Mithu",
       role: SystemRole.CO_MD,
-      branch: "Bangladesh HQ",
-      jobRole: "Managing Director",
+      branch: "Company — Global",
+      jobRole: "Co-Managing Director",
       skill: "On-Page SEO",
       level: "Expert",
       exp: 10,
@@ -230,9 +251,9 @@ async function seedStaff() {
     },
     {
       email: "ops@pouchcare.com",
-      name: "Md. Habibullah",
+      name: "Habib Sourov",
       role: SystemRole.OP_MANAGER,
-      branch: "Bangladesh HQ",
+      branch: "Company — Global",
       jobRole: "Operations Manager",
       skill: "Operations & Delivery",
       level: "Expert",
@@ -240,12 +261,13 @@ async function seedStaff() {
       salary: 2500,
       join: new Date("2019-03-01"),
     },
+    // ── Phulpur Mymensingh branch — under Branch Manager Zihadujjaman ────────
     {
       email: "branch@pouchcare.com",
-      name: "Zihadduzzaman",
+      name: "Zihadujjaman",
       role: SystemRole.BRANCH_MANAGER,
-      branch: "Dhaka",
-      jobRole: "Branch Manager — Dhaka",
+      branch: BRANCH_NAME,
+      jobRole: "Branch Manager — Phulpur Mymensingh",
       skill: "Client Management",
       level: "Advanced",
       exp: 4,
@@ -256,7 +278,7 @@ async function seedStaff() {
       email: "hr@pouchcare.com",
       name: "Fatima Akter",
       role: SystemRole.HR_MANAGER,
-      branch: "Bangladesh HQ",
+      branch: BRANCH_NAME,
       jobRole: "HR Manager",
       skill: "Human Resources",
       level: "Advanced",
@@ -268,7 +290,7 @@ async function seedStaff() {
       email: "dev1@pouchcare.com",
       name: "Rakib Hasan",
       role: SystemRole.STAFF,
-      branch: "Bangladesh HQ",
+      branch: BRANCH_NAME,
       jobRole: "Full-Stack Developer",
       skill: "React / Node.js",
       level: "Advanced",
@@ -280,7 +302,7 @@ async function seedStaff() {
       email: "seo1@pouchcare.com",
       name: "Nusrat Jahan",
       role: SystemRole.STAFF,
-      branch: "Dhaka",
+      branch: BRANCH_NAME,
       jobRole: "SEO Specialist",
       skill: "Link Building",
       level: "Intermediate",
@@ -292,7 +314,7 @@ async function seedStaff() {
       email: "content1@pouchcare.com",
       name: "Tanvir Ahmed",
       role: SystemRole.STAFF,
-      branch: "Dhaka",
+      branch: BRANCH_NAME,
       jobRole: "Content Writer",
       skill: "SEO Content Writing",
       level: "Intermediate",
@@ -304,7 +326,7 @@ async function seedStaff() {
       email: "design1@pouchcare.com",
       name: "Ayesha Siddika",
       role: SystemRole.STAFF,
-      branch: "Bangladesh HQ",
+      branch: BRANCH_NAME,
       jobRole: "UI/UX Designer",
       skill: "Figma / Adobe XD",
       level: "Intermediate",
@@ -316,7 +338,7 @@ async function seedStaff() {
       email: "intern1@pouchcare.com",
       name: "Mehedi Hasan",
       role: SystemRole.INTERN,
-      branch: "Dhaka",
+      branch: BRANCH_NAME,
       jobRole: "SEO Intern",
       skill: "On-Page SEO",
       level: "Beginner",
@@ -372,7 +394,7 @@ async function seedManagedDevices(staffIds: Record<string, string>) {
       ipAddress: "10.10.0.10",
       status: "Active",
       systemRole: "CEO",
-      branch: "Dubai HQ",
+      branch: "Company — Global",
     },
     {
       email: "comd@pouchcare.com",
@@ -382,7 +404,7 @@ async function seedManagedDevices(staffIds: Record<string, string>) {
       ipAddress: "10.10.0.11",
       status: "Active",
       systemRole: "CO_MD",
-      branch: "Bangladesh HQ",
+      branch: "Company — Global",
     },
     {
       email: "ops@pouchcare.com",
@@ -392,17 +414,17 @@ async function seedManagedDevices(staffIds: Record<string, string>) {
       ipAddress: "10.10.0.15",
       status: "Active",
       systemRole: "OP_MANAGER",
-      branch: "Bangladesh HQ",
+      branch: "Company — Global",
     },
     {
       email: "branch@pouchcare.com",
-      deviceName: "Dhaka-Desk-01",
+      deviceName: "Phulpur-Desk-01",
       deviceType: "Desktop",
       os: "Windows 11",
-      ipAddress: "10.10.2.21",
+      ipAddress: "192.168.1.21",
       status: "Active",
       systemRole: "BRANCH_MANAGER",
-      branch: "Dhaka",
+      branch: BRANCH_NAME,
     },
     {
       email: "hr@pouchcare.com",
@@ -412,7 +434,7 @@ async function seedManagedDevices(staffIds: Record<string, string>) {
       ipAddress: "10.10.0.20",
       status: "Active",
       systemRole: "HR_MANAGER",
-      branch: "Bangladesh HQ",
+      branch: BRANCH_NAME,
     },
     {
       email: "dev1@pouchcare.com",
@@ -422,7 +444,7 @@ async function seedManagedDevices(staffIds: Record<string, string>) {
       ipAddress: "10.10.0.25",
       status: "Active",
       systemRole: "STAFF",
-      branch: "Bangladesh HQ",
+      branch: BRANCH_NAME,
     },
     {
       email: "seo1@pouchcare.com",
@@ -432,7 +454,7 @@ async function seedManagedDevices(staffIds: Record<string, string>) {
       ipAddress: "10.10.2.30",
       status: "Active",
       systemRole: "STAFF",
-      branch: "Dhaka",
+      branch: BRANCH_NAME,
     },
     {
       email: "content1@pouchcare.com",
@@ -442,7 +464,7 @@ async function seedManagedDevices(staffIds: Record<string, string>) {
       ipAddress: "10.10.2.31",
       status: "Active",
       systemRole: "STAFF",
-      branch: "Dhaka",
+      branch: BRANCH_NAME,
     },
     {
       email: "design1@pouchcare.com",
@@ -452,7 +474,7 @@ async function seedManagedDevices(staffIds: Record<string, string>) {
       ipAddress: "10.10.0.26",
       status: "Active",
       systemRole: "STAFF",
-      branch: "Bangladesh HQ",
+      branch: BRANCH_NAME,
     },
     {
       email: "intern1@pouchcare.com",
@@ -462,7 +484,7 @@ async function seedManagedDevices(staffIds: Record<string, string>) {
       ipAddress: "10.10.2.40",
       status: "Active",
       systemRole: "INTERN",
-      branch: "Dhaka",
+      branch: BRANCH_NAME,
     },
   ];
 
@@ -1298,8 +1320,10 @@ async function seedDailyReports(staffIds: Record<string, string>) {
       branch: "Bangladesh HQ",
       reportDate: daysAgo(1),
       hoursWorked: 9,
-      tasksCompleted: "Built portal notification API; fixed 3 TypeScript errors in invoice page",
-      plannedTomorrow: "Implement WebSocket for real-time notifications; code review for PR#42",
+      tasksCompleted:
+        "Built portal notification API; fixed 3 TypeScript errors in invoice page",
+      plannedTomorrow:
+        "Implement WebSocket for real-time notifications; code review for PR#42",
       mood: "Great",
     },
     {
@@ -1309,8 +1333,10 @@ async function seedDailyReports(staffIds: Record<string, string>) {
       branch: "Dhaka",
       reportDate: daysAgo(1),
       hoursWorked: 8,
-      tasksCompleted: "Sent 20 outreach emails; secured 5 guest post placements (DA30-40)",
-      plannedTomorrow: "Follow up with 15 pending publishers; compile DA/DR report",
+      tasksCompleted:
+        "Sent 20 outreach emails; secured 5 guest post placements (DA30-40)",
+      plannedTomorrow:
+        "Follow up with 15 pending publishers; compile DA/DR report",
       mood: "Good",
     },
     {
@@ -1320,7 +1346,8 @@ async function seedDailyReports(staffIds: Record<string, string>) {
       branch: "Dhaka",
       reportDate: daysAgo(1),
       hoursWorked: 7.5,
-      tasksCompleted: "Wrote 2 blog articles (1500 words each); edited 1 client brief",
+      tasksCompleted:
+        "Wrote 2 blog articles (1500 words each); edited 1 client brief",
       plannedTomorrow: "Write 2 more articles; proofread Bloom Beauty batch",
       mood: "Neutral",
     },
@@ -1331,8 +1358,10 @@ async function seedDailyReports(staffIds: Record<string, string>) {
       branch: "Bangladesh HQ",
       reportDate: daysAgo(1),
       hoursWorked: 8,
-      tasksCompleted: "Designed 3 social media banners; created wireframe for new landing page",
-      plannedTomorrow: "Finalize landing page mockup; design email template for campaign",
+      tasksCompleted:
+        "Designed 3 social media banners; created wireframe for new landing page",
+      plannedTomorrow:
+        "Finalize landing page mockup; design email template for campaign",
       mood: "Great",
     },
     {
@@ -1342,7 +1371,8 @@ async function seedDailyReports(staffIds: Record<string, string>) {
       branch: "Bangladesh HQ",
       reportDate: daysAgo(1),
       hoursWorked: 8,
-      tasksCompleted: "Reviewed 5 applications for SEO position; conducted 1 phone screening",
+      tasksCompleted:
+        "Reviewed 5 applications for SEO position; conducted 1 phone screening",
       plannedTomorrow: "Schedule 2 interviews; update leave balance sheet",
       mood: "Good",
     },
@@ -1369,16 +1399,76 @@ async function seedDailyReports(staffIds: Record<string, string>) {
 
 async function seedPayroll(staffIds: Record<string, string>) {
   const payrollData = [
-    { email: "ceo@pouchcare.com", name: "Abdullah Al Mamun", role: "CEO", branch: "Dubai HQ", base: 0 },
-    { email: "comd@pouchcare.com", name: "Md Oliullah", role: "CO_MD", branch: "Bangladesh HQ", base: 0 },
-    { email: "ops@pouchcare.com", name: "Md. Habibullah", role: "OP_MANAGER", branch: "Bangladesh HQ", base: 2500 },
-    { email: "branch@pouchcare.com", name: "Zihadduzzaman", role: "BRANCH_MANAGER", branch: "Dhaka", base: 2000 },
-    { email: "hr@pouchcare.com", name: "Fatima Akter", role: "HR_MANAGER", branch: "Bangladesh HQ", base: 1800 },
-    { email: "dev1@pouchcare.com", name: "Rakib Hasan", role: "STAFF", branch: "Bangladesh HQ", base: 1500 },
-    { email: "seo1@pouchcare.com", name: "Nusrat Jahan", role: "STAFF", branch: "Dhaka", base: 1200 },
-    { email: "content1@pouchcare.com", name: "Tanvir Ahmed", role: "STAFF", branch: "Dhaka", base: 900 },
-    { email: "design1@pouchcare.com", name: "Ayesha Siddika", role: "STAFF", branch: "Bangladesh HQ", base: 1100 },
-    { email: "intern1@pouchcare.com", name: "Mehedi Hasan", role: "INTERN", branch: "Dhaka", base: 400 },
+    {
+      email: "ceo@pouchcare.com",
+      name: "Abdullah Al Mamun",
+      role: "CEO",
+      branch: "Dubai HQ",
+      base: 0,
+    },
+    {
+      email: "comd@pouchcare.com",
+      name: "Md Oliullah",
+      role: "CO_MD",
+      branch: "Bangladesh HQ",
+      base: 0,
+    },
+    {
+      email: "ops@pouchcare.com",
+      name: "Md. Habibullah",
+      role: "OP_MANAGER",
+      branch: "Bangladesh HQ",
+      base: 2500,
+    },
+    {
+      email: "branch@pouchcare.com",
+      name: "Zihadduzzaman",
+      role: "BRANCH_MANAGER",
+      branch: "Dhaka",
+      base: 2000,
+    },
+    {
+      email: "hr@pouchcare.com",
+      name: "Fatima Akter",
+      role: "HR_MANAGER",
+      branch: "Bangladesh HQ",
+      base: 1800,
+    },
+    {
+      email: "dev1@pouchcare.com",
+      name: "Rakib Hasan",
+      role: "STAFF",
+      branch: "Bangladesh HQ",
+      base: 1500,
+    },
+    {
+      email: "seo1@pouchcare.com",
+      name: "Nusrat Jahan",
+      role: "STAFF",
+      branch: "Dhaka",
+      base: 1200,
+    },
+    {
+      email: "content1@pouchcare.com",
+      name: "Tanvir Ahmed",
+      role: "STAFF",
+      branch: "Dhaka",
+      base: 900,
+    },
+    {
+      email: "design1@pouchcare.com",
+      name: "Ayesha Siddika",
+      role: "STAFF",
+      branch: "Bangladesh HQ",
+      base: 1100,
+    },
+    {
+      email: "intern1@pouchcare.com",
+      name: "Mehedi Hasan",
+      role: "INTERN",
+      branch: "Dhaka",
+      base: 400,
+    },
   ];
 
   const months = [
@@ -1433,16 +1523,96 @@ async function seedPayroll(staffIds: Record<string, string>) {
 
 async function seedPerformanceRatings(staffIds: Record<string, string>) {
   const ratings = [
-    { email: "ceo@pouchcare.com", name: "Abdullah Al Mamun", overall: 4.9, quality: 4.8, comms: 4.9, punct: 4.8, team: 4.9 },
-    { email: "comd@pouchcare.com", name: "Md Oliullah", overall: 4.8, quality: 4.9, comms: 4.7, punct: 4.8, team: 4.8 },
-    { email: "ops@pouchcare.com", name: "Md. Habibullah", overall: 4.6, quality: 4.7, comms: 4.5, punct: 4.6, team: 4.6 },
-    { email: "branch@pouchcare.com", name: "Zihadduzzaman", overall: 4.4, quality: 4.3, comms: 4.5, punct: 4.4, team: 4.3 },
-    { email: "hr@pouchcare.com", name: "Fatima Akter", overall: 4.5, quality: 4.4, comms: 4.7, punct: 4.5, team: 4.6 },
-    { email: "dev1@pouchcare.com", name: "Rakib Hasan", overall: 4.6, quality: 4.8, comms: 4.3, punct: 4.5, team: 4.4 },
-    { email: "seo1@pouchcare.com", name: "Nusrat Jahan", overall: 4.3, quality: 4.4, comms: 4.2, punct: 4.3, team: 4.5 },
-    { email: "content1@pouchcare.com", name: "Tanvir Ahmed", overall: 4.1, quality: 4.2, comms: 4.0, punct: 4.1, team: 4.2 },
-    { email: "design1@pouchcare.com", name: "Ayesha Siddika", overall: 4.4, quality: 4.6, comms: 4.3, punct: 4.2, team: 4.5 },
-    { email: "intern1@pouchcare.com", name: "Mehedi Hasan", overall: 3.8, quality: 3.7, comms: 3.9, punct: 4.0, team: 3.8 },
+    {
+      email: "ceo@pouchcare.com",
+      name: "Abdullah Al Mamun",
+      overall: 4.9,
+      quality: 4.8,
+      comms: 4.9,
+      punct: 4.8,
+      team: 4.9,
+    },
+    {
+      email: "comd@pouchcare.com",
+      name: "Md Oliullah",
+      overall: 4.8,
+      quality: 4.9,
+      comms: 4.7,
+      punct: 4.8,
+      team: 4.8,
+    },
+    {
+      email: "ops@pouchcare.com",
+      name: "Md. Habibullah",
+      overall: 4.6,
+      quality: 4.7,
+      comms: 4.5,
+      punct: 4.6,
+      team: 4.6,
+    },
+    {
+      email: "branch@pouchcare.com",
+      name: "Zihadduzzaman",
+      overall: 4.4,
+      quality: 4.3,
+      comms: 4.5,
+      punct: 4.4,
+      team: 4.3,
+    },
+    {
+      email: "hr@pouchcare.com",
+      name: "Fatima Akter",
+      overall: 4.5,
+      quality: 4.4,
+      comms: 4.7,
+      punct: 4.5,
+      team: 4.6,
+    },
+    {
+      email: "dev1@pouchcare.com",
+      name: "Rakib Hasan",
+      overall: 4.6,
+      quality: 4.8,
+      comms: 4.3,
+      punct: 4.5,
+      team: 4.4,
+    },
+    {
+      email: "seo1@pouchcare.com",
+      name: "Nusrat Jahan",
+      overall: 4.3,
+      quality: 4.4,
+      comms: 4.2,
+      punct: 4.3,
+      team: 4.5,
+    },
+    {
+      email: "content1@pouchcare.com",
+      name: "Tanvir Ahmed",
+      overall: 4.1,
+      quality: 4.2,
+      comms: 4.0,
+      punct: 4.1,
+      team: 4.2,
+    },
+    {
+      email: "design1@pouchcare.com",
+      name: "Ayesha Siddika",
+      overall: 4.4,
+      quality: 4.6,
+      comms: 4.3,
+      punct: 4.2,
+      team: 4.5,
+    },
+    {
+      email: "intern1@pouchcare.com",
+      name: "Mehedi Hasan",
+      overall: 3.8,
+      quality: 3.7,
+      comms: 3.9,
+      punct: 4.0,
+      team: 3.8,
+    },
   ];
 
   for (const r of ratings) {
@@ -2944,8 +3114,8 @@ async function seedPortal() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function seedPortalExtras(portalIds: Record<string, string>) {
-  const johnId = portalIds['john@example.com'];
-  const aliceId = portalIds['alice@example.com'];
+  const johnId = portalIds["john@example.com"];
+  const aliceId = portalIds["alice@example.com"];
 
   if (!johnId) return;
 
@@ -2953,30 +3123,30 @@ async function seedPortalExtras(portalIds: Record<string, string>) {
   const apkJobs = [
     {
       portalMemberId: johnId,
-      appName: 'PouchCare Mobile',
-      url: 'https://pouchcare.com',
-      plan: 'pro',
-      status: 'completed',
+      appName: "PouchCare Mobile",
+      url: "https://pouchcare.com",
+      plan: "pro",
+      status: "completed",
       apkSizeMb: 12.4,
-      downloadUrl: 'https://cdn.pouchcare.com/apk/pouchcare-mobile-v1.0.apk',
+      downloadUrl: "https://cdn.pouchcare.com/apk/pouchcare-mobile-v1.0.apk",
     },
     {
       portalMemberId: johnId,
-      appName: 'My Portfolio App',
-      url: 'https://john-portfolio.com',
-      plan: 'basic',
-      status: 'processing',
+      appName: "My Portfolio App",
+      url: "https://john-portfolio.com",
+      plan: "basic",
+      status: "processing",
       apkSizeMb: null,
       downloadUrl: null,
     },
     {
       portalMemberId: aliceId ?? johnId,
-      appName: 'Alice Blog App',
-      url: 'https://alice-blog.com',
-      plan: 'basic',
-      status: 'completed',
+      appName: "Alice Blog App",
+      url: "https://alice-blog.com",
+      plan: "basic",
+      status: "completed",
       apkSizeMb: 8.7,
-      downloadUrl: 'https://cdn.pouchcare.com/apk/alice-blog-v1.0.apk',
+      downloadUrl: "https://cdn.pouchcare.com/apk/alice-blog-v1.0.apk",
     },
   ];
   for (const job of apkJobs) {
@@ -2987,38 +3157,47 @@ async function seedPortalExtras(portalIds: Record<string, string>) {
   const sessions = [
     {
       portalMemberId: johnId,
-      tokenHash: crypto.createHash('sha256').update('seed-session-token-1').digest('hex'),
-      deviceType: 'Desktop',
-      browserName: 'Chrome',
-      osName: 'Windows 11',
-      ipAddress: '203.0.113.10',
-      country: 'BD',
-      city: 'Dhaka',
-      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/124.0',
+      tokenHash: crypto
+        .createHash("sha256")
+        .update("seed-session-token-1")
+        .digest("hex"),
+      deviceType: "Desktop",
+      browserName: "Chrome",
+      osName: "Windows 11",
+      ipAddress: "203.0.113.10",
+      country: "BD",
+      city: "Dhaka",
+      userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/124.0",
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
     },
     {
       portalMemberId: johnId,
-      tokenHash: crypto.createHash('sha256').update('seed-session-token-2').digest('hex'),
-      deviceType: 'Mobile',
-      browserName: 'Safari',
-      osName: 'iOS 17',
-      ipAddress: '203.0.113.11',
-      country: 'BD',
-      city: 'Chittagong',
-      userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0) Safari/605.1.15',
+      tokenHash: crypto
+        .createHash("sha256")
+        .update("seed-session-token-2")
+        .digest("hex"),
+      deviceType: "Mobile",
+      browserName: "Safari",
+      osName: "iOS 17",
+      ipAddress: "203.0.113.11",
+      country: "BD",
+      city: "Chittagong",
+      userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0) Safari/605.1.15",
       expiresAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
     },
     {
       portalMemberId: aliceId ?? johnId,
-      tokenHash: crypto.createHash('sha256').update('seed-session-token-3').digest('hex'),
-      deviceType: 'Desktop',
-      browserName: 'Firefox',
-      osName: 'macOS',
-      ipAddress: '203.0.113.50',
-      country: 'CA',
-      city: 'Toronto',
-      userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15) Firefox/125.0',
+      tokenHash: crypto
+        .createHash("sha256")
+        .update("seed-session-token-3")
+        .digest("hex"),
+      deviceType: "Desktop",
+      browserName: "Firefox",
+      osName: "macOS",
+      ipAddress: "203.0.113.50",
+      country: "CA",
+      city: "Toronto",
+      userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15) Firefox/125.0",
       expiresAt: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
     },
   ];
@@ -3030,48 +3209,48 @@ async function seedPortalExtras(portalIds: Record<string, string>) {
   const loginLogs = [
     {
       portalMemberId: johnId,
-      email: 'john@example.com',
-      ipAddress: '203.0.113.10',
-      country: 'BD',
-      city: 'Dhaka',
-      deviceType: 'Desktop',
-      browserName: 'Chrome',
-      osName: 'Windows 11',
-      status: 'success',
+      email: "john@example.com",
+      ipAddress: "203.0.113.10",
+      country: "BD",
+      city: "Dhaka",
+      deviceType: "Desktop",
+      browserName: "Chrome",
+      osName: "Windows 11",
+      status: "success",
     },
     {
       portalMemberId: johnId,
-      email: 'john@example.com',
-      ipAddress: '198.51.100.5',
-      country: 'US',
-      city: 'New York',
-      deviceType: 'Desktop',
-      browserName: 'Firefox',
-      osName: 'macOS',
-      status: 'success',
+      email: "john@example.com",
+      ipAddress: "198.51.100.5",
+      country: "US",
+      city: "New York",
+      deviceType: "Desktop",
+      browserName: "Firefox",
+      osName: "macOS",
+      status: "success",
     },
     {
       portalMemberId: johnId,
-      email: 'john@example.com',
-      ipAddress: '192.0.2.99',
-      country: 'RU',
-      city: 'Moscow',
-      deviceType: 'Desktop',
-      browserName: 'Chrome',
-      osName: 'Linux',
-      status: 'failed',
-      failureReason: 'Invalid password',
+      email: "john@example.com",
+      ipAddress: "192.0.2.99",
+      country: "RU",
+      city: "Moscow",
+      deviceType: "Desktop",
+      browserName: "Chrome",
+      osName: "Linux",
+      status: "failed",
+      failureReason: "Invalid password",
     },
     {
       portalMemberId: aliceId ?? johnId,
-      email: 'alice@example.com',
-      ipAddress: '203.0.113.50',
-      country: 'AE',
-      city: 'Dubai',
-      deviceType: 'Mobile',
-      browserName: 'Safari',
-      osName: 'iOS 17',
-      status: 'success',
+      email: "alice@example.com",
+      ipAddress: "203.0.113.50",
+      country: "AE",
+      city: "Dubai",
+      deviceType: "Mobile",
+      browserName: "Safari",
+      osName: "iOS 17",
+      status: "success",
     },
   ];
   for (const log of loginLogs) {
@@ -3081,13 +3260,13 @@ async function seedPortalExtras(portalIds: Record<string, string>) {
   // Portal-linked invoices
   const invoices = [
     {
-      invoiceNumber: 'INV-P001',
-      clientName: 'John Doe',
-      clientEmail: 'john@example.com',
+      invoiceNumber: "INV-P001",
+      clientName: "John Doe",
+      clientEmail: "john@example.com",
       portalMemberId: johnId,
-      service: 'Link Building (50x DA40+)',
-      status: 'Paid',
-      paymentMethod: 'Wallet',
+      service: "Link Building (50x DA40+)",
+      status: "Paid",
+      paymentMethod: "Wallet",
       amountUsd: 750,
       amountBdt: 93000,
       issueDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
@@ -3095,25 +3274,25 @@ async function seedPortalExtras(portalIds: Record<string, string>) {
       paidDate: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000),
     },
     {
-      invoiceNumber: 'INV-P002',
-      clientName: 'John Doe',
-      clientEmail: 'john@example.com',
+      invoiceNumber: "INV-P002",
+      clientName: "John Doe",
+      clientEmail: "john@example.com",
       portalMemberId: johnId,
-      service: 'Web Development',
-      status: 'Pending',
+      service: "Web Development",
+      status: "Pending",
       amountUsd: 2500,
       amountBdt: 310000,
       issueDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
       dueDate: new Date(Date.now() + 25 * 24 * 60 * 60 * 1000),
     },
     {
-      invoiceNumber: 'INV-P003',
-      clientName: 'Alice Smith',
-      clientEmail: 'alice@example.com',
+      invoiceNumber: "INV-P003",
+      clientName: "Alice Smith",
+      clientEmail: "alice@example.com",
       portalMemberId: aliceId ?? johnId,
-      service: 'Monthly SEO Package',
-      status: 'Paid',
-      paymentMethod: 'Bank Transfer',
+      service: "Monthly SEO Package",
+      status: "Paid",
+      paymentMethod: "Bank Transfer",
       amountUsd: 500,
       amountBdt: 62000,
       issueDate: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000),
@@ -3121,12 +3300,12 @@ async function seedPortalExtras(portalIds: Record<string, string>) {
       paidDate: new Date(Date.now() - 35 * 24 * 60 * 60 * 1000),
     },
     {
-      invoiceNumber: 'INV-P004',
-      clientName: 'John Doe',
-      clientEmail: 'john@example.com',
+      invoiceNumber: "INV-P004",
+      clientName: "John Doe",
+      clientEmail: "john@example.com",
       portalMemberId: johnId,
-      service: 'Content Writing (10 articles)',
-      status: 'Overdue',
+      service: "Content Writing (10 articles)",
+      status: "Overdue",
       amountUsd: 350,
       amountBdt: 43400,
       issueDate: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000),
@@ -3134,47 +3313,49 @@ async function seedPortalExtras(portalIds: Record<string, string>) {
     },
   ];
   for (const inv of invoices) {
-    await prisma.invoice.upsert({
-      where: { invoiceNumber: inv.invoiceNumber },
-      update: {},
-      create: inv as any,
-    }).catch(() => null);
+    await prisma.invoice
+      .upsert({
+        where: { invoiceNumber: inv.invoiceNumber },
+        update: {},
+        create: inv as any,
+      })
+      .catch(() => null);
   }
 
   // Portal-linked domains
   const portalDomains = [
     {
-      domainName: 'johndoe-seo.com',
-      status: 'Active',
-      registrar: 'Namecheap',
+      domainName: "johndoe-seo.com",
+      status: "Active",
+      registrar: "Namecheap",
       portalMemberId: johnId,
       expiryDate: new Date(Date.now() + 300 * 24 * 60 * 60 * 1000),
       registrationDate: new Date(Date.now() - 65 * 24 * 60 * 60 * 1000),
       annualRenewalCost: 12.99,
-      sslStatus: 'Valid',
-      niche: 'SEO',
+      sslStatus: "Valid",
+      niche: "SEO",
     },
     {
-      domainName: 'john-portfolio.dev',
-      status: 'Active',
-      registrar: 'GoDaddy',
+      domainName: "john-portfolio.dev",
+      status: "Active",
+      registrar: "GoDaddy",
       portalMemberId: johnId,
       expiryDate: new Date(Date.now() + 200 * 24 * 60 * 60 * 1000),
       registrationDate: new Date(Date.now() - 120 * 24 * 60 * 60 * 1000),
       annualRenewalCost: 15.99,
-      sslStatus: 'Valid',
-      niche: 'Portfolio',
+      sslStatus: "Valid",
+      niche: "Portfolio",
     },
     {
-      domainName: 'alice-blog.com',
-      status: 'Active',
-      registrar: 'Namecheap',
+      domainName: "alice-blog.com",
+      status: "Active",
+      registrar: "Namecheap",
       portalMemberId: aliceId ?? johnId,
       expiryDate: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000),
       registrationDate: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000),
       annualRenewalCost: 10.99,
-      sslStatus: 'Valid',
-      niche: 'Blog',
+      sslStatus: "Valid",
+      niche: "Blog",
     },
   ];
   for (const d of portalDomains) {
@@ -3184,45 +3365,45 @@ async function seedPortalExtras(portalIds: Record<string, string>) {
   // Portal-linked websites
   const portalWebsites = [
     {
-      name: 'JohnDoe SEO Agency',
-      url: 'https://johndoe-seo.com',
-      type: 'Business',
-      status: 'Live',
-      platform: 'WordPress',
-      hostedOn: 'Server-01',
-      domainLinked: 'johndoe-seo.com',
+      name: "JohnDoe SEO Agency",
+      url: "https://johndoe-seo.com",
+      type: "Business",
+      status: "Live",
+      platform: "WordPress",
+      hostedOn: "Server-01",
+      domainLinked: "johndoe-seo.com",
       portalMemberId: johnId,
       monthlyTraffic: 2500,
       daScore: 28,
-      sslStatus: 'Valid',
+      sslStatus: "Valid",
       lastUpdated: new Date(),
     },
     {
-      name: 'John Portfolio',
-      url: 'https://john-portfolio.dev',
-      type: 'Portfolio',
-      status: 'Live',
-      platform: 'React',
-      hostedOn: 'Vercel',
-      domainLinked: 'john-portfolio.dev',
+      name: "John Portfolio",
+      url: "https://john-portfolio.dev",
+      type: "Portfolio",
+      status: "Live",
+      platform: "React",
+      hostedOn: "Vercel",
+      domainLinked: "john-portfolio.dev",
       portalMemberId: johnId,
       monthlyTraffic: 800,
       daScore: 12,
-      sslStatus: 'Valid',
+      sslStatus: "Valid",
       lastUpdated: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
     },
     {
-      name: 'Alice Blog',
-      url: 'https://alice-blog.com',
-      type: 'Blog',
-      status: 'Live',
-      platform: 'WordPress',
-      hostedOn: 'Server-02',
-      domainLinked: 'alice-blog.com',
+      name: "Alice Blog",
+      url: "https://alice-blog.com",
+      type: "Blog",
+      status: "Live",
+      platform: "WordPress",
+      hostedOn: "Server-02",
+      domainLinked: "alice-blog.com",
       portalMemberId: aliceId ?? johnId,
       monthlyTraffic: 1200,
       daScore: 18,
-      sslStatus: 'Valid',
+      sslStatus: "Valid",
       lastUpdated: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
     },
   ];
@@ -3230,7 +3411,7 @@ async function seedPortalExtras(portalIds: Record<string, string>) {
     await prisma.website.create({ data: w as any }).catch(() => null);
   }
 
-  console.log('✅ Portal extras (APK jobs, sessions, login logs) seeded');
+  console.log("✅ Portal extras (APK jobs, sessions, login logs) seeded");
 }
 
 async function seedNotifications(
@@ -3710,44 +3891,279 @@ async function seedMisc() {
 async function seedSystemSettings() {
   const settings = [
     // General
-    { key: "company.name", value: JSON.stringify("PouchCare"), type: "string", group: "general", label: "Company Name", description: "Organization display name", isPublic: true },
-    { key: "company.email", value: JSON.stringify("info@pouchcare.com"), type: "string", group: "general", label: "Contact Email", description: "Primary contact email", isPublic: true },
-    { key: "company.phone", value: JSON.stringify("+880-1700-000000"), type: "string", group: "general", label: "Contact Phone", description: "Primary phone number", isPublic: true },
-    { key: "company.currency", value: JSON.stringify("USD"), type: "string", group: "general", label: "Default Currency", description: "Default system currency" },
-    { key: "company.timezone", value: JSON.stringify("Asia/Dhaka"), type: "string", group: "general", label: "Timezone", description: "System timezone" },
-    { key: "company.logo_url", value: JSON.stringify("/images/logo.svg"), type: "string", group: "general", label: "Logo URL", description: "Path to company logo", isPublic: true },
+    {
+      key: "company.name",
+      value: JSON.stringify("PouchCare"),
+      type: "string",
+      group: "general",
+      label: "Company Name",
+      description: "Organization display name",
+      isPublic: true,
+    },
+    {
+      key: "company.email",
+      value: JSON.stringify("info@pouchcare.com"),
+      type: "string",
+      group: "general",
+      label: "Contact Email",
+      description: "Primary contact email",
+      isPublic: true,
+    },
+    {
+      key: "company.phone",
+      value: JSON.stringify("+880-1700-000000"),
+      type: "string",
+      group: "general",
+      label: "Contact Phone",
+      description: "Primary phone number",
+      isPublic: true,
+    },
+    {
+      key: "company.currency",
+      value: JSON.stringify("USD"),
+      type: "string",
+      group: "general",
+      label: "Default Currency",
+      description: "Default system currency",
+    },
+    {
+      key: "company.timezone",
+      value: JSON.stringify("Asia/Dhaka"),
+      type: "string",
+      group: "general",
+      label: "Timezone",
+      description: "System timezone",
+    },
+    {
+      key: "company.logo_url",
+      value: JSON.stringify("/images/logo.svg"),
+      type: "string",
+      group: "general",
+      label: "Logo URL",
+      description: "Path to company logo",
+      isPublic: true,
+    },
     // Financial
-    { key: "finance.tax_rate", value: JSON.stringify(0.05), type: "number", group: "financial", label: "Tax Rate", description: "Default tax percentage (0-1)" },
-    { key: "finance.invoice_prefix", value: JSON.stringify("INV"), type: "string", group: "financial", label: "Invoice Prefix", description: "Prefix for auto-generated invoice numbers" },
-    { key: "finance.auto_overdue_days", value: JSON.stringify(30), type: "number", group: "financial", label: "Auto Overdue Days", description: "Days before an unpaid invoice is marked overdue" },
-    { key: "finance.payment_methods", value: JSON.stringify(["Payoneer", "USDT TRC20", "Binance", "Bank Transfer", "Cash"]), type: "json", group: "financial", label: "Payment Methods", description: "Accepted payment methods" },
+    {
+      key: "finance.tax_rate",
+      value: JSON.stringify(0.05),
+      type: "number",
+      group: "financial",
+      label: "Tax Rate",
+      description: "Default tax percentage (0-1)",
+    },
+    {
+      key: "finance.invoice_prefix",
+      value: JSON.stringify("INV"),
+      type: "string",
+      group: "financial",
+      label: "Invoice Prefix",
+      description: "Prefix for auto-generated invoice numbers",
+    },
+    {
+      key: "finance.auto_overdue_days",
+      value: JSON.stringify(30),
+      type: "number",
+      group: "financial",
+      label: "Auto Overdue Days",
+      description: "Days before an unpaid invoice is marked overdue",
+    },
+    {
+      key: "finance.payment_methods",
+      value: JSON.stringify([
+        "Payoneer",
+        "USDT TRC20",
+        "Binance",
+        "Bank Transfer",
+        "Cash",
+      ]),
+      type: "json",
+      group: "financial",
+      label: "Payment Methods",
+      description: "Accepted payment methods",
+    },
     // Security
-    { key: "security.session_ttl_hours", value: JSON.stringify(168), type: "number", group: "security", label: "Session TTL (Hours)", description: "Portal session lifetime in hours" },
-    { key: "security.max_login_attempts", value: JSON.stringify(5), type: "number", group: "security", label: "Max Login Attempts", description: "Maximum failed logins before lockout" },
-    { key: "security.lockout_minutes", value: JSON.stringify(15), type: "number", group: "security", label: "Lockout Duration (Min)", description: "Account lockout duration in minutes" },
-    { key: "security.two_factor_required", value: JSON.stringify(false), type: "boolean", group: "security", label: "2FA Required", description: "Whether 2FA is mandatory for staff" },
-    { key: "security.ip_whitelist_enabled", value: JSON.stringify(false), type: "boolean", group: "security", label: "IP Whitelist Enabled", description: "Enable IP whitelist for admin panel" },
+    {
+      key: "security.session_ttl_hours",
+      value: JSON.stringify(168),
+      type: "number",
+      group: "security",
+      label: "Session TTL (Hours)",
+      description: "Portal session lifetime in hours",
+    },
+    {
+      key: "security.max_login_attempts",
+      value: JSON.stringify(5),
+      type: "number",
+      group: "security",
+      label: "Max Login Attempts",
+      description: "Maximum failed logins before lockout",
+    },
+    {
+      key: "security.lockout_minutes",
+      value: JSON.stringify(15),
+      type: "number",
+      group: "security",
+      label: "Lockout Duration (Min)",
+      description: "Account lockout duration in minutes",
+    },
+    {
+      key: "security.two_factor_required",
+      value: JSON.stringify(false),
+      type: "boolean",
+      group: "security",
+      label: "2FA Required",
+      description: "Whether 2FA is mandatory for staff",
+    },
+    {
+      key: "security.ip_whitelist_enabled",
+      value: JSON.stringify(false),
+      type: "boolean",
+      group: "security",
+      label: "IP Whitelist Enabled",
+      description: "Enable IP whitelist for admin panel",
+    },
     // Modules
-    { key: "modules.portal_enabled", value: JSON.stringify(true), type: "boolean", group: "modules", label: "Client Portal", description: "Enable the client portal" },
-    { key: "modules.crm_enabled", value: JSON.stringify(true), type: "boolean", group: "modules", label: "CRM Module", description: "Enable CRM / lead management" },
-    { key: "modules.hr_enabled", value: JSON.stringify(true), type: "boolean", group: "modules", label: "HR Module", description: "Enable HR / hiring module" },
-    { key: "modules.monitoring_enabled", value: JSON.stringify(true), type: "boolean", group: "modules", label: "Camera Monitoring", description: "Enable camera / CCTV monitoring" },
-    { key: "modules.plugins_enabled", value: JSON.stringify(true), type: "boolean", group: "modules", label: "Plugin Platform", description: "Enable plugin management" },
-    { key: "modules.tools_enabled", value: JSON.stringify(true), type: "boolean", group: "modules", label: "SEO Tools", description: "Enable SEO analysis tools" },
+    {
+      key: "modules.portal_enabled",
+      value: JSON.stringify(true),
+      type: "boolean",
+      group: "modules",
+      label: "Client Portal",
+      description: "Enable the client portal",
+    },
+    {
+      key: "modules.crm_enabled",
+      value: JSON.stringify(true),
+      type: "boolean",
+      group: "modules",
+      label: "CRM Module",
+      description: "Enable CRM / lead management",
+    },
+    {
+      key: "modules.hr_enabled",
+      value: JSON.stringify(true),
+      type: "boolean",
+      group: "modules",
+      label: "HR Module",
+      description: "Enable HR / hiring module",
+    },
+    {
+      key: "modules.monitoring_enabled",
+      value: JSON.stringify(true),
+      type: "boolean",
+      group: "modules",
+      label: "Camera Monitoring",
+      description: "Enable camera / CCTV monitoring",
+    },
+    {
+      key: "modules.plugins_enabled",
+      value: JSON.stringify(true),
+      type: "boolean",
+      group: "modules",
+      label: "Plugin Platform",
+      description: "Enable plugin management",
+    },
+    {
+      key: "modules.tools_enabled",
+      value: JSON.stringify(true),
+      type: "boolean",
+      group: "modules",
+      label: "SEO Tools",
+      description: "Enable SEO analysis tools",
+    },
     // Integrations
-    { key: "integrations.smtp_host", value: JSON.stringify("smtp.gmail.com"), type: "string", group: "integrations", label: "SMTP Host", description: "Email server hostname" },
-    { key: "integrations.smtp_port", value: JSON.stringify(587), type: "number", group: "integrations", label: "SMTP Port", description: "Email server port" },
-    { key: "integrations.whatsapp_enabled", value: JSON.stringify(false), type: "boolean", group: "integrations", label: "WhatsApp Alerts", description: "Enable WhatsApp notification integration" },
-    { key: "integrations.cloudflare_proxy", value: JSON.stringify(true), type: "boolean", group: "integrations", label: "Cloudflare Proxy", description: "Enable Cloudflare proxy on assets" },
+    {
+      key: "integrations.smtp_host",
+      value: JSON.stringify("smtp.gmail.com"),
+      type: "string",
+      group: "integrations",
+      label: "SMTP Host",
+      description: "Email server hostname",
+    },
+    {
+      key: "integrations.smtp_port",
+      value: JSON.stringify(587),
+      type: "number",
+      group: "integrations",
+      label: "SMTP Port",
+      description: "Email server port",
+    },
+    {
+      key: "integrations.whatsapp_enabled",
+      value: JSON.stringify(false),
+      type: "boolean",
+      group: "integrations",
+      label: "WhatsApp Alerts",
+      description: "Enable WhatsApp notification integration",
+    },
+    {
+      key: "integrations.cloudflare_proxy",
+      value: JSON.stringify(true),
+      type: "boolean",
+      group: "integrations",
+      label: "Cloudflare Proxy",
+      description: "Enable Cloudflare proxy on assets",
+    },
     // Notifications
-    { key: "notifications.email_on_order", value: JSON.stringify(true), type: "boolean", group: "notifications", label: "Email on New Order", description: "Send email when a portal order is placed" },
-    { key: "notifications.email_on_ticket", value: JSON.stringify(true), type: "boolean", group: "notifications", label: "Email on Ticket Reply", description: "Send email on support ticket replies" },
-    { key: "notifications.daily_digest", value: JSON.stringify(true), type: "boolean", group: "notifications", label: "Daily Digest", description: "Send daily summary digest to managers" },
+    {
+      key: "notifications.email_on_order",
+      value: JSON.stringify(true),
+      type: "boolean",
+      group: "notifications",
+      label: "Email on New Order",
+      description: "Send email when a portal order is placed",
+    },
+    {
+      key: "notifications.email_on_ticket",
+      value: JSON.stringify(true),
+      type: "boolean",
+      group: "notifications",
+      label: "Email on Ticket Reply",
+      description: "Send email on support ticket replies",
+    },
+    {
+      key: "notifications.daily_digest",
+      value: JSON.stringify(true),
+      type: "boolean",
+      group: "notifications",
+      label: "Daily Digest",
+      description: "Send daily summary digest to managers",
+    },
     // Portal
-    { key: "portal.commission_rate", value: JSON.stringify(0.20), type: "number", group: "general", label: "Commission Rate", description: "Default referral commission rate" },
-    { key: "portal.commission_hold_days", value: JSON.stringify(14), type: "number", group: "general", label: "Commission Hold Days", description: "Days to hold commission before release" },
-    { key: "portal.min_payout_usd", value: JSON.stringify(50), type: "number", group: "general", label: "Min Payout (USD)", description: "Minimum payout request amount" },
-    { key: "portal.registration_open", value: JSON.stringify(true), type: "boolean", group: "general", label: "Registration Open", description: "Allow new portal registrations", isPublic: true },
+    {
+      key: "portal.commission_rate",
+      value: JSON.stringify(0.2),
+      type: "number",
+      group: "general",
+      label: "Commission Rate",
+      description: "Default referral commission rate",
+    },
+    {
+      key: "portal.commission_hold_days",
+      value: JSON.stringify(14),
+      type: "number",
+      group: "general",
+      label: "Commission Hold Days",
+      description: "Days to hold commission before release",
+    },
+    {
+      key: "portal.min_payout_usd",
+      value: JSON.stringify(50),
+      type: "number",
+      group: "general",
+      label: "Min Payout (USD)",
+      description: "Minimum payout request amount",
+    },
+    {
+      key: "portal.registration_open",
+      value: JSON.stringify(true),
+      type: "boolean",
+      group: "general",
+      label: "Registration Open",
+      description: "Allow new portal registrations",
+      isPublic: true,
+    },
   ];
 
   for (const s of settings) {
@@ -3783,7 +4199,11 @@ async function seedSystemAuditLogs(staffIds: Record<string, string>) {
       actorId: ceoId || "system",
       actorName: "Abdullah Al Mamun",
       actorRole: "CEO",
-      details: JSON.stringify({ key: "portal.commission_rate", oldValue: 0.15, newValue: 0.20 }),
+      details: JSON.stringify({
+        key: "portal.commission_rate",
+        oldValue: 0.15,
+        newValue: 0.2,
+      }),
       createdAt: daysAgo(60),
     },
     {
@@ -3792,7 +4212,11 @@ async function seedSystemAuditLogs(staffIds: Record<string, string>) {
       actorId: ceoId || "system",
       actorName: "Abdullah Al Mamun",
       actorRole: "CEO",
-      details: JSON.stringify({ key: "security.max_login_attempts", oldValue: 10, newValue: 5 }),
+      details: JSON.stringify({
+        key: "security.max_login_attempts",
+        oldValue: 10,
+        newValue: 5,
+      }),
       createdAt: daysAgo(45),
     },
     {
@@ -3819,7 +4243,11 @@ async function seedSystemAuditLogs(staffIds: Record<string, string>) {
       actorId: opsId || "system",
       actorName: "Md. Habibullah",
       actorRole: "OP_MANAGER",
-      details: JSON.stringify({ staffName: "Zihadduzzaman", leaveType: "Annual", days: 5 }),
+      details: JSON.stringify({
+        staffName: "Zihadduzzaman",
+        leaveType: "Annual",
+        days: 5,
+      }),
       createdAt: daysAgo(30),
     },
     {
@@ -3828,7 +4256,11 @@ async function seedSystemAuditLogs(staffIds: Record<string, string>) {
       actorId: opsId || "system",
       actorName: "Md. Habibullah",
       actorRole: "OP_MANAGER",
-      details: JSON.stringify({ memberId: "john@example.com", amountUsd: 85, method: "USDT TRC20" }),
+      details: JSON.stringify({
+        memberId: "john@example.com",
+        amountUsd: 85,
+        method: "USDT TRC20",
+      }),
       createdAt: daysAgo(15),
     },
     {
@@ -3837,7 +4269,11 @@ async function seedSystemAuditLogs(staffIds: Record<string, string>) {
       actorId: ceoId || "system",
       actorName: "Abdullah Al Mamun",
       actorRole: "CEO",
-      details: JSON.stringify({ role: "BRANCH_MANAGER", key: "finance.access", allowed: true }),
+      details: JSON.stringify({
+        role: "BRANCH_MANAGER",
+        key: "finance.access",
+        allowed: true,
+      }),
       createdAt: daysAgo(10),
     },
     {
@@ -3846,7 +4282,10 @@ async function seedSystemAuditLogs(staffIds: Record<string, string>) {
       actorId: opsId || "system",
       actorName: "Md. Habibullah",
       actorRole: "OP_MANAGER",
-      details: JSON.stringify({ slug: "pouchcare-seo-helper", version: "1.1.0" }),
+      details: JSON.stringify({
+        slug: "pouchcare-seo-helper",
+        version: "1.1.0",
+      }),
       createdAt: daysAgo(7),
     },
     {
@@ -3855,7 +4294,10 @@ async function seedSystemAuditLogs(staffIds: Record<string, string>) {
       actorId: ceoId || "system",
       actorName: "Abdullah Al Mamun",
       actorRole: "CEO",
-      details: JSON.stringify({ email: "flagged@example.com", reason: "Fraud investigation" }),
+      details: JSON.stringify({
+        email: "flagged@example.com",
+        reason: "Fraud investigation",
+      }),
       createdAt: daysAgo(5),
     },
     {
@@ -3864,7 +4306,11 @@ async function seedSystemAuditLogs(staffIds: Record<string, string>) {
       actorId: ceoId || "system",
       actorName: "Abdullah Al Mamun",
       actorRole: "CEO",
-      details: JSON.stringify({ key: "modules.tools_enabled", oldValue: false, newValue: true }),
+      details: JSON.stringify({
+        key: "modules.tools_enabled",
+        oldValue: false,
+        newValue: true,
+      }),
       createdAt: daysAgo(3),
     },
     {
@@ -3939,7 +4385,9 @@ async function main() {
   console.log("  CEO:             ceo@pouchcare.com     (Abdullah Al Mamun)");
   console.log("  MD (Co-MD):      comd@pouchcare.com    (Md Oliullah)");
   console.log("  Ops Manager:     ops@pouchcare.com     (Md. Habibullah)");
-  console.log("  Branch Manager:  branch@pouchcare.com  (Zihadduzzaman — Dhaka)");
+  console.log(
+    "  Branch Manager:  branch@pouchcare.com  (Zihadduzzaman — Dhaka)",
+  );
   console.log("  HR Manager:      hr@pouchcare.com      (Fatima Akter)");
   console.log("  Developer:       dev1@pouchcare.com    (Rakib Hasan)");
   console.log("  SEO Specialist:  seo1@pouchcare.com    (Nusrat Jahan)");
@@ -3947,9 +4395,7 @@ async function main() {
   console.log("  Designer:        design1@pouchcare.com (Ayesha Siddika)");
   console.log("  Intern:          intern1@pouchcare.com (Mehedi Hasan)");
   console.log("  Portal Members:  john / alice / michael / omar @example.com");
-  console.log(
-    `  Portal (full test):  ${TEST_PORTAL_EMAIL}  /  Test@123`,
-  );
+  console.log(`  Portal (full test):  ${TEST_PORTAL_EMAIL}  /  Test@123`);
   console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 }
 

@@ -37,13 +37,13 @@ export function ClientSidebar() {
   const desktopCollapsed = !isMobile && isCollapsed;
 
   const sidebarInner = (
-    <div className="flex h-full min-h-0 flex-col bg-white">
-      <div className="flex h-14 shrink-0 items-center gap-3 border-b border-gray-200/80 px-4 lg:h-16">
+    <div className="flex h-full min-h-0 flex-col bg-white dark:bg-gray-900">
+      <div className="flex h-14 shrink-0 items-center gap-3 border-b border-gray-200/80 dark:border-gray-800 px-4 lg:h-16">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-600 text-sm font-bold text-white transition-transform duration-300 ease-out hover:scale-[1.03]">
           P
         </div>
         {!desktopCollapsed && (
-          <span className="truncate text-sm font-bold text-gray-900">
+          <span className="truncate text-sm font-bold text-gray-900 dark:text-gray-100">
             Portal
           </span>
         )}
@@ -51,7 +51,7 @@ export function ClientSidebar() {
           <button
             type="button"
             onClick={() => closeMobile()}
-            className="relative z-10 ml-auto rounded-lg p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+            className="relative z-10 ml-auto rounded-lg p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-400"
             aria-label="Close menu"
           >
             <X className="h-5 w-5" />
@@ -66,7 +66,7 @@ export function ClientSidebar() {
         {CLIENT_NAV_GROUPS.map((group) => (
           <div key={group.label} className="mb-4">
             {!desktopCollapsed && (
-              <p className="mb-1 px-2 text-[10px] font-semibold uppercase tracking-wider text-gray-400">
+              <p className="mb-1 px-2 text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
                 {group.label}
               </p>
             )}
@@ -83,8 +83,8 @@ export function ClientSidebar() {
                       cn(
                         "group relative flex items-center gap-2.5 rounded-lg px-2.5 py-2.5 text-sm transition-all duration-300 ease-out",
                         isActive
-                          ? "bg-primary-50/90 font-medium text-primary-800"
-                          : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
+                          ? "bg-primary-50/90 font-medium text-primary-800 dark:bg-primary-950/40 dark:text-primary-300"
+                          : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200",
                         !isActive &&
                           !desktopCollapsed &&
                           "hover:translate-x-0.5",
@@ -116,19 +116,19 @@ export function ClientSidebar() {
         ))}
       </nav>
 
-      <div className="shrink-0 border-t border-gray-100">
+      <div className="shrink-0 border-t border-gray-100 dark:border-gray-800">
         {user && (
           <Link
             to={paths.dashboardProfile}
             className={cn(
-              "flex items-center gap-2.5 p-3 transition-colors hover:bg-gray-50",
+              "flex items-center gap-2.5 p-3 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800",
               desktopCollapsed && "justify-center",
             )}
           >
             <Avatar name={user.fullName} src={user.avatarUrl} size="sm" />
             {!desktopCollapsed && (
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-gray-900">
+                <p className="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
                   {user.fullName}
                 </p>
                 <p className="truncate text-xs text-gray-400">{user.email}</p>
@@ -141,7 +141,7 @@ export function ClientSidebar() {
             type="button"
             onClick={toggle}
             className={cn(
-              "flex w-full items-center gap-2 border-t border-gray-100 py-2.5 text-xs text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-700",
+              "flex w-full items-center gap-2 border-t border-gray-100 py-2.5 text-xs text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-700 dark:border-gray-800 dark:hover:bg-gray-800 dark:hover:text-gray-300",
               isCollapsed ? "justify-center px-0" : "px-4",
             )}
             aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
@@ -184,7 +184,7 @@ export function ClientSidebar() {
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
               transition={{ type: "spring", damping: 36, stiffness: 380 }}
-              className="absolute inset-y-0 left-0 z-10 flex h-full w-[260px] min-h-0 flex-col bg-white shadow-2xl"
+              className="absolute inset-y-0 left-0 z-10 flex h-full w-[260px] min-h-0 flex-col bg-white shadow-2xl dark:bg-gray-900"
             >
               {sidebarInner}
             </motion.aside>
@@ -198,7 +198,7 @@ export function ClientSidebar() {
   return (
     <aside
       className={cn(
-        "fixed inset-y-0 left-0 z-30 hidden min-h-0 border-r border-gray-200/80 bg-white transition-[width] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] lg:block",
+        "fixed inset-y-0 left-0 z-30 hidden min-h-0 border-r border-gray-200/80 bg-white dark:border-gray-800 dark:bg-gray-900 transition-[width] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] lg:block",
         isCollapsed ? "w-[72px]" : "w-[260px]",
       )}
     >

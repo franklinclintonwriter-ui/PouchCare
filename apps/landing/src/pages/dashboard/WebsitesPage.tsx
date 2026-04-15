@@ -53,27 +53,33 @@ export default function WebsitesPage() {
       return;
     }
 
-    await createMutation.mutateAsync({
-      name: newName,
-      url: newUrl,
-      type: newType,
-      platform: newPlatform,
-    });
-
-    setShowAddForm(false);
-    setNewName("");
-    setNewUrl("");
-    setNewType("Business");
-    setNewPlatform("Custom");
-    toast.success("Website added successfully");
+    try {
+      await createMutation.mutateAsync({
+        name: newName,
+        url: newUrl,
+        type: newType,
+        platform: newPlatform,
+      });
+      setShowAddForm(false);
+      setNewName("");
+      setNewUrl("");
+      setNewType("Business");
+      setNewPlatform("Custom");
+      toast.success("Website added successfully");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to add website");
+    }
   };
 
   const handleDeleteWebsite = async () => {
     if (!deleteConfirm.id) return;
-
-    await deleteMutation.mutateAsync(deleteConfirm.id);
-    setDeleteConfirm({ open: false });
-    toast.success("Website deleted successfully");
+    try {
+      await deleteMutation.mutateAsync(deleteConfirm.id);
+      setDeleteConfirm({ open: false });
+      toast.success("Website deleted successfully");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to delete website");
+    }
   };
 
   const online = data.filter((w) => w.status === "online").length;
@@ -85,8 +91,8 @@ export default function WebsitesPage() {
     <div className="space-y-5 sm:space-y-6">
       <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
         <div className="flex-1">
-          <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">My Websites</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100 sm:text-2xl">My Websites</h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             Monitor uptime, SEO health, SSL status, and analytics for your sites.
           </p>
         </div>
@@ -104,8 +110,8 @@ export default function WebsitesPage() {
 
       {/* Add Website Form */}
       {showAddForm && (
-        <div className="rounded-2xl border border-gray-200/90 bg-white p-5 shadow-sm">
-          <h2 className="mb-4 text-lg font-semibold text-gray-900">Add New Website</h2>
+        <div className="rounded-2xl border border-gray-200/90 dark:border-gray-700 bg-white dark:bg-gray-900 p-5 shadow-sm">
+          <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">Add New Website</h2>
           <form onSubmit={handleAddWebsite} className="space-y-4">
             <div>
               <Label htmlFor="site-name" required>Name</Label>
@@ -138,7 +144,7 @@ export default function WebsitesPage() {
                   id="site-type"
                   value={newType}
                   onChange={(e) => setNewType(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm transition-colors hover:border-gray-300 focus-visible:border-primary-400 focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:outline-none disabled:cursor-not-allowed disabled:bg-gray-50 disabled:opacity-60"
+                  className="mt-1 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2.5 text-sm text-gray-900 dark:text-gray-100 shadow-sm transition-colors hover:border-gray-300 dark:hover:border-gray-600 focus-visible:border-primary-400 focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:outline-none disabled:cursor-not-allowed disabled:bg-gray-50 disabled:opacity-60"
                 >
                   <option value="Business">Business</option>
                   <option value="Portfolio">Portfolio</option>
@@ -154,7 +160,7 @@ export default function WebsitesPage() {
                   id="site-platform"
                   value={newPlatform}
                   onChange={(e) => setNewPlatform(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm transition-colors hover:border-gray-300 focus-visible:border-primary-400 focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:outline-none disabled:cursor-not-allowed disabled:bg-gray-50 disabled:opacity-60"
+                  className="mt-1 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2.5 text-sm text-gray-900 dark:text-gray-100 shadow-sm transition-colors hover:border-gray-300 dark:hover:border-gray-600 focus-visible:border-primary-400 focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:outline-none disabled:cursor-not-allowed disabled:bg-gray-50 disabled:opacity-60"
                 >
                   <option value="WordPress">WordPress</option>
                   <option value="React">React</option>
@@ -196,20 +202,20 @@ export default function WebsitesPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
-        <div className="rounded-xl border border-gray-200/80 bg-white p-4 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Sites</p>
-          <p className="mt-1 text-2xl font-bold tabular-nums text-gray-900">{websites.isLoading ? "…" : data.length}</p>
+        <div className="rounded-xl border border-gray-200/80 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 shadow-sm">
+          <p className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Sites</p>
+          <p className="mt-1 text-2xl font-bold tabular-nums text-gray-900 dark:text-gray-100">{websites.isLoading ? "…" : data.length}</p>
         </div>
-        <div className="rounded-xl border border-gray-200/80 bg-white p-4 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Online</p>
+        <div className="rounded-xl border border-gray-200/80 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 shadow-sm">
+          <p className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Online</p>
           <p className="mt-1 text-2xl font-bold tabular-nums text-emerald-700">{websites.isLoading ? "…" : online}</p>
         </div>
-        <div className="rounded-xl border border-gray-200/80 bg-white p-4 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Avg. SEO</p>
+        <div className="rounded-xl border border-gray-200/80 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 shadow-sm">
+          <p className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Avg. SEO</p>
           <p className={cn("mt-1 text-2xl font-bold tabular-nums", seoScoreColor(avgSeo))}>{websites.isLoading ? "…" : `${avgSeo}/100`}</p>
         </div>
-        <div className="rounded-xl border border-gray-200/80 bg-white p-4 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wide text-gray-500">SSL issues</p>
+        <div className="rounded-xl border border-gray-200/80 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 shadow-sm">
+          <p className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">SSL issues</p>
           <p className="mt-1 text-2xl font-bold tabular-nums text-red-600">
             {websites.isLoading ? "…" : data.filter((w) => !w.sslValid).length}
           </p>
@@ -222,20 +228,20 @@ export default function WebsitesPage() {
         description="Click a site to see detailed performance and SEO data."
       >
         {websites.isLoading && (
-          <p className="py-8 text-center text-sm text-gray-500">Loading websites…</p>
+          <p className="py-8 text-center text-sm text-gray-500 dark:text-gray-400">Loading websites…</p>
         )}
         {websites.error && (
           <p className="py-8 text-center text-sm text-red-500">Failed to load websites</p>
         )}
         {!websites.isLoading && !websites.error && data.length === 0 && (
-          <p className="py-8 text-center text-sm text-gray-500">No websites yet</p>
+          <p className="py-8 text-center text-sm text-gray-500 dark:text-gray-400">No websites yet</p>
         )}
         {!websites.isLoading && !websites.error && data.length > 0 && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-2">
           {data.map((site) => (
             <div
               key={site.id}
-              className="group flex flex-col rounded-2xl border border-gray-200/90 bg-white p-5 shadow-sm transition-all hover:border-primary-200 hover:shadow-md"
+              className="group flex flex-col rounded-2xl border border-gray-200/90 dark:border-gray-700 bg-white dark:bg-gray-900 p-5 shadow-sm transition-all hover:border-primary-200 hover:shadow-md"
             >
               {/* Header */}
               <div className="flex items-start justify-between gap-3">
@@ -243,11 +249,11 @@ export default function WebsitesPage() {
                   to={paths.dashboardWebsite(site.id)}
                   className="flex flex-1 items-center gap-3"
                 >
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gray-100 text-gray-500 group-hover:bg-primary-50 group-hover:text-primary-600">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 group-hover:bg-primary-50 group-hover:text-primary-600">
                     <Globe className="h-5 w-5" />
                   </div>
                   <div className="min-w-0">
-                    <p className="truncate font-semibold text-gray-900">{site.name}</p>
+                    <p className="truncate font-semibold text-gray-900 dark:text-gray-100">{site.name}</p>
                     <p className="truncate font-mono text-xs text-gray-400">{site.fqdn}</p>
                   </div>
                 </Link>
@@ -257,7 +263,7 @@ export default function WebsitesPage() {
                   </Badge>
                   <button
                     onClick={() => setDeleteConfirm({ open: true, id: site.id })}
-                    className="inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white p-1.5 text-gray-400 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+                    className="inline-flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-1.5 text-gray-400 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600"
                     aria-label="Delete website"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -268,7 +274,7 @@ export default function WebsitesPage() {
               {/* Metrics */}
               <Link
                 to={paths.dashboardWebsite(site.id)}
-                className="group/metrics mt-4 grid grid-cols-3 gap-3 border-t border-gray-100 pt-4 transition-opacity hover:opacity-80"
+                className="group/metrics mt-4 grid grid-cols-3 gap-3 border-t border-gray-100 dark:border-gray-800 pt-4 transition-opacity hover:opacity-80"
               >
                 <div>
                   <p className="flex items-center gap-1 text-xs text-gray-400">
@@ -282,7 +288,7 @@ export default function WebsitesPage() {
                   <p className="flex items-center gap-1 text-xs text-gray-400">
                     <Activity className="h-3 w-3" /> Uptime
                   </p>
-                  <p className="mt-0.5 text-lg font-bold tabular-nums text-gray-900">
+                  <p className="mt-0.5 text-lg font-bold tabular-nums text-gray-900 dark:text-gray-100">
                     {site.uptimePct}%
                   </p>
                 </div>
@@ -290,7 +296,7 @@ export default function WebsitesPage() {
                   <p className="flex items-center gap-1 text-xs text-gray-400">
                     <Eye className="h-3 w-3" /> Visitors
                   </p>
-                  <p className="mt-0.5 text-lg font-bold tabular-nums text-gray-900">
+                  <p className="mt-0.5 text-lg font-bold tabular-nums text-gray-900 dark:text-gray-100">
                     {site.analytics.visitorsMonth.toLocaleString()}
                   </p>
                 </div>
@@ -313,7 +319,7 @@ export default function WebsitesPage() {
                   SSL {site.sslValid ? "valid" : "expired"}
                 </span>
                 {site.hostingPlan && (
-                  <span className="inline-flex items-center gap-1 rounded-md border border-gray-200 bg-gray-50 px-1.5 py-0.5 font-medium text-gray-600">
+                  <span className="inline-flex items-center gap-1 rounded-md border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 px-1.5 py-0.5 font-medium text-gray-600 dark:text-gray-400">
                     <Shield className="h-3 w-3" />
                     {site.hostingPlan}
                   </span>

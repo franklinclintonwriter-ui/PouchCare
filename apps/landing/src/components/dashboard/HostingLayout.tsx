@@ -24,10 +24,9 @@ const tabs = [
 export function HostingLayout() {
   return (
     <div className="space-y-6 sm:space-y-8">
-      <div className="-mx-4 border-b border-gray-200/90 px-4 sm:mx-0 sm:rounded-xl sm:border sm:bg-white sm:shadow-sm">
-        <div
+      <div className="-mx-4 border-b border-gray-200/90 dark:border-gray-700 px-4 sm:mx-0 sm:rounded-xl sm:border sm:bg-white dark:sm:bg-gray-900 sm:shadow-sm">
+        <nav
           className="flex gap-1 overflow-x-auto overscroll-x-contain pb-px [-ms-overflow-style:none] [scrollbar-width:none] sm:gap-2 [&::-webkit-scrollbar]:hidden"
-          role="tablist"
           aria-label="Hosting sections"
         >
           {tabs.map(({ to, label, end, icon: Icon }) => (
@@ -38,14 +37,14 @@ export function HostingLayout() {
               className={({ isActive }) =>
                 isActive
                   ? "flex min-h-[44px] shrink-0 snap-start items-center gap-2 border-b-2 border-primary-600 px-3 py-3 text-sm font-semibold text-primary-800 transition-colors sm:min-h-0 sm:rounded-t-lg sm:border-b-2 sm:bg-primary-50/60 sm:px-4 sm:py-3"
-                  : "flex min-h-[44px] shrink-0 snap-start items-center gap-2 border-b-2 border-transparent px-3 py-3 text-sm font-semibold text-gray-500 transition-colors hover:border-gray-200 hover:text-gray-800 sm:min-h-0 sm:rounded-t-lg sm:border-b-2 sm:px-4 sm:py-3"
+                  : "flex min-h-[44px] shrink-0 snap-start items-center gap-2 border-b-2 border-transparent px-3 py-3 text-sm font-semibold text-gray-500 dark:text-gray-400 transition-colors hover:border-gray-200 dark:hover:border-gray-600 hover:text-gray-800 dark:hover:text-gray-100 sm:min-h-0 sm:rounded-t-lg sm:border-b-2 sm:px-4 sm:py-3"
               }
             >
               <Icon className="h-4 w-4 shrink-0" aria-hidden />
               {label}
             </NavLink>
           ))}
-        </div>
+        </nav>
       </div>
 
       <div className="flex items-start gap-2 rounded-xl border border-dashed border-primary-200/80 bg-primary-50/40 px-3 py-2.5 text-xs leading-relaxed text-primary-900 sm:text-sm">

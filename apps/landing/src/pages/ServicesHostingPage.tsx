@@ -63,10 +63,10 @@ export default function ServicesHostingPage() {
             </SectionSub>
             <div className="flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
               <Link
-                to={paths.dashboardHostingRegister}
+                to="/services/hosting/search"
                 className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary-600 to-primary-500 px-6 py-3 text-base font-semibold text-white shadow-soft transition-all hover:from-primary-700 hover:to-primary-600 hover:-translate-y-0.5 hover:shadow-elevated active:translate-y-0 sm:w-auto touch-manipulation"
               >
-                Search domains in portal
+                Search domains — free
                 <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />
               </Link>
               <Link
@@ -134,7 +134,10 @@ export default function ServicesHostingPage() {
               </SectionHeading>
               <SectionSub className="mx-auto max-w-lg">
                 Same plan cards as the portal register flow — one source in{" "}
-                <code className="rounded bg-gray-200/80 px-1 text-xs">mockHosting.ts</code>.
+                <code className="rounded bg-gray-200/80 px-1 text-xs">
+                  mockHosting.ts
+                </code>
+                .
               </SectionSub>
             </div>
           </ScrollReveal>
@@ -176,11 +179,13 @@ export default function ServicesHostingPage() {
                 <ul className="mt-6 space-y-3 text-sm text-gray-700">
                   <li className="flex gap-2">
                     <Globe2 className="mt-0.5 h-4 w-4 shrink-0 text-sky-500" />
-                    Registrar-style search and mock checkout (live billing later).
+                    Registrar-style search and mock checkout (live billing
+                    later).
                   </li>
                   <li className="flex gap-2">
                     <Lock className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
-                    Certificate tracking and DNS tables in the domain detail view.
+                    Certificate tracking and DNS tables in the domain detail
+                    view.
                   </li>
                 </ul>
               </div>

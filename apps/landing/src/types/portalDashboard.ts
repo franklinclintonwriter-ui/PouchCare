@@ -17,6 +17,8 @@ export interface PortalOrderRow {
   deadline?: string | null;
   deliveryDate?: string | null;
   paymentStatus?: string;
+  rating?: number | null;
+  reviewNote?: string | null;
 }
 
 export interface WalletSummary {

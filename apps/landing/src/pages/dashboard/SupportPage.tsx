@@ -42,19 +42,21 @@ export default function SupportPage() {
       >
         <div className="grid w-full max-w-2xl gap-4">
           <div>
-            <label className="text-sm font-medium text-gray-700">Subject</label>
+            <label htmlFor="ticket-subject" className="text-sm font-medium text-gray-700 dark:text-gray-300">Subject</label>
             <input
+              id="ticket-subject"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              className="mt-1 min-h-[44px] w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm"
+              className="mt-1 min-h-[44px] w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2.5 text-sm"
             />
           </div>
           <div>
-            <label className="text-sm font-medium text-gray-700">Priority</label>
+            <label htmlFor="ticket-priority" className="text-sm font-medium text-gray-700 dark:text-gray-300">Priority</label>
             <select
+              id="ticket-priority"
               value={priority}
               onChange={(e) => setPriority(e.target.value)}
-              className="mt-1 min-h-[44px] w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm"
+              className="mt-1 min-h-[44px] w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2.5 text-sm"
             >
               <option value="Low">Low</option>
               <option value="Medium">Medium</option>
@@ -62,12 +64,13 @@ export default function SupportPage() {
             </select>
           </div>
           <div>
-            <label className="text-sm font-medium text-gray-700">Message</label>
+            <label htmlFor="ticket-message" className="text-sm font-medium text-gray-700 dark:text-gray-300">Message</label>
             <textarea
+              id="ticket-message"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               rows={4}
-              className="mt-1 min-h-[7rem] w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm"
+              className="mt-1 min-h-[7rem] w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2.5 text-sm"
             />
           </div>
           <Button
@@ -83,11 +86,13 @@ export default function SupportPage() {
 
       <DashboardPanel title="Your tickets">
         {tickets.isLoading ? (
-          <p className="text-sm text-gray-500">Loading…</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Loading…</p>
+        ) : tickets.isError ? (
+          <p className="text-sm text-red-600">Failed to load tickets.</p>
         ) : !tickets.data?.items.length ? (
-          <p className="text-sm text-gray-500">No tickets yet.</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">No tickets yet.</p>
         ) : (
-          <ul className="divide-y divide-gray-100">
+          <ul className="divide-y divide-gray-100 dark:divide-gray-800">
             {tickets.data.items.map((t) => (
               <li
                 key={t.id}
@@ -100,7 +105,7 @@ export default function SupportPage() {
                   >
                     {t.subject}
                   </Link>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
                     {formatDate(t.createdAt)} · {t.priority}
                   </p>
                 </div>

@@ -16,6 +16,7 @@ const NAV_LINKS = [
   { label: "Home", href: "/" },
   { label: "Services", href: "/services" },
   { label: "Hosting", href: "/services/hosting" },
+  { label: "Domain Search", href: "/services/hosting/search" },
   { label: "Web→APK", href: "/services/web-to-apk" },
   { label: "Backlinks", href: "/backlinks" },
   { label: "Pricing", href: "/pricing" },
@@ -197,10 +198,7 @@ export function Navbar() {
             className="flex items-center justify-between px-5 shrink-0 border-b border-gray-200"
             style={{ height: "68px" }}
           >
-            <BrandLogo
-              variant="drawer"
-              onClick={() => setMobileOpen(false)}
-            />
+            <BrandLogo variant="drawer" onClick={() => setMobileOpen(false)} />
             <button
               type="button"
               onClick={() => setMobileOpen(false)}

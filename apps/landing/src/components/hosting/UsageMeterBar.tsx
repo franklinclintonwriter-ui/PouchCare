@@ -20,6 +20,11 @@ export function UsageMeterBar({
       </div>
       <div className="h-2 overflow-hidden rounded-full bg-gray-100">
         <div
+          role="progressbar"
+          aria-valuenow={used}
+          aria-valuemin={0}
+          aria-valuemax={limit}
+          aria-label={`${used} of ${limit} ${unit} used`}
           className={cn(
             "h-full rounded-full transition-all",
             p > 90 ? "bg-amber-500" : "bg-primary-500",

@@ -38,15 +38,15 @@ export const ui = {
 
   /** Card-style surface */
   panel:
-    "rounded-2xl border border-gray-200/90 bg-white shadow-xl shadow-gray-900/10 ring-1 ring-black/5",
+    "rounded-2xl border border-gray-200/90 bg-white shadow-xl shadow-gray-900/10 ring-1 ring-black/5 dark:border-gray-800 dark:bg-gray-900 dark:shadow-black/20 dark:ring-white/5",
 
   popoverSurface:
-    "rounded-xl border border-gray-200/90 bg-white py-1 shadow-lg shadow-gray-900/10 ring-1 ring-black/5",
+    "rounded-xl border border-gray-200/90 bg-white py-1 shadow-lg shadow-gray-900/10 ring-1 ring-black/5 dark:border-gray-800 dark:bg-gray-900 dark:ring-white/5",
 
-  heading: "text-base font-semibold tracking-tight text-gray-900",
-  headingLg: "text-lg font-semibold tracking-tight text-gray-900",
-  description: "text-sm text-gray-600",
-  label: "text-sm font-medium text-gray-700",
+  heading: "text-base font-semibold tracking-tight text-gray-900 dark:text-gray-100",
+  headingLg: "text-lg font-semibold tracking-tight text-gray-900 dark:text-gray-100",
+  description: "text-sm text-gray-600 dark:text-gray-400",
+  label: "text-sm font-medium text-gray-700 dark:text-gray-300",
 
   /** z-index scale (keep in sync with portal components) */
   z: {

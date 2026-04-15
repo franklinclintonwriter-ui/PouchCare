@@ -29,7 +29,7 @@ export function DashboardLayout() {
   }, [location.key, isMobile, closeMobile]);
 
   return (
-    <div className="min-h-screen bg-gray-50/80">
+    <div className="min-h-screen bg-gray-50/80 dark:bg-gray-950">
       <ClientSidebar />
 
       <div

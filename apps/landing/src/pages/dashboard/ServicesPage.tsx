@@ -54,11 +54,11 @@ export default function ServicesPage() {
       }
     >
       {isLoading ? (
-        <p className="text-sm text-gray-500">Loading catalog…</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">Loading catalog…</p>
       ) : isError ? (
         <p className="text-sm text-red-600">Could not load services.</p>
       ) : !data?.length ? (
-        <p className="text-sm text-gray-500">No services available.</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">No services available.</p>
       ) : (
         <>
           {/* Search and filter bar */}
@@ -84,7 +84,7 @@ export default function ServicesPage() {
                     "rounded-full px-3 py-1.5 text-xs font-semibold transition-colors",
                     selectedCategory === cat
                       ? "bg-primary-100 text-primary-800"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-800",
+                      : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-800 dark:hover:text-gray-100",
                   )}
                 >
                   {cat}
@@ -95,7 +95,7 @@ export default function ServicesPage() {
 
           {/* Services grid */}
           {filtered.length === 0 ? (
-            <p className="py-8 text-center text-sm text-gray-500">
+            <p className="py-8 text-center text-sm text-gray-500 dark:text-gray-400">
               No services match your filters.
             </p>
           ) : (
@@ -105,24 +105,24 @@ export default function ServicesPage() {
                 return (
                   <li
                     key={s.id}
-                    className="flex flex-col rounded-xl border border-gray-200 bg-gray-50/50 p-4"
+                    className="flex flex-col rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 p-4"
                   >
                     <div className="flex flex-1 flex-col">
                       <p className="text-xs font-semibold uppercase tracking-wide text-primary-600">
                         {s.category ?? "Service"}
                       </p>
-                      <h3 className="mt-1 text-lg font-semibold text-gray-900">
+                      <h3 className="mt-1 text-lg font-semibold text-gray-900 dark:text-gray-100">
                         {s.name}
                       </h3>
                       {s.shortDescription && (
-                        <p className="mt-2 line-clamp-3 text-sm text-gray-600">
+                        <p className="mt-2 line-clamp-3 text-sm text-gray-600 dark:text-gray-400">
                           {s.shortDescription}
                         </p>
                       )}
-                      <p className="mt-3 text-xl font-bold text-gray-900">
+                      <p className="mt-3 text-xl font-bold text-gray-900 dark:text-gray-100">
                         {formatUsd(price)}
                         {s.turnaroundDays != null && (
-                          <span className="ml-2 text-sm font-normal text-gray-500">
+                          <span className="ml-2 text-sm font-normal text-gray-500 dark:text-gray-400">
                             · ~{s.turnaroundDays} days
                           </span>
                         )}

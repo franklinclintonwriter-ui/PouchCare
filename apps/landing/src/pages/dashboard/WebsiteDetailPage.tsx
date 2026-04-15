@@ -59,7 +59,7 @@ export default function WebsiteDetailPage() {
   const deleteMutation = useDeleteWebsite();
 
   if (!siteId || site.isLoading) {
-    return <p className="text-center text-gray-500">Loading…</p>;
+    return <p className="text-center text-gray-500 dark:text-gray-400">Loading…</p>;
   }
 
   if (site.error || !site.data) {
@@ -84,29 +84,36 @@ export default function WebsiteDetailPage() {
       return;
     }
 
-    await updateMutation.mutateAsync({
-      id: siteId,
-      name: editName,
-      url: editUrl,
-      type: editType,
-      platform: editPlatform,
-    });
-
-    setIsEditing(false);
-    toast.success("Website updated successfully");
+    try {
+      await updateMutation.mutateAsync({
+        id: siteId,
+        name: editName,
+        url: editUrl,
+        type: editType,
+        platform: editPlatform,
+      });
+      setIsEditing(false);
+      toast.success("Website updated successfully");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to update website");
+    }
   };
 
   const handleDeleteWebsite = async () => {
-    await deleteMutation.mutateAsync(siteId);
-    setDeleteConfirm(false);
-    navigate(paths.dashboardWebsites);
-    toast.success("Website deleted successfully");
+    try {
+      await deleteMutation.mutateAsync(siteId);
+      setDeleteConfirm(false);
+      navigate(paths.dashboardWebsites);
+      toast.success("Website deleted successfully");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to delete website");
+    }
   };
 
   return (
     <div className="space-y-5 sm:space-y-6">
       {/* Breadcrumb */}
-      <nav className="flex flex-wrap items-center gap-1 text-xs text-gray-500 sm:text-sm" aria-label="Breadcrumb">
+      <nav className="flex flex-wrap items-center gap-1 text-xs text-gray-500 dark:text-gray-400 sm:text-sm" aria-label="Breadcrumb">
         <Link
           to={paths.dashboardWebsites}
           className="inline-flex min-h-[44px] items-center gap-1 font-medium text-primary-600 hover:text-primary-800 sm:min-h-0"
@@ -115,13 +122,13 @@ export default function WebsiteDetailPage() {
           My Websites
         </Link>
         <ChevronRight className="h-4 w-4 shrink-0 text-gray-400" />
-        <span className="break-all font-mono text-gray-900">{websiteData.fqdn}</span>
+        <span className="break-all font-mono text-gray-900 dark:text-gray-100">{websiteData.fqdn}</span>
       </nav>
 
       {/* Edit Form */}
       {isEditing && (
-        <div className="rounded-2xl border border-gray-200/90 bg-white p-5 shadow-sm sm:p-7">
-          <h2 className="mb-4 text-lg font-semibold text-gray-900">Edit Website</h2>
+        <div className="rounded-2xl border border-gray-200/90 dark:border-gray-700 bg-white dark:bg-gray-900 p-5 shadow-sm sm:p-7">
+          <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">Edit Website</h2>
           <form onSubmit={handleSaveEdit} className="space-y-4">
             <div>
               <Label htmlFor="edit-name" required>Name</Label>
@@ -152,7 +159,7 @@ export default function WebsiteDetailPage() {
                   id="edit-type"
                   value={editType}
                   onChange={(e) => setEditType(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm transition-colors hover:border-gray-300 focus-visible:border-primary-400 focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:outline-none disabled:cursor-not-allowed disabled:bg-gray-50 disabled:opacity-60"
+                  className="mt-1 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2.5 text-sm text-gray-900 dark:text-gray-100 shadow-sm transition-colors hover:border-gray-300 dark:hover:border-gray-600 focus-visible:border-primary-400 focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:outline-none disabled:cursor-not-allowed disabled:bg-gray-50 disabled:opacity-60"
                 >
                   <option value="Business">Business</option>
                   <option value="Portfolio">Portfolio</option>
@@ -168,7 +175,7 @@ export default function WebsiteDetailPage() {
                   id="edit-platform"
                   value={editPlatform}
                   onChange={(e) => setEditPlatform(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm transition-colors hover:border-gray-300 focus-visible:border-primary-400 focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:outline-none disabled:cursor-not-allowed disabled:bg-gray-50 disabled:opacity-60"
+                  className="mt-1 w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2.5 text-sm text-gray-900 dark:text-gray-100 shadow-sm transition-colors hover:border-gray-300 dark:hover:border-gray-600 focus-visible:border-primary-400 focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:outline-none disabled:cursor-not-allowed disabled:bg-gray-50 disabled:opacity-60"
                 >
                   <option value="WordPress">WordPress</option>
                   <option value="React">React</option>
@@ -279,33 +286,33 @@ export default function WebsiteDetailPage() {
       {/* SEO + analytics row */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className={cn("flex flex-col items-center justify-center rounded-xl border p-5", seoScoreBg(websiteData.seoScore))}>
-          <p className="text-xs font-medium uppercase tracking-wide text-gray-500">SEO Score</p>
+          <p className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">SEO Score</p>
           <p className={cn("mt-1 text-4xl font-extrabold tabular-nums", seoScoreColor(websiteData.seoScore))}>
             {websiteData.seoScore}
           </p>
-          <p className="mt-0.5 text-xs text-gray-500">/100</p>
+          <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">/100</p>
         </div>
-        <div className="rounded-xl border border-gray-200/80 bg-white p-5 shadow-sm">
-          <div className="flex items-center gap-2 text-xs font-medium text-gray-500">
+        <div className="rounded-xl border border-gray-200/80 dark:border-gray-700 bg-white dark:bg-gray-900 p-5 shadow-sm">
+          <div className="flex items-center gap-2 text-xs font-medium text-gray-500 dark:text-gray-400">
             <Eye className="h-3.5 w-3.5" /> Monthly visitors
           </div>
-          <p className="mt-1 text-2xl font-bold tabular-nums text-gray-900">
+          <p className="mt-1 text-2xl font-bold tabular-nums text-gray-900 dark:text-gray-100">
             {a.visitorsMonth.toLocaleString()}
           </p>
         </div>
-        <div className="rounded-xl border border-gray-200/80 bg-white p-5 shadow-sm">
-          <div className="flex items-center gap-2 text-xs font-medium text-gray-500">
+        <div className="rounded-xl border border-gray-200/80 dark:border-gray-700 bg-white dark:bg-gray-900 p-5 shadow-sm">
+          <div className="flex items-center gap-2 text-xs font-medium text-gray-500 dark:text-gray-400">
             <MousePointerClick className="h-3.5 w-3.5" /> Pageviews
           </div>
-          <p className="mt-1 text-2xl font-bold tabular-nums text-gray-900">
+          <p className="mt-1 text-2xl font-bold tabular-nums text-gray-900 dark:text-gray-100">
             {a.pageviewsMonth.toLocaleString()}
           </p>
         </div>
-        <div className="rounded-xl border border-gray-200/80 bg-white p-5 shadow-sm">
-          <div className="flex items-center gap-2 text-xs font-medium text-gray-500">
+        <div className="rounded-xl border border-gray-200/80 dark:border-gray-700 bg-white dark:bg-gray-900 p-5 shadow-sm">
+          <div className="flex items-center gap-2 text-xs font-medium text-gray-500 dark:text-gray-400">
             <TrendingUp className="h-3.5 w-3.5" /> Bounce rate
           </div>
-          <p className="mt-1 text-2xl font-bold tabular-nums text-gray-900">{a.bounceRate}%</p>
+          <p className="mt-1 text-2xl font-bold tabular-nums text-gray-900 dark:text-gray-100">{a.bounceRate}%</p>
         </div>
       </div>
 
@@ -313,25 +320,25 @@ export default function WebsiteDetailPage() {
         {/* Performance / uptime panel */}
         <DashboardPanel title="Performance" description="Uptime and session analytics.">
           <dl className="grid grid-cols-2 gap-4">
-            <div className="rounded-xl border border-gray-100 bg-gray-50/60 p-4">
-              <dt className="flex items-center gap-1.5 text-xs font-medium text-gray-500">
+            <div className="rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50/60 dark:bg-gray-800/50 p-4">
+              <dt className="flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-400">
                 <Activity className="h-3.5 w-3.5" /> Uptime
               </dt>
-              <dd className="mt-1 text-xl font-bold tabular-nums text-gray-900">{websiteData.uptimePct}%</dd>
+              <dd className="mt-1 text-xl font-bold tabular-nums text-gray-900 dark:text-gray-100">{websiteData.uptimePct}%</dd>
             </div>
-            <div className="rounded-xl border border-gray-100 bg-gray-50/60 p-4">
-              <dt className="flex items-center gap-1.5 text-xs font-medium text-gray-500">
+            <div className="rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50/60 dark:bg-gray-800/50 p-4">
+              <dt className="flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-400">
                 <Timer className="h-3.5 w-3.5" /> Avg. session
               </dt>
-              <dd className="mt-1 text-xl font-bold tabular-nums text-gray-900">
+              <dd className="mt-1 text-xl font-bold tabular-nums text-gray-900 dark:text-gray-100">
                 {Math.floor(a.avgSessionSec / 60)}m {a.avgSessionSec % 60}s
               </dd>
             </div>
-            <div className="col-span-2 rounded-xl border border-gray-100 bg-gray-50/60 p-4">
-              <dt className="flex items-center gap-1.5 text-xs font-medium text-gray-500">
+            <div className="col-span-2 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50/60 dark:bg-gray-800/50 p-4">
+              <dt className="flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-gray-400">
                 <Clock className="h-3.5 w-3.5" /> Last checked
               </dt>
-              <dd className="mt-1 text-sm text-gray-800">{formatDateShort(websiteData.lastChecked)}</dd>
+              <dd className="mt-1 text-sm text-gray-800 dark:text-gray-200">{formatDateShort(websiteData.lastChecked)}</dd>
             </div>
           </dl>
         </DashboardPanel>
@@ -339,7 +346,7 @@ export default function WebsiteDetailPage() {
         {/* SSL + tech stack panel */}
         <DashboardPanel title="Infrastructure" description="SSL certificate and tech stack.">
           <div className="space-y-4">
-            <div className="rounded-xl border border-gray-100 bg-gray-50/60 p-4">
+            <div className="rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50/60 dark:bg-gray-800/50 p-4">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                   {websiteData.sslValid ? (
@@ -348,10 +355,10 @@ export default function WebsiteDetailPage() {
                     <Unlock className="h-5 w-5 text-red-600" />
                   )}
                   <div>
-                    <p className="text-sm font-semibold text-gray-900">
+                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                       SSL {websiteData.sslValid ? "valid" : "expired"}
                     </p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
                       Expires {formatDateShort(websiteData.sslExpiresAt)}
                     </p>
                   </div>
@@ -370,7 +377,7 @@ export default function WebsiteDetailPage() {
                 {websiteData.techStack.map((tech) => (
                   <span
                     key={tech}
-                    className="rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-700"
+                    className="rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 px-2.5 py-1 text-xs font-medium text-gray-700 dark:text-gray-300"
                   >
                     {tech}
                   </span>
@@ -400,8 +407,8 @@ export default function WebsiteDetailPage() {
           <div className="rounded-xl border border-red-200 bg-red-50 p-5">
             <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
               <div>
-                <p className="font-semibold text-gray-900">Delete Website</p>
-                <p className="mt-1 text-sm text-gray-600">
+                <p className="font-semibold text-gray-900 dark:text-gray-100">Delete Website</p>
+                <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
                   Permanently remove this website from your account. This action cannot be undone.
                 </p>
               </div>

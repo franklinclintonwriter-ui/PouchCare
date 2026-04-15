@@ -17,12 +17,12 @@ export function StatCard({
   return (
     <div
       className={cn(
-        "rounded-xl border border-gray-200/80 bg-white p-4 shadow-sm sm:p-5",
+        "rounded-xl border border-gray-200/80 bg-white p-4 shadow-sm sm:p-5 dark:border-gray-800 dark:bg-gray-900",
         className,
       )}
     >
       <div className="flex items-start justify-between gap-2">
-        <p className="min-w-0 text-xs font-medium uppercase tracking-wide text-gray-500">
+        <p className="min-w-0 text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
           {label}
         </p>
         {icon ? (
@@ -31,10 +31,10 @@ export function StatCard({
           </span>
         ) : null}
       </div>
-      <p className="mt-1 break-words text-xl font-semibold tabular-nums text-gray-900 sm:text-2xl">
+      <p className="mt-1 break-words text-xl font-semibold tabular-nums text-gray-900 dark:text-gray-100 sm:text-2xl">
         {value}
       </p>
-      {hint ? <p className="mt-1 text-xs text-gray-500">{hint}</p> : null}
+      {hint ? <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{hint}</p> : null}
     </div>
   );
 }

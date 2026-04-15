@@ -39,11 +39,15 @@ function useClickOutside(
 ) {
   useEffect(() => {
     if (!enabled) return;
-    const handler = (e: MouseEvent) => {
+    const handler = (e: MouseEvent | TouchEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) onOutside();
     };
     document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    document.addEventListener("touchstart", handler);
+    return () => {
+      document.removeEventListener("mousedown", handler);
+      document.removeEventListener("touchstart", handler);
+    };
   }, [ref, enabled, onOutside]);
 }
 
@@ -111,7 +115,7 @@ export function ClientDashboardHeader() {
   return (
     <header
       className={cn(
-        "sticky top-0 z-[35] border-b border-gray-200/80 bg-white/90 backdrop-blur-md transition-[box-shadow,background-color] duration-300 ease-out",
+        "sticky top-0 z-[35] border-b border-gray-200/80 bg-white/90 backdrop-blur-md transition-[box-shadow,background-color] duration-300 ease-out dark:border-gray-800 dark:bg-gray-900/90",
         scrolled && "shadow-sm shadow-gray-900/5",
       )}
     >
@@ -120,7 +124,7 @@ export function ClientDashboardHeader() {
           <button
             type="button"
             onClick={openMobile}
-            className="inline-flex h-11 min-w-[44px] items-center justify-center rounded-xl p-2 text-gray-500 transition-all duration-300 ease-out hover:bg-gray-100/90 hover:text-gray-800 active:scale-[0.96] touch-manipulation"
+            className="inline-flex h-11 min-w-[44px] items-center justify-center rounded-xl p-2 text-gray-500 transition-all duration-300 ease-out hover:bg-gray-100/90 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100 active:scale-[0.96] touch-manipulation"
             aria-label="Menu"
           >
             <Menu className="h-[18px] w-[18px]" />
@@ -139,8 +143,8 @@ export function ClientDashboardHeader() {
                 setProfileOpen(false);
               }}
               className={cn(
-                "relative inline-flex h-11 min-w-[44px] items-center justify-center rounded-xl p-2 transition-all duration-300 ease-out hover:bg-gray-100/90 hover:text-gray-800 active:scale-[0.96] touch-manipulation",
-                cartOpen ? "bg-gray-100/90 text-gray-800" : "text-gray-500",
+                "relative inline-flex h-11 min-w-[44px] items-center justify-center rounded-xl p-2 transition-all duration-300 ease-out hover:bg-gray-100/90 hover:text-gray-800 dark:hover:bg-gray-800 dark:hover:text-gray-100 active:scale-[0.96] touch-manipulation",
+                cartOpen ? "bg-gray-100/90 text-gray-800 dark:bg-gray-800 dark:text-gray-200" : "text-gray-500 dark:text-gray-400",
               )}
               aria-label="Cart"
               aria-expanded={cartOpen}
@@ -167,10 +171,10 @@ export function ClientDashboardHeader() {
                 setProfileOpen(false);
               }}
               className={cn(
-                "relative inline-flex h-11 min-w-[44px] items-center justify-center rounded-xl p-2 transition-all duration-300 ease-out hover:bg-gray-100/90 hover:text-gray-800 active:scale-[0.96] touch-manipulation",
+                "relative inline-flex h-11 min-w-[44px] items-center justify-center rounded-xl p-2 transition-all duration-300 ease-out hover:bg-gray-100/90 hover:text-gray-800 dark:hover:bg-gray-800 dark:hover:text-gray-100 active:scale-[0.96] touch-manipulation",
                 notifOpen
-                  ? "bg-gray-100/90 text-gray-800"
-                  : "text-gray-500",
+                  ? "bg-gray-100/90 text-gray-800 dark:bg-gray-800 dark:text-gray-200"
+                  : "text-gray-500 dark:text-gray-400",
               )}
               aria-label="Notifications"
               aria-expanded={notifOpen}
@@ -194,10 +198,10 @@ export function ClientDashboardHeader() {
                   exit={{ opacity: 0, y: -6, scale: 0.98 }}
                   transition={dropdownTransition}
                   style={{ transformOrigin: "top right" }}
-                  className="absolute right-0 top-full z-50 mt-2 w-[min(100vw-2rem,22rem)] overflow-hidden rounded-2xl border border-gray-200/90 bg-white/95 py-2 shadow-lg shadow-gray-900/10 ring-1 ring-black/5 backdrop-blur-md"
+                  className="absolute right-0 top-full z-50 mt-2 w-[min(100vw-2rem,22rem)] overflow-hidden rounded-2xl border border-gray-200/90 bg-white/95 py-2 shadow-lg shadow-gray-900/10 ring-1 ring-black/5 backdrop-blur-md dark:border-gray-700 dark:bg-gray-900/95"
                 >
-                <div className="flex items-center justify-between border-b border-gray-100/80 px-3 pb-2">
-                  <span className="text-xs font-semibold text-gray-900">
+                <div className="flex items-center justify-between border-b border-gray-100/80 px-3 pb-2 dark:border-gray-800">
+                  <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">
                     Alerts
                   </span>
                   {unread > 0 && (
@@ -212,7 +216,7 @@ export function ClientDashboardHeader() {
                 </div>
                 <div className="max-h-72 overflow-y-auto overscroll-contain [scrollbar-width:thin]">
                   {!items.length ? (
-                    <p className="px-3 py-6 text-center text-xs text-gray-500">
+                    <p className="px-3 py-6 text-center text-xs text-gray-500 dark:text-gray-400">
                       None yet
                     </p>
                   ) : (
@@ -221,10 +225,10 @@ export function ClientDashboardHeader() {
                       const ext = to?.startsWith("http");
                       const body = (
                         <>
-                          <p className="text-xs font-medium text-gray-900">
+                          <p className="text-xs font-medium text-gray-900 dark:text-gray-100">
                             {n.title}
                           </p>
-                          <p className="mt-0.5 line-clamp-2 text-[11px] text-gray-600">
+                          <p className="mt-0.5 line-clamp-2 text-[11px] text-gray-600 dark:text-gray-400">
                             {n.message}
                           </p>
                           <p className="mt-1 text-[10px] text-gray-400">
@@ -236,7 +240,7 @@ export function ClientDashboardHeader() {
                         <div
                           key={n.id}
                           className={cn(
-                            "border-b border-gray-50/90 px-3 py-2.5 transition-colors duration-200 last:border-0",
+                            "border-b border-gray-50/90 px-3 py-2.5 transition-colors duration-200 last:border-0 dark:border-gray-800/50",
                             !n.read && "bg-primary-50/50",
                           )}
                         >
@@ -270,7 +274,7 @@ export function ClientDashboardHeader() {
                   <Link
                     to={paths.dashboardNotifications}
                     onClick={() => setNotifOpen(false)}
-                    className="block border-t border-gray-100/80 px-3 py-2 text-center text-xs font-medium text-primary-600 transition-colors duration-200 hover:bg-primary-50/50"
+                    className="block border-t border-gray-100/80 px-3 py-2 text-center text-xs font-medium text-primary-600 transition-colors duration-200 hover:bg-primary-50/50 dark:border-gray-800"
                   >
                     View all notifications
                   </Link>
@@ -282,7 +286,7 @@ export function ClientDashboardHeader() {
 
           <Link
             to="/"
-            className="inline-flex h-11 min-w-[44px] items-center justify-center rounded-xl p-2 text-gray-500 transition-all duration-300 ease-out hover:bg-gray-100/90 hover:text-gray-800 active:scale-[0.96] touch-manipulation"
+            className="inline-flex h-11 min-w-[44px] items-center justify-center rounded-xl p-2 text-gray-500 transition-all duration-300 ease-out hover:bg-gray-100/90 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-100 active:scale-[0.96] touch-manipulation"
             aria-label="Site"
           >
             <Globe className="h-[18px] w-[18px] sm:h-5 sm:w-5" />
@@ -296,8 +300,8 @@ export function ClientDashboardHeader() {
                 setNotifOpen(false);
               }}
               className={cn(
-                "flex items-center gap-1 rounded-full p-1 pr-1.5 transition-all duration-300 ease-out hover:bg-gray-100/90 active:scale-[0.98]",
-                profileOpen && "bg-gray-100/90 ring-2 ring-primary-500/15",
+                "flex items-center gap-1 rounded-full p-1 pr-1.5 transition-all duration-300 ease-out hover:bg-gray-100/90 dark:hover:bg-gray-800 active:scale-[0.98]",
+                profileOpen && "bg-gray-100/90 dark:bg-gray-800 ring-2 ring-primary-500/15",
               )}
               aria-label="Account"
               aria-expanded={profileOpen}
@@ -318,18 +322,18 @@ export function ClientDashboardHeader() {
                   exit={{ opacity: 0, y: -6, scale: 0.98 }}
                   transition={dropdownTransition}
                   style={{ transformOrigin: "top right" }}
-                  className="absolute right-0 top-full z-50 mt-2 w-52 overflow-hidden rounded-2xl border border-gray-200/90 bg-white/95 py-1.5 shadow-lg shadow-gray-900/10 ring-1 ring-black/5 backdrop-blur-md"
+                  className="absolute right-0 top-full z-50 mt-2 w-52 overflow-hidden rounded-2xl border border-gray-200/90 bg-white/95 py-1.5 shadow-lg shadow-gray-900/10 ring-1 ring-black/5 backdrop-blur-md dark:border-gray-700 dark:bg-gray-900/95"
                 >
-                <div className="border-b border-gray-100/80 px-3 py-2">
-                  <p className="truncate text-sm font-medium text-gray-900">
+                <div className="border-b border-gray-100/80 px-3 py-2 dark:border-gray-800">
+                  <p className="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
                     {user.fullName}
                   </p>
-                  <p className="truncate text-xs text-gray-500">{user.email}</p>
+                  <p className="truncate text-xs text-gray-500 dark:text-gray-400">{user.email}</p>
                 </div>
                 <Link
                   to={paths.dashboardProfile}
                   onClick={() => setProfileOpen(false)}
-                  className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 transition-colors duration-200 hover:bg-gray-50/90"
+                  className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 transition-colors duration-200 hover:bg-gray-50/90 dark:text-gray-300 dark:hover:bg-gray-800"
                 >
                   <User className="h-4 w-4 shrink-0 text-gray-400" />
                   Profile
@@ -337,7 +341,7 @@ export function ClientDashboardHeader() {
                 <Link
                   to={paths.dashboardSettings}
                   onClick={() => setProfileOpen(false)}
-                  className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 transition-colors duration-200 hover:bg-gray-50/90"
+                  className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 transition-colors duration-200 hover:bg-gray-50/90 dark:text-gray-300 dark:hover:bg-gray-800"
                 >
                   <Settings className="h-4 w-4 shrink-0 text-gray-400" />
                   Settings
@@ -345,7 +349,7 @@ export function ClientDashboardHeader() {
                 <Link
                   to={paths.dashboardBilling}
                   onClick={() => setProfileOpen(false)}
-                  className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 transition-colors duration-200 hover:bg-gray-50/90"
+                  className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 transition-colors duration-200 hover:bg-gray-50/90 dark:text-gray-300 dark:hover:bg-gray-800"
                 >
                   <Receipt className="h-4 w-4 shrink-0 text-gray-400" />
                   Billing
@@ -353,7 +357,7 @@ export function ClientDashboardHeader() {
                 <Link
                   to={paths.dashboardSupport}
                   onClick={() => setProfileOpen(false)}
-                  className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 transition-colors duration-200 hover:bg-gray-50/90"
+                  className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 transition-colors duration-200 hover:bg-gray-50/90 dark:text-gray-300 dark:hover:bg-gray-800"
                 >
                   <LifeBuoy className="h-4 w-4 shrink-0 text-gray-400" />
                   Support
@@ -362,7 +366,7 @@ export function ClientDashboardHeader() {
                   type="button"
                   onClick={() => void handleLogout()}
                   disabled={logout.isPending}
-                  className="flex w-full items-center gap-2 border-t border-gray-100/80 px-3 py-2 text-left text-sm text-red-600 transition-colors duration-200 hover:bg-red-50/90 disabled:opacity-50"
+                  className="flex w-full items-center gap-2 border-t border-gray-100/80 px-3 py-2 text-left text-sm text-red-600 transition-colors duration-200 hover:bg-red-50/90 disabled:opacity-50 dark:border-gray-800 dark:hover:bg-red-950/50"
                 >
                   <LogOut className="h-4 w-4 shrink-0" />
                   Sign out

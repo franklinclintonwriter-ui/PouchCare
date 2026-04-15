@@ -117,7 +117,7 @@ export function Modal({
               onClick={(e) => e.stopPropagation()}
             >
               {(title || description || !hideCloseButton) && (
-                <div className="flex items-start justify-between gap-3 border-b border-gray-100 px-4 py-4 sm:px-5">
+                <div className="flex items-start justify-between gap-3 border-b border-gray-100 dark:border-gray-800 px-4 py-4 sm:px-5">
                   <div className="min-w-0">
                     {title && (
                       <h2 id="modal-title" className={ui.heading}>
@@ -136,7 +136,7 @@ export function Modal({
                       onClick={onClose}
                       aria-label="Close"
                       className={cn(
-                        "shrink-0 rounded-xl p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700",
+                        "shrink-0 rounded-xl p-2 text-gray-400 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-300",
                         ui.focusRing,
                       )}
                     >
@@ -151,7 +151,7 @@ export function Modal({
               </div>
 
               {footer && (
-                <div className="flex flex-col-reverse gap-2 border-t border-gray-100 px-4 py-3 sm:flex-row sm:justify-end sm:px-5">
+                <div className="flex flex-col-reverse gap-2 border-t border-gray-100 dark:border-gray-800 px-4 py-3 sm:flex-row sm:justify-end sm:px-5">
                   {footer}
                 </div>
               )}

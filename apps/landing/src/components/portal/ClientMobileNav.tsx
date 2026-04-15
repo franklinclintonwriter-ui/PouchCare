@@ -23,7 +23,7 @@ export function ClientMobileNav() {
       className="fixed inset-x-0 bottom-0 z-40 lg:hidden"
       aria-label="Primary"
     >
-      <div className="border-t border-gray-200/80 bg-white/95 shadow-[0_-8px_32px_-12px_rgba(15,23,42,0.12)] backdrop-blur-xl transition-shadow duration-300">
+      <div className="border-t border-gray-200/80 bg-white/95 shadow-[0_-8px_32px_-12px_rgba(15,23,42,0.12)] backdrop-blur-xl transition-shadow duration-300 dark:border-gray-800 dark:bg-gray-900/95">
         <div
           className={cn(
             "mx-auto grid w-full max-w-lg touch-manipulation",
@@ -37,7 +37,7 @@ export function ClientMobileNav() {
 
             const itemClass = cn(
               "group relative flex min-h-[52px] flex-col items-center justify-center gap-0.5 rounded-xl py-1.5 transition-colors duration-300 ease-out",
-              "outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white",
+              "outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-900",
             );
 
             if (item.more) {
@@ -48,10 +48,10 @@ export function ClientMobileNav() {
                   onClick={openMobile}
                   className={itemClass}
                 >
-                  <div className="relative flex h-9 w-full max-w-[2.75rem] items-center justify-center rounded-xl text-gray-500 transition-transform duration-300 ease-out active:scale-95">
+                  <div className="relative flex h-9 w-full max-w-[2.75rem] items-center justify-center rounded-xl text-gray-500 dark:text-gray-400 transition-transform duration-300 ease-out active:scale-95">
                     <Icon className="h-5 w-5" strokeWidth={1.75} aria-hidden />
                   </div>
-                  <span className="max-w-full truncate px-0.5 text-center text-[10px] font-medium leading-tight text-gray-500">
+                  <span className="max-w-full truncate px-0.5 text-center text-[10px] font-medium leading-tight text-gray-500 dark:text-gray-400">
                     {item.label}
                   </span>
                 </button>
@@ -72,14 +72,14 @@ export function ClientMobileNav() {
                   {active && (
                     <motion.div
                       layoutId="client-mobile-nav-pill"
-                      className="absolute inset-0 rounded-xl bg-primary-100/90"
+                      className="absolute inset-0 rounded-xl bg-primary-100/90 dark:bg-primary-900/40"
                       transition={{ type: "spring", stiffness: 440, damping: 38 }}
                     />
                   )}
                   <Icon
                     className={cn(
                       "relative z-10 h-5 w-5 transition-colors duration-300",
-                      active ? "text-primary-700" : "text-gray-500",
+                      active ? "text-primary-700" : "text-gray-500 dark:text-gray-400",
                     )}
                     strokeWidth={active ? 2.25 : 1.75}
                     aria-hidden
@@ -88,7 +88,7 @@ export function ClientMobileNav() {
                 <span
                   className={cn(
                     "max-w-full truncate px-0.5 text-center text-[10px] font-semibold leading-tight transition-colors duration-200",
-                    active ? "text-primary-800" : "text-gray-500",
+                    active ? "text-primary-800" : "text-gray-500 dark:text-gray-400",
                   )}
                 >
                   {item.label}

@@ -5,10 +5,12 @@
  * All fields now use API: usePortalMe() + useUpdateProfile()
  */
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
+  AlertTriangle,
   BadgeCheck,
   Building2,
   Camera,
@@ -18,8 +20,10 @@ import {
   MapPin,
   Package,
   Phone,
+  RefreshCw,
   User,
   Wallet,
+  X,
 } from "lucide-react";
 import { usePortalMe } from "@/api/portal-auth";
 import { useUpdateProfile } from "@/api/portal-dashboard";
@@ -39,6 +43,7 @@ import {
 } from "@/data/constants";
 import { toast } from "sonner";
 import { cn } from "@/lib/cn";
+import { paths } from "@/routes/paths";
 
 // ── Zod schemas ────────────────────────────────────────────────────────────
 const identitySchema = z.object({
@@ -87,10 +92,40 @@ function SectionIcon({ icon: Icon, color }: { icon: React.ElementType; color: st
 function ReadonlyField({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <Label className="text-xs text-gray-500">{label}</Label>
-      <div className="mt-1 min-h-[44px] flex items-center rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-700">
+      <Label className="text-xs text-gray-500 dark:text-gray-400">{label}</Label>
+      <div className="mt-1 min-h-[44px] flex items-center rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
         {value || <span className="text-gray-400 italic">—</span>}
       </div>
+    </div>
+  );
+}
+
+function ProfileSkeleton() {
+  return (
+    <div className="space-y-5 sm:space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="space-y-2">
+          <div className="h-7 w-32 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700" />
+          <div className="h-4 w-64 animate-pulse rounded bg-gray-100 dark:bg-gray-800" />
+        </div>
+        <div className="h-6 w-16 animate-pulse rounded-full bg-gray-200 dark:bg-gray-700" />
+      </div>
+      {[1, 2, 3].map((i) => (
+        <div key={i} className="rounded-2xl border border-gray-200/80 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
+          <div className="mb-4 space-y-2">
+            <div className="h-5 w-28 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
+            <div className="h-3 w-48 animate-pulse rounded bg-gray-100 dark:bg-gray-800" />
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {[1, 2, 3, 4].map((j) => (
+              <div key={j} className="space-y-2">
+                <div className="h-3 w-20 animate-pulse rounded bg-gray-100 dark:bg-gray-800" />
+                <div className="h-11 animate-pulse rounded-xl bg-gray-100 dark:bg-gray-800" />
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -227,13 +262,39 @@ export default function ProfilePage() {
 
   const user = me.data;
 
+  if (me.isLoading) return <ProfileSkeleton />;
+
+  if (me.isError) {
+    return (
+      <div className="flex flex-col items-center justify-center rounded-2xl border border-red-200 bg-red-50 py-16 text-center dark:border-red-900/50 dark:bg-red-950/30">
+        <AlertTriangle className="h-10 w-10 text-red-400" />
+        <p className="mt-3 text-sm font-medium text-gray-900 dark:text-gray-100">
+          Failed to load profile
+        </p>
+        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+          {me.error instanceof Error ? me.error.message : "Please try again."}
+        </p>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="mt-4"
+          icon={<RefreshCw className="h-4 w-4" />}
+          onClick={() => void me.refetch()}
+        >
+          Retry
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-5 sm:space-y-6">
       {/* ── Page header ───────────────────────────────────────────────── */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">Profile</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100 sm:text-2xl">Profile</h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             Manage your identity, contact info, company details, and billing address.
           </p>
         </div>
@@ -277,6 +338,16 @@ export default function ProfilePage() {
               >
                 <Camera className="h-3.5 w-3.5" />
               </button>
+              {avatarPreview && (
+                <button
+                  type="button"
+                  onClick={() => setAvatarPreview(null)}
+                  className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-gray-700 text-white shadow-md transition-colors hover:bg-red-600"
+                  aria-label="Remove avatar preview"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              )}
               <input
                 ref={fileInputRef}
                 type="file"
@@ -285,8 +356,11 @@ export default function ProfilePage() {
                 onChange={handleAvatarChange}
               />
             </div>
-            <p className="text-xs text-gray-500 text-center lg:text-center">
+            <p className="text-xs text-gray-500 dark:text-gray-400 text-center lg:text-center">
               PNG, JPG up to 2 MB
+            </p>
+            <p className="text-[10px] text-gray-400 text-center">
+              Upload saves locally (API coming soon)
             </p>
           </div>
 
@@ -309,7 +383,7 @@ export default function ProfilePage() {
               )}
             </div>
             <ReadonlyField label="Email address" value={user?.email ?? ""} />
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-gray-500 dark:text-gray-400">
               Email changes require re-verification. Contact support to update.
             </p>
             <Button
@@ -376,7 +450,7 @@ export default function ProfilePage() {
             <Label htmlFor="preferredContact">Preferred contact method</Label>
             <select
               id="preferredContact"
-              className="mt-1 min-h-[44px] w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/40"
+              className="mt-1 min-h-[44px] w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm transition-colors hover:border-gray-300 focus-visible:border-primary-400 focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:hover:border-gray-600"
               {...contact.register("preferredContact")}
             >
               {(["email", "phone", "whatsapp", "telegram"] as const).map((v) => (
@@ -390,10 +464,10 @@ export default function ProfilePage() {
             <Button
               type="submit"
               variant="primary"
-              disabled={update.isPending}
+              disabled={!contact.formState.isDirty || update.isPending}
               className="min-h-[44px] w-full sm:w-auto"
             >
-              Save contact info
+              {update.isPending ? "Saving…" : "Save contact info"}
             </Button>
           </div>
         </form>
@@ -441,7 +515,7 @@ export default function ProfilePage() {
             <Label htmlFor="industry">Industry</Label>
             <select
               id="industry"
-              className="mt-1 min-h-[44px] w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/40"
+              className="mt-1 min-h-[44px] w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm transition-colors hover:border-gray-300 focus-visible:border-primary-400 focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:hover:border-gray-600"
               {...company.register("industry")}
             >
               <option value="">Select industry…</option>
@@ -456,10 +530,10 @@ export default function ProfilePage() {
             <Button
               type="submit"
               variant="primary"
-              disabled={update.isPending}
+              disabled={!company.formState.isDirty || update.isPending}
               className="min-h-[44px] w-full sm:w-auto"
             >
-              Save company info
+              {update.isPending ? "Saving…" : "Save company info"}
             </Button>
           </div>
         </form>
@@ -521,7 +595,7 @@ export default function ProfilePage() {
             <Label htmlFor="addressCountry">Country</Label>
             <select
               id="addressCountry"
-              className="mt-1 min-h-[44px] w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/40"
+              className="mt-1 min-h-[44px] w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 shadow-sm transition-colors hover:border-gray-300 focus-visible:border-primary-400 focus-visible:ring-2 focus-visible:ring-primary-500/25 focus-visible:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:hover:border-gray-600"
               {...address.register("addressCountry")}
             >
               <option value="">Select country…</option>
@@ -536,10 +610,10 @@ export default function ProfilePage() {
             <Button
               type="submit"
               variant="primary"
-              disabled={update.isPending}
+              disabled={!address.formState.isDirty || update.isPending}
               className="min-h-[44px] w-full sm:w-auto"
             >
-              Save address
+              {update.isPending ? "Saving…" : "Save address"}
             </Button>
           </div>
         </form>
@@ -568,19 +642,19 @@ export default function ProfilePage() {
           ].map(({ label, value }) => (
             <div
               key={label}
-              className="group relative rounded-xl border border-gray-200/80 bg-gray-50/60 p-4"
+              className="relative rounded-xl border border-gray-200/80 bg-gray-50/60 p-4 dark:border-gray-700 dark:bg-gray-800/50"
             >
-              <dt className="text-xs font-medium text-gray-500">{label}</dt>
-              <dd className="mt-1 flex items-center gap-2 break-all text-sm font-semibold text-gray-900">
+              <dt className="text-xs font-medium text-gray-500 dark:text-gray-400">{label}</dt>
+              <dd className="mt-1 flex items-center gap-2 break-all text-sm font-semibold text-gray-900 dark:text-gray-100">
                 <span className="min-w-0 flex-1">{value}</span>
                 {value && value !== "—" && value !== "Not verified" && (
                   <button
                     type="button"
                     onClick={() => copyToClipboard(value, label)}
-                    className="shrink-0 opacity-0 transition-opacity group-hover:opacity-100"
+                    className="shrink-0 rounded-md p-1 text-gray-400 transition-colors hover:bg-gray-200 hover:text-primary-600 dark:hover:bg-gray-700"
                     aria-label={`Copy ${label}`}
                   >
-                    <Copy className="h-3.5 w-3.5 text-gray-400 hover:text-primary-600" />
+                    <Copy className="h-3.5 w-3.5" />
                   </button>
                 )}
               </dd>
@@ -596,35 +670,35 @@ export default function ProfilePage() {
         action={<SectionIcon icon={Globe} color="bg-rose-50 text-rose-600" />}
       >
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <div className="flex items-center gap-4 rounded-xl border border-gray-200/80 bg-gray-50/60 p-4">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-100 text-primary-700">
+          <div className="flex items-center gap-4 rounded-xl border border-gray-200/80 bg-gray-50/60 p-4 dark:border-gray-700 dark:bg-gray-800/50">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-100 text-primary-700 dark:bg-primary-900/50 dark:text-primary-300">
               <Package className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-xs font-medium text-gray-500">Active orders</p>
-              <p className="text-xl font-bold tabular-nums text-gray-900">
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Active orders</p>
+              <p className="text-xl font-bold tabular-nums text-gray-900 dark:text-gray-100">
                 {orders.isLoading ? "…" : (orders.data?.meta.total ?? 0)}
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-4 rounded-xl border border-gray-200/80 bg-gray-50/60 p-4">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
+          <div className="flex items-center gap-4 rounded-xl border border-gray-200/80 bg-gray-50/60 p-4 dark:border-gray-700 dark:bg-gray-800/50">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300">
               <Globe className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-xs font-medium text-gray-500">Domains</p>
-              <p className="text-xl font-bold tabular-nums text-gray-900">
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Domains</p>
+              <p className="text-xl font-bold tabular-nums text-gray-900 dark:text-gray-100">
                 {domainsQuery.isLoading ? "…" : (domainsQuery.data?.items.length ?? 0)}
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-4 rounded-xl border border-gray-200/80 bg-gray-50/60 p-4">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
+          <div className="flex items-center gap-4 rounded-xl border border-gray-200/80 bg-gray-50/60 p-4 dark:border-gray-700 dark:bg-gray-800/50">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300">
               <Wallet className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-xs font-medium text-gray-500">Wallet balance</p>
-              <p className="text-xl font-bold tabular-nums text-gray-900">
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Wallet balance</p>
+              <p className="text-xl font-bold tabular-nums text-gray-900 dark:text-gray-100">
                 {wallet.isLoading
                   ? "…"
                   : formatUsd(wallet.data?.walletBalance ?? 0)}
@@ -635,9 +709,9 @@ export default function ProfilePage() {
         <p className="mt-3 text-xs text-gray-400">
           <Lock className="mr-1 inline h-3 w-3" />
           Account security settings are managed under{" "}
-          <a href="/dashboard/settings" className="font-medium text-primary-600 hover:underline">
+          <Link to={paths.dashboardSettings} className="font-medium text-primary-600 hover:underline">
             Settings
-          </a>
+          </Link>
           .
         </p>
       </DashboardPanel>

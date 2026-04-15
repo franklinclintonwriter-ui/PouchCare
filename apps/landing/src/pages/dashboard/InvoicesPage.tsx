@@ -65,24 +65,26 @@ export default function InvoicesPage() {
     return list;
   }, [invoicesData, search]);
 
+  const allInvoices = usePortalInvoices(1, 1000);
   const totals = useMemo(() => {
-    if (!invoicesData) return { paid: 0, pending: 0, count: 0 };
-    const paid = invoicesData.items
+    const source = allInvoices.data?.items ?? invoicesData?.items ?? [];
+    const paid = source
       .filter((i) => i.status === "paid")
       .reduce((s, i) => s + i.total, 0);
-    const pending = invoicesData.items
+    const pending = source
       .filter((i) => i.status === "pending" || i.status === "overdue")
       .reduce((s, i) => s + i.total, 0);
-    return { paid, pending, count: invoicesData.meta.total || invoicesData.items.length };
-  }, [invoicesData]);
+    const count = allInvoices.data?.meta.total ?? invoicesData?.meta.total ?? source.length;
+    return { paid, pending, count };
+  }, [allInvoices.data, invoicesData]);
 
   return (
     <div className="space-y-5 sm:space-y-6">
       {/* Page header */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl font-bold text-gray-900 sm:text-2xl">Invoices</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100 sm:text-2xl">Invoices</h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
             View, filter, and print invoices for your orders and subscriptions.
           </p>
         </div>
@@ -90,16 +92,16 @@ export default function InvoicesPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
-        <div className="rounded-xl border border-gray-200/80 bg-white p-4 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Total invoices</p>
-          <p className="mt-1 text-2xl font-bold tabular-nums text-gray-900">{totals.count}</p>
+        <div className="rounded-xl border border-gray-200/80 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 shadow-sm">
+          <p className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Total invoices</p>
+          <p className="mt-1 text-2xl font-bold tabular-nums text-gray-900 dark:text-gray-100">{totals.count}</p>
         </div>
-        <div className="rounded-xl border border-gray-200/80 bg-white p-4 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Total paid</p>
+        <div className="rounded-xl border border-gray-200/80 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 shadow-sm">
+          <p className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Total paid</p>
           <p className="mt-1 text-2xl font-bold tabular-nums text-emerald-700">{formatUsd(totals.paid)}</p>
         </div>
-        <div className="rounded-xl border border-gray-200/80 bg-white p-4 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Outstanding</p>
+        <div className="rounded-xl border border-gray-200/80 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 shadow-sm">
+          <p className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Outstanding</p>
           <p className="mt-1 text-2xl font-bold tabular-nums text-amber-700">{formatUsd(totals.pending)}</p>
         </div>
       </div>
@@ -120,7 +122,7 @@ export default function InvoicesPage() {
                   "rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors",
                   filter === t.value
                     ? "bg-primary-100 text-primary-800"
-                    : "text-gray-500 hover:bg-gray-100 hover:text-gray-800",
+                    : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-800 dark:hover:text-gray-100",
                 )}
               >
                 {t.label}
@@ -149,7 +151,7 @@ export default function InvoicesPage() {
             Failed to load invoices. Please try again.
           </p>
         ) : filtered.length === 0 ? (
-          <p className="py-10 text-center text-sm text-gray-500">
+          <p className="py-10 text-center text-sm text-gray-500 dark:text-gray-400">
             No invoices match your filter.
           </p>
         ) : (
@@ -162,28 +164,28 @@ export default function InvoicesPage() {
             </ul>
 
             {/* Desktop table */}
-            <div className="mt-4 hidden overflow-x-auto rounded-xl border border-gray-100 md:block">
+            <div className="mt-4 hidden overflow-x-auto rounded-xl border border-gray-100 dark:border-gray-800 md:block">
               <table className="w-full min-w-[640px] text-left text-sm">
                 <thead>
-                  <tr className="border-b border-gray-200 bg-gray-50/80 text-xs uppercase tracking-wide text-gray-500">
+                  <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-800/50 text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
                     {["Invoice #", "Date", "Due", "Amount", "Status", ""].map((h) => (
                       <th key={h} className="px-4 py-2.5 font-semibold">{h}</th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                   {filtered.map((inv) => (
-                    <tr key={inv.id} className="hover:bg-gray-50/60">
-                      <td className="px-4 py-3 font-mono font-semibold text-gray-900">
+                    <tr key={inv.id} className="hover:bg-gray-50/60 dark:hover:bg-gray-800">
+                      <td className="px-4 py-3 font-mono font-semibold text-gray-900 dark:text-gray-100">
                         {inv.invoiceNumber}
                       </td>
-                      <td className="px-4 py-3 tabular-nums text-gray-600">
+                      <td className="px-4 py-3 tabular-nums text-gray-600 dark:text-gray-400">
                         {formatDateShort(inv.issueDate)}
                       </td>
-                      <td className="px-4 py-3 tabular-nums text-gray-600">
+                      <td className="px-4 py-3 tabular-nums text-gray-600 dark:text-gray-400">
                         {formatDateShort(inv.dueDate)}
                       </td>
-                      <td className="px-4 py-3 font-semibold tabular-nums text-gray-900">
+                      <td className="px-4 py-3 font-semibold tabular-nums text-gray-900 dark:text-gray-100">
                         {formatUsd(inv.total)}
                       </td>
                       <td className="px-4 py-3">
@@ -195,7 +197,7 @@ export default function InvoicesPage() {
                         <div className="flex justify-end gap-1.5">
                           <Link
                             to={paths.dashboardInvoice(inv.id)}
-                            className="inline-flex h-8 items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                            className="inline-flex h-8 items-center gap-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-2.5 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
                           >
                             <Eye className="h-3.5 w-3.5" />
                             View
@@ -204,7 +206,7 @@ export default function InvoicesPage() {
                             type="button"
                             onClick={() => void handleDownload(inv.id)}
                             disabled={download.isPending}
-                            className="inline-flex h-8 items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                            className="inline-flex h-8 items-center gap-1 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-2.5 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50"
                           >
                             <Download className="h-3.5 w-3.5" />
                           </button>
@@ -224,11 +226,11 @@ export default function InvoicesPage() {
 
 function InvoiceCard({ inv, onDownload, downloading }: { inv: Invoice; onDownload: (id: string) => void; downloading?: boolean }) {
   return (
-    <li className="rounded-2xl border border-gray-200/90 bg-white p-4 shadow-sm">
+    <li className="rounded-2xl border border-gray-200/90 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 shadow-sm">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="font-mono text-sm font-bold text-gray-900">{inv.invoiceNumber}</p>
-          <p className="mt-0.5 truncate text-xs text-gray-500">
+          <p className="font-mono text-sm font-bold text-gray-900 dark:text-gray-100">{inv.invoiceNumber}</p>
+          <p className="mt-0.5 truncate text-xs text-gray-500 dark:text-gray-400">
             {inv.relatedOrderId ?? "—"}
           </p>
         </div>
@@ -239,21 +241,21 @@ function InvoiceCard({ inv, onDownload, downloading }: { inv: Invoice; onDownloa
       <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
         <div>
           <p className="text-gray-400">Issued</p>
-          <p className="tabular-nums text-gray-700">{formatDateShort(inv.issueDate)}</p>
+          <p className="tabular-nums text-gray-700 dark:text-gray-300">{formatDateShort(inv.issueDate)}</p>
         </div>
         <div>
           <p className="text-gray-400">Due</p>
-          <p className="tabular-nums text-gray-700">{formatDateShort(inv.dueDate)}</p>
+          <p className="tabular-nums text-gray-700 dark:text-gray-300">{formatDateShort(inv.dueDate)}</p>
         </div>
         <div className="text-right">
           <p className="text-gray-400">Total</p>
-          <p className="font-bold tabular-nums text-gray-900">{formatUsd(inv.total)}</p>
+          <p className="font-bold tabular-nums text-gray-900 dark:text-gray-100">{formatUsd(inv.total)}</p>
         </div>
       </div>
       <div className="mt-3 flex gap-2">
         <Link
           to={paths.dashboardInvoice(inv.id)}
-          className="flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-white text-sm font-medium text-primary-700 hover:bg-primary-50 transition-colors"
+          className="flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm font-medium text-primary-700 hover:bg-primary-50 transition-colors"
         >
           <Eye className="h-4 w-4" />
           View
@@ -262,7 +264,7 @@ function InvoiceCard({ inv, onDownload, downloading }: { inv: Invoice; onDownloa
           type="button"
           onClick={() => void onDownload(inv.id)}
           disabled={downloading}
-          className="flex min-h-[44px] w-12 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 transition-colors disabled:opacity-50"
+          className="flex min-h-[44px] w-12 items-center justify-center rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
           aria-label="Download PDF"
         >
           <Download className="h-4 w-4" />

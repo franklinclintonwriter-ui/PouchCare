@@ -3,7 +3,7 @@ export interface MockBranch {
   name: string;
   city: string;
   country: string;
-  status: 'online' | 'partial' | 'offline';
+  status: "online" | "partial" | "offline";
   totalCameras: number;
   onlineCameras: number;
   gradientFrom: string;
@@ -17,7 +17,7 @@ export interface MockCamera {
   branchId: string;
   label: string;
   location: string;
-  status: 'online' | 'offline' | 'recording';
+  status: "online" | "offline" | "recording";
   resolution: string;
   streamUrl: string;
   lastMotion?: string;
@@ -29,80 +29,40 @@ export interface MockCamera {
 
 export const MOCK_BRANCHES: MockBranch[] = [
   {
-    id: 'branch-dhaka',
-    name: 'Dhaka Main Office',
-    city: 'Dhaka',
-    country: 'Bangladesh',
-    status: 'online',
-    totalCameras: 12,
-    onlineCameras: 12,
-    gradientFrom: '#1d4ed8',
-    gradientTo: '#3b82f6',
-    address: 'House 12, Road 7, Banani, Dhaka-1213',
-    nvr: 'Hikvision DS-9632NI-I8',
-  },
-  {
-    id: 'branch-chittagong',
-    name: 'Chittagong Branch',
-    city: 'Chittagong',
-    country: 'Bangladesh',
-    status: 'partial',
-    totalCameras: 8,
-    onlineCameras: 6,
-    gradientFrom: '#0f766e',
-    gradientTo: '#14b8a6',
-    address: 'Agrabad C/A, Chittagong',
-    nvr: 'Dahua NVR5216-4KS2',
-  },
-  {
-    id: 'branch-sylhet',
-    name: 'Sylhet Branch',
-    city: 'Sylhet',
-    country: 'Bangladesh',
-    status: 'online',
+    id: "branch-phulpur",
+    name: "PouchCare - Digital Marketing",
+    city: "Phulpur, Mymensingh",
+    country: "Bangladesh",
+    status: "online",
     totalCameras: 6,
-    onlineCameras: 6,
-    gradientFrom: '#7e22ce',
-    gradientTo: '#a855f7',
-    address: 'Zindabazar, Sylhet-3100',
-    nvr: 'Hikvision DS-7716NI-K4',
-  },
-  {
-    id: 'branch-dubai',
-    name: 'Dubai Office',
-    city: 'Dubai',
-    country: 'UAE',
-    status: 'online',
-    totalCameras: 10,
-    onlineCameras: 10,
-    gradientFrom: '#b45309',
-    gradientTo: '#f59e0b',
-    address: 'Business Bay, Sheikh Zayed Road, Dubai',
-    nvr: 'Axis S3016',
-  },
-  {
-    id: 'branch-remote',
-    name: 'Remote Hub',
-    city: 'London',
-    country: 'UK',
-    status: 'offline',
-    totalCameras: 4,
-    onlineCameras: 0,
-    gradientFrom: '#374151',
-    gradientTo: '#6b7280',
-    address: 'Canary Wharf, London E14',
-    nvr: 'Synology NVR1218',
+    onlineCameras: 5,
+    gradientFrom: "#1d4ed8",
+    gradientTo: "#3b82f6",
+    address: "Phulpur, Mymensingh, Bangladesh",
+    nvr: "TP-Link VIGI NVR1104H-4P",
   },
 ];
 
 const CAMERA_LOCATIONS = [
-  'Main Entrance', 'Reception', 'Server Room', 'Office Floor', 'Meeting Room A',
-  'Meeting Room B', 'Parking Lot', 'Fire Exit', 'CEO Office', 'Operations Room',
-  'Warehouse', 'Roof Access', 'Side Entrance', 'Break Room', 'Print Room',
+  "Main Entrance",
+  "Reception",
+  "Server Room",
+  "Office Floor",
+  "Meeting Room A",
+  "Meeting Room B",
+  "Parking Lot",
+  "Fire Exit",
+  "CEO Office",
+  "Operations Room",
+  "Warehouse",
+  "Roof Access",
+  "Side Entrance",
+  "Break Room",
+  "Print Room",
 ];
 
-const RESOLUTIONS = ['1080p', '4K', '2K', '720p'];
-const ANGLES = ['Wide 140°', 'Standard 90°', 'Narrow 60°', 'PTZ 360°'];
+const RESOLUTIONS = ["1080p", "4K", "2K", "720p"];
+const ANGLES = ["Wide 140°", "Standard 90°", "Narrow 60°", "PTZ 360°"];
 
 function seededRandom(seed: number) {
   let s = seed;
@@ -122,14 +82,16 @@ function buildCamerasForBranch(branch: MockBranch): MockCamera[] {
     const loc = CAMERA_LOCATIONS[i % CAMERA_LOCATIONS.length];
 
     const lastMotionMinsAgo = Math.floor(rand() * 120);
-    const lastMotion = new Date(Date.now() - lastMotionMinsAgo * 60_000).toISOString();
+    const lastMotion = new Date(
+      Date.now() - lastMotionMinsAgo * 60_000,
+    ).toISOString();
 
     cameras.push({
       id: `${branch.id}-cam-${i + 1}`,
       branchId: branch.id,
-      label: `CAM-${String(i + 1).padStart(2, '0')}`,
+      label: `CAM-${String(i + 1).padStart(2, "0")}`,
       location: loc,
-      status: isOnline ? (isRecording ? 'recording' : 'online') : 'offline',
+      status: isOnline ? (isRecording ? "recording" : "online") : "offline",
       resolution: RESOLUTIONS[Math.floor(rand() * RESOLUTIONS.length)],
       streamUrl: `rtsp://stream.pouchcare.com/${branch.id}/cam${i + 1}/live`,
       lastMotion: isOnline ? lastMotion : undefined,
@@ -143,7 +105,9 @@ function buildCamerasForBranch(branch: MockBranch): MockCamera[] {
   return cameras;
 }
 
-export const MOCK_CAMERAS: MockCamera[] = MOCK_BRANCHES.flatMap(buildCamerasForBranch);
+export const MOCK_CAMERAS: MockCamera[] = MOCK_BRANCHES.flatMap(
+  buildCamerasForBranch,
+);
 
 export function getMockBranch(id: string): MockBranch | undefined {
   return MOCK_BRANCHES.find((b) => b.id === id);
@@ -159,9 +123,9 @@ export function getMockCamera(id: string): MockCamera | undefined {
 
 export const MONITOR_SUMMARY = {
   totalBranches: MOCK_BRANCHES.length,
-  onlineBranches: MOCK_BRANCHES.filter((b) => b.status === 'online').length,
+  onlineBranches: MOCK_BRANCHES.filter((b) => b.status === "online").length,
   totalCameras: MOCK_BRANCHES.reduce((acc, b) => acc + b.totalCameras, 0),
   onlineCameras: MOCK_BRANCHES.reduce((acc, b) => acc + b.onlineCameras, 0),
-  recordingCameras: MOCK_CAMERAS.filter((c) => c.status === 'recording').length,
-  offlineCameras: MOCK_CAMERAS.filter((c) => c.status === 'offline').length,
+  recordingCameras: MOCK_CAMERAS.filter((c) => c.status === "recording").length,
+  offlineCameras: MOCK_CAMERAS.filter((c) => c.status === "offline").length,
 };

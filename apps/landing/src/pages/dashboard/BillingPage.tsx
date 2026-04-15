@@ -84,22 +84,24 @@ export default function BillingPage() {
       >
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div>
-            <label className="text-xs font-medium text-gray-600">Amount (USD)</label>
+            <label htmlFor="payout-amount" className="text-xs font-medium text-gray-600 dark:text-gray-400">Amount (USD)</label>
             <input
+              id="payout-amount"
               type="number"
               min={MIN_PAYOUT}
               step="0.01"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="mt-1 min-h-[44px] w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm"
+              className="mt-1 min-h-[44px] w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2.5 text-sm"
             />
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-600">Method</label>
+            <label htmlFor="payout-method" className="text-xs font-medium text-gray-600 dark:text-gray-400">Method</label>
             <select
+              id="payout-method"
               value={method}
               onChange={(e) => setMethod(e.target.value)}
-              className="mt-1 min-h-[44px] w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm"
+              className="mt-1 min-h-[44px] w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2.5 text-sm"
             >
               {PAY_METHODS.map((m) => (
                 <option key={m.value} value={m.value}>
@@ -109,15 +111,16 @@ export default function BillingPage() {
             </select>
           </div>
           <div className="sm:col-span-2">
-            <label className="text-xs font-medium text-gray-600">
+            <label htmlFor="payout-details" className="text-xs font-medium text-gray-600 dark:text-gray-400">
               Payment details
             </label>
             <textarea
+              id="payout-details"
               value={details}
               onChange={(e) => setDetails(e.target.value)}
               placeholder="TRC20 address, Payoneer email, bank info…"
               rows={3}
-              className="mt-1 min-h-[5.5rem] w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm"
+              className="mt-1 min-h-[5.5rem] w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2.5 text-sm"
             />
           </div>
         </div>
@@ -133,9 +136,11 @@ export default function BillingPage() {
 
       <DashboardPanel title="Commission ledger">
         {comm.isLoading ? (
-          <p className="text-sm text-gray-500">Loading…</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Loading…</p>
+        ) : comm.isError ? (
+          <p className="text-sm text-red-600">Failed to load commissions.</p>
         ) : !comm.data?.items.length ? (
-          <p className="text-sm text-gray-500">No commission rows yet.</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">No commission rows yet.</p>
         ) : (
           <NarrowWide
             narrow={
@@ -143,14 +148,14 @@ export default function BillingPage() {
                 {comm.data.items.map((c) => (
                   <li
                     key={c.id}
-                    className="rounded-2xl border border-gray-200/90 bg-gray-50/40 p-4 shadow-sm"
+                    className="rounded-2xl border border-gray-200/90 dark:border-gray-700 bg-gray-50/40 dark:bg-gray-800/50 p-4 shadow-sm"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
                           {formatDateShort(c.createdAt)}
                         </p>
-                        <p className="mt-1 font-medium text-gray-900">
+                        <p className="mt-1 font-medium text-gray-900 dark:text-gray-100">
                           {c.referredMemberName ?? "—"}
                         </p>
                         <div className="mt-2">
@@ -159,7 +164,7 @@ export default function BillingPage() {
                           </Badge>
                         </div>
                       </div>
-                      <p className="shrink-0 text-lg font-semibold tabular-nums text-gray-900">
+                      <p className="shrink-0 text-lg font-semibold tabular-nums text-gray-900 dark:text-gray-100">
                         {formatUsd(c.commissionAmountUsd)}
                       </p>
                     </div>
@@ -168,10 +173,10 @@ export default function BillingPage() {
               </ul>
             }
             wide={
-              <div className="overflow-x-auto rounded-xl border border-gray-100">
+              <div className="overflow-x-auto rounded-xl border border-gray-100 dark:border-gray-800">
                 <table className="w-full min-w-[700px] text-left text-sm">
                   <thead>
-                    <tr className="border-b border-gray-200 bg-gray-50/80 text-xs uppercase text-gray-500">
+                    <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-800/50 text-xs uppercase text-gray-500 dark:text-gray-400">
                       <th className="px-4 py-3 font-medium">Date</th>
                       <th className="px-4 py-3 font-medium">Referral</th>
                       <th className="px-4 py-3 font-medium">Status</th>
@@ -180,10 +185,10 @@ export default function BillingPage() {
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100">
+                  <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                     {comm.data.items.map((c) => (
                       <tr key={c.id}>
-                        <td className="px-4 py-2.5 text-gray-600">
+                        <td className="px-4 py-2.5 text-gray-600 dark:text-gray-400">
                           {formatDateShort(c.createdAt)}
                         </td>
                         <td className="px-4 py-2.5">
@@ -209,9 +214,11 @@ export default function BillingPage() {
 
       <DashboardPanel title="Payout history">
         {payouts.isLoading ? (
-          <p className="text-sm text-gray-500">Loading…</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Loading…</p>
+        ) : payouts.isError ? (
+          <p className="text-sm text-red-600">Failed to load payout history.</p>
         ) : !payouts.data?.items.length ? (
-          <p className="text-sm text-gray-500">No payouts yet.</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">No payouts yet.</p>
         ) : (
           <NarrowWide
             narrow={
@@ -219,22 +226,22 @@ export default function BillingPage() {
                 {payouts.data.items.map((p) => (
                   <li
                     key={p.id}
-                    className="rounded-2xl border border-gray-200/90 bg-gray-50/40 p-4 shadow-sm"
+                    className="rounded-2xl border border-gray-200/90 dark:border-gray-700 bg-gray-50/40 dark:bg-gray-800/50 p-4 shadow-sm"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <p className="text-xs text-gray-500">Requested</p>
-                        <p className="font-medium text-gray-900">
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Requested</p>
+                        <p className="font-medium text-gray-900 dark:text-gray-100">
                           {formatDateShort(p.requestedDate)}
                         </p>
-                        <p className="mt-2 text-sm text-gray-600">
+                        <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
                           {p.paymentMethod.replace(/_/g, " ")}
                         </p>
-                        <p className="mt-1 text-sm text-gray-600">
+                        <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
                           {p.status}
                         </p>
                       </div>
-                      <p className="shrink-0 text-lg font-semibold tabular-nums text-gray-900">
+                      <p className="shrink-0 text-lg font-semibold tabular-nums text-gray-900 dark:text-gray-100">
                         {formatUsd(p.amountUsd)}
                       </p>
                     </div>
@@ -243,10 +250,10 @@ export default function BillingPage() {
               </ul>
             }
             wide={
-              <div className="overflow-x-auto rounded-xl border border-gray-100">
+              <div className="overflow-x-auto rounded-xl border border-gray-100 dark:border-gray-800">
                 <table className="w-full min-w-[560px] text-left text-sm">
                   <thead>
-                    <tr className="border-b border-gray-200 bg-gray-50/80 text-xs uppercase text-gray-500">
+                    <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-800/50 text-xs uppercase text-gray-500 dark:text-gray-400">
                       <th className="px-4 py-3 font-medium">Requested</th>
                       <th className="px-4 py-3 font-medium">Method</th>
                       <th className="px-4 py-3 font-medium">Status</th>
@@ -255,10 +262,10 @@ export default function BillingPage() {
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100">
+                  <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                     {payouts.data.items.map((p) => (
                       <tr key={p.id}>
-                        <td className="px-4 py-2.5 text-gray-600">
+                        <td className="px-4 py-2.5 text-gray-600 dark:text-gray-400">
                           {formatDateShort(p.requestedDate)}
                         </td>
                         <td className="px-4 py-2.5">

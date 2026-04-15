@@ -6,6 +6,7 @@ import {
   getAccessToken,
   getRefreshToken,
   setAccessToken,
+  setRefreshToken,
   clearPortalAuth,
 } from "@/utils/portalStorage";
 
@@ -65,10 +66,10 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       const refreshToken = getRefreshToken();
       if (!refreshToken) {
-        const msg =
-          (error.response?.data as { error?: string })?.error ||
-          "Session expired";
-        return Promise.reject(new Error(msg));
+        clearPortalAuth();
+        usePortalAuthStore.getState().logout();
+        window.location.assign(paths.login);
+        return Promise.reject(new Error("Session expired"));
       }
 
       if (isRefreshing) {
@@ -92,12 +93,16 @@ api.interceptors.response.use(
         const res = await axios.post(refreshUrl, { refresh_token: refreshToken });
         const body = res.data as {
           success?: boolean;
-          data?: { access_token?: string };
+          data?: { access_token?: string; refresh_token?: string };
         };
         const newAccess = body.data?.access_token;
         if (!newAccess) throw new Error("No access token from refresh");
 
         setAccessToken(newAccess);
+        const newRefresh = body.data?.refresh_token;
+        if (newRefresh) {
+          setRefreshToken(newRefresh);
+        }
         usePortalAuthStore.getState().updateTokens(newAccess);
         processQueue(null, newAccess);
         originalRequest.headers.Authorization = `Bearer ${newAccess}`;

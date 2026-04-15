@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "@/api/client";
+import type { PaginatedMeta } from "@/types/portalDashboard";
 
 export interface Session {
   id: string;
@@ -30,13 +31,6 @@ export interface SecuritySettings {
   newFeatures: boolean;
   marketingEmails: boolean;
   smsAlerts: boolean;
-}
-
-export interface PaginatedMeta {
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
 }
 
 function unwrapPaginated<T>(res: {

@@ -27,20 +27,12 @@ import {
 import { usePortalInvoices } from "@/api/portal-invoices";
 import { usePortalWebsites } from "@/api/portal-websites";
 import { usePortalDomains } from "@/api/portal-hosting";
-import { formatUsd, formatDateShort } from "@/lib/format";
+import { formatUsd, formatDateShort, orderStatusVariant } from "@/lib/format";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { DashboardPanel } from "@/components/dashboard/DashboardPanel";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
-
-function statusVariant(s: string): "green" | "yellow" | "sky" | "red" {
-  const u = s.toUpperCase();
-  if (u === "COMPLETED" || u === "DELIVERED") return "green";
-  if (u === "PROCESSING" || u === "PENDING") return "yellow";
-  if (u === "CANCELLED" || u === "REFUNDED") return "red";
-  return "sky";
-}
 
 const QUICK_ACTIONS: { to: string; label: string; icon: React.ElementType; color: string }[] = [
   { to: paths.dashboardOrders, label: "Orders", icon: Package, color: "bg-primary-50 text-primary-600" },
@@ -54,7 +46,7 @@ const QUICK_ACTIONS: { to: string; label: string; icon: React.ElementType; color
   { to: paths.dashboardBilling, label: "Billing", icon: Receipt, color: "bg-orange-50 text-orange-600" },
   { to: paths.dashboardReferrals, label: "Referrals", icon: Users, color: "bg-pink-50 text-pink-600" },
   { to: paths.dashboardSupport, label: "Support", icon: LifeBuoy, color: "bg-cyan-50 text-cyan-600" },
-  { to: paths.dashboardSettings, label: "Settings", icon: Settings, color: "bg-gray-100 text-gray-600" },
+  { to: paths.dashboardSettings, label: "Settings", icon: Settings, color: "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400" },
 ];
 
 export default function DashboardOverviewPage() {
@@ -77,10 +69,10 @@ export default function DashboardOverviewPage() {
       {/* Welcome */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
-          <p className="text-xs font-medium uppercase tracking-wide text-gray-400 sm:text-sm sm:normal-case sm:tracking-normal sm:text-gray-500">
+          <p className="text-xs font-medium uppercase tracking-wide text-gray-400 sm:text-sm sm:normal-case sm:tracking-normal sm:text-gray-500 sm:dark:text-gray-400">
             Welcome back
           </p>
-          <h2 className="mt-0.5 truncate text-lg font-bold text-gray-900 sm:text-xl">
+          <h2 className="mt-0.5 truncate text-lg font-bold text-gray-900 dark:text-gray-100 sm:text-xl">
             {user?.fullName ?? "Client"}
           </h2>
         </div>
@@ -152,9 +144,9 @@ export default function DashboardOverviewPage() {
           }
         >
           {recent.isLoading ? (
-            <p className="text-sm text-gray-500">Loading…</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Loading…</p>
           ) : !recent.data?.items.length ? (
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
               No orders yet.{" "}
               <Link to={paths.dashboardServices} className="font-medium text-primary-600">
                 Browse services
@@ -162,28 +154,28 @@ export default function DashboardOverviewPage() {
               to get started.
             </p>
           ) : (
-            <ul className="space-y-3 sm:space-y-0 sm:divide-y sm:divide-gray-100">
+            <ul className="space-y-3 sm:space-y-0 sm:divide-y sm:divide-gray-100 sm:dark:divide-gray-800">
               {recent.data.items.map((o) => (
                 <li
                   key={o.id}
-                  className="rounded-2xl border border-gray-200/80 bg-gray-50/50 p-4 sm:flex sm:flex-wrap sm:items-center sm:justify-between sm:gap-2 sm:rounded-none sm:border-0 sm:bg-transparent sm:p-0 sm:py-3 sm:first:pt-0 sm:last:pb-0"
+                  className="rounded-2xl border border-gray-200/80 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 p-4 sm:flex sm:flex-wrap sm:items-center sm:justify-between sm:gap-2 sm:rounded-none sm:border-0 sm:bg-transparent sm:p-0 sm:py-3 sm:first:pt-0 sm:last:pb-0"
                 >
                   <div className="min-w-0 flex-1">
                     <Link
                       to={paths.dashboardOrder(o.id)}
-                      className="font-medium text-gray-900 hover:text-primary-700"
+                      className="font-medium text-gray-900 dark:text-gray-100 hover:text-primary-700"
                     >
                       {o.serviceName ?? o.service}
                     </Link>
-                    <p className="mt-0.5 text-xs text-gray-500">
+                    <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
                       #{o.orderId} · {formatDateShort(o.orderDate)}
                     </p>
                   </div>
-                  <div className="mt-3 flex items-center justify-between gap-3 border-t border-gray-200/80 pt-3 sm:mt-0 sm:border-0 sm:pt-0">
-                    <Badge variant={statusVariant(o.status)}>
+                  <div className="mt-3 flex items-center justify-between gap-3 border-t border-gray-200/80 dark:border-gray-700 pt-3 sm:mt-0 sm:border-0 sm:pt-0">
+                    <Badge variant={orderStatusVariant(o.status)}>
                       {o.status.replace(/_/g, " ")}
                     </Badge>
-                    <p className="text-sm font-semibold tabular-nums text-gray-900">
+                    <p className="text-sm font-semibold tabular-nums text-gray-900 dark:text-gray-100">
                       {formatUsd(o.amountUsd)}
                     </p>
                   </div>
@@ -200,12 +192,12 @@ export default function DashboardOverviewPage() {
               <Link
                 key={to}
                 to={to}
-                className="group flex flex-col items-center gap-1.5 rounded-xl border border-gray-100 bg-gray-50/50 p-3 text-center transition-all hover:border-primary-200 hover:bg-primary-50/50 hover:shadow-sm"
+                className="group flex flex-col items-center gap-1.5 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/50 p-3 text-center transition-all hover:border-primary-200 hover:bg-primary-50/50 hover:shadow-sm"
               >
                 <div className={cn("flex h-9 w-9 items-center justify-center rounded-xl", color)}>
                   <Icon className="h-4 w-4" />
                 </div>
-                <span className="text-[11px] font-medium text-gray-700 group-hover:text-primary-700">
+                <span className="text-[11px] font-medium text-gray-700 dark:text-gray-300 group-hover:text-primary-700">
                   {label}
                 </span>
               </Link>

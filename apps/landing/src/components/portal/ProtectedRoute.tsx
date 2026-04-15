@@ -8,8 +8,9 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
   const location = useLocation();
 
   if (!isAuthenticated) {
+    const from = location.pathname + location.search + location.hash;
     return (
-      <Navigate to={paths.login} replace state={{ from: location.pathname }} />
+      <Navigate to={paths.login} replace state={{ from }} />
     );
   }
 

@@ -23,8 +23,8 @@ const variantStyles: Record<Variant, string> = {
     "bg-red-600 text-white shadow-soft hover:bg-red-700 hover:-translate-y-0.5 hover:shadow-elevated active:translate-y-0 focus-visible:ring-red-500/50",
   sky: "bg-primary-500 text-white hover:bg-primary-600 hover:-translate-y-0.5 active:translate-y-0",
   outline:
-    "border border-gray-300 text-gray-700 hover:bg-primary-50 hover:border-primary-300 hover:text-primary-700 hover:-translate-y-0.5 active:translate-y-0",
-  ghost: "text-gray-500 hover:text-gray-900 hover:bg-gray-100",
+    "border border-gray-300 text-gray-700 hover:bg-primary-50 hover:border-primary-300 hover:text-primary-700 hover:-translate-y-0.5 active:translate-y-0 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-primary-950/40 dark:hover:border-primary-700 dark:hover:text-primary-300",
+  ghost: "text-gray-500 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-100 dark:hover:bg-gray-800",
 };
 
 const sizeStyles: Record<Size, string> = {

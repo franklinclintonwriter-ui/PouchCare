@@ -1,13 +1,17 @@
 import { BACKLINK_PACKAGES, SERVICES, type BacklinkPackage, type ServiceItem } from './constants';
+import { getApiOrigin } from '@/config/apiOrigin';
 
-const API_BASE = import.meta.env.VITE_API_URL ?? '';
+function getMarketingApiBase(): string {
+  const origin = getApiOrigin();
+  return origin ? `${origin}/v1` : '/v1';
+}
 
 // ── Generic fetcher ───────────────────────────────────────────────────────
 
 async function apiFetch<T>(path: string, fallback: T): Promise<T> {
-  if (!API_BASE) return fallback;
+  const base = getMarketingApiBase();
   try {
-    const res = await fetch(`${API_BASE}${path}`, {
+    const res = await fetch(`${base}${path}`, {
       headers: { Accept: 'application/json' },
       signal: AbortSignal.timeout(5000),
     });
@@ -55,7 +59,7 @@ function getCategoryIcon(category: string): string {
 }
 
 export async function getServices(): Promise<ServiceItem[]> {
-  const data = await apiFetch<ApiService[]>('/v1/services', []);
+  const data = await apiFetch<ApiService[]>('/services', []);
   if (!data.length) return SERVICES;
   return data.filter((s) => s.isActive).map(mapApiService);
 }
@@ -89,7 +93,7 @@ function mapApiBacklink(p: ApiBacklinkPackage): BacklinkPackage {
 }
 
 export async function getBacklinkPackages(): Promise<BacklinkPackage[]> {
-  const data = await apiFetch<ApiBacklinkPackage[]>('/v1/backlink-packages', []);
+  const data = await apiFetch<ApiBacklinkPackage[]>('/backlink-packages', []);
   if (!data.length) return BACKLINK_PACKAGES;
   return data.map(mapApiBacklink);
 }
@@ -105,18 +109,16 @@ export interface ContactPayload {
 }
 
 export async function submitContact(payload: ContactPayload): Promise<boolean> {
-  if (!API_BASE) {
-    window.location.href = `mailto:hello@pouchcare.com?subject=${encodeURIComponent(payload.subject)}&body=${encodeURIComponent(payload.message)}`;
-    return true;
-  }
+  const base = getMarketingApiBase();
   try {
-    const res = await fetch(`${API_BASE}/v1/contact`, {
+    const res = await fetch(`${base}/contact`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
     return res.ok;
   } catch {
-    return false;
+    window.location.href = `mailto:hello@pouchcare.com?subject=${encodeURIComponent(payload.subject)}&body=${encodeURIComponent(payload.message)}`;
+    return true;
   }
 }

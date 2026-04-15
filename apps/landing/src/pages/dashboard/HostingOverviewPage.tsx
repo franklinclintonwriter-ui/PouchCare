@@ -41,21 +41,21 @@ export default function HostingOverviewPage() {
     <div className="space-y-6 sm:space-y-8">
       <div
         className={cn(
-          "relative overflow-hidden rounded-2xl border border-gray-200/90 bg-gradient-to-br from-white via-primary-50/40 to-sky-50/50 p-4 shadow-sm sm:p-6 md:p-8",
+          "relative overflow-hidden rounded-2xl border border-gray-200/90 dark:border-gray-700 bg-gradient-to-br from-white via-primary-50/40 to-sky-50/50 p-4 shadow-sm sm:p-6 md:p-8",
         )}
       >
         <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-primary-400/10 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-12 left-1/3 h-32 w-32 rounded-full bg-sky-400/15 blur-2xl" />
         <div className="relative flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="min-w-0">
-            <div className="inline-flex items-center gap-2 rounded-full border border-primary-200/60 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-primary-700 shadow-sm">
+            <div className="inline-flex items-center gap-2 rounded-full border border-primary-200/60 bg-white/80 dark:bg-gray-900 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-primary-700 shadow-sm">
               <Globe2 className="h-3.5 w-3.5 shrink-0" aria-hidden />
               Domain & hosting
             </div>
-            <h1 className="mt-3 text-xl font-bold tracking-tight text-gray-900 sm:text-2xl md:text-3xl">
+            <h1 className="mt-3 text-xl font-bold tracking-tight text-gray-900 dark:text-gray-100 sm:text-2xl md:text-3xl">
               Your infrastructure
             </h1>
-            <p className="mt-2 max-w-xl text-sm leading-relaxed text-gray-600 sm:text-base">
+            <p className="mt-2 max-w-xl text-sm leading-relaxed text-gray-600 dark:text-gray-400 sm:text-base">
               Monitor domains, SSL, and DNS. Use{" "}
               <Link
                 to={paths.dashboardHostingRegister}
@@ -123,6 +123,10 @@ export default function HostingOverviewPage() {
           <div className="flex items-center justify-center py-10">
             <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
           </div>
+        ) : domainsData === undefined ? (
+          <p className="py-10 text-center text-sm text-red-600">
+            Failed to load domains. Please try again.
+          </p>
         ) : (
           <>
             {/* Mobile / small tablet: stacked cards */}
@@ -131,24 +135,24 @@ export default function HostingOverviewPage() {
             <li key={d.id}>
               <Link
                 to={paths.dashboardHostingDomain(d.id)}
-                className="flex min-h-[44px] flex-col gap-3 rounded-xl border border-gray-200 bg-gray-50/50 p-4 transition-colors active:bg-primary-50/50"
+                className="flex min-h-[44px] flex-col gap-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 p-4 transition-colors active:bg-primary-50/50"
               >
                 <div className="flex flex-wrap items-start justify-between gap-2">
-                  <span className="break-all font-mono text-base font-semibold text-gray-900">
+                  <span className="break-all font-mono text-base font-semibold text-gray-900 dark:text-gray-100">
                     {d.fqdn}
                   </span>
                   <Badge variant={hostingStatusVariant(d.status)}>
                     {d.status.replace(/_/g, " ")}
                   </Badge>
                 </div>
-                <dl className="grid grid-cols-2 gap-2 text-xs text-gray-600 sm:text-sm">
+                <dl className="grid grid-cols-2 gap-2 text-xs text-gray-600 dark:text-gray-400 sm:text-sm">
                   <div>
                     <dt className="text-gray-400">Plan</dt>
-                    <dd className="font-medium text-gray-800">{d.planName}</dd>
+                    <dd className="font-medium text-gray-800 dark:text-gray-200">{d.planName}</dd>
                   </div>
                   <div>
                     <dt className="text-gray-400">Monthly</dt>
-                    <dd className="font-semibold tabular-nums text-gray-900">
+                    <dd className="font-semibold tabular-nums text-gray-900 dark:text-gray-100">
                       {formatUsd(d.monthlyPriceUsd)}
                     </dd>
                   </div>
@@ -176,10 +180,10 @@ export default function HostingOverviewPage() {
             </ul>
 
             {/* md+: data table */}
-            <div className="hidden overflow-x-auto rounded-xl border border-gray-100 md:block">
+            <div className="hidden overflow-x-auto rounded-xl border border-gray-100 dark:border-gray-800 md:block">
           <table className="w-full min-w-[640px] text-left text-sm">
             <thead>
-              <tr className="border-b border-gray-200 bg-gray-50/80 text-xs uppercase tracking-wide text-gray-500">
+              <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-800/50 text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
                 <th className="px-3 py-3 font-semibold lg:px-4">Domain</th>
                 <th className="px-3 py-3 font-semibold lg:px-4">Status</th>
                 <th className="px-3 py-3 font-semibold lg:px-4">Plan</th>
@@ -191,7 +195,7 @@ export default function HostingOverviewPage() {
                 <th className="w-px px-3 py-3 lg:px-4" />
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
               {domains.map((d) => (
                 <tr
                   key={d.id}
@@ -199,7 +203,7 @@ export default function HostingOverviewPage() {
                 >
                   <td className="px-3 py-3.5 lg:px-4">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-mono text-sm font-medium text-gray-900">
+                      <span className="font-mono text-sm font-medium text-gray-900 dark:text-gray-100">
                         {d.fqdn}
                       </span>
                       {d.autoRenew && (
@@ -214,14 +218,14 @@ export default function HostingOverviewPage() {
                       {d.status.replace(/_/g, " ")}
                     </Badge>
                   </td>
-                  <td className="px-3 py-3.5 text-gray-700 lg:px-4">
+                  <td className="px-3 py-3.5 text-gray-700 dark:text-gray-300 lg:px-4">
                     {d.planName}
                   </td>
-                  <td className="px-3 py-3.5 tabular-nums text-gray-600 lg:px-4">
+                  <td className="px-3 py-3.5 tabular-nums text-gray-600 dark:text-gray-400 lg:px-4">
                     {formatDateShort(d.expiresAt)}
                   </td>
                   <td className="px-3 py-3.5 lg:px-4">
-                    <span className="inline-flex items-center gap-1 text-gray-700">
+                    <span className="inline-flex items-center gap-1 text-gray-700 dark:text-gray-300">
                       <Lock
                         className="h-3.5 w-3.5 shrink-0 text-emerald-600"
                         aria-hidden
@@ -229,7 +233,7 @@ export default function HostingOverviewPage() {
                       {formatDateShort(d.sslExpiresAt)}
                     </span>
                   </td>
-                  <td className="px-3 py-3.5 text-right font-medium tabular-nums text-gray-900 lg:px-4">
+                  <td className="px-3 py-3.5 text-right font-medium tabular-nums text-gray-900 dark:text-gray-100 lg:px-4">
                     {formatUsd(d.monthlyPriceUsd)}
                   </td>
                   <td className="px-3 py-3.5 text-right lg:px-4">

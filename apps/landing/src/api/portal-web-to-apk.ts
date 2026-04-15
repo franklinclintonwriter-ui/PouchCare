@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "@/api/client";
+import type { PaginatedMeta } from "@/types/portalDashboard";
 
 export type ApkJobStatus =
   | "queued"
@@ -18,13 +19,6 @@ export interface ApkJob {
   completedAt: string | null;
   apkSizeMb: number | null;
   downloadUrl: string | null;
-}
-
-export interface PaginatedMeta {
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
 }
 
 function unwrapPaginated<T>(res: {
