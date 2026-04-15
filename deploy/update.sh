@@ -11,7 +11,7 @@ info() { echo -e "${CYAN}[→]${NC}  $1"; }
 warn() { echo -e "${YELLOW}[⚠️]${NC}  $1"; }
 fail() { echo -e "\033[0;31m[❌]${NC} $1"; exit 1; }
 
-APP_USER="pouchcare-api"
+APP_USER="ubuntu"
 REPO_DIR="/home/${APP_USER}/Developments/PouchCare"
 API_DIR="${REPO_DIR}/apps/api"
 HTDOCS="/home/${APP_USER}/htdocs"
@@ -26,14 +26,14 @@ echo -e "${CYAN}${BOLD}═══════════════════
 # 1. Pull latest code
 info "Pulling latest main from origin..."
 cd "${REPO_DIR}"
-sudo -u ${APP_USER} git fetch origin
-sudo -u ${APP_USER} git checkout main
-sudo -u ${APP_USER} git reset --hard origin/main
+git fetch origin
+git checkout main
+git reset --hard origin/main
 log "Code: $(git log --oneline -1)"
 
 # 2. Database backup
 info "Backing up database before migration..."
-BACKUP_DIR="/home/pouchcare-api/backups"
+BACKUP_DIR="/home/ubuntu/backups"
 mkdir -p "$BACKUP_DIR"
 pg_dump -U pouchcare -h localhost pouchcare > "$BACKUP_DIR/pre-deploy-$(date +%Y%m%d%H%M%S).sql" 2>/dev/null || warn "pg_dump skipped (check pg_hba.conf)"
 log "Backup to $BACKUP_DIR"

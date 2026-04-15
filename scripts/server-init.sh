@@ -18,7 +18,7 @@ log()  { echo -e "${GREEN}[✅]${NC} $1"; }
 info() { echo -e "${CYAN}[→]${NC}  $1"; }
 warn() { echo -e "${YELLOW}[⚠️]${NC}  $1"; }
 
-APP_USER="pouchcare-api"
+APP_USER="ubuntu"
 HOME_DIR="/home/${APP_USER}"
 REPO_DIR="${HOME_DIR}/Developments/PouchCare"
 API_DIR="${REPO_DIR}/apps/api"

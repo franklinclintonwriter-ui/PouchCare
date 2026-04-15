@@ -158,7 +158,7 @@ Add these three:
 |-----|-------|------|---------|------|
 | `SSH_PRIVATE_KEY` | *(see below)* | File | ✅ Yes | ❌ No |
 | `DEPLOY_HOST` | `72.60.204.92` | Variable | ✅ Yes | ❌ No |
-| `DEPLOY_USER` | `pouchcare` | Variable | ✅ Yes | ❌ No |
+| `DEPLOY_USER` | `ubuntu` | Variable | ✅ Yes | ❌ No |
 
 **Value for `SSH_PRIVATE_KEY` (paste EXACTLY, including the BEGIN/END lines):**
 

@@ -166,7 +166,7 @@ sudo chmod 440 /etc/sudoers.d/pouchcare-deploy
 |-----|-------|------|---------|------|
 | `SSH_PRIVATE_KEY` | (paste the PRIVATE key from 2.1 — include BEGIN/END lines) | File | ✅ | ❌ |
 | `DEPLOY_HOST` | Your server's IP or hostname (e.g. `203.0.113.45` or `server.pouchcare.com`) | Variable | ✅ | ❌ |
-| `DEPLOY_USER` | `pouchcare` | Variable | ✅ | ❌ |
+| `DEPLOY_USER` | `ubuntu` | Variable | ✅ | ❌ |
 
 Optional:
 | Key | Value |
