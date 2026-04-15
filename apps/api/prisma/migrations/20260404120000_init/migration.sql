@@ -1,4 +1,4 @@
-﻿-- CreateEnum
+-- CreateEnum
 CREATE TYPE "SystemRole" AS ENUM ('CEO', 'Brother / Co-MD', 'Operation Manager', 'HR Manager', 'Branch Manager', 'STAFF', 'INTERN');
 
 -- CreateEnum
