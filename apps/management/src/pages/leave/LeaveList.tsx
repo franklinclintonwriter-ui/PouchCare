@@ -163,7 +163,7 @@ export default function LeaveList() {
           ? [
               {
                 type: "button" as const,
-                label: "Add For Staff",
+                label: "Add For Shoulder",
                 icon: UserPlus,
                 onClick: () => setCreateOpen(true),
               },
@@ -216,7 +216,7 @@ export default function LeaveList() {
   const columns: Column<LeaveRequest>[] = [
     {
       key: "staffName",
-      label: "Staff",
+      label: "Shoulder",
       sticky: true,
       render: (row) => (
         <div className="flex items-center gap-2">
@@ -441,7 +441,7 @@ export default function LeaveList() {
       >
         <div className="space-y-3">
           <Select
-            label="Staff Member"
+            label="Shoulder"
             value={createForm.staffMemberId}
             onChange={(e) =>
               setCreateForm((prev) => ({

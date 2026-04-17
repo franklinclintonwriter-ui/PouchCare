@@ -106,7 +106,7 @@ function Sidebar() {
     {
       label: "HR",
       items: [
-        { label: "Staff Directory", icon: Users, href: "/staff" },
+        { label: "Shoulder Directory", icon: Users, href: "/staff" },
         { label: "Leaderboard", icon: Trophy, href: "/staff/leaderboard" },
         {
           label: "Branches",

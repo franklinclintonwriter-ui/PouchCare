@@ -16,7 +16,7 @@ import { usePermission } from '@/hooks/usePermission';
 import { toast } from 'sonner';
 
 const audienceLabels: Record<string, string> = {
-  staff: 'Staff Only',
+  staff: 'Shoulder Only',
   clients: 'Clients Only',
   all: 'Everyone',
 };

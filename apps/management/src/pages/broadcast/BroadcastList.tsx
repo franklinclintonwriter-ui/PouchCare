@@ -32,7 +32,7 @@ const channelColors: Record<string, 'primary' | 'success' | 'warning'> = {
 
 const AUDIENCE_OPTIONS = [
   { label: 'All Users', value: 'all' },
-  { label: 'Staff Only', value: 'staff' },
+  { label: 'Shoulder Only', value: 'staff' },
   { label: 'Clients Only', value: 'clients' },
 ];
 
@@ -45,7 +45,7 @@ const FILTER_CHANNELS = [{ label: 'All channels', value: '' }, ...CHANNEL_OPTION
 const FILTER_AUDIENCES = [
   { label: 'All audiences', value: '' },
   { label: 'All Users', value: 'all' },
-  { label: 'Staff Only', value: 'staff' },
+  { label: 'Shoulder Only', value: 'staff' },
   { label: 'Clients Only', value: 'clients' },
 ];
 

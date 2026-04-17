@@ -217,7 +217,7 @@ export default function TeamAttendance() {
   const columns: Column<AttendanceRecord>[] = [
     {
       key: "staffName",
-      label: "Staff",
+      label: "Shoulder",
       sticky: true,
       render: (row) => (
         <div className="flex items-center gap-2">
@@ -500,7 +500,7 @@ export default function TeamAttendance() {
         >
           <div className="space-y-4">
             <Select
-              label="Staff Member"
+              label="Shoulder"
               value={createForm.staffMemberId}
               onChange={(e) =>
                 setCreateForm((prev) => ({

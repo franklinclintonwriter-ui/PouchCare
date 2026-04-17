@@ -83,7 +83,7 @@ export default function DailyReports() {
   const columns: Column<DailyReport>[] = [
     {
       key: 'staffName',
-      label: 'Staff',
+      label: 'Shoulder',
       sticky: true,
       render: (row) => (
         <div className="flex items-center gap-2">

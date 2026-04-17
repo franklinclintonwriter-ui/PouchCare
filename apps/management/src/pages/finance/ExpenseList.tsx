@@ -154,7 +154,7 @@ export default function ExpenseList() {
         <span className="font-medium">{formatCurrency(row.amount)}</span>
       ),
     },
-    { key: "staffName", label: "Staff" },
+    { key: "staffName", label: "Shoulder" },
     { key: "date", label: "Date" },
     {
       key: "status",

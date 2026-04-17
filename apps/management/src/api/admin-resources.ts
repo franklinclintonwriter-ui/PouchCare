@@ -391,7 +391,7 @@ export interface ManagerCandidate {
 }
 
 /**
- * Fetch all active staff members (for selecting a manager when creating a new branch).
+ * Fetch all active shoulders (for selecting a manager when creating a new branch).
  * Optional `branch` param filters to staff already at that branch.
  */
 export function useStaffForManager(branchName?: string) {

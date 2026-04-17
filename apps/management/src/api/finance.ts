@@ -99,7 +99,7 @@ function mapExpense(raw: RawExpense): Expense {
     category: raw.category ?? "General",
     amount: raw.amountUsd ?? 0,
     staffId: raw.paidBy ?? "",
-    staffName: raw.paidBy ?? "Staff",
+    staffName: raw.paidBy ?? "Shoulder",
     date: raw.expenseDate,
     receiptUrl: raw.receiptUrl ?? undefined,
     status: normalizeApprovalStatus(raw.status),

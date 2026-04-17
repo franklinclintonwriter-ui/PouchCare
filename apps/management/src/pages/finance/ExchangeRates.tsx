@@ -395,7 +395,7 @@ export default function ExchangeRates() {
             onPageChange={setPage}
             emptyIcon={<Banknote />}
             emptyTitle="No exchange rates"
-            emptyDescription="Create a rate to drive finance conversions. Each save is attributed to the signed-in staff member."
+            emptyDescription="Create a rate to drive finance conversions. Each save is attributed to the signed-in shoulder."
           />
         </div>
 

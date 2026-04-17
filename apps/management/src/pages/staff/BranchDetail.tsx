@@ -171,7 +171,7 @@ export default function BranchDetail() {
       () => ({
         title: branch?.name ?? "Branch",
         breadcrumbs: [
-          { label: "Staff", href: "/staff" },
+          { label: "Shoulder", href: "/staff" },
           { label: "Branches", href: "/staff/branches" },
           { label: branch?.name ?? "…" },
         ],
@@ -843,7 +843,7 @@ type RefRow = { label: string; n: number; icon: LucideIcon };
 
 function refRowsWithIcons(refs: BranchReferenceBreakdown): RefRow[] {
   const rows: RefRow[] = [
-    { label: "Staff", n: refs.staffMembers, icon: Users },
+    { label: "Shoulder", n: refs.staffMembers, icon: Users },
     { label: "Tasks", n: refs.tasks, icon: ListTodo },
     { label: "Projects", n: refs.projects, icon: FolderKanban },
     { label: "Attendance", n: refs.attendance, icon: Clock },

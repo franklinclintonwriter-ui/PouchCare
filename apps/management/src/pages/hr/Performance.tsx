@@ -351,7 +351,7 @@ export default function Performance() {
       >
         <div className="space-y-3">
           <Select
-            label="Staff Member"
+            label="Shoulder"
             value={form.staffMemberId}
             onChange={(e) => {
               const selectedId = e.target.value;
@@ -367,7 +367,7 @@ export default function Performance() {
             options={staffOptions}
           />
           <Input
-            label="Staff Name (display)"
+            label="Shoulder Name (display)"
             placeholder="John Doe"
             value={form.staffName}
             onChange={(e) =>

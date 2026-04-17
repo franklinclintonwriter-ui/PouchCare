@@ -231,7 +231,7 @@ export default function DeviceDetail() {
                   <User className="h-5 w-5" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Staff Member ID</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Shoulder ID</p>
                   <p className="font-mono text-sm font-semibold text-gray-900 dark:text-gray-100">
                     {device.staffMemberId}
                   </p>
@@ -243,7 +243,7 @@ export default function DeviceDetail() {
                 className="mt-4"
                 onClick={() => navigate(`/staff/${device.staffMemberId}`)}
               >
-                View Staff Profile
+                View Shoulder Profile
               </Button>
             </CardContent>
           </Card>

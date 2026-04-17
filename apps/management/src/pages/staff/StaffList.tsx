@@ -61,7 +61,7 @@ const roleLabel: Record<string, string> = {
   OP_MANAGER: "Ops Manager",
   HR_MANAGER: "HR Manager",
   BRANCH_MANAGER: "Branch Mgr",
-  STAFF: "Staff",
+  STAFF: "Shoulder",
   INTERN: "Intern",
 };
 
@@ -149,8 +149,8 @@ export default function StaffList() {
 
   const headerConfig = useMemo(
     () => ({
-      title: "Staff Directory",
-      breadcrumbs: [{ label: "Home", href: "/" }, { label: "Staff Directory" }],
+      title: "Shoulder Directory",
+      breadcrumbs: [{ label: "Home", href: "/" }, { label: "Shoulder Directory" }],
       actions: [
         {
           type: "toggle" as const,
@@ -166,7 +166,7 @@ export default function StaffList() {
           ? [
               {
                 type: "button" as const,
-                label: "New Staff",
+                label: "New Shoulder",
                 icon: Plus,
                 onClick: () => setOpenCreate(true),
               },
@@ -189,7 +189,7 @@ export default function StaffList() {
             { label: "Ops Manager", value: "OP_MANAGER" },
             { label: "HR Manager", value: "HR_MANAGER" },
             { label: "Branch Manager", value: "BRANCH_MANAGER" },
-            { label: "Staff", value: "STAFF" },
+            { label: "Shoulder", value: "STAFF" },
             { label: "Intern", value: "INTERN" },
           ],
           value: role,
@@ -537,7 +537,7 @@ export default function StaffList() {
                 { label: "Ops Manager", value: "OP_MANAGER" },
                 { label: "HR Manager", value: "HR_MANAGER" },
                 { label: "Branch Manager", value: "BRANCH_MANAGER" },
-                { label: "Staff", value: "STAFF" },
+                { label: "Shoulder", value: "STAFF" },
                 { label: "Intern", value: "INTERN" },
               ]}
             />
@@ -559,7 +559,7 @@ export default function StaffList() {
         <ConfirmDialog
           isOpen={!!confirmDeactivate}
           onClose={() => setConfirmDeactivate(null)}
-          title="Deactivate Staff Member"
+          title="Deactivate Shoulder"
           message={`Are you sure you want to deactivate ${confirmDeactivate?.name}? They will no longer be able to access the system.`}
           confirmLabel="Deactivate"
           variant="danger"
@@ -581,7 +581,7 @@ export default function StaffList() {
         <ConfirmDialog
           isOpen={!!confirmRestore}
           onClose={() => setConfirmRestore(null)}
-          title="Restore Staff Member"
+          title="Restore Shoulder"
           message={`Are you sure you want to restore ${confirmRestore?.name}? They will regain access to the system.`}
           confirmLabel="Restore"
           variant="info"

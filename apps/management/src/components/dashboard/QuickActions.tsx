@@ -39,7 +39,7 @@ interface QuickAction {
 const QUICK_ACTIONS: QuickAction[] = [
   {
     id: "staff",
-    label: "Staff Members",
+    label: "Shoulders",
     description: "Manage team",
     icon: <Users className="h-5 w-5" />,
     path: ROUTES.STAFF,

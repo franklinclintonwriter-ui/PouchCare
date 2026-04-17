@@ -228,7 +228,7 @@ export default function PayrollList() {
     exportCsv(
       filteredEntries,
       [
-        { key: "staffName", label: "Staff Name" },
+        { key: "staffName", label: "Shoulder Name" },
         {
           key: "role",
           label: "Role",
@@ -405,7 +405,7 @@ export default function PayrollList() {
   const columns: Column<PayrollEntry>[] = [
     {
       key: "staffName",
-      label: "Staff",
+      label: "Shoulder",
       sticky: true,
       render: (row) => (
         <span className="font-semibold text-gray-900 dark:text-gray-100">
@@ -639,7 +639,7 @@ export default function PayrollList() {
         isOpen={showCreate}
         onClose={() => setShowCreate(false)}
         title="Process Payroll"
-        description="Create a new payroll record for a staff member"
+        description="Create a new payroll record for a shoulder"
         size="md"
         footer={
           <>
@@ -654,13 +654,13 @@ export default function PayrollList() {
       >
         <div className="space-y-4">
           <Select
-            label="Staff Member *"
+            label="Shoulder *"
             value={form.staffMemberId}
             onChange={(e) =>
               setForm((f) => ({ ...f, staffMemberId: e.target.value }))
             }
             options={[
-              { label: "Select staff member...", value: "" },
+              { label: "Select shoulder...", value: "" },
               ...staffList.map((s) => ({
                 label: `${s.name} (${s.email})`,
                 value: s.id,

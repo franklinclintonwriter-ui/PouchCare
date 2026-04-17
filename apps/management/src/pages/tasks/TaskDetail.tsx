@@ -636,7 +636,7 @@ export default function TaskDetail() {
               <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
                 <div className="min-w-[240px] flex-1">
                   <Select
-                    label="Staff / intern"
+                    label="Shoulder / intern"
                     value={assignSpecialistId}
                     onChange={(e) => setAssignSpecialistId(e.target.value)}
                     options={[

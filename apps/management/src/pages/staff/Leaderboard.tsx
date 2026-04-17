@@ -49,9 +49,9 @@ export default function StaffLeaderboard() {
 
   const headerConfig = useMemo(
     () => ({
-      title: "Staff Leaderboard",
+      title: "Shoulder Leaderboard",
       breadcrumbs: [
-        { label: "Staff", href: "/staff" },
+        { label: "Shoulder", href: "/staff" },
         { label: "Leaderboard", icon: Trophy },
       ],
       actions: [],
@@ -116,7 +116,7 @@ export default function StaffLeaderboard() {
     },
     {
       key: "name",
-      label: "Staff Member",
+      label: "Shoulder",
       sticky: true,
       render: (row, _col, index) => (
         <div className="flex items-center gap-3">

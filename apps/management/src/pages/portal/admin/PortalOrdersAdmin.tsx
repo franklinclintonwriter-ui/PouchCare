@@ -118,7 +118,7 @@ export default function PortalOrdersAdmin() {
     },
     {
       key: 'assignedStaff',
-      label: 'Staff',
+      label: 'Shoulder',
       render: (row) => (
         <span className="text-sm text-gray-600 dark:text-gray-400">{row.assignedStaff ?? '--'}</span>
       ),

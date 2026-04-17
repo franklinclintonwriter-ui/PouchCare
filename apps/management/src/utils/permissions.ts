@@ -72,7 +72,7 @@ export const ROLE_LABELS: Record<SystemRole, string> = {
   OP_MANAGER: 'Operations Manager',
   HR_MANAGER: 'HR Manager',
   BRANCH_MANAGER: 'Branch Manager',
-  STAFF: 'Staff',
+  STAFF: 'Shoulder',
   INTERN: 'Intern',
 };
 

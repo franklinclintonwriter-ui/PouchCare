@@ -37,7 +37,7 @@ export default function Devices() {
     { key: 'deviceName', label: 'Device', sticky: true, render: (r) => <span className="font-medium">{r.deviceName}</span> },
     { key: 'deviceType', label: 'Type', render: (r) => <span>{r.deviceType || '-'}</span> },
     { key: 'ipAddress', label: 'IP', render: (r) => <span className="font-mono text-xs">{r.ipAddress || '-'}</span> },
-    { key: 'staffMemberId', label: 'Staff ID', render: (r) => <span className="font-mono text-xs">{r.staffMemberId}</span> },
+    { key: 'staffMemberId', label: 'Shoulder ID', render: (r) => <span className="font-mono text-xs">{r.staffMemberId}</span> },
     { key: 'status', label: 'Status', render: (r) => <Badge variant={r.status === 'Active' ? 'success' : 'default'} size="sm">{r.status}</Badge> },
   ];
 
@@ -65,7 +65,7 @@ export default function Devices() {
               size="sm"
               isLoading={createDevice.isPending}
               onClick={async () => {
-                if (!deviceName.trim() || !staffMemberId.trim()) return toast.error('Device name and staff member id required');
+                if (!deviceName.trim() || !staffMemberId.trim()) return toast.error('Device name and shoulder id required');
                 try {
                   await createDevice.mutateAsync({
                     deviceName: deviceName.trim(),
@@ -91,7 +91,7 @@ export default function Devices() {
       >
         <div className="space-y-3">
           <Input label="Device Name" value={deviceName} onChange={(e) => setDeviceName(e.target.value)} />
-          <Input label="Staff Member ID" value={staffMemberId} onChange={(e) => setStaffMemberId(e.target.value)} />
+          <Input label="Shoulder ID" value={staffMemberId} onChange={(e) => setStaffMemberId(e.target.value)} />
           <Select
             label="Device Type"
             value={deviceType}

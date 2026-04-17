@@ -1,6 +1,6 @@
 /**
  * PouchCare OS — Production Seed Script
- * Seeds: Services + ServicePlans + Staff Members
+ * Seeds: Services + ServicePlans + Shoulders
  * Run inside pouchcare-api container: node /tmp/seed-services-staff.js
  */
 const { PrismaClient } = require('@prisma/client');
@@ -684,7 +684,7 @@ async function main() {
   }
   console.log(`\n  ✅ Branches: HQ, Dhaka`);
 
-  // ── 3. Seed Staff Members ────────────────────────────────────────────────────
+  // ── 3. Seed Shoulders ────────────────────────────────────────────────────
   const passwordHash = await bcrypt.hash(STAFF_PASSWORD, 12);
   let staffCreated = 0;
   let staffSkipped = 0;

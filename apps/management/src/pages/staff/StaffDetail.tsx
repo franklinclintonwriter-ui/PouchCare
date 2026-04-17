@@ -130,7 +130,7 @@ export default function StaffDetail() {
       toast.success('Staff member updated');
       setEditOpen(false);
     } catch (err) {
-      toast.error(getApiErrorMessage(err, 'Failed to update staff member'));
+      toast.error(getApiErrorMessage(err, 'Failed to update shoulder'));
     }
   };
 
@@ -169,10 +169,10 @@ export default function StaffDetail() {
   }, [member, tab]);
 
   const headerConfig = useMemo(() => ({
-    title: member?.name ?? 'Staff Member',
+    title: member?.name ?? 'Shoulder',
     breadcrumbs: [
       { label: 'Home', href: '/' },
-      { label: 'Staff', href: '/staff' },
+      { label: 'Shoulder', href: '/staff' },
       { label: member?.name ?? '...' },
     ],
     actions: [
@@ -671,7 +671,7 @@ export default function StaffDetail() {
       <Modal
         isOpen={editOpen}
         onClose={() => setEditOpen(false)}
-        title="Edit staff member"
+        title="Edit shoulder"
         size="sm"
         footer={(
           <>

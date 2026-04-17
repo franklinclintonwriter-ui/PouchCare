@@ -72,7 +72,7 @@ export default function PortalOrderDetail() {
             </InfoItem>
             <InfoItem label="Placed" value={order.placedDate} />
             <InfoItem label="Delivery" value={order.deliveryDate ?? 'Pending'} />
-            <InfoItem label="Assigned Staff" value={order.assignedStaff ?? 'Unassigned'} />
+            <InfoItem label="Assigned Shoulder" value={order.assignedStaff ?? 'Unassigned'} />
           </div>
         </Card>
 

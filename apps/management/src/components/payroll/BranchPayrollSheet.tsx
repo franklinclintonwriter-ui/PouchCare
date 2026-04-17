@@ -228,7 +228,7 @@ function BranchPayrollSheet({
       {/* Note */}
       <section className="mt-6 rounded-lg border border-dashed border-gray-200 bg-gray-50/50 p-3 text-xs text-gray-600">
         <span className="font-semibold text-gray-700">Note:</span> This salary
-        report covers all {entries.length} staff members assigned to the{" "}
+        report covers all {entries.length} shoulders assigned to the{" "}
         <span className="font-semibold">{branchName}</span> branch for{" "}
         {periodLabel}.
         {pendingCount > 0 && (

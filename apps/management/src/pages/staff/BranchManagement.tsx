@@ -90,7 +90,7 @@ export default function BranchManagement() {
         title: "Branch Management",
         breadcrumbs: [
           { label: "Home", href: "/" },
-          { label: "Staff", href: "/staff" },
+          { label: "Shoulder", href: "/staff" },
           { label: "Branches" },
         ],
         actions: [

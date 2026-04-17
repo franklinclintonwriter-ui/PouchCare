@@ -68,7 +68,7 @@ export interface StaffStats {
   active: number;
   onLeave: number;
   newThisMonth?: number;
-  /** Optional; dashboard Staff Overview does not render this today */
+  /** Optional; dashboard Shoulder Overview does not render this today */
   topRated?: TopRatedStaff[];
 }
 

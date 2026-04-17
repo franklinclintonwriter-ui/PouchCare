@@ -50,7 +50,7 @@ export default function StaffDocumentViewer() {
       title: doc?.title ?? 'Document',
       breadcrumbs: [
         { label: 'Home', href: '/' },
-        { label: 'Staff', href: '/staff' },
+        { label: 'Shoulder', href: '/staff' },
         { label: staff?.name ?? '…', href: `/staff/${staffId}` },
         { label: doc?.title ?? 'Document' },
       ],

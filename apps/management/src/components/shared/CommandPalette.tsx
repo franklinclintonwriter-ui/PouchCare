@@ -37,7 +37,7 @@ function CommandPalette() {
       { id: 'tasks', label: 'Tasks', href: '/tasks', icon: <CheckSquare className="h-4 w-4" />, category: 'Navigation' },
       { id: 'my-tasks', label: 'My Tasks', href: '/tasks/mine', icon: <CheckSquare className="h-4 w-4" />, category: 'Navigation' },
       { id: 'projects', label: 'Projects', href: '/projects', icon: <FolderKanban className="h-4 w-4" />, category: 'Navigation' },
-      { id: 'staff', label: 'Staff Members', href: '/staff', icon: <Users className="h-4 w-4" />, category: 'Navigation' },
+      { id: 'staff', label: 'Shoulders', href: '/staff', icon: <Users className="h-4 w-4" />, category: 'Navigation' },
       { id: 'attendance', label: 'Attendance', href: '/attendance', icon: <Clock className="h-4 w-4" />, category: 'Navigation' },
       { id: 'payroll', label: 'Payroll', href: '/payroll', icon: <DollarSign className="h-4 w-4" />, category: 'Finance', permission: 'payroll.access' },
       { id: 'invoices', label: 'Invoices', href: '/finance/invoices', icon: <DollarSign className="h-4 w-4" />, category: 'Finance', permission: 'finance.access' },
@@ -103,7 +103,7 @@ function CommandPalette() {
       description: item.email,
       href: `/staff/${item.id}`,
       icon: <Users className="h-4 w-4" />,
-      category: 'Staff',
+      category: 'Shoulder',
     }));
     (r.tasks ?? []).forEach((item) => out.push({
       id: `live-task-${item.id}`,
