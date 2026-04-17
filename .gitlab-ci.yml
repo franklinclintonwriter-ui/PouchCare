@@ -9,11 +9,13 @@
 #   Mgmt     → Cloudflare Pages project: pouchcarebd (m.pouchcare.com)
 #
 # ── Required GitLab CI/CD Variables (Settings → CI/CD → Variables) ──────────
-#   CLOUDFLARE_API_TOKEN  API token with Pages:Write  (masked, protected)
+#   WRANGLER_AUTH_CONFIG  base64-encoded ~/.wrangler/config/default.toml
+#                         (OAuth token with pages:write + offline_access)
 #   DEPLOY_HOST           VPS IP: 72.60.204.92        (masked)
 #   DEPLOY_USER           root                         (masked)
 #   DEPLOY_PORT           22  (optional, defaults 22)
 #   SSH_PRIVATE_KEY       ED25519 private key for VPS  (File type, protected)
+#   CLOUDFLARE_ACCOUNT_ID 6433fd63b2b296d6e9d0d03b366c246e
 # ──────────────────────────────────────────────────────────────────────────────
 
 workflow:
@@ -93,10 +95,25 @@ build:all:
       - apps/landing/dist/
     expire_in: 2 hours
 
+# ── Restore wrangler OAuth (shared before_script for CF deploys) ──────────────
+.wrangler_auth: &wrangler_auth
+  before_script:
+    - npm ci --cache .npm --prefer-offline --legacy-peer-deps --silent
+    - |
+      if [ -n "$WRANGLER_AUTH_CONFIG" ]; then
+        mkdir -p ~/.wrangler/config
+        echo "$WRANGLER_AUTH_CONFIG" | base64 -d > ~/.wrangler/config/default.toml
+        echo "✅ Wrangler auth restored"
+      else
+        echo "❌ WRANGLER_AUTH_CONFIG not set — aborting"
+        exit 1
+      fi
+
 # ── Deploy Landing → pouchcare (pouchcare.com) ────────────────────────────────
 deploy:landing:
   stage: deploy
   needs: ["build:all"]
+  <<: *wrangler_auth
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
       when: on_success
@@ -105,7 +122,6 @@ deploy:landing:
     name: production/landing
     url: https://pouchcare.com
   script:
-    - npm ci --cache .npm --prefer-offline --legacy-peer-deps --silent
     - echo "Deploying Landing → Cloudflare Pages (pouchcare)..."
     - cd apps/landing
     - npx wrangler pages deploy dist --project-name pouchcare --branch main --commit-dirty=true
@@ -115,6 +131,7 @@ deploy:landing:
 deploy:management:
   stage: deploy
   needs: ["build:all"]
+  <<: *wrangler_auth
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
       when: on_success
@@ -123,7 +140,6 @@ deploy:management:
     name: production/management
     url: https://m.pouchcare.com
   script:
-    - npm ci --cache .npm --prefer-offline --legacy-peer-deps --silent
     - echo "Deploying Management → Cloudflare Pages (pouchcarebd)..."
     - cd apps/management
     - npx wrangler pages deploy dist --project-name pouchcarebd --branch main --commit-dirty=true
@@ -144,9 +160,11 @@ deploy:api:
   before_script:
     - apk add --no-cache openssh-client bash curl
     - mkdir -p ~/.ssh && chmod 700 ~/.ssh
-    - cp "$SSH_PRIVATE_KEY" ~/.ssh/id_ed25519
+    # SSH_PRIVATE_KEY_B64 is base64 of the deploy key (added to VPS authorized_keys)
+    - echo "$SSH_PRIVATE_KEY_B64" | base64 -d > ~/.ssh/id_ed25519
     - chmod 600 ~/.ssh/id_ed25519
     - ssh-keyscan -p "${DEPLOY_PORT:-22}" -H "${DEPLOY_HOST}" >> ~/.ssh/known_hosts 2>/dev/null || true
+    - ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no -p "${DEPLOY_PORT:-22}" "${DEPLOY_USER}@${DEPLOY_HOST}" "echo 'SSH OK'" || (echo "❌ SSH auth failed" && exit 1)
   script:
     - echo "Deploying API — commit ${CI_COMMIT_SHORT_SHA} to ${DEPLOY_HOST}..."
     - |
