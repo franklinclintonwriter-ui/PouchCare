@@ -72,6 +72,7 @@ function Header() {
       )}
     >
       <div className="flex h-14 items-center gap-2 px-3 lg:gap-3 lg:px-5">
+        {/* Hamburger — mobile only */}
         <button
           onClick={openMobile}
           className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-300 lg:hidden lg:p-2"
@@ -79,6 +80,15 @@ function Header() {
         >
           <Menu className="h-[18px] w-[18px] lg:h-5 lg:w-5" />
         </button>
+
+        {/* Mobile logo — centred, only when sidebar is hidden */}
+        <a href="/" className="lg:hidden">
+          <img
+            src="/pouchcare-logo.png"
+            alt="PouchCare"
+            className="h-7 w-auto object-contain"
+          />
+        </a>
 
         <div className="flex min-w-0 flex-1 items-center gap-2 lg:gap-3">
           <div className="min-w-0 flex-1">

@@ -401,20 +401,36 @@ function Sidebar() {
   const sidebarContent = (
     <div className="flex h-full flex-col">
       {/* Logo */}
-      <div className="flex h-14 items-center gap-3 border-b border-gray-200/80 px-4 dark:border-gray-700/60">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary-600 text-sm font-bold text-white">
-          P
-        </div>
-        {!isCollapsed && (
-          <span className="text-sm font-bold text-gray-900 dark:text-gray-100">
-            PouchCare OS
-          </span>
+      <div className="flex h-14 items-center gap-2 border-b border-gray-200/80 px-3 dark:border-gray-700/60">
+        {isCollapsed && !isMobile ? (
+          /* Collapsed: show icon mark only */
+          <div className="flex w-full items-center justify-center">
+            <img
+              src="/pouchcare-logo.png"
+              alt="PouchCare"
+              className="h-7 w-7 rounded-md object-contain"
+              style={{ objectPosition: 'left center' }}
+            />
+          </div>
+        ) : (
+          /* Expanded: full logo */
+          <Link
+            to="/"
+            className="flex min-w-0 flex-1 items-center gap-2 rounded-lg px-1 py-1 transition-opacity hover:opacity-85"
+          >
+            <img
+              src="/pouchcare-logo.png"
+              alt="PouchCare"
+              className="h-8 w-auto object-contain"
+              style={{ maxWidth: '140px' }}
+            />
+          </Link>
         )}
         {isMobile && (
           <button
             onClick={closeMobile}
             aria-label="Close menu"
-            className="ml-auto rounded-lg p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+            className="ml-auto shrink-0 rounded-lg p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
           >
             <X className="h-5 w-5" />
           </button>
