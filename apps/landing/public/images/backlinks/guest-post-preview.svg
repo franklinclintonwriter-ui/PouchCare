@@ -1,0 +1,115 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 280" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="480" y2="280" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#f8fafc"/><stop offset="1" stop-color="#f1f5f9"/>
+    </linearGradient>
+    <filter id="sh"><feDropShadow dx="0" dy="4" stdDeviation="8" flood-opacity=".1"/></filter>
+    <filter id="shs"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity=".08"/></filter>
+  </defs>
+  <rect width="480" height="280" rx="14" fill="url(#bg)"/>
+
+  <!-- Article mockup -->
+  <g filter="url(#sh)" transform="translate(20, 16)">
+    <rect width="280" height="248" rx="10" fill="white"/>
+    <!-- Site header -->
+    <rect width="280" height="30" rx="10" fill="#f8fafc"/>
+    <rect y="20" width="280" height="10" fill="#f8fafc"/>
+    <circle cx="16" cy="15" r="4" fill="#ef4444" opacity=".6"/>
+    <circle cx="28" cy="15" r="4" fill="#f59e0b" opacity=".6"/>
+    <circle cx="40" cy="15" r="4" fill="#10b981" opacity=".6"/>
+    <rect x="60" y="10" width="160" height="10" rx="5" fill="#e2e8f0"/>
+    <text x="80" y="18" font-family="system-ui" font-size="5" fill="#94a3b8">techblog.io/growth/seo-strategies</text>
+
+    <!-- Article content -->
+    <text x="20" y="50" font-family="system-ui" font-size="9" fill="#1e293b" font-weight="700">10 Proven SEO Strategies That Drive</text>
+    <text x="20" y="63" font-family="system-ui" font-size="9" fill="#1e293b" font-weight="700">Real Organic Growth in 2026</text>
+
+    <text x="20" y="80" font-family="system-ui" font-size="6" fill="#64748b">By Sarah Mitchell · Published March 15, 2026 · 8 min read</text>
+
+    <!-- Paragraph lines -->
+    <rect x="20" y="92" width="240" height="4" rx="2" fill="#e2e8f0"/>
+    <rect x="20" y="100" width="220" height="4" rx="2" fill="#e2e8f0"/>
+    <rect x="20" y="108" width="240" height="4" rx="2" fill="#e2e8f0"/>
+    <rect x="20" y="116" width="180" height="4" rx="2" fill="#e2e8f0"/>
+
+    <!-- Highlighted backlink area -->
+    <rect x="16" y="126" width="248" height="38" rx="6" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1"/>
+    <rect x="20" y="130" width="240" height="4" rx="2" fill="#cbd5e1"/>
+    <rect x="20" y="138" width="160" height="4" rx="2" fill="#cbd5e1"/>
+    <!-- The actual backlink text -->
+    <rect x="168" y="137" width="72" height="6" rx="2" fill="#3b82f6" opacity=".2"/>
+    <text x="172" y="143" font-family="system-ui" font-size="5.5" fill="#2563eb" font-weight="600" text-decoration="underline">your-website.com</text>
+    <rect x="20" y="148" width="200" height="4" rx="2" fill="#cbd5e1"/>
+    <rect x="20" y="156" width="120" height="4" rx="2" fill="#cbd5e1"/>
+
+    <!-- Annotation arrow -->
+    <path d="M256 142 L272 142" stroke="#2563eb" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+
+    <!-- More paragraph lines -->
+    <rect x="20" y="174" width="240" height="4" rx="2" fill="#e2e8f0"/>
+    <rect x="20" y="182" width="200" height="4" rx="2" fill="#e2e8f0"/>
+    <rect x="20" y="190" width="240" height="4" rx="2" fill="#e2e8f0"/>
+    <rect x="20" y="198" width="180" height="4" rx="2" fill="#e2e8f0"/>
+    <rect x="20" y="206" width="220" height="4" rx="2" fill="#e2e8f0"/>
+    <rect x="20" y="214" width="190" height="4" rx="2" fill="#e2e8f0"/>
+
+    <!-- Author section -->
+    <rect x="20" y="226" width="240" height="1" fill="#e2e8f0"/>
+    <circle cx="36" cy="240" r="10" fill="#dbeafe"/>
+    <text x="36" y="244" font-family="system-ui" font-size="8" fill="#3b82f6" text-anchor="middle" font-weight="700">S</text>
+    <text x="52" y="237" font-family="system-ui" font-size="6" fill="#1e293b" font-weight="600">Sarah Mitchell</text>
+    <text x="52" y="247" font-family="system-ui" font-size="5" fill="#94a3b8">Tech Journalist · DA 62</text>
+  </g>
+
+  <!-- Right side: Link quality card -->
+  <g filter="url(#sh)" transform="translate(316, 16)">
+    <rect width="148" height="120" rx="10" fill="white"/>
+    <rect width="148" height="4" rx="2" fill="#3b82f6"/>
+    <text x="14" y="24" font-family="system-ui" font-size="8" fill="#1e293b" font-weight="700">Link Quality Score</text>
+
+    <!-- Score gauge -->
+    <g transform="translate(74, 65)">
+      <circle cx="0" cy="0" r="28" fill="none" stroke="#e2e8f0" stroke-width="6"/>
+      <circle cx="0" cy="0" r="28" fill="none" stroke="#3b82f6" stroke-width="6" stroke-dasharray="158 18" stroke-dashoffset="44" stroke-linecap="round"/>
+      <text x="0" y="4" font-family="system-ui" font-size="16" fill="#1e293b" font-weight="800" text-anchor="middle">95</text>
+      <text x="0" y="14" font-family="system-ui" font-size="5" fill="#64748b" text-anchor="middle">/100</text>
+    </g>
+  </g>
+
+  <!-- Checklist card -->
+  <g filter="url(#sh)" transform="translate(316, 146)">
+    <rect width="148" height="118" rx="10" fill="white"/>
+    <text x="14" y="22" font-family="system-ui" font-size="7" fill="#1e293b" font-weight="700">14-Point Checklist</text>
+    <g transform="translate(14, 32)">
+      <rect width="8" height="8" rx="2" fill="#dcfce7" stroke="#86efac" stroke-width=".5"/>
+      <text x="3" y="7" font-family="system-ui" font-size="5" fill="#16a34a" font-weight="800">✓</text>
+      <text x="14" y="7" font-family="system-ui" font-size="6" fill="#374151">DA verified (Ahrefs)</text>
+    </g>
+    <g transform="translate(14, 44)">
+      <rect width="8" height="8" rx="2" fill="#dcfce7" stroke="#86efac" stroke-width=".5"/>
+      <text x="3" y="7" font-family="system-ui" font-size="5" fill="#16a34a" font-weight="800">✓</text>
+      <text x="14" y="7" font-family="system-ui" font-size="6" fill="#374151">Real organic traffic</text>
+    </g>
+    <g transform="translate(14, 56)">
+      <rect width="8" height="8" rx="2" fill="#dcfce7" stroke="#86efac" stroke-width=".5"/>
+      <text x="3" y="7" font-family="system-ui" font-size="5" fill="#16a34a" font-weight="800">✓</text>
+      <text x="14" y="7" font-family="system-ui" font-size="6" fill="#374151">Spam score &lt; 3%</text>
+    </g>
+    <g transform="translate(14, 68)">
+      <rect width="8" height="8" rx="2" fill="#dcfce7" stroke="#86efac" stroke-width=".5"/>
+      <text x="3" y="7" font-family="system-ui" font-size="5" fill="#16a34a" font-weight="800">✓</text>
+      <text x="14" y="7" font-family="system-ui" font-size="6" fill="#374151">Niche-relevant content</text>
+    </g>
+    <g transform="translate(14, 80)">
+      <rect width="8" height="8" rx="2" fill="#dcfce7" stroke="#86efac" stroke-width=".5"/>
+      <text x="3" y="7" font-family="system-ui" font-size="5" fill="#16a34a" font-weight="800">✓</text>
+      <text x="14" y="7" font-family="system-ui" font-size="6" fill="#374151">Editorial standards</text>
+    </g>
+    <g transform="translate(14, 92)">
+      <rect width="8" height="8" rx="2" fill="#dcfce7" stroke="#86efac" stroke-width=".5"/>
+      <text x="3" y="7" font-family="system-ui" font-size="5" fill="#16a34a" font-weight="800">✓</text>
+      <text x="14" y="7" font-family="system-ui" font-size="6" fill="#374151">Permanent do-follow</text>
+    </g>
+    <text x="14" y="110" font-family="system-ui" font-size="5" fill="#64748b">+8 more checks passed</text>
+  </g>
+</svg>

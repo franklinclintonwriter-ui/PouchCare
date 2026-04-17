@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="400" y2="300" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#e0f2fe"/><stop offset="1" stop-color="#bae6fd"/>
+    </linearGradient>
+    <linearGradient id="a" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#0ea5e9"/><stop offset="1" stop-color="#2563eb"/>
+    </linearGradient>
+    <filter id="sh"><feDropShadow dx="0" dy="4" stdDeviation="6" flood-opacity=".12"/></filter>
+    <filter id="sh2"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity=".1"/></filter>
+  </defs>
+  <!-- Background -->
+  <rect width="400" height="300" rx="12" fill="url(#bg)"/>
+  <!-- Decorative dots -->
+  <circle cx="30" cy="30" r="3" fill="#0ea5e9" opacity=".2"/>
+  <circle cx="370" cy="270" r="4" fill="#2563eb" opacity=".15"/>
+  <circle cx="350" cy="40" r="5" fill="#0ea5e9" opacity=".1"/>
+  <circle cx="50" cy="250" r="3" fill="#2563eb" opacity=".15"/>
+  <!-- Browser window -->
+  <g filter="url(#sh)">
+    <rect x="60" y="40" width="200" height="180" rx="10" fill="white"/>
+    <rect x="60" y="40" width="200" height="30" rx="10" fill="#f1f5f9"/>
+    <rect x="60" y="60" width="200" height="10" fill="#f1f5f9"/>
+    <circle cx="78" cy="55" r="5" fill="#fca5a5"/>
+    <circle cx="93" cy="55" r="5" fill="#fde68a"/>
+    <circle cx="108" cy="55" r="5" fill="#86efac"/>
+    <rect x="130" y="50" width="110" height="10" rx="5" fill="#e2e8f0"/>
+    <!-- Page content lines -->
+    <rect x="76" y="82" width="80" height="8" rx="3" fill="#0ea5e9" opacity=".7"/>
+    <rect x="76" y="98" width="168" height="5" rx="2" fill="#cbd5e1"/>
+    <rect x="76" y="109" width="152" height="5" rx="2" fill="#cbd5e1"/>
+    <rect x="76" y="120" width="160" height="5" rx="2" fill="#cbd5e1"/>
+    <!-- Highlighted keyword -->
+    <rect x="76" y="136" width="60" height="14" rx="4" fill="#dbeafe"/>
+    <rect x="80" y="140" width="52" height="6" rx="2" fill="#3b82f6" opacity=".5"/>
+    <rect x="146" y="138" width="80" height="5" rx="2" fill="#cbd5e1"/>
+    <rect x="76" y="158" width="140" height="5" rx="2" fill="#cbd5e1"/>
+    <rect x="76" y="169" width="120" height="5" rx="2" fill="#cbd5e1"/>
+    <!-- Meta tag indicator -->
+    <rect x="76" y="186" width="90" height="20" rx="6" fill="#dbeafe" stroke="#93c5fd" stroke-width="1"/>
+    <text x="82" y="200" font-family="system-ui" font-size="9" fill="#2563eb" font-weight="600">&lt;meta&gt; ✓</text>
+  </g>
+  <!-- Magnifying glass -->
+  <g filter="url(#sh)" transform="translate(240, 100)">
+    <circle cx="50" cy="50" r="42" fill="white" opacity=".95"/>
+    <circle cx="50" cy="50" r="36" stroke="#0ea5e9" stroke-width="5" fill="none"/>
+    <circle cx="50" cy="50" r="36" stroke="#2563eb" stroke-width="5" fill="#dbeafe" opacity=".3"/>
+    <line x1="78" y1="78" x2="110" y2="110" stroke="#0ea5e9" stroke-width="8" stroke-linecap="round"/>
+    <line x1="78" y1="78" x2="110" y2="110" stroke="#2563eb" stroke-width="6" stroke-linecap="round"/>
+    <!-- Check inside magnifier -->
+    <path d="M36 52l8 8 18-20" stroke="#10b981" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <!-- Score meter -->
+  <g filter="url(#sh2)" transform="translate(280, 30)">
+    <rect width="90" height="50" rx="10" fill="white"/>
+    <text x="12" y="20" font-family="system-ui" font-size="8" fill="#64748b" font-weight="500">SEO Score</text>
+    <text x="12" y="40" font-family="system-ui" font-size="18" fill="#10b981" font-weight="800">96/100</text>
+  </g>
+  <!-- Keyword badges bottom -->
+  <g filter="url(#sh2)" transform="translate(50, 240)">
+    <rect width="70" height="26" rx="13" fill="#0ea5e9"/>
+    <text x="10" y="17" font-family="system-ui" font-size="9" fill="white" font-weight="600">Keywords</text>
+  </g>
+  <g filter="url(#sh2)" transform="translate(130, 240)">
+    <rect width="60" height="26" rx="13" fill="#2563eb"/>
+    <text x="10" y="17" font-family="system-ui" font-size="9" fill="white" font-weight="600">H1 Tag</text>
+  </g>
+  <g filter="url(#sh2)" transform="translate(200, 240)">
+    <rect width="80" height="26" rx="13" fill="#0284c7"/>
+    <text x="10" y="17" font-family="system-ui" font-size="9" fill="white" font-weight="600">Schema ✓</text>
+  </g>
+</svg>

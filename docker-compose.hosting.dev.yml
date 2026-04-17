@@ -1,0 +1,84 @@
+# Development API stack — isolated DB, Redis, and API for https://api-dev.pouchcare.com
+#
+# Does NOT share volumes or ports with docker-compose.hosting.yml (production).
+# The prod Caddy container reverse-proxies api-dev.pouchcare.com → host:7001 (see deploy/Caddyfile).
+#
+# 1. Copy apps/api/.env.dev.example → apps/api/.env.dev (JWT_* must differ from production).
+# 2. Optional: set POSTGRES_PASSWORD_DEV in root .env (default: pouchcare_dev).
+# 3. From repo root: npm run docker:hosting:dev  (Compose project name: pouchcare-dev — isolated from production)
+#
+# Health: http://localhost:7001/health  |  Public: https://api-dev.pouchcare.com/health
+# (Requires prod stack Caddy running on the same host, or use tunnel only to host.docker.internal:7001.)
+
+services:
+  postgres_dev:
+    image: postgres:16-alpine
+    container_name: pouchcare-dev-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: pouchcare
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD_DEV:-pouchcare_dev}
+      POSTGRES_DB: pouchcare_dev
+    ports:
+      - "${POSTGRES_DEV_PORT:-5433}:5432"
+    volumes:
+      - pouchcare_dev_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pouchcare -d pouchcare_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis_dev:
+    image: redis:7-alpine
+    container_name: pouchcare-dev-redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_DEV_PORT:-6380}:6379"
+    volumes:
+      - pouchcare_dev_redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api_dev:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.api
+    container_name: pouchcare-dev-api
+    restart: unless-stopped
+    depends_on:
+      postgres_dev:
+        condition: service_healthy
+      redis_dev:
+        condition: service_healthy
+    ports:
+      - "${API_DEV_PORT:-7001}:7000"
+    environment:
+      # Must not be "production" here: assertProductionStorageOrExit() requires R2; dev stack uses local disk uploads.
+      NODE_ENV: development
+      PORT: "7000"
+      STORAGE_LOCAL_FALLBACK: "true"
+      DATABASE_URL: postgresql://pouchcare:${POSTGRES_PASSWORD_DEV:-pouchcare_dev}@postgres_dev:5432/pouchcare_dev
+      REDIS_URL: redis://redis_dev:6379
+      API_URL: ${API_URL_DEV:-https://api-dev.pouchcare.com}
+    # Copy apps/api/.env.dev.example → apps/api/.env.dev before first `up` (JWT_*, CORS, etc.).
+    env_file:
+      - path: ./apps/api/.env.dev
+        required: false
+    volumes:
+      - pouchcare_dev_api_uploads:/app/apps/api/uploads
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:7000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
+volumes:
+  pouchcare_dev_pg_data:
+  pouchcare_dev_redis_data:
+  pouchcare_dev_api_uploads:

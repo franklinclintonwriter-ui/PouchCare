@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="400" y2="300" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#eef2ff"/><stop offset="1" stop-color="#e0e7ff"/>
+    </linearGradient>
+    <filter id="sh"><feDropShadow dx="0" dy="4" stdDeviation="6" flood-opacity=".12"/></filter>
+  </defs>
+  <rect width="400" height="300" rx="12" fill="url(#bg)"/>
+  <!-- Code editor -->
+  <g filter="url(#sh)">
+    <rect x="30" y="30" width="260" height="240" rx="12" fill="#1e1e2e"/>
+    <!-- Title bar -->
+    <rect x="30" y="30" width="260" height="30" rx="12" fill="#313244"/>
+    <rect x="30" y="50" width="260" height="10" fill="#313244"/>
+    <circle cx="50" cy="45" r="5" fill="#f38ba8"/>
+    <circle cx="65" cy="45" r="5" fill="#fab387"/>
+    <circle cx="80" cy="45" r="5" fill="#a6e3a1"/>
+    <text x="150" y="49" text-anchor="middle" font-family="system-ui" font-size="8" fill="#6c7086">index.tsx</text>
+    <!-- File tabs -->
+    <rect x="30" y="60" width="260" height="20" fill="#181825"/>
+    <rect x="34" y="62" width="60" height="16" rx="4" fill="#1e1e2e"/>
+    <text x="44" y="74" font-family="monospace" font-size="7" fill="#cdd6f4">App.tsx</text>
+    <rect x="98" y="62" width="60" height="16" rx="4" fill="#313244"/>
+    <text x="108" y="74" font-family="monospace" font-size="7" fill="#89b4fa">index.tsx</text>
+    <!-- Code lines -->
+    <text x="42" y="100" font-family="monospace" font-size="8" fill="#6c7086">1</text>
+    <text x="60" y="100" font-family="monospace" font-size="8" fill="#cba6f7">import</text>
+    <text x="100" y="100" font-family="monospace" font-size="8" fill="#cdd6f4"> React </text>
+    <text x="140" y="100" font-family="monospace" font-size="8" fill="#cba6f7">from</text>
+    <text x="168" y="100" font-family="monospace" font-size="8" fill="#a6e3a1"> 'react'</text>
+    <text x="42" y="116" font-family="monospace" font-size="8" fill="#6c7086">2</text>
+    <text x="60" y="116" font-family="monospace" font-size="8" fill="#cba6f7">import</text>
+    <text x="100" y="116" font-family="monospace" font-size="8" fill="#cdd6f4"> { motion } </text>
+    <text x="172" y="116" font-family="monospace" font-size="8" fill="#cba6f7">from</text>
+    <text x="200" y="116" font-family="monospace" font-size="8" fill="#a6e3a1"> 'framer'</text>
+    <text x="42" y="132" font-family="monospace" font-size="8" fill="#6c7086">3</text>
+    <text x="42" y="148" font-family="monospace" font-size="8" fill="#6c7086">4</text>
+    <text x="60" y="148" font-family="monospace" font-size="8" fill="#89b4fa">export default function</text>
+    <text x="195" y="148" font-family="monospace" font-size="8" fill="#fab387"> App</text>
+    <text x="215" y="148" font-family="monospace" font-size="8" fill="#cdd6f4">() {</text>
+    <text x="42" y="164" font-family="monospace" font-size="8" fill="#6c7086">5</text>
+    <text x="68" y="164" font-family="monospace" font-size="8" fill="#cba6f7">  return</text>
+    <text x="110" y="164" font-family="monospace" font-size="8" fill="#cdd6f4"> (</text>
+    <text x="42" y="180" font-family="monospace" font-size="8" fill="#6c7086">6</text>
+    <text x="76" y="180" font-family="monospace" font-size="8" fill="#89b4fa">   &lt;div</text>
+    <text x="110" y="180" font-family="monospace" font-size="8" fill="#fab387"> className</text>
+    <text x="168" y="180" font-family="monospace" font-size="8" fill="#cdd6f4">=</text>
+    <text x="176" y="180" font-family="monospace" font-size="8" fill="#a6e3a1">"hero"</text>
+    <text x="206" y="180" font-family="monospace" font-size="8" fill="#89b4fa">&gt;</text>
+    <text x="42" y="196" font-family="monospace" font-size="8" fill="#6c7086">7</text>
+    <text x="84" y="196" font-family="monospace" font-size="8" fill="#89b4fa">    &lt;h1&gt;</text>
+    <text x="116" y="196" font-family="monospace" font-size="8" fill="#cdd6f4">Hello World</text>
+    <text x="190" y="196" font-family="monospace" font-size="8" fill="#89b4fa">&lt;/h1&gt;</text>
+    <!-- Line highlight -->
+    <rect x="30" y="189" width="260" height="14" fill="#89b4fa" opacity=".06"/>
+    <!-- Cursor blink -->
+    <rect x="222" y="190" width="2" height="12" fill="#f5e0dc" opacity=".8"/>
+  </g>
+  <!-- Browser preview -->
+  <g filter="url(#sh)" transform="translate(250, 50)">
+    <rect width="130" height="100" rx="10" fill="white"/>
+    <rect y="0" width="130" height="22" rx="10" fill="#f1f5f9"/>
+    <rect y="16" width="130" height="6" fill="#f1f5f9"/>
+    <circle cx="16" cy="11" r="3.5" fill="#fca5a5"/>
+    <circle cx="27" cy="11" r="3.5" fill="#fde68a"/>
+    <circle cx="38" cy="11" r="3.5" fill="#86efac"/>
+    <rect x="50" y="7" width="60" height="8" rx="4" fill="#e2e8f0"/>
+    <rect x="12" y="32" width="60" height="8" rx="3" fill="#6366f1" opacity=".15"/>
+    <text x="14" y="39" font-family="system-ui" font-size="7" fill="#4f46e5" font-weight="700">Hello World</text>
+    <rect x="12" y="48" width="100" height="4" rx="2" fill="#e2e8f0"/>
+    <rect x="12" y="56" width="80" height="4" rx="2" fill="#e2e8f0"/>
+    <rect x="12" y="72" width="50" height="16" rx="5" fill="#6366f1"/>
+    <text x="20" y="83" font-family="system-ui" font-size="7" fill="white" font-weight="600">Get Started</text>
+  </g>
+  <!-- Tech badges -->
+  <g filter="url(#sh)" transform="translate(250, 170)">
+    <rect width="55" height="24" rx="8" fill="white" stroke="#c7d2fe" stroke-width="1"/>
+    <text x="8" y="16" font-family="system-ui" font-size="8" fill="#4f46e5" font-weight="600">⚛ React</text>
+  </g>
+  <g filter="url(#sh)" transform="translate(310, 170)">
+    <rect width="62" height="24" rx="8" fill="white" stroke="#c7d2fe" stroke-width="1"/>
+    <text x="8" y="16" font-family="system-ui" font-size="8" fill="#4f46e5" font-weight="600">▲ Next.js</text>
+  </g>
+  <g filter="url(#sh)" transform="translate(265, 200)">
+    <rect width="80" height="24" rx="8" fill="white" stroke="#c7d2fe" stroke-width="1"/>
+    <text x="8" y="16" font-family="system-ui" font-size="8" fill="#4f46e5" font-weight="600">🔷 TypeScript</text>
+  </g>
+  <!-- Terminal snippet -->
+  <g filter="url(#sh)" transform="translate(255, 240)">
+    <rect width="120" height="36" rx="6" fill="#1e293b"/>
+    <text x="8" y="16" font-family="monospace" font-size="7" fill="#4ade80">$ npm run build</text>
+    <text x="8" y="28" font-family="monospace" font-size="7" fill="#94a3b8">✓ Built in 1.2s</text>
+  </g>
+</svg>

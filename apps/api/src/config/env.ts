@@ -1,0 +1,110 @@
+import { z } from "zod";
+
+const schema = z.object({
+  NODE_ENV: z
+    .enum(["development", "production", "test"])
+    .default("development"),
+  PORT: z.coerce.number().default(7000),
+  DATABASE_URL: z.string().min(1),
+  REDIS_URL: z.string().default("redis://localhost:6379"),
+  JWT_SECRET: z.string().min(32),
+  JWT_REFRESH_SECRET: z.string().min(32),
+  JWT_EXPIRES_IN: z.string().default("15m"),
+  JWT_REFRESH_EXPIRES_IN: z.string().default("7d"),
+  BCRYPT_ROUNDS: z.coerce.number().default(12),
+  RESEND_API_KEY: z.string().default(""),
+  EMAIL_FROM: z.string().default("PouchCare <no-reply@pouchcare.com>"),
+  S3_BUCKET: z.string().default(""),
+  S3_REGION: z.string().default("eu-central-1"),
+  /** AWS-style names (either pair works; R2 dashboard often shows *_ID / *_ACCESS_KEY). */
+  S3_ACCESS_KEY: z.string().default(""),
+  S3_SECRET_KEY: z.string().default(""),
+  S3_ACCESS_KEY_ID: z.string().default(""),
+  S3_SECRET_ACCESS_KEY: z.string().default(""),
+  S3_ENDPOINT: z.string().default(""),
+  /** Public base URL of this API (used for local disk upload URLs; set in production). */
+  API_URL: z.string().default("http://localhost:7000"),
+  ALLOWED_ORIGINS: z
+    .string()
+    .default(
+      "http://localhost:3000,http://localhost:3001,http://localhost:5173,http://localhost:5174,http://localhost:5175",
+    ),
+  COMMISSION_RATE: z.coerce.number().default(0.2),
+  COMMISSION_HOLD_DAYS: z.coerce.number().default(14),
+  MIN_PAYOUT_USD: z.coerce.number().default(50),
+  DEFAULT_USD_TO_BDT: z.coerce.number().default(124),
+  FRONTEND_URL: z.string().default("http://localhost:5173"),
+  /** Base URL for client portal (verify email, reset password links). Production: https://pouchcare.com */
+  PORTAL_URL: z.string().default("https://pouchcare.com"),
+  IP_WHITELIST_ENABLED: z.string().default("false"),
+  IP_WHITELIST: z.string().default("127.0.0.1,::1"),
+  /**
+   * When true (non-production only), allow storing uploads on local disk under ./uploads
+   * instead of Cloudflare R2. Production always requires R2.
+   */
+  STORAGE_LOCAL_FALLBACK: z.enum(["true", "false"]).default("false"),
+
+  /**
+   * Max wait per HTTPS request to TP-Link VIGI NVR OpenAPI / snapshot (ms).
+   * Increase on slow VPN links; does not fix routing/firewall — see NVR integration docs.
+   */
+  VIGI_HTTPS_TIMEOUT_MS: z.coerce.number().min(5000).max(180000).default(60000),
+
+  /** AI provider API keys (all optional — AI features degrade gracefully). */
+  OPENAI_API_KEY: z.string().default(""),
+  ANTHROPIC_API_KEY: z.string().default(""),
+  GOOGLE_AI_API_KEY: z.string().default(""),
+  GROQ_API_KEY: z.string().default(""),
+  AI_DEFAULT_PROVIDER: z
+    .enum(["openai", "anthropic", "google", "groq"])
+    .default("openai"),
+  AI_DEFAULT_MODEL: z.string().default("gpt-4o"),
+  AI_MONTHLY_TOKEN_LIMIT: z.coerce.number().default(5_000_000),
+
+  /** Supabase (satellite services: storage, realtime, analytics, DB agent) */
+  SUPABASE_URL: z.string().default(""),
+  SUPABASE_SERVICE_KEY: z.string().default(""),
+  SUPABASE_ANON_KEY: z.string().default(""),
+  SUPABASE_S3_ENDPOINT: z.string().default(""),
+  SUPABASE_S3_REGION: z.string().default("ap-northeast-2"),
+  SUPABASE_S3_ACCESS_KEY: z.string().default(""),
+  SUPABASE_S3_SECRET_KEY: z.string().default(""),
+
+  /** SSH Server (workspace remote IDE) */
+  SSH_HOST: z.string().default(""),
+  SSH_PORT: z.coerce.number().default(22),
+  SSH_USERNAME: z.string().default("workspace"),
+  SSH_PASSWORD: z.string().default(""),
+  SSH_PRIVATE_KEY: z.string().default(""),
+
+  /** GitHub OAuth (workspace integration) */
+  GITHUB_CLIENT_ID: z.string().default(""),
+  GITHUB_CLIENT_SECRET: z.string().default(""),
+  GITHUB_CALLBACK_URL: z.string().default("http://localhost:3000/ai/workspace/github/callback"),
+
+  /** Notion integration */
+  NOTION_CLIENT_ID: z.string().default(""),
+  NOTION_CLIENT_SECRET: z.string().default(""),
+  NOTION_REDIRECT_URI: z.string().default("http://localhost:3000/ai/workspace/notion/callback"),
+
+  /** Cloudflare integration (uses existing R2 keys + optional Workers/Pages token) */
+  CLOUDFLARE_PAGES_PROJECT: z.string().default(""),
+
+  /** Name.com domain registrar API credentials */
+  NAMECOM_USERNAME: z.string().default(""),
+  NAMECOM_TOKEN: z.string().default(""),
+  /** https://api.name.com for production, https://api.dev.name.com for dev/test */
+  NAMECOM_API_URL: z.string().default("https://api.name.com"),
+});
+
+function parseEnv() {
+  const result = schema.safeParse(process.env);
+  if (!result.success) {
+    console.error("❌ Invalid environment variables:");
+    console.error(result.error.flatten().fieldErrors);
+    process.exit(1);
+  }
+  return result.data;
+}
+
+export const env = parseEnv();

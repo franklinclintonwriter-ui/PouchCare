@@ -1,0 +1,160 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "🚀 Dev: Auto Start",
+      "type": "shell",
+      "command": "powershell -ExecutionPolicy Bypass -File scripts/dev-start.ps1",
+      "isBackground": true,
+      "runOptions": {
+        "runOn": "folderOpen"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "focus": false,
+        "clear": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "build-api",
+      "type": "shell",
+      "command": "cd apps/api; npx tsc",
+      "group": "build",
+      "presentation": {
+        "reveal": "silent",
+        "panel": "shared"
+      },
+      "problemMatcher": [
+        "$tsc"
+      ]
+    },
+    {
+      "label": "dev: API (port 7000)",
+      "type": "shell",
+      "command": "cd apps/api; npm run dev",
+      "isBackground": true,
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "dev"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "dev: Management (port 3000)",
+      "type": "shell",
+      "command": "cd apps/management; npm run dev",
+      "isBackground": true,
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "dev"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "dev: Staff Office (port 5175)",
+      "type": "shell",
+      "command": "cd apps/office; npm run dev",
+      "isBackground": true,
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "dev"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "dev: Landing (port 3001 — marketing + client routes)",
+      "type": "shell",
+      "command": "cd apps/landing; npm run dev",
+      "isBackground": true,
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "dev"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "🚀 Start ALL (API + frontends)",
+      "dependsOn": [
+        "dev: API (port 7000)",
+        "dev: Management (port 3000)",
+        "dev: Staff Office (port 5175)",
+        "dev: Landing (port 3001 — marketing + client routes)"
+      ],
+      "dependsOrder": "parallel",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "prisma: generate",
+      "type": "shell",
+      "command": "cd apps/api; npx prisma generate",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "prisma: migrate dev",
+      "type": "shell",
+      "command": "cd apps/api; npx prisma migrate dev",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "prisma: studio",
+      "type": "shell",
+      "command": "cd apps/api; npx prisma studio",
+      "isBackground": true,
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "prisma: seed",
+      "type": "shell",
+      "command": "cd apps/api; npm run db:seed",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "type-check: all",
+      "type": "shell",
+      "command": "cd apps/api; npx tsc --noEmit; if ($LASTEXITCODE -eq 0) { Write-Host '✅ API OK' } else { exit $LASTEXITCODE }; cd ../management; npx tsc --noEmit; if ($LASTEXITCODE -eq 0) { Write-Host '✅ Management OK' } else { exit $LASTEXITCODE }; cd ../office; npx tsc --noEmit; if ($LASTEXITCODE -eq 0) { Write-Host '✅ Office OK' } else { exit $LASTEXITCODE }; cd ../landing; npx tsc --noEmit; if ($LASTEXITCODE -eq 0) { Write-Host '✅ Landing OK' } else { exit $LASTEXITCODE }",
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": [
+        "$tsc"
+      ]
+    },
+    {
+      "label": "Stop All Dev Servers",
+      "type": "shell",
+      "command": "taskkill /F /IM node.exe 2>$null; Write-Host '✅ All Node processes stopped'",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    }
+  ]
+}

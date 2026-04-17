@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="400" y2="300" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#fce7f3"/><stop offset="1" stop-color="#ede9fe"/>
+    </linearGradient>
+    <filter id="sh"><feDropShadow dx="0" dy="4" stdDeviation="6" flood-opacity=".12"/></filter>
+  </defs>
+  <rect width="400" height="300" rx="12" fill="url(#bg)"/>
+  <circle cx="50" cy="40" r="4" fill="#ec4899" opacity=".2"/>
+  <circle cx="360" cy="260" r="5" fill="#8b5cf6" opacity=".15"/>
+  <!-- Phone -->
+  <g filter="url(#sh)">
+    <rect x="130" y="30" width="140" height="240" rx="18" fill="white"/>
+    <rect x="130" y="30" width="140" height="240" rx="18" stroke="#e5e7eb" stroke-width="1"/>
+    <rect x="175" y="38" width="50" height="6" rx="3" fill="#e5e7eb"/>
+    <!-- Post image area -->
+    <rect x="142" y="60" width="116" height="80" rx="6" fill="#fce7f3"/>
+    <circle cx="200" cy="95" r="20" fill="#ec4899" opacity=".3"/>
+    <path d="M192 95 l6-8 l4 5 l8-10 l10 13z" fill="#ec4899" opacity=".5"/>
+    <!-- Hearts & likes -->
+    <circle cx="155" cy="155" r="8" fill="#ef4444" opacity=".15"/>
+    <text x="155" y="158" text-anchor="middle" font-size="10" fill="#ef4444">♥</text>
+    <text x="172" y="158" font-family="system-ui" font-size="8" fill="#6b7280">2.4k likes</text>
+    <!-- Comment lines -->
+    <rect x="142" y="170" width="90" height="5" rx="2" fill="#d1d5db"/>
+    <rect x="142" y="180" width="70" height="5" rx="2" fill="#e5e7eb"/>
+    <!-- Action buttons -->
+    <rect x="142" y="195" width="25" height="20" rx="6" fill="#fce7f3"/>
+    <rect x="172" y="195" width="25" height="20" rx="6" fill="#ede9fe"/>
+    <rect x="202" y="195" width="25" height="20" rx="6" fill="#dbeafe"/>
+    <!-- Bottom nav -->
+    <rect x="142" y="235" width="116" height="25" rx="6" fill="#f9fafb"/>
+    <circle cx="165" cy="248" r="5" fill="#ec4899" opacity=".4"/>
+    <circle cx="190" cy="248" r="5" fill="#8b5cf6" opacity=".4"/>
+    <circle cx="215" cy="248" r="5" fill="#3b82f6" opacity=".4"/>
+    <circle cx="240" cy="248" r="5" fill="#10b981" opacity=".4"/>
+  </g>
+  <!-- Floating notification -->
+  <g filter="url(#sh)">
+    <rect x="280" y="60" width="90" height="40" rx="10" fill="white"/>
+    <circle cx="300" cy="80" r="10" fill="#ec4899" opacity=".2"/>
+    <text x="300" y="84" text-anchor="middle" font-size="10" fill="#ec4899">📱</text>
+    <text x="320" y="76" font-family="system-ui" font-size="7" fill="#374151">+1.2k</text>
+    <text x="320" y="87" font-family="system-ui" font-size="6" fill="#9ca3af">followers</text>
+  </g>
+  <!-- Analytics card -->
+  <g filter="url(#sh)">
+    <rect x="30" y="120" width="85" height="55" rx="10" fill="white"/>
+    <text x="45" y="140" font-family="system-ui" font-size="7" fill="#9ca3af">Engagement</text>
+    <text x="45" y="158" font-family="system-ui" font-size="14" font-weight="bold" fill="#8b5cf6">+89%</text>
+  </g>
+</svg>

@@ -1,0 +1,127 @@
+# Production API stack: Postgres + Redis + API + Caddy (https://api.pouchcare.com).
+# Development API (separate DB): docker-compose.hosting.dev.yml → https://api-dev.pouchcare.com (via Caddy → :7001).
+#
+# 1. Copy apps/api/.env and set at least: JWT_SECRET, JWT_REFRESH_SECRET (32+ chars each).
+#    Set ALLOWED_ORIGINS in that file (include https://m.pouchcare.com, etc.) — compose does not override it.
+# 2. From repo root: npm run docker:hosting  (or docker compose -f docker-compose.hosting.yml up -d --build)
+# 3. API direct: http://localhost:7000/health  |  Public: https://api.pouchcare.com/health
+#
+# Cloudflare Tunnel (same Docker network as `api` — no open ports required):
+#   Set TUNNEL_TOKEN in a root `.env` (see deploy/cloudflared/README-docker.md), then:
+#   npm run docker:hosting:tunnel
+#   In Zero Trust → Public hostnames: api.pouchcare.com → http://api:7000 ; api-dev.pouchcare.com → http://host.docker.internal:7001
+#
+# Public HTTPS:
+#   - DNS A/AAAA: api.pouchcare.com → this host’s public IP.
+#   - Router/firewall: forward 80 and 443 to this machine.
+#   - deploy/Caddyfile proxies api.pouchcare.com → api:7000 (TLS via Let’s Encrypt).
+#
+# Compose sets DATABASE_URL, REDIS_URL, NODE_ENV, PORT, and API_URL (defaults to https://api.pouchcare.com).
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: pouchcare-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: pouchcare
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pouchcare}
+      POSTGRES_DB: pouchcare
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pouchcare_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pouchcare -d pouchcare"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: pouchcare-redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - pouchcare_redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.api
+    container_name: pouchcare-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "${API_PORT:-7000}:7000"
+    environment:
+      NODE_ENV: production
+      PORT: "7000"
+      DATABASE_URL: postgresql://pouchcare:${POSTGRES_PASSWORD:-pouchcare}@postgres:5432/pouchcare
+      REDIS_URL: redis://redis:6379
+      # Public URL for redirects, signed links, uploads — overrides localhost in apps/api/.env inside the container.
+      API_URL: ${API_URL:-https://api.pouchcare.com}
+    env_file:
+      - ./apps/api/.env
+    volumes:
+      - pouchcare_api_uploads:/app/apps/api/uploads
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:7000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: pouchcare-caddy
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "80:80"
+      - "443:443"
+    # api-dev.pouchcare.com proxies to the dev API published on host :7001 (docker-compose.hosting.dev.yml).
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+  # Runs on the default Compose network so it can reach the API as http://api:7000.
+  # Requires TUNNEL_TOKEN (Cloudflare Zero Trust → Networks → Tunnels → your tunnel → token).
+  # Start with: npm run docker:hosting:tunnel  (or docker compose ... --profile tunnel up -d)
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: pouchcare-cloudflared
+    profiles:
+      - tunnel
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    command: tunnel run
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:-}
+    # Reach Vite apps on the host while API stays in Docker (optional; map in tunnel ingress / dashboard).
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+volumes:
+  pouchcare_pg_data:
+  pouchcare_redis_data:
+  pouchcare_api_uploads:
+  caddy_data:
+  caddy_config:

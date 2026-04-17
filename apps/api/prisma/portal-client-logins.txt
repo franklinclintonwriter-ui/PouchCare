@@ -1,0 +1,21 @@
+PouchCare OS — Client portal (development seed)
+================================================
+Use these on the landing app: /my-accounts/login
+(API: POST /v1/portal/login)
+
+Default password for most demo clients:  Password123!
+
+  Email                         Password      Notes
+  ----------------------------- ------------- ---------------------------------
+  john@example.com              Password123!  Active; wallet, orders, referrals
+  alice@example.com           Password123!  Active
+  michael@example.com           Password123!  Active
+  omar@example.com            Password123!  Active
+  sofia@example.com           Password123!  NOT for login: emailVerified=false
+                                            (API returns "verify email first")
+  referred.demo@pouchcare.com Password123!  Active; referred by test account
+
+Full demo account (extra portal data in seed):
+  Test@pouchcare.com            Test@123
+
+Change these passwords before any production use.

@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 200" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="480" y2="200" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0f172a"/><stop offset="1" stop-color="#1e293b"/>
+    </linearGradient>
+    <filter id="sh"><feDropShadow dx="0" dy="3" stdDeviation="6" flood-opacity=".12"/></filter>
+  </defs>
+  <rect width="480" height="200" rx="14" fill="url(#bg)"/>
+
+  <!-- Volume discount bars -->
+  <text x="240" y="22" font-family="system-ui" font-size="10" fill="#38bdf8" font-weight="700" text-anchor="middle" letter-spacing="2">VOLUME PRICING — SAVE UP TO 30%</text>
+
+  <!-- Price comparison: 1 link, 10, 50, 100, 1000 -->
+  <g transform="translate(30, 40)">
+    <!-- Bar: 1 link -->
+    <g filter="url(#sh)">
+      <rect width="75" height="130" rx="8" fill="#1e293b" stroke="#334155" stroke-width=".5"/>
+      <text x="37" y="20" font-family="system-ui" font-size="7" fill="#94a3b8" font-weight="600" text-anchor="middle">×1</text>
+      <rect x="20" y="40" width="35" height="70" rx="4" fill="#38bdf8" opacity=".25"/>
+      <text x="37" y="80" font-family="system-ui" font-size="10" fill="#e2e8f0" font-weight="800" text-anchor="middle">$30</text>
+      <text x="37" y="123" font-family="system-ui" font-size="6" fill="#64748b" text-anchor="middle">per link</text>
+    </g>
+
+    <!-- Bar: 10 links -->
+    <g filter="url(#sh)" transform="translate(85, 0)">
+      <rect width="75" height="130" rx="8" fill="#1e293b" stroke="#334155" stroke-width=".5"/>
+      <text x="37" y="20" font-family="system-ui" font-size="7" fill="#94a3b8" font-weight="600" text-anchor="middle">×10</text>
+      <rect x="20" y="45" width="35" height="65" rx="4" fill="#38bdf8" opacity=".4"/>
+      <text x="37" y="82" font-family="system-ui" font-size="10" fill="#e2e8f0" font-weight="800" text-anchor="middle">$26</text>
+      <rect x="12" y="102" width="51" height="14" rx="4" fill="#10b981" opacity=".15"/>
+      <text x="37" y="113" font-family="system-ui" font-size="6" fill="#10b981" font-weight="700" text-anchor="middle">Save 13%</text>
+      <text x="37" y="123" font-family="system-ui" font-size="6" fill="#64748b" text-anchor="middle">per link</text>
+    </g>
+
+    <!-- Bar: 50 links -->
+    <g filter="url(#sh)" transform="translate(170, 0)">
+      <rect width="75" height="130" rx="8" fill="#1e293b" stroke="#334155" stroke-width=".5"/>
+      <text x="37" y="20" font-family="system-ui" font-size="7" fill="#94a3b8" font-weight="600" text-anchor="middle">×50</text>
+      <rect x="20" y="50" width="35" height="60" rx="4" fill="#818cf8" opacity=".5"/>
+      <text x="37" y="84" font-family="system-ui" font-size="10" fill="#e2e8f0" font-weight="800" text-anchor="middle">$24</text>
+      <rect x="12" y="102" width="51" height="14" rx="4" fill="#10b981" opacity=".15"/>
+      <text x="37" y="113" font-family="system-ui" font-size="6" fill="#10b981" font-weight="700" text-anchor="middle">Save 20%</text>
+      <text x="37" y="123" font-family="system-ui" font-size="6" fill="#64748b" text-anchor="middle">per link</text>
+    </g>
+
+    <!-- Bar: 100 links -->
+    <g filter="url(#sh)" transform="translate(255, 0)">
+      <rect width="75" height="130" rx="8" fill="#1e293b" stroke="#38bdf8" stroke-width="1"/>
+      <rect x="12" y="-8" width="51" height="14" rx="7" fill="#38bdf8"/>
+      <text x="37" y="3" font-family="system-ui" font-size="6" fill="white" font-weight="800" text-anchor="middle">POPULAR</text>
+      <text x="37" y="26" font-family="system-ui" font-size="7" fill="#94a3b8" font-weight="600" text-anchor="middle">×100</text>
+      <rect x="20" y="55" width="35" height="55" rx="4" fill="#38bdf8" opacity=".6"/>
+      <text x="37" y="86" font-family="system-ui" font-size="10" fill="#e2e8f0" font-weight="800" text-anchor="middle">$22</text>
+      <rect x="12" y="102" width="51" height="14" rx="4" fill="#10b981" opacity=".15"/>
+      <text x="37" y="113" font-family="system-ui" font-size="6" fill="#10b981" font-weight="700" text-anchor="middle">Save 27%</text>
+      <text x="37" y="123" font-family="system-ui" font-size="6" fill="#64748b" text-anchor="middle">per link</text>
+    </g>
+
+    <!-- Bar: 1000 links -->
+    <g filter="url(#sh)" transform="translate(340, 0)">
+      <rect width="90" height="130" rx="8" fill="#1e293b" stroke="#334155" stroke-width=".5"/>
+      <text x="45" y="20" font-family="system-ui" font-size="7" fill="#94a3b8" font-weight="600" text-anchor="middle">×1,000</text>
+      <rect x="22" y="58" width="46" height="52" rx="4" fill="#818cf8" opacity=".7"/>
+      <text x="45" y="88" font-family="system-ui" font-size="10" fill="#e2e8f0" font-weight="800" text-anchor="middle">$21</text>
+      <rect x="17" y="102" width="56" height="14" rx="4" fill="#10b981" opacity=".15"/>
+      <text x="45" y="113" font-family="system-ui" font-size="6" fill="#10b981" font-weight="700" text-anchor="middle">Save 30%</text>
+      <text x="45" y="123" font-family="system-ui" font-size="6" fill="#64748b" text-anchor="middle">per link</text>
+    </g>
+  </g>
+
+  <!-- Bottom note -->
+  <text x="240" y="188" font-family="system-ui" font-size="6" fill="#475569" text-anchor="middle">Example pricing for Standard Guest Post (DA 30-40). All packages have tiered volume discounts.</text>
+</svg>

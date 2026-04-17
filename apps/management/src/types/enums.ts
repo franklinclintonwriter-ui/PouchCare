@@ -1,0 +1,17 @@
+export type SystemRole = 'CEO' | 'CO_MD' | 'OP_MANAGER' | 'HR_MANAGER' | 'BRANCH_MANAGER' | 'STAFF' | 'INTERN';
+export type TaskStatus = 'NOT_STARTED' | 'IN_PROGRESS' | 'BLOCKED' | 'REVIEW' | 'DONE';
+export type ApprovalStatus = 'WAITING' | 'SUBMITTED' | 'APPROVED_MGR' | 'REJECTED_MGR' | 'ESCALATED' | 'VERIFIED';
+export type Priority = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
+export type AttendanceStatus = 'PRESENT' | 'ABSENT' | 'LATE' | 'HALF_DAY' | 'REMOTE';
+export type WorkType = 'OFFICE' | 'REMOTE' | 'FIELD' | 'LEAVE' | 'HOLIDAY';
+export type LeaveType = 'ANNUAL' | 'SICK' | 'EMERGENCY' | 'MATERNITY' | 'PATERNITY' | 'UNPAID';
+export type LeaveStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
+export type ProjectStatus = 'PENDING' | 'IN_PROGRESS' | 'REVIEW' | 'DELIVERED' | 'ON_HOLD' | 'CANCELLED';
+export type PaymentStatus = 'UNPAID' | 'PARTIAL' | 'PAID' | 'OVERDUE' | 'REFUNDED';
+export type LeadStage = 'NEW' | 'QUALIFIED' | 'PROPOSAL' | 'NEGOTIATION' | 'WON' | 'LOST';
+export type PortalMemberStatus = 'ACTIVE' | 'PENDING_VERIFICATION' | 'SUSPENDED' | 'INACTIVE';
+export type OrderStatus = 'PENDING' | 'PROCESSING' | 'DELIVERED' | 'REVISION_REQUESTED' | 'COMPLETED' | 'CANCELLED' | 'REFUNDED';
+export type WalletTxType = 'DEPOSIT' | 'ORDER_PAYMENT' | 'COMMISSION_CREDIT' | 'REFUND' | 'PAYOUT' | 'ADJUSTMENT';
+export type CommissionStatus = 'PENDING_HOLD' | 'AVAILABLE' | 'PAID_OUT' | 'CANCELLED' | 'FRAUD_HOLD';
+export type PayoutStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'REJECTED';
+export type PaymentMethod = 'PAYONEER' | 'USDT_TRC20' | 'BINANCE' | 'BANK_TRANSFER' | 'CASH';

@@ -1,0 +1,6 @@
+# Cloudflare Pages — Marketing + client portal (pouchcare.com)
+# First time: npm run pages:project:create  (creates project "pouchcare")
+# Deploy:      npm run pages:deploy   — or from repo root: npm run pages:deploy:landing
+# Requires:   wrangler login  and  apps/landing/.env.production  (VITE_API_URL, etc.)
+name = "pouchcare"
+pages_build_output_dir = "dist"

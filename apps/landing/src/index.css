@@ -1,0 +1,383 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Theme CSS Custom Properties ──────────────────────────────────────── */
+:root {
+  --color-primary-50: 239 246 255;
+  --color-primary-100: 219 234 254;
+  --color-primary-200: 191 219 254;
+  --color-primary-300: 147 197 253;
+  --color-primary-400: 96 165 250;
+  --color-primary-500: 59 130 246;
+  --color-primary-600: 37 99 235;
+  --color-primary-700: 29 78 216;
+  --color-primary-800: 30 64 175;
+  --color-primary-900: 30 58 138;
+  --color-primary-950: 23 37 84;
+}
+
+/* ─── Base ──────────────────────────────────────────────────────────────── */
+@layer base {
+  html {
+    /* Only smooth-scroll for in-page anchor jumps, not for route changes
+       (route changes use instant scroll via ScrollToTop) */
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* Prevent rubber-band bounce from feeling disconnected */
+    overscroll-behavior-y: none;
+    /* Improve text rendering on high-DPI screens */
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    @apply bg-gradient-to-b from-gray-50 via-white to-gray-100 text-gray-900;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  html.dark body {
+    @apply bg-gray-950 text-gray-100;
+    background-image: none;
+  }
+
+  /* Reduce motion for users who prefer it */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  html.dark ::selection {
+    @apply bg-primary-900 text-primary-100;
+  }
+
+  ::selection {
+    @apply bg-primary-100 text-primary-900;
+  }
+
+  /* Thin, styled scrollbar */
+  ::-webkit-scrollbar {
+    width: 4px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgb(var(--color-primary-500));
+  }
+  html.dark ::-webkit-scrollbar-thumb {
+    background: #334155;
+  }
+  html.dark ::-webkit-scrollbar-thumb:hover {
+    background: rgb(var(--color-primary-400));
+  }
+
+  /* Focus ring — keyboard navigation (uses theme accent) */
+  :focus-visible {
+    outline: 2px solid rgb(var(--color-primary-500));
+    outline-offset: 3px;
+  }
+}
+
+/* ─── Components ────────────────────────────────────────────────────────── */
+@layer components {
+  .section-pad {
+    @apply px-4 sm:px-6 lg:px-8 py-16 sm:py-20 lg:py-24;
+  }
+
+  .container-max {
+    @apply max-w-screen-2xl mx-auto;
+  }
+
+  .glass-card {
+    @apply bg-white/90 dark:bg-gray-900/90 border border-gray-200/80 dark:border-gray-700/60 rounded-2xl shadow-soft;
+  }
+
+  .text-gradient {
+    background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Dark mode: brighter gradient for contrast on dark backgrounds */
+  html.dark .text-gradient {
+    background: linear-gradient(135deg, #60a5fa 0%, #93c5fd 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Portal / auth form input base */
+  .input-base {
+    @apply w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400
+           focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/30
+           dark:border-gray-700 dark:bg-gray-800/70 dark:text-gray-100 dark:placeholder:text-gray-500
+           dark:focus:border-primary-400 dark:focus:ring-primary-400/30;
+  }
+
+  /* Portal card / panel */
+  .portal-card {
+    @apply rounded-xl border border-gray-200 bg-white shadow-soft
+           dark:border-gray-800 dark:bg-gray-900;
+  }
+
+  /* Status badge base */
+  .badge-base {
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium;
+  }
+
+  .glow-border {
+    @apply border border-primary-500/30 shadow-[0_0_24px_rgba(37,99,235,0.12)];
+  }
+
+  .hero-grid {
+    background-image:
+      linear-gradient(rgba(148, 163, 184, 0.1) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(148, 163, 184, 0.1) 1px, transparent 1px);
+    background-size: 60px 60px;
+  }
+
+  /* Interactive card — uses only GPU-composited properties */
+  .card-hover {
+    transition:
+      transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+      border-color 0.2s ease;
+  }
+  .card-hover:hover {
+    transform: translateY(-2px);
+  }
+}
+
+/* ─── Utilities ─────────────────────────────────────────────────────────── */
+@layer utilities {
+  .animation-delay-100 {
+    animation-delay: 100ms;
+  }
+  .animation-delay-200 {
+    animation-delay: 200ms;
+  }
+  .animation-delay-300 {
+    animation-delay: 300ms;
+  }
+  .animation-delay-400 {
+    animation-delay: 400ms;
+  }
+  .animation-delay-500 {
+    animation-delay: 500ms;
+  }
+
+  /* Scrollbar-free but scrollable */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Blog prose styles */
+  .prose-custom p {
+    @apply text-gray-600 leading-relaxed text-base;
+  }
+  .prose-custom strong {
+    @apply text-gray-900 font-semibold;
+  }
+
+  /* GPU layer promotion — use sparingly on key animated elements */
+  .gpu {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+  }
+
+  @media (min-width: 1024px) {
+    .max-w-7xl {
+      max-width: 96rem;
+    }
+  }
+}
+
+/* ─── Keyframes ─────────────────────────────────────────────────────────── */
+
+/* Shimmer gradient text */
+@keyframes shimmer {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Hero fade-up — runs once on mount */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-up {
+  /* Use only opacity + transform to stay on GPU compositor thread */
+  animation: fadeUp 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: opacity, transform;
+}
+
+/* Management-style compatibility layer for existing landing classes */
+.landing-theme .text-slate-50,
+.landing-theme .text-slate-100,
+.landing-theme .text-slate-200 {
+  color: rgb(17 24 39) !important;
+}
+
+.landing-theme .text-slate-300 {
+  color: rgb(55 65 81) !important;
+}
+
+.landing-theme .text-slate-400,
+.landing-theme .text-slate-500,
+.landing-theme .text-slate-600 {
+  color: rgb(107 114 128) !important;
+}
+
+/* Darken bright accent colors for better readability on light surfaces */
+.landing-theme .text-sky-300,
+.landing-theme .text-sky-400 {
+  color: rgb(29 78 216) !important;
+}
+
+.landing-theme .text-sky-400\/70 {
+  color: rgb(59 130 246 / 0.92) !important;
+}
+
+.landing-theme .text-rose-400 {
+  color: rgb(190 24 93) !important;
+}
+
+.landing-theme .text-green-400 {
+  color: rgb(22 163 74) !important;
+}
+
+.landing-theme [class*="bg-navy-900"] {
+  background-color: rgb(249 250 251) !important;
+}
+
+.landing-theme [class*="bg-navy-800"] {
+  background-color: rgb(255 255 255) !important;
+}
+
+.landing-theme [class*="bg-navy-700"] {
+  background-color: rgb(249 250 251) !important;
+}
+
+.landing-theme [class*="bg-navy-600"] {
+  background-color: rgb(243 244 246) !important;
+}
+
+.landing-theme [class*="border-navy-"] {
+  border-color: rgb(229 231 235) !important;
+}
+
+/* Floating cards in hero — GPU only */
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0px) translateX(0px);
+  }
+  33% {
+    transform: translateY(-18px) translateX(10px);
+  }
+  66% {
+    transform: translateY(8px) translateX(-8px);
+  }
+}
+/* Marquee scroll */
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+.animate-marquee {
+  animation: marquee 30s linear infinite;
+}
+
+/* Pulse ring */
+@keyframes pingOnce {
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  80% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}
+
+/* Smooth nav underline slide */
+@keyframes slideIn {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* ── Print stylesheet (invoices) ──────────────────────────────────────── */
+@media print {
+  body {
+    background: white !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  header,
+  aside,
+  nav,
+  footer,
+  .print\\:hidden,
+  [data-sonner-toaster] {
+    display: none !important;
+  }
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  #invoice-document {
+    max-width: 100% !important;
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  @page {
+    size: A4;
+    margin: 12mm 16mm;
+  }
+}

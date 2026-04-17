@@ -1,0 +1,7 @@
+# Copy to deploy/Caddyfile and adjust hostname if needed.
+# Requires ports 80/443 forwarded to this machine (or use Cloudflare Tunnel).
+
+api.pouchcare.com {
+	encode gzip zstd
+	reverse_proxy api:7000
+}

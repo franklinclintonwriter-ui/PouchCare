@@ -1,0 +1,52 @@
+# Build from repository root:
+#   docker build -f deploy/Dockerfile.api -t pouchcare-api .
+FROM node:20-bookworm-slim AS builder
+WORKDIR /app
+RUN apt-get update && apt-get install -y openssl ca-certificates && rm -rf /var/lib/apt/lists/*
+
+COPY package.json package-lock.json ./
+COPY apps/api/package.json ./apps/api/
+COPY apps/api/prisma ./apps/api/prisma
+COPY apps/landing/package.json ./apps/landing/
+COPY apps/management/package.json ./apps/management/
+COPY packages/types/package.json ./packages/types/
+COPY packages/utils/package.json ./packages/utils/
+
+RUN npm ci --legacy-peer-deps
+
+COPY apps/api ./apps/api
+COPY packages ./packages
+
+WORKDIR /app/apps/api
+ENV DATABASE_URL="postgresql://pouchcare:pouchcare@localhost:5432/pouchcare"
+RUN npm install -g tsc-alias@1.8.10 \
+  && npx prisma generate \
+  && npx tsc \
+  && npx tsc-alias -p tsconfig.json
+
+FROM node:20-bookworm-slim AS runner
+WORKDIR /app
+RUN apt-get update && apt-get install -y openssl ca-certificates wget && rm -rf /var/lib/apt/lists/* \
+  && npm install -g prisma@5.10.0
+
+COPY package.json package-lock.json ./
+COPY apps/api/package.json ./apps/api/
+COPY apps/api/prisma ./apps/api/prisma
+COPY apps/landing/package.json ./apps/landing/
+COPY apps/management/package.json ./apps/management/
+COPY packages/types/package.json ./packages/types/
+COPY packages/utils/package.json ./packages/utils/
+
+RUN npm ci --omit=dev --legacy-peer-deps
+
+COPY --from=builder /app/apps/api/dist ./apps/api/dist
+COPY --from=builder /app/apps/api/prisma ./apps/api/prisma
+
+WORKDIR /app/apps/api
+ENV DATABASE_URL="postgresql://pouchcare:pouchcare@localhost:5432/pouchcare"
+RUN npx prisma generate
+
+ENV NODE_ENV=production
+EXPOSE 7000
+# Inline entrypoint avoids CRLF issues when the image is built on Windows checkouts.
+ENTRYPOINT ["/bin/sh", "-c", "set -e; cd /app/apps/api; prisma migrate deploy; exec node dist/server.js"]

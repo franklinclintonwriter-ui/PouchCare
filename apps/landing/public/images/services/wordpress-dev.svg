@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="400" y2="300" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#eff6ff"/><stop offset="1" stop-color="#eef2ff"/>
+    </linearGradient>
+    <filter id="sh"><feDropShadow dx="0" dy="4" stdDeviation="6" flood-opacity=".12"/></filter>
+  </defs>
+  <rect width="400" height="300" rx="12" fill="url(#bg)"/>
+  <!-- WordPress admin panel -->
+  <g filter="url(#sh)">
+    <rect x="30" y="30" width="260" height="230" rx="10" fill="white"/>
+    <!-- Sidebar -->
+    <rect x="30" y="30" width="60" height="230" rx="10" fill="#1e293b"/>
+    <rect x="80" y="30" width="10" height="230" fill="#1e293b"/>
+    <!-- WP logo -->
+    <circle cx="60" cy="54" r="14" fill="#21759b"/>
+    <text x="60" y="60" text-anchor="middle" font-family="serif" font-size="18" fill="white" font-weight="900">W</text>
+    <!-- Sidebar items -->
+    <rect x="38" y="78" width="44" height="8" rx="3" fill="#475569"/>
+    <rect x="38" y="94" width="36" height="8" rx="3" fill="#334155"/>
+    <rect x="38" y="110" width="40" height="8" rx="3" fill="#334155"/>
+    <rect x="38" y="126" width="44" height="8" rx="3" fill="#60a5fa" opacity=".5"/>
+    <rect x="38" y="142" width="34" height="8" rx="3" fill="#334155"/>
+    <rect x="38" y="158" width="38" height="8" rx="3" fill="#334155"/>
+    <!-- Main content area -->
+    <text x="100" y="55" font-family="system-ui" font-size="10" fill="#1e293b" font-weight="700">Theme Customizer</text>
+    <!-- Theme preview -->
+    <rect x="100" y="66" width="180" height="110" rx="6" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+    <rect x="106" y="72" width="168" height="20" rx="4" fill="#21759b" opacity=".1"/>
+    <text x="112" y="86" font-family="system-ui" font-size="8" fill="#21759b" font-weight="600">My WordPress Site</text>
+    <rect x="106" y="100" width="80" height="6" rx="2" fill="#1e293b" opacity=".15"/>
+    <rect x="106" y="112" width="168" height="4" rx="2" fill="#e2e8f0"/>
+    <rect x="106" y="120" width="140" height="4" rx="2" fill="#e2e8f0"/>
+    <rect x="106" y="128" width="160" height="4" rx="2" fill="#e2e8f0"/>
+    <rect x="106" y="140" width="60" height="16" rx="5" fill="#21759b"/>
+    <text x="116" y="152" font-family="system-ui" font-size="7" fill="white" font-weight="600">Read More</text>
+    <rect x="200" y="100" width="68" height="56" rx="4" fill="#e0f2fe" opacity=".5"/>
+    <!-- Plugin cards -->
+    <text x="100" y="194" font-family="system-ui" font-size="8" fill="#64748b" font-weight="600">Active Plugins (8)</text>
+    <rect x="100" y="200" width="55" height="44" rx="6" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1"/>
+    <text x="112" y="218" font-family="system-ui" font-size="12">🔌</text>
+    <text x="106" y="236" font-family="system-ui" font-size="6" fill="#374151" font-weight="500">Yoast SEO</text>
+    <rect x="163" y="200" width="55" height="44" rx="6" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1"/>
+    <text x="175" y="218" font-family="system-ui" font-size="12">⚡</text>
+    <text x="169" y="236" font-family="system-ui" font-size="6" fill="#374151" font-weight="500">WP Rocket</text>
+    <rect x="226" y="200" width="55" height="44" rx="6" fill="#fef3c7" stroke="#fde68a" stroke-width="1"/>
+    <text x="238" y="218" font-family="system-ui" font-size="12">🛡️</text>
+    <text x="232" y="236" font-family="system-ui" font-size="6" fill="#374151" font-weight="500">Wordfence</text>
+  </g>
+  <!-- Speed card -->
+  <g filter="url(#sh)" transform="translate(310, 40)">
+    <rect width="70" height="60" rx="8" fill="white"/>
+    <text x="10" y="18" font-family="system-ui" font-size="7" fill="#64748b" font-weight="500">Speed Score</text>
+    <circle cx="35" cy="42" r="14" stroke="#e2e8f0" stroke-width="3" fill="none"/>
+    <circle cx="35" cy="42" r="14" stroke="#10b981" stroke-width="3" fill="none" stroke-dasharray="72 88" stroke-linecap="round" transform="rotate(-90 35 42)"/>
+    <text x="35" y="46" text-anchor="middle" font-family="system-ui" font-size="10" fill="#10b981" font-weight="800">A+</text>
+  </g>
+  <!-- Custom theme badge -->
+  <g filter="url(#sh)" transform="translate(310, 115)">
+    <rect width="70" height="50" rx="8" fill="white"/>
+    <text x="10" y="18" font-family="system-ui" font-size="7" fill="#64748b" font-weight="500">Theme</text>
+    <text x="10" y="38" font-family="system-ui" font-size="9" fill="#21759b" font-weight="700">Custom</text>
+  </g>
+  <!-- PHP version -->
+  <g filter="url(#sh)" transform="translate(310, 180)">
+    <rect width="70" height="50" rx="8" fill="white"/>
+    <text x="10" y="18" font-family="system-ui" font-size="7" fill="#64748b" font-weight="500">PHP</text>
+    <text x="10" y="38" font-family="system-ui" font-size="12" fill="#7c3aed" font-weight="800">8.3</text>
+  </g>
+  <!-- WP CLI command -->
+  <g filter="url(#sh)" transform="translate(310, 245)">
+    <rect width="75" height="30" rx="6" fill="#1e293b"/>
+    <text x="6" y="14" font-family="monospace" font-size="6" fill="#4ade80">$ wp plugin</text>
+    <text x="6" y="24" font-family="monospace" font-size="6" fill="#94a3b8">  update --all</text>
+  </g>
+</svg>

@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="400" y2="300" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ecfdf5"/><stop offset="1" stop-color="#cffafe"/>
+    </linearGradient>
+    <filter id="sh"><feDropShadow dx="0" dy="4" stdDeviation="6" flood-opacity=".12"/></filter>
+  </defs>
+  <rect width="400" height="300" rx="12" fill="url(#bg)"/>
+  <!-- Map background -->
+  <g opacity=".12">
+    <path d="M0 100 Q100 80 200 110 Q300 140 400 100" stroke="#0ea5e9" stroke-width="2"/>
+    <path d="M0 140 Q100 120 200 150 Q300 160 400 130" stroke="#0ea5e9" stroke-width="1.5"/>
+    <path d="M0 170 Q80 190 180 170 Q300 150 400 180" stroke="#0ea5e9" stroke-width="1"/>
+    <rect x="80" y="80" width="240" height="160" rx="8" stroke="#0ea5e9" stroke-width="1.5" fill="none"/>
+  </g>
+  <!-- Map pin (large, central) -->
+  <g filter="url(#sh)" transform="translate(150, 40)">
+    <path d="M50 0C28 0 10 18 10 40c0 30 40 65 40 65s40-35 40-65C90 18 72 0 50 0z" fill="#ef4444"/>
+    <path d="M50 0C28 0 10 18 10 40c0 30 40 65 40 65s40-35 40-65C90 18 72 0 50 0z" fill="url(#pin)" opacity=".9"/>
+    <circle cx="50" cy="38" r="16" fill="white"/>
+    <!-- Storefront inside pin -->
+    <rect x="38" y="32" width="24" height="14" rx="2" fill="#0ea5e9" opacity=".2" stroke="#0ea5e9" stroke-width="1"/>
+    <rect x="38" y="32" width="24" height="5" fill="#0ea5e9" opacity=".3" rx="2"/>
+    <rect x="44" y="39" width="5" height="7" rx="1" fill="#0ea5e9" opacity=".5"/>
+    <rect x="52" y="39" width="5" height="7" rx="1" fill="#0ea5e9" opacity=".5"/>
+    <defs><linearGradient id="pin" x1="50" y1="0" x2="50" y2="105" gradientUnits="userSpaceOnUse"><stop stop-color="#ef4444"/><stop offset="1" stop-color="#dc2626"/></linearGradient></defs>
+  </g>
+  <!-- Google Business card -->
+  <g filter="url(#sh)" transform="translate(30, 150)">
+    <rect width="150" height="100" rx="10" fill="white"/>
+    <rect x="12" y="12" width="30" height="30" rx="6" fill="#f0f9ff" stroke="#bae6fd" stroke-width="1"/>
+    <text x="20" y="33" font-family="system-ui" font-size="16">🏪</text>
+    <text x="50" y="28" font-family="system-ui" font-size="9" fill="#1e293b" font-weight="700">Your Business</text>
+    <text x="50" y="40" font-family="system-ui" font-size="7" fill="#64748b">123 Main St, City</text>
+    <!-- Stars -->
+    <g transform="translate(12, 52)">
+      <text font-family="system-ui" font-size="10" fill="#fbbf24">★★★★★</text>
+      <text x="56" y="0" font-family="system-ui" font-size="7" fill="#64748b" dy="1">4.9 (127)</text>
+    </g>
+    <rect x="12" y="70" width="50" height="18" rx="6" fill="#0ea5e9"/>
+    <text x="19" y="83" font-family="system-ui" font-size="7" fill="white" font-weight="600">Directions</text>
+    <rect x="68" y="70" width="36" height="18" rx="6" fill="#f1f5f9" stroke="#e2e8f0" stroke-width="1"/>
+    <text x="75" y="83" font-family="system-ui" font-size="7" fill="#475569" font-weight="500">Call</text>
+  </g>
+  <!-- Citation sources -->
+  <g filter="url(#sh)" transform="translate(220, 150)">
+    <rect width="150" height="100" rx="10" fill="white"/>
+    <text x="12" y="22" font-family="system-ui" font-size="8" fill="#64748b" font-weight="600">Local Citations</text>
+    <g transform="translate(12, 32)">
+      <rect width="126" height="16" rx="4" fill="#f0fdf4"/>
+      <text x="6" y="11" font-family="system-ui" font-size="7" fill="#374151">Google Business</text>
+      <text x="100" y="11" font-family="system-ui" font-size="7" fill="#10b981" font-weight="700">✓</text>
+    </g>
+    <g transform="translate(12, 52)">
+      <rect width="126" height="16" rx="4" fill="#f0fdf4"/>
+      <text x="6" y="11" font-family="system-ui" font-size="7" fill="#374151">Yelp</text>
+      <text x="100" y="11" font-family="system-ui" font-size="7" fill="#10b981" font-weight="700">✓</text>
+    </g>
+    <g transform="translate(12, 72)">
+      <rect width="126" height="16" rx="4" fill="#fefce8"/>
+      <text x="6" y="11" font-family="system-ui" font-size="7" fill="#374151">Apple Maps</text>
+      <text x="90" y="11" font-family="system-ui" font-size="7" fill="#f59e0b" font-weight="700">Pending</text>
+    </g>
+  </g>
+  <!-- Decorative small pins -->
+  <g opacity=".5">
+    <circle cx="100" cy="100" r="4" fill="#ef4444"/>
+    <circle cx="310" cy="80" r="3" fill="#f97316"/>
+    <circle cx="350" cy="130" r="3" fill="#ef4444"/>
+  </g>
+</svg>

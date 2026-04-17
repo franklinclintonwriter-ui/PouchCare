@@ -1,0 +1,276 @@
+import { Router } from "express";
+import { z } from "zod";
+import prisma from "@/lib/prisma";
+import {
+  authenticate,
+  requireStaff,
+  requireRoles,
+  MANAGER_ROLES,
+  type AuthRequest,
+} from "@/middleware/auth";
+import type { Prisma, SystemRole } from "@prisma/client";
+import {
+  canManagerAccessStaffMember,
+  mergeLeaveWhereForManager,
+} from "@/lib/teamBranchScope";
+import { validate } from "@/middleware/validate";
+import { getPagination, paginatedMeta, buildMeta } from "@/utils/pagination";
+import {
+  ok,
+  created,
+  badRequest,
+  notFound,
+  forbidden,
+  serverError,
+} from "@/utils/response";
+
+const router = Router();
+router.use(authenticate);
+
+const applySchema = z.object({
+  leaveType: z.string(),
+  startDate: z.string(),
+  endDate: z.string(),
+  reason: z.string().optional(),
+});
+
+const adminCreateSchema = applySchema.extend({
+  staffMemberId: z.string(),
+});
+
+// GET /v1/leave
+router.get("/", requireStaff, async (req: AuthRequest, res) => {
+  try {
+    const { page, limit, skip } = getPagination(req);
+    const role = req.user!.role as SystemRole;
+    let where: Prisma.LeaveRequestWhereInput = {};
+    if (!MANAGER_ROLES.includes(role)) {
+      where.staffMemberId = req.user!.id;
+    } else {
+      where = await mergeLeaveWhereForManager(req, {});
+    }
+
+    const [requests, total] = await Promise.all([
+      prisma.leaveRequest.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.leaveRequest.count({ where }),
+    ]);
+    return ok(res, requests, buildMeta(total, page, limit));
+  } catch (err) {
+    serverError(res, err);
+  }
+});
+
+// GET /v1/leave/:id
+router.get("/:id", requireStaff, async (req: AuthRequest, res) => {
+  try {
+    const request = await prisma.leaveRequest.findUnique({
+      where: { id: req.params.id },
+    });
+    if (!request) return notFound(res);
+    const role = req.user!.role as SystemRole;
+    if (!MANAGER_ROLES.includes(role) && request.staffMemberId !== req.user!.id)
+      return notFound(res);
+    if (MANAGER_ROLES.includes(role)) {
+      const okScope = await canManagerAccessStaffMember(
+        req.user!.id,
+        role,
+        request.staffMemberId,
+      );
+      if (!okScope) return notFound(res);
+    }
+    return ok(res, request);
+  } catch (err) {
+    serverError(res, err);
+  }
+});
+
+// DELETE /v1/leave/:id
+router.delete(
+  "/:id",
+  requireRoles(...(MANAGER_ROLES as any)),
+  async (req: AuthRequest, res) => {
+    try {
+      const row = await prisma.leaveRequest.findUnique({
+        where: { id: req.params.id },
+        select: { id: true, staffMemberId: true },
+      });
+      if (!row) return notFound(res);
+      const role = req.user!.role as SystemRole;
+      const okScope = await canManagerAccessStaffMember(
+        req.user!.id,
+        role,
+        row.staffMemberId,
+      );
+      if (!okScope) return forbidden(res, "Cannot delete this leave request");
+      await prisma.leaveRequest.delete({ where: { id: req.params.id } });
+      return ok(res, { message: "Leave request deleted" });
+    } catch (err) {
+      return serverError(res, err);
+    }
+  },
+);
+
+// POST /v1/leave/apply
+router.post("/apply", requireStaff, validate(applySchema), async (req, res) => {
+  try {
+    const { leaveType, startDate, endDate, reason } = req.body;
+    const staff = await prisma.staffMember.findUnique({
+      where: { id: req.user!.id },
+      select: { name: true, branch: true, systemRole: true },
+    });
+
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const totalDays =
+      Math.ceil((end.getTime() - start.getTime()) / 86400000) + 1;
+
+    const request = await prisma.leaveRequest.create({
+      data: {
+        staffMemberId: req.user!.id,
+        staffName: staff?.name || "",
+        staffSystemRole: staff?.systemRole,
+        branch: staff?.branch,
+        leaveType: leaveType as any,
+        startDate: start,
+        endDate: end,
+        totalDays,
+        reason,
+      },
+    });
+    return created(res, request);
+  } catch (err) {
+    serverError(res, err);
+  }
+});
+
+// POST /v1/leave — Managers create leave on behalf of staff
+router.post(
+  "/",
+  requireRoles(...(MANAGER_ROLES as any)),
+  validate(adminCreateSchema),
+  async (req: AuthRequest, res) => {
+    try {
+      const { staffMemberId, leaveType, startDate, endDate, reason } = req.body;
+      const role = req.user!.role as SystemRole;
+      const okScope = await canManagerAccessStaffMember(
+        req.user!.id,
+        role,
+        staffMemberId,
+      );
+      if (!okScope) return forbidden(res, "Cannot create leave for this staff member");
+      const staff = await prisma.staffMember.findUnique({
+        where: { id: staffMemberId },
+        select: { id: true, name: true, branch: true, systemRole: true },
+      });
+      if (!staff) return notFound(res, "Staff member not found");
+
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      const totalDays =
+        Math.ceil((end.getTime() - start.getTime()) / 86400000) + 1;
+
+      const request = await prisma.leaveRequest.create({
+        data: {
+          staffMemberId,
+          staffName: staff.name,
+          staffSystemRole: staff.systemRole,
+          branch: staff.branch,
+          leaveType: leaveType as any,
+          startDate: start,
+          endDate: end,
+          totalDays,
+          reason,
+        },
+      });
+      return created(res, request);
+    } catch (err) {
+      return serverError(res, err);
+    }
+  },
+);
+
+// PUT /v1/leave/:id/approve
+router.put(
+  "/:id/approve",
+  requireRoles(...(MANAGER_ROLES as any)),
+  async (req: AuthRequest, res) => {
+    try {
+      const row = await prisma.leaveRequest.findUnique({
+        where: { id: req.params.id },
+        select: { id: true, staffMemberId: true },
+      });
+      if (!row) return notFound(res);
+      const role = req.user!.role as SystemRole;
+      const okScope = await canManagerAccessStaffMember(
+        req.user!.id,
+        role,
+        row.staffMemberId,
+      );
+      if (!okScope) return forbidden(res, "Cannot approve this leave request");
+      const updated = await prisma.leaveRequest.update({
+        where: { id: req.params.id },
+        data: { status: "APPROVED", approvedBy: req.user!.id },
+      });
+      return ok(res, updated);
+    } catch (err) {
+      return serverError(res, err);
+    }
+  },
+);
+
+// PUT /v1/leave/:id/reject
+router.put(
+  "/:id/reject",
+  requireRoles(...(MANAGER_ROLES as any)),
+  async (req: AuthRequest, res) => {
+    try {
+      const row = await prisma.leaveRequest.findUnique({
+        where: { id: req.params.id },
+        select: { id: true, staffMemberId: true },
+      });
+      if (!row) return notFound(res);
+      const role = req.user!.role as SystemRole;
+      const okScope = await canManagerAccessStaffMember(
+        req.user!.id,
+        role,
+        row.staffMemberId,
+      );
+      if (!okScope) return forbidden(res, "Cannot reject this leave request");
+      const updated = await prisma.leaveRequest.update({
+        where: { id: req.params.id },
+        data: { status: "REJECTED", notes: req.body.note ?? req.body.reason },
+      });
+      return ok(res, updated);
+    } catch (err) {
+      return serverError(res, err);
+    }
+  },
+);
+
+// PUT /v1/leave/:id/cancel
+router.put("/:id/cancel", requireStaff, async (req, res) => {
+  try {
+    const request = await prisma.leaveRequest.findUnique({
+      where: { id: req.params.id },
+    });
+    if (!request) return notFound(res);
+    if (request.staffMemberId !== req.user!.id) return forbidden(res);
+    if (request.status !== "PENDING")
+      return badRequest(res, "Can only cancel pending requests");
+
+    const updated = await prisma.leaveRequest.update({
+      where: { id: req.params.id },
+      data: { status: "CANCELLED" },
+    });
+    return ok(res, updated);
+  } catch (err) {
+    serverError(res, err);
+  }
+});
+
+export default router;

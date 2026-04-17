@@ -1,0 +1,33 @@
+# Cloudflare Tunnel — local dev → your zone (pouchcare.com)
+#
+# SETUP (once):
+#   1. cloudflared tunnel login
+#   2. cloudflared tunnel create pouchcare-dev
+#   3. Copy this file to config.yml
+#   4. Replace YOUR_TUNNEL_UUID and the credentials-file path (see tunnel create output)
+#   5. Route DNS (pick ONE approach):
+#        cloudflared tunnel route dns pouchcare-dev api.pouchcare.com
+#        cloudflared tunnel route dns pouchcare-dev m.pouchcare.com
+#        cloudflared tunnel route dns pouchcare-dev pouchcare.com
+#        cloudflared tunnel route dns pouchcare-dev www.pouchcare.com
+#      Or add CNAMEs in Cloudflare Dashboard → Zero Trust / Tunnels → your tunnel.
+#
+# RUN (while `npm run dev` is running locally):
+#   npm run tunnel:dev
+#
+# Ports must match Vite + API: landing 3001, management 3000, API 7000 (see repo root package.json / vite configs).
+
+tunnel: YOUR_TUNNEL_UUID
+credentials-file: C:/Users/YOUR_WINDOWS_USER/.cloudflared/YOUR_TUNNEL_UUID.json
+
+ingress:
+  # API first (subdomain)
+  - hostname: api.pouchcare.com
+    service: http://127.0.0.1:7000
+  - hostname: m.pouchcare.com
+    service: http://127.0.0.1:3000
+  - hostname: www.pouchcare.com
+    service: http://127.0.0.1:3001
+  - hostname: pouchcare.com
+    service: http://127.0.0.1:3001
+  - service: http_status:404

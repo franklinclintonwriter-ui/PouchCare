@@ -1,0 +1,19 @@
+# Cloudflare Tunnel — config file when cloudflared runs in Docker (advanced).
+# Copy to config.docker.yml, set tunnel UUID, and mount this file + credentials into the container.
+# Service URLs use Docker DNS (api) and host.docker.internal for processes on the host.
+#
+# Prefer TUNNEL_TOKEN + dashboard routes (see README-docker.md) unless you need file-based ingress.
+
+tunnel: YOUR_TUNNEL_UUID
+credentials-file: /etc/cloudflared/credentials.json
+
+ingress:
+  - hostname: api.pouchcare.com
+    service: http://api:7000
+  - hostname: m.pouchcare.com
+    service: http://host.docker.internal:3000
+  - hostname: www.pouchcare.com
+    service: http://host.docker.internal:3001
+  - hostname: pouchcare.com
+    service: http://host.docker.internal:3001
+  - service: http_status:404

@@ -1,0 +1,34 @@
+# Vite dev on the VPS (hot reload) — TLS via Caddy:
+#   https://dev-m.pouchcare.com     → management (3000)
+#   https://dev-pouchcare.com       → landing / client portal (3001)
+#   https://dev.pouchcare.com       → same landing (alias)
+#
+# API: Caddy routes /v1*, /health*, /uploads* on dev hostnames to the dev API (:7001); see deploy/Caddyfile.
+# Override per-app URLs with VITE_DEV_MANAGEMENT_* / VITE_DEV_LANDING_* if needed.
+#
+#   npm run docker:frontend:dev
+#
+# Bind-mount: set FRONTEND_DEV_ROOT to the repo path on the host if not using `.` from repo root.
+
+services:
+  vite_frontends:
+    image: node:20-bookworm
+    container_name: pouchcare-vite-frontends
+    restart: unless-stopped
+    working_dir: /workspace
+    ports:
+      - "3000:3000"
+      - "3001:3001"
+    environment:
+      VITE_DEV_MANAGEMENT_API_URL: ${VITE_DEV_MANAGEMENT_API_URL:-https://dev-m.pouchcare.com}
+      VITE_DEV_MANAGEMENT_WS_URL: ${VITE_DEV_MANAGEMENT_WS_URL:-wss://dev-m.pouchcare.com/v1/realtime}
+      VITE_DEV_LANDING_API_URL: ${VITE_DEV_LANDING_API_URL:-https://dev-pouchcare.com}
+      VITE_DEV_LANDING_WS_URL: ${VITE_DEV_LANDING_WS_URL:-wss://dev-pouchcare.com/v1/realtime}
+    volumes:
+      - ${FRONTEND_DEV_ROOT:-.}:/workspace
+      - frontend_dev_root_node_modules:/workspace/node_modules
+      - ./deploy/frontend-dev-start.sh:/start.sh:ro
+    command: ["/bin/sh", "/start.sh"]
+
+volumes:
+  frontend_dev_root_node_modules:

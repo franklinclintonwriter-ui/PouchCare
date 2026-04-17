@@ -1,0 +1,34 @@
+/**
+ * In-app routes — keep aligned with `src/lib/portal.ts` URL builders and API email links.
+ * Hosting/websites here are the client portal (`/v1/portal/*`), not staff management `/assets` + `/v1/assets`.
+ */
+export const paths = {
+  login: "/my-accounts/login",
+  register: "/my-accounts/register",
+  verifyEmail: "/my-accounts/verify-email",
+  forgotPassword: "/my-accounts/forgot-password",
+  resetPassword: "/my-accounts/reset-password",
+  dashboard: "/dashboard",
+  dashboardOrders: "/dashboard/orders",
+  dashboardOrder: (id: string) => `/dashboard/orders/${id}`,
+  dashboardWallet: "/dashboard/wallet",
+  dashboardReferrals: "/dashboard/referrals",
+  dashboardServices: "/dashboard/services",
+  dashboardCart: "/dashboard/cart",
+  dashboardBilling: "/dashboard/billing",
+  dashboardProfile: "/dashboard/profile",
+  dashboardSettings: "/dashboard/settings",
+  dashboardSupport: "/dashboard/support",
+  dashboardSupportTicket: (id: string) => `/dashboard/support/${id}`,
+  dashboardHosting: "/dashboard/hosting",
+  /** Must stay a static segment before `:domainId` in router config. */
+  dashboardHostingRegister: "/dashboard/hosting/register",
+  dashboardHostingDomain: (domainId: string) => `/dashboard/hosting/${domainId}`,
+  dashboardWebToApk: "/dashboard/web-to-apk",
+  dashboardInvoices: "/dashboard/invoices",
+  dashboardInvoice: (id: string) => `/dashboard/invoices/${id}`,
+  dashboardWebsites: "/dashboard/websites",
+  dashboardWebsite: (id: string) => `/dashboard/websites/${id}`,
+  dashboardNotifications: "/dashboard/notifications",
+  domainSearch: "/services/hosting/search",
+} as const;

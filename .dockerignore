@@ -1,0 +1,21 @@
+# Keep API Docker build context small
+.git
+.github
+**/.git
+**/node_modules
+**/dist
+**/dist-ssr
+**/.turbo
+**/coverage
+**/*.md
+!deploy/*.md
+apps/management/node_modules
+apps/landing/node_modules
+apps/api/node_modules
+apps/management/dist
+apps/landing/dist
+playwright-report
+test-results
+*.log
+.env.local
+.env.*.local

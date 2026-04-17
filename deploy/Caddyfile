@@ -1,0 +1,67 @@
+# HTTPS reverse proxy (production + development API on same host).
+# Production:  npm run docker:hosting        → api:7000
+# Development: npm run docker:hosting:dev    → host port 7001 (pouchcare-dev-api)
+# Caddy must have extra_hosts host.docker.internal:host-gateway (see docker-compose.hosting.yml).
+
+api.pouchcare.com {
+	encode gzip zstd
+	reverse_proxy api:7000
+}
+
+api-dev.pouchcare.com {
+	encode gzip zstd
+	reverse_proxy host.docker.internal:7001
+}
+
+# Vite dev (docker-compose.frontend-dev.yml) — npm run docker:frontend:dev on the VPS
+# API paths go to dev API on :7001 so the SPA can use same-origin VITE_API_URL (no api-dev DNS required).
+# Order: API routes first, then Vite.
+dev-m.pouchcare.com {
+	encode gzip zstd
+	handle /v1/* {
+		reverse_proxy host.docker.internal:7001
+	}
+	handle /v1 {
+		reverse_proxy host.docker.internal:7001
+	}
+	handle /health {
+		reverse_proxy host.docker.internal:7001
+	}
+	handle /health/ready {
+		reverse_proxy host.docker.internal:7001
+	}
+	handle /uploads/* {
+		reverse_proxy host.docker.internal:7001
+	}
+	handle /uploads {
+		reverse_proxy host.docker.internal:7001
+	}
+	handle {
+		reverse_proxy host.docker.internal:3000
+	}
+}
+
+dev-pouchcare.com, dev.pouchcare.com {
+	encode gzip zstd
+	handle /v1/* {
+		reverse_proxy host.docker.internal:7001
+	}
+	handle /v1 {
+		reverse_proxy host.docker.internal:7001
+	}
+	handle /health {
+		reverse_proxy host.docker.internal:7001
+	}
+	handle /health/ready {
+		reverse_proxy host.docker.internal:7001
+	}
+	handle /uploads/* {
+		reverse_proxy host.docker.internal:7001
+	}
+	handle /uploads {
+		reverse_proxy host.docker.internal:7001
+	}
+	handle {
+		reverse_proxy host.docker.internal:3001
+	}
+}

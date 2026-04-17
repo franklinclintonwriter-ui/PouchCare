@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="400" y2="300" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#eef2ff"/><stop offset="1" stop-color="#fae8ff"/>
+    </linearGradient>
+    <linearGradient id="phone" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#1e1b4b"/><stop offset="1" stop-color="#312e81"/>
+    </linearGradient>
+    <filter id="sh"><feDropShadow dx="0" dy="6" stdDeviation="8" flood-opacity=".15"/></filter>
+    <filter id="sh2"><feDropShadow dx="0" dy="3" stdDeviation="4" flood-opacity=".1"/></filter>
+  </defs>
+  <rect width="400" height="300" rx="12" fill="url(#bg)"/>
+  <!-- Phone 1 (center, main) -->
+  <g filter="url(#sh)" transform="translate(140, 20)">
+    <rect width="120" height="220" rx="18" fill="url(#phone)"/>
+    <rect x="30" y="6" width="60" height="6" rx="3" fill="#3730a3" opacity=".6"/>
+    <!-- Status bar -->
+    <text x="12" y="24" font-family="system-ui" font-size="7" fill="#a5b4fc">9:41</text>
+    <text x="92" y="24" font-family="system-ui" font-size="7" fill="#a5b4fc">📶 🔋</text>
+    <!-- App content -->
+    <rect x="8" y="32" width="104" height="50" rx="10" fill="#4f46e5"/>
+    <text x="18" y="52" font-family="system-ui" font-size="9" fill="white" font-weight="700">Welcome back!</text>
+    <text x="18" y="66" font-family="system-ui" font-size="7" fill="#c7d2fe">Your dashboard is ready</text>
+    <circle cx="90" cy="55" r="14" fill="#818cf8" opacity=".4"/>
+    <text x="85" y="59" font-family="system-ui" font-size="12" fill="white">📊</text>
+    <!-- App cards -->
+    <rect x="8" y="90" width="48" height="48" rx="10" fill="#f8fafc"/>
+    <text x="22" y="115" font-family="system-ui" font-size="16" text-anchor="middle">🛒</text>
+    <text x="22" y="130" font-family="system-ui" font-size="6" fill="#374151" text-anchor="middle">Shop</text>
+    <rect x="62" y="90" width="48" height="48" rx="10" fill="#f8fafc"/>
+    <text x="76" y="115" font-family="system-ui" font-size="16" text-anchor="middle">💬</text>
+    <text x="76" y="130" font-family="system-ui" font-size="6" fill="#374151" text-anchor="middle">Chat</text>
+    <rect x="8" y="146" width="48" height="48" rx="10" fill="#f8fafc"/>
+    <text x="22" y="171" font-family="system-ui" font-size="16" text-anchor="middle">📱</text>
+    <text x="22" y="186" font-family="system-ui" font-size="6" fill="#374151" text-anchor="middle">Profile</text>
+    <rect x="62" y="146" width="48" height="48" rx="10" fill="#f8fafc"/>
+    <text x="76" y="171" font-family="system-ui" font-size="16" text-anchor="middle">⚙️</text>
+    <text x="76" y="186" font-family="system-ui" font-size="6" fill="#374151" text-anchor="middle">Settings</text>
+    <!-- Bottom nav -->
+    <rect x="8" y="200" width="104" height="14" rx="7" fill="#312e81"/>
+    <rect x="40" y="201" width="40" height="4" rx="2" fill="#6366f1"/>
+  </g>
+  <!-- Phone 2 (left, tilted) -->
+  <g filter="url(#sh2)" transform="translate(30, 60) rotate(-8, 50, 100)">
+    <rect width="90" height="170" rx="14" fill="#1e1b4b" opacity=".9"/>
+    <rect x="6" y="26" width="78" height="40" rx="8" fill="#6366f1" opacity=".3"/>
+    <rect x="6" y="72" width="36" height="36" rx="8" fill="#f1f5f9" opacity=".8"/>
+    <rect x="46" y="72" width="36" height="36" rx="8" fill="#f1f5f9" opacity=".8"/>
+    <rect x="6" y="114" width="36" height="36" rx="8" fill="#f1f5f9" opacity=".8"/>
+    <rect x="46" y="114" width="36" height="36" rx="8" fill="#f1f5f9" opacity=".8"/>
+  </g>
+  <!-- Phone 3 (right, tilted) -->
+  <g filter="url(#sh2)" transform="translate(280, 60) rotate(8, 50, 100)">
+    <rect width="90" height="170" rx="14" fill="#1e1b4b" opacity=".9"/>
+    <rect x="6" y="26" width="78" height="100" rx="8" fill="#f1f5f9" opacity=".8"/>
+    <rect x="14" y="34" width="62" height="8" rx="3" fill="#6366f1" opacity=".3"/>
+    <rect x="14" y="48" width="50" height="5" rx="2" fill="#cbd5e1"/>
+    <rect x="14" y="58" width="55" height="5" rx="2" fill="#cbd5e1"/>
+    <rect x="14" y="68" width="40" height="5" rx="2" fill="#cbd5e1"/>
+    <rect x="14" y="86" width="40" height="20" rx="6" fill="#6366f1"/>
+    <text x="22" y="100" font-family="system-ui" font-size="7" fill="white" font-weight="600">Buy</text>
+    <rect x="6" y="132" width="78" height="14" rx="7" fill="#312e81"/>
+  </g>
+  <!-- Platform badges -->
+  <g filter="url(#sh2)" transform="translate(30, 252)">
+    <rect width="65" height="28" rx="8" fill="white"/>
+    <text x="8" y="19" font-family="system-ui" font-size="8" fill="#374151" font-weight="600">🍎 iOS</text>
+  </g>
+  <g filter="url(#sh2)" transform="translate(105, 252)">
+    <rect width="85" height="28" rx="8" fill="white"/>
+    <text x="8" y="19" font-family="system-ui" font-size="8" fill="#374151" font-weight="600">🤖 Android</text>
+  </g>
+  <g filter="url(#sh2)" transform="translate(300, 252)">
+    <rect width="80" height="28" rx="8" fill="white"/>
+    <text x="8" y="19" font-family="system-ui" font-size="8" fill="#6366f1" font-weight="700">React Native</text>
+  </g>
+</svg>

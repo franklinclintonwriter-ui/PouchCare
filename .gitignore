@@ -1,0 +1,78 @@
+# ── Environment & Secrets ──────────────────────────────────
+.env
+.env.local
+.env.*.local
+apps/api/.env
+apps/api/.env.dev
+apps/api/.env.test
+apps/management/.env.local
+apps/landing/.env.local
+
+# ── Dependencies ───────────────────────────────────────────
+node_modules/
+.pnp
+.pnp.js
+
+# ── Build outputs ──────────────────────────────────────────
+dist/
+build/
+.next/
+.nuxt/
+out/
+apps/api/dist/
+
+# ── Turbo / Vite cache ─────────────────────────────────────
+.turbo/
+.vite/
+
+# ── TypeScript ─────────────────────────────────────────────
+*.tsbuildinfo
+
+# ── Logs ───────────────────────────────────────────────────
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ── OS ─────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.~lock.*
+
+# ── IDE ────────────────────────────────────────────────────
+.idea/
+.vscode/settings.json
+*.swp
+*.swo
+
+# ── Testing ────────────────────────────────────────────────
+coverage/
+.nyc_output/
+test-results/
+playwright-report/
+
+# ── Junk / temp files ──────────────────────────────────────
+*.docx
+*.xlsx
+*.xlsx#
+tmp-*.json
+*.tmp
+
+# ── Cloudflare Tunnel — local config only ──────────────────
+deploy/cloudflared/config.yml
+
+# ── Generated seed credentials ─────────────────────────────
+apps/api/prisma/.salary-seed-credentials.txt
+
+# ── Misc ───────────────────────────────────────────────────
+*.pem
+.vercel
+.netlify
+.claude/
+.cursor/
+
+# ── Docker volumes (local only) ────────────────────────────
+pgdata/
+redisdata/

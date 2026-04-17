@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="400" y2="300" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ecfdf5"/><stop offset="1" stop-color="#fef3c7"/>
+    </linearGradient>
+    <filter id="sh"><feDropShadow dx="0" dy="4" stdDeviation="6" flood-opacity=".12"/></filter>
+  </defs>
+  <rect width="400" height="300" rx="12" fill="url(#bg)"/>
+  <!-- Video editor workspace -->
+  <g filter="url(#sh)">
+    <rect x="20" y="20" width="280" height="170" rx="10" fill="#1a1a2e"/>
+    <!-- Preview area -->
+    <rect x="28" y="28" width="192" height="120" rx="6" fill="#16213e"/>
+    <!-- Video frame -->
+    <rect x="40" y="40" width="168" height="96" rx="4" fill="#0f3460" opacity=".6"/>
+    <rect x="50" y="50" width="80" height="14" rx="3" fill="white" opacity=".9"/>
+    <text x="56" y="60" font-family="system-ui" font-size="8" fill="#1a1a2e" font-weight="700">Your Brand</text>
+    <rect x="50" y="72" width="148" height="4" rx="2" fill="white" opacity=".3"/>
+    <rect x="50" y="82" width="120" height="4" rx="2" fill="white" opacity=".2"/>
+    <rect x="50" y="100" width="56" height="18" rx="6" fill="#10b981"/>
+    <text x="58" y="113" font-family="system-ui" font-size="7" fill="white" font-weight="600">Subscribe</text>
+    <!-- Play button overlay -->
+    <circle cx="124" cy="88" r="20" fill="white" opacity=".15"/>
+    <polygon points="118,78 118,98 134,88" fill="white" opacity=".6"/>
+    <!-- Right panel - effects -->
+    <rect x="228" y="28" width="64" height="120" rx="4" fill="#16213e"/>
+    <text x="234" y="44" font-family="system-ui" font-size="7" fill="#94a3b8" font-weight="600">Effects</text>
+    <rect x="234" y="52" width="52" height="10" rx="3" fill="#10b981" opacity=".3"/>
+    <text x="238" y="60" font-family="monospace" font-size="6" fill="#4ade80">Color Grade</text>
+    <rect x="234" y="66" width="52" height="10" rx="3" fill="#8b5cf6" opacity=".3"/>
+    <text x="238" y="74" font-family="monospace" font-size="6" fill="#a78bfa">Transition</text>
+    <rect x="234" y="80" width="52" height="10" rx="3" fill="#f59e0b" opacity=".3"/>
+    <text x="238" y="88" font-family="monospace" font-size="6" fill="#fbbf24">Text Anim</text>
+    <rect x="234" y="94" width="52" height="10" rx="3" fill="#ec4899" opacity=".3"/>
+    <text x="238" y="102" font-family="monospace" font-size="6" fill="#f472b6">Motion</text>
+    <rect x="234" y="112" width="52" height="10" rx="3" fill="#0ea5e9" opacity=".3"/>
+    <text x="238" y="120" font-family="monospace" font-size="6" fill="#38bdf8">Audio Mix</text>
+    <!-- Timeline -->
+    <rect x="28" y="156" width="264" height="28" rx="4" fill="#0f0f23"/>
+    <!-- Playhead -->
+    <rect x="148" y="152" width="2" height="36" fill="#ef4444"/>
+    <polygon points="146,152 152,152 149,148" fill="#ef4444"/>
+    <!-- Track bars -->
+    <rect x="34" y="160" width="120" height="6" rx="2" fill="#10b981" opacity=".6"/>
+    <rect x="160" y="160" width="80" height="6" rx="2" fill="#0ea5e9" opacity=".6"/>
+    <rect x="34" y="170" width="60" height="6" rx="2" fill="#f59e0b" opacity=".5"/>
+    <rect x="100" y="170" width="90" height="6" rx="2" fill="#f59e0b" opacity=".4"/>
+    <rect x="196" y="170" width="40" height="6" rx="2" fill="#8b5cf6" opacity=".4"/>
+    <!-- Audio waveform -->
+    <rect x="34" y="178" width="258" height="2" fill="#525252"/>
+    <g opacity=".4" fill="#4ade80">
+      <rect x="36" y="176" width="2" height="6" rx="1"/>
+      <rect x="42" y="174" width="2" height="10" rx="1"/>
+      <rect x="48" y="175" width="2" height="8" rx="1"/>
+      <rect x="54" y="173" width="2" height="12" rx="1"/>
+      <rect x="60" y="176" width="2" height="6" rx="1"/>
+      <rect x="66" y="174" width="2" height="10" rx="1"/>
+      <rect x="72" y="172" width="2" height="14" rx="1"/>
+      <rect x="78" y="175" width="2" height="8" rx="1"/>
+      <rect x="84" y="173" width="2" height="12" rx="1"/>
+      <rect x="90" y="176" width="2" height="6" rx="1"/>
+    </g>
+  </g>
+  <!-- Export panel -->
+  <g filter="url(#sh)" transform="translate(315, 30)">
+    <rect width="70" height="70" rx="8" fill="white"/>
+    <text x="10" y="18" font-family="system-ui" font-size="7" fill="#64748b" font-weight="600">Export</text>
+    <rect x="10" y="26" width="50" height="16" rx="5" fill="#10b981"/>
+    <text x="16" y="38" font-family="system-ui" font-size="7" fill="white" font-weight="600">4K UHD</text>
+    <text x="10" y="56" font-family="system-ui" font-size="7" fill="#64748b">MP4 · H.265</text>
+    <text x="10" y="66" font-family="system-ui" font-size="7" fill="#10b981" font-weight="600">60 FPS</text>
+  </g>
+  <!-- Duration badge -->
+  <g filter="url(#sh)" transform="translate(315, 115)">
+    <rect width="70" height="45" rx="8" fill="white"/>
+    <text x="10" y="18" font-family="system-ui" font-size="7" fill="#64748b" font-weight="500">Duration</text>
+    <text x="10" y="36" font-family="system-ui" font-size="14" fill="#1e293b" font-weight="800">2:34</text>
+  </g>
+  <!-- Thumbnails strip -->
+  <g filter="url(#sh)" transform="translate(20, 210)">
+    <rect width="360" height="70" rx="10" fill="white"/>
+    <text x="14" y="20" font-family="system-ui" font-size="8" fill="#64748b" font-weight="600">Project Timeline</text>
+    <rect x="14" y="30" width="60" height="32" rx="4" fill="#0f3460" opacity=".3"/>
+    <text x="30" y="50" font-family="system-ui" font-size="7" fill="white" text-anchor="middle">Scene 1</text>
+    <rect x="80" y="30" width="60" height="32" rx="4" fill="#10b981" opacity=".2"/>
+    <text x="96" y="50" font-family="system-ui" font-size="7" fill="#10b981" text-anchor="middle">Scene 2</text>
+    <rect x="146" y="30" width="60" height="32" rx="4" fill="#8b5cf6" opacity=".2"/>
+    <text x="162" y="50" font-family="system-ui" font-size="7" fill="#8b5cf6" text-anchor="middle">Scene 3</text>
+    <rect x="212" y="30" width="60" height="32" rx="4" fill="#f59e0b" opacity=".2"/>
+    <text x="228" y="50" font-family="system-ui" font-size="7" fill="#f59e0b" text-anchor="middle">Outro</text>
+    <rect x="278" y="30" width="60" height="32" rx="4" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="4 2"/>
+    <text x="294" y="50" font-family="system-ui" font-size="10" fill="#94a3b8" text-anchor="middle">+</text>
+  </g>
+</svg>

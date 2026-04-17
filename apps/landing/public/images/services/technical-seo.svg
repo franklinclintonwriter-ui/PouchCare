@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="400" y2="300" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#e0f2fe"/><stop offset="1" stop-color="#cffafe"/>
+    </linearGradient>
+    <linearGradient id="a" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#0ea5e9"/><stop offset="1" stop-color="#0284c7"/>
+    </linearGradient>
+    <filter id="sh"><feDropShadow dx="0" dy="4" stdDeviation="6" flood-opacity=".12"/></filter>
+  </defs>
+  <rect width="400" height="300" rx="12" fill="url(#bg)"/>
+  <!-- Dashboard panel -->
+  <g filter="url(#sh)">
+    <rect x="40" y="35" width="240" height="230" rx="12" fill="white"/>
+    <!-- Header -->
+    <rect x="40" y="35" width="240" height="36" rx="12" fill="#f8fafc"/>
+    <rect x="40" y="60" width="240" height="11" fill="#f8fafc"/>
+    <text x="56" y="58" font-family="system-ui" font-size="10" fill="#0ea5e9" font-weight="700">Technical SEO Dashboard</text>
+    <!-- Core Web Vitals gauges -->
+    <text x="56" y="90" font-family="system-ui" font-size="8" fill="#64748b" font-weight="600">Core Web Vitals</text>
+    <!-- LCP gauge -->
+    <g transform="translate(60, 100)">
+      <circle cx="28" cy="28" r="24" stroke="#e2e8f0" stroke-width="5" fill="none"/>
+      <circle cx="28" cy="28" r="24" stroke="#10b981" stroke-width="5" fill="none" stroke-dasharray="120 151" stroke-linecap="round" transform="rotate(-90 28 28)"/>
+      <text x="28" y="32" text-anchor="middle" font-family="system-ui" font-size="12" fill="#10b981" font-weight="800">92</text>
+      <text x="28" y="62" text-anchor="middle" font-family="system-ui" font-size="7" fill="#64748b">LCP</text>
+    </g>
+    <!-- FID gauge -->
+    <g transform="translate(135, 100)">
+      <circle cx="28" cy="28" r="24" stroke="#e2e8f0" stroke-width="5" fill="none"/>
+      <circle cx="28" cy="28" r="24" stroke="#0ea5e9" stroke-width="5" fill="none" stroke-dasharray="135 151" stroke-linecap="round" transform="rotate(-90 28 28)"/>
+      <text x="28" y="32" text-anchor="middle" font-family="system-ui" font-size="12" fill="#0ea5e9" font-weight="800">98</text>
+      <text x="28" y="62" text-anchor="middle" font-family="system-ui" font-size="7" fill="#64748b">FID</text>
+    </g>
+    <!-- CLS gauge -->
+    <g transform="translate(210, 100)">
+      <circle cx="28" cy="28" r="24" stroke="#e2e8f0" stroke-width="5" fill="none"/>
+      <circle cx="28" cy="28" r="24" stroke="#f59e0b" stroke-width="5" fill="none" stroke-dasharray="110 151" stroke-linecap="round" transform="rotate(-90 28 28)"/>
+      <text x="28" y="32" text-anchor="middle" font-family="system-ui" font-size="12" fill="#f59e0b" font-weight="800">78</text>
+      <text x="28" y="62" text-anchor="middle" font-family="system-ui" font-size="7" fill="#64748b">CLS</text>
+    </g>
+    <!-- Checklist -->
+    <text x="56" y="192" font-family="system-ui" font-size="8" fill="#64748b" font-weight="600">Audit Items</text>
+    <g transform="translate(56, 200)">
+      <rect width="12" height="12" rx="3" fill="#dcfce7" stroke="#86efac" stroke-width="1"/>
+      <path d="M3 6l2.5 2.5L9 4" stroke="#10b981" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="18" y="10" font-family="system-ui" font-size="8" fill="#374151">Schema markup added</text>
+    </g>
+    <g transform="translate(56, 218)">
+      <rect width="12" height="12" rx="3" fill="#dcfce7" stroke="#86efac" stroke-width="1"/>
+      <path d="M3 6l2.5 2.5L9 4" stroke="#10b981" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="18" y="10" font-family="system-ui" font-size="8" fill="#374151">Sitemap.xml optimized</text>
+    </g>
+    <g transform="translate(56, 236)">
+      <rect width="12" height="12" rx="3" fill="#fef3c7" stroke="#fde68a" stroke-width="1"/>
+      <text x="3" y="10" font-family="system-ui" font-size="8" fill="#d97706">⚡</text>
+      <text x="18" y="10" font-family="system-ui" font-size="8" fill="#374151">Image compression...</text>
+    </g>
+  </g>
+  <!-- Gear icon -->
+  <g filter="url(#sh)" transform="translate(300, 60)">
+    <circle cx="40" cy="40" r="40" fill="url(#a)" opacity=".9"/>
+    <path d="M40 24v-4M40 60v-4M24 40h-4M60 40h4M29 29l-3-3M54 54l-3-3M29 51l-3 3M51 29l3-3" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+    <circle cx="40" cy="40" r="12" stroke="white" stroke-width="3" fill="none"/>
+    <circle cx="40" cy="40" r="5" fill="white"/>
+  </g>
+  <!-- Speed badge -->
+  <g filter="url(#sh)" transform="translate(295, 160)">
+    <rect width="90" height="50" rx="10" fill="white"/>
+    <text x="12" y="19" font-family="system-ui" font-size="8" fill="#64748b" font-weight="500">Page Speed</text>
+    <text x="12" y="40" font-family="system-ui" font-size="18" fill="#10b981" font-weight="800">1.2s</text>
+    <text x="58" y="40" font-family="system-ui" font-size="7" fill="#10b981">↓ 68%</text>
+  </g>
+  <!-- Code snippet -->
+  <g filter="url(#sh)" transform="translate(295, 225)">
+    <rect width="90" height="50" rx="8" fill="#1e293b"/>
+    <text x="8" y="18" font-family="monospace" font-size="7" fill="#38bdf8">&lt;script</text>
+    <text x="8" y="28" font-family="monospace" font-size="7" fill="#a5f3fc">  type=</text>
+    <text x="40" y="28" font-family="monospace" font-size="7" fill="#fde68a">"ld+json"</text>
+    <text x="8" y="38" font-family="monospace" font-size="7" fill="#38bdf8">&gt;</text>
+  </g>
+</svg>

@@ -1,0 +1,39 @@
+{
+  "recommendations": [
+    // TypeScript & React
+    "ms-vscode.vscode-typescript-next",
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+
+    // Tailwind
+    "bradlc.vscode-tailwindcss",
+
+    // Prisma
+    "Prisma.prisma",
+
+    // Git
+    "eamodio.gitlens",
+    "mhutchie.git-graph",
+
+    // REST API Testing (replaces Postman)
+    "humao.rest-client",
+    "rangav.vscode-thunder-client",
+
+    // Environment
+    "mikestead.dotenv",
+    "EditorConfig.EditorConfig",
+
+    // React
+    "dsznajder.es7-react-js-snippets",
+
+    // Path Intellisense
+    "christian-kohler.path-intellisense",
+    "wayou.vscode-todo-highlight",
+
+    // Productivity
+    "aaron-bond.better-comments",
+    "oderwat.indent-rainbow",
+    "usernamehw.errorlens"
+  ],
+  "unwantedRecommendations": []
+}
