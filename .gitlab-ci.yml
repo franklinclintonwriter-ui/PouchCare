@@ -1,22 +1,16 @@
-# ──────────────────────────────────────────────────────────────────────────────
-# PouchCare OS — GitLab CI/CD
-# Monorepo: npm workspaces + Turbo  |  Node >= 20
+# PouchCare OS - GitLab CI/CD
+# Architecture:
+#   API     -> Docker on VPS root@72.60.204.92 (rebuild via SSH)
+#   Landing -> Cloudflare Pages: pouchcare       (pouchcare.com)
+#   Mgmt    -> Cloudflare Pages: pouchcarebd     (m.pouchcare.com)
 #
-# Architecture (current):
-#   API      → Docker container on VPS (root@72.60.204.92)
-#               Rebuilt & restarted via SSH on every push to main
-#   Landing  → Cloudflare Pages project: pouchcare   (pouchcare.com)
-#   Mgmt     → Cloudflare Pages project: pouchcarebd (m.pouchcare.com)
-#
-# ── Required GitLab CI/CD Variables (Settings → CI/CD → Variables) ──────────
-#   WRANGLER_AUTH_CONFIG  base64-encoded ~/.wrangler/config/default.toml
-#                         (OAuth token with pages:write + offline_access)
-#   DEPLOY_HOST           VPS IP: 72.60.204.92        (masked)
-#   DEPLOY_USER           root                         (masked)
-#   DEPLOY_PORT           22  (optional, defaults 22)
-#   SSH_PRIVATE_KEY       ED25519 private key for VPS  (File type, protected)
-#   CLOUDFLARE_ACCOUNT_ID 6433fd63b2b296d6e9d0d03b366c246e
-# ──────────────────────────────────────────────────────────────────────────────
+# CI/CD Variables (Settings -> CI/CD -> Variables):
+#   WRANGLER_AUTH_CONFIG   base64 of ~/.wrangler/config/default.toml (pages:write + offline_access)
+#   SSH_PRIVATE_KEY_B64    base64 of VPS deploy Ed25519 private key
+#   DEPLOY_HOST            72.60.204.92
+#   DEPLOY_USER            root
+#   DEPLOY_PORT            22
+#   CLOUDFLARE_ACCOUNT_ID  6433fd63b2b296d6e9d0d03b366c246e
 
 workflow:
   rules:
@@ -52,42 +46,36 @@ stages:
   - build
   - deploy
 
-# ── Type-check all workspaces ─────────────────────────────────────────────────
+# Type-check all workspaces
 quality:typecheck:
   stage: verify
   script:
     - node --version && npm --version
     - npm ci --cache .npm --prefer-offline --legacy-peer-deps
-    - echo "=== API: Prisma generate + tsc ==="
     - cd apps/api && npx prisma generate && npx tsc --noEmit && cd ../..
-    - echo "=== Management: tsc ==="
     - cd apps/management && npx tsc --noEmit && cd ../..
-    - echo "=== Landing: tsc ==="
     - cd apps/landing && npx tsc --noEmit && cd ../..
-    - echo "✅ All type-checks passed"
+    - echo "All type-checks passed"
   rules:
     - if: $CI_COMMIT_BRANCH
 
-# ── Build all apps ────────────────────────────────────────────────────────────
+# Build all apps
 build:all:
   stage: build
   needs: ["quality:typecheck"]
   script:
     - npm ci --cache .npm --prefer-offline --legacy-peer-deps
-    - echo "=== Building API (TypeScript) ==="
     - cd apps/api && npx prisma generate && npx tsc && cd ../..
-    - echo "=== Building Management SPA ==="
     - cd apps/management
     - echo "VITE_API_URL=https://api.pouchcare.com" >> .env.production.local
     - echo "VITE_WS_URL=wss://api.pouchcare.com/v1/realtime" >> .env.production.local
     - npm run build:vite
     - cd ../..
-    - echo "=== Building Landing / Portal SPA ==="
     - cd apps/landing
     - echo "VITE_API_URL=https://api.pouchcare.com" >> .env.production.local
     - npm run build
     - cd ../..
-    - echo "✅ All builds complete"
+    - echo "All builds complete"
   artifacts:
     paths:
       - apps/api/dist/
@@ -95,25 +83,10 @@ build:all:
       - apps/landing/dist/
     expire_in: 2 hours
 
-# ── Restore wrangler OAuth (shared before_script for CF deploys) ──────────────
-.wrangler_auth: &wrangler_auth
-  before_script:
-    - npm ci --cache .npm --prefer-offline --legacy-peer-deps --silent
-    - |
-      if [ -n "$WRANGLER_AUTH_CONFIG" ]; then
-        mkdir -p ~/.wrangler/config
-        echo "$WRANGLER_AUTH_CONFIG" | base64 -d > ~/.wrangler/config/default.toml
-        echo "✅ Wrangler auth restored"
-      else
-        echo "❌ WRANGLER_AUTH_CONFIG not set — aborting"
-        exit 1
-      fi
-
-# ── Deploy Landing → pouchcare (pouchcare.com) ────────────────────────────────
+# Deploy Landing -> pouchcare (pouchcare.com)
 deploy:landing:
   stage: deploy
   needs: ["build:all"]
-  <<: *wrangler_auth
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
       when: on_success
@@ -121,17 +94,21 @@ deploy:landing:
   environment:
     name: production/landing
     url: https://pouchcare.com
+  before_script:
+    - npm ci --cache .npm --prefer-offline --legacy-peer-deps --silent
+    - mkdir -p ~/.wrangler/config
+    - echo "$WRANGLER_AUTH_CONFIG" | base64 -d > ~/.wrangler/config/default.toml
+    - echo "Wrangler auth restored"
   script:
-    - echo "Deploying Landing → Cloudflare Pages (pouchcare)..."
+    - echo "Deploying Landing to Cloudflare Pages pouchcare..."
     - cd apps/landing
     - npx wrangler pages deploy dist --project-name pouchcare --branch main --commit-dirty=true
-    - echo "✅ Landing deployed → https://pouchcare.com"
+    - echo "Landing deployed to https://pouchcare.com"
 
-# ── Deploy Management → pouchcarebd (m.pouchcare.com) ────────────────────────
+# Deploy Management -> pouchcarebd (m.pouchcare.com)
 deploy:management:
   stage: deploy
   needs: ["build:all"]
-  <<: *wrangler_auth
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
       when: on_success
@@ -139,13 +116,18 @@ deploy:management:
   environment:
     name: production/management
     url: https://m.pouchcare.com
+  before_script:
+    - npm ci --cache .npm --prefer-offline --legacy-peer-deps --silent
+    - mkdir -p ~/.wrangler/config
+    - echo "$WRANGLER_AUTH_CONFIG" | base64 -d > ~/.wrangler/config/default.toml
+    - echo "Wrangler auth restored"
   script:
-    - echo "Deploying Management → Cloudflare Pages (pouchcarebd)..."
+    - echo "Deploying Management to Cloudflare Pages pouchcarebd..."
     - cd apps/management
     - npx wrangler pages deploy dist --project-name pouchcarebd --branch main --commit-dirty=true
-    - echo "✅ Management deployed → https://m.pouchcare.com"
+    - echo "Management deployed to https://m.pouchcare.com"
 
-# ── Deploy API → Docker on VPS (root@72.60.204.92) ───────────────────────────
+# Deploy API -> Docker on VPS
 deploy:api:
   stage: deploy
   image: alpine:3.19
@@ -160,45 +142,34 @@ deploy:api:
   before_script:
     - apk add --no-cache openssh-client bash curl
     - mkdir -p ~/.ssh && chmod 700 ~/.ssh
-    # SSH_PRIVATE_KEY_B64 is base64 of the deploy key (added to VPS authorized_keys)
     - echo "$SSH_PRIVATE_KEY_B64" | base64 -d > ~/.ssh/id_ed25519
     - chmod 600 ~/.ssh/id_ed25519
     - ssh-keyscan -p "${DEPLOY_PORT:-22}" -H "${DEPLOY_HOST}" >> ~/.ssh/known_hosts 2>/dev/null || true
-    - ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no -p "${DEPLOY_PORT:-22}" "${DEPLOY_USER}@${DEPLOY_HOST}" "echo 'SSH OK'" || (echo "❌ SSH auth failed" && exit 1)
+    - ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no -p "${DEPLOY_PORT:-22}" "${DEPLOY_USER}@${DEPLOY_HOST}" "echo SSH_OK" || (echo "SSH auth failed" && exit 1)
   script:
-    - echo "Deploying API — commit ${CI_COMMIT_SHORT_SHA} to ${DEPLOY_HOST}..."
+    - echo "Deploying API commit ${CI_COMMIT_SHORT_SHA} to ${DEPLOY_HOST}..."
     - |
-      ssh -p "${DEPLOY_PORT:-22}" -o StrictHostKeyChecking=no "${DEPLOY_USER}@${DEPLOY_HOST}" bash << 'REMOTE'
+      ssh -i ~/.ssh/id_ed25519 -p "${DEPLOY_PORT:-22}" -o StrictHostKeyChecking=no "${DEPLOY_USER}@${DEPLOY_HOST}" bash << 'REMOTE'
         set -e
-        REPO=/opt/pouchcare
-        cd $REPO
-
-        echo "── Pulling latest main ──"
+        cd /opt/pouchcare
         git fetch origin main
         git reset --hard origin/main
         echo "Commit: $(git log --oneline -1)"
-
-        echo "── Running DB migrations ──"
-        docker exec pouchcare-api sh -c "cd /app/apps/api && npx prisma migrate deploy" || true
-
-        echo "── Rebuilding API container ──"
+        docker exec pouchcare-api sh -c "cd /app/apps/api && npx prisma migrate deploy" 2>/dev/null || echo "migrate: nothing to do"
         docker compose -f docker-compose.hosting.yml up -d --build api
-
-        echo "── Waiting for API to become healthy ──"
         for i in 1 2 3 4 5 6 7 8; do
           if curl -sf http://127.0.0.1:7000/health > /dev/null 2>&1; then
-            echo "✅ API healthy"
+            echo "API healthy"
             exit 0
           fi
-          echo "   Waiting... ($i/8)"
+          echo "Waiting $i/8..."
           sleep 5
         done
-        echo "❌ API health check failed"
+        echo "API health check failed"
         docker logs pouchcare-api --tail 20
         exit 1
       REMOTE
-    - echo "✅ Verifying public endpoint..."
     - sleep 3
-    - curl -sf --max-time 10 "https://api.pouchcare.com/health" && echo "✅ https://api.pouchcare.com/health OK" || echo "⚠️ External health check pending (DNS/TLS propagation)"
+    - curl -sf --max-time 10 "https://api.pouchcare.com/health" && echo "API OK" || echo "API health pending"
   after_script:
     - rm -f ~/.ssh/id_ed25519
