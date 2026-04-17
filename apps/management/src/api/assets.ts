@@ -157,12 +157,13 @@ function mapWebsite(raw: RawWebsite): WebsiteAsset {
 }
 
 export function useDomainStats() {
-  return useQuery<{ total: number; completed: number; inProgress: number; incomplete: number; expiringSoon: number }>({
+  return useQuery<DomainStats>({
     queryKey: ['domain-stats'],
     queryFn: async () => {
       const { data } = await api.get('/assets/domains/stats');
-      return data as any;
+      return (data?.data ?? data) as DomainStats;
     },
+    staleTime: 30 * 1000,
   });
 }
 
@@ -183,8 +184,20 @@ export interface DomainFilters {
   status?: string;
   niche?: string;
   tag?: string;
-  sortBy?: 'expiry' | 'name' | 'status' | 'niche';
+  sortBy?: 'expiry' | 'name' | 'status' | 'niche' | 'da' | 'dr' | 'traffic' | 'backlinks' | 'age';
   sortDir?: 'asc' | 'desc';
+}
+
+export interface DomainStats {
+  total: number;
+  completed: number;
+  inProgress: number;
+  incomplete: number;
+  expiringSoon: number;
+  expiringIn90: number;
+  expired: number;
+  totalWebsites: number;
+  liveWebsites: number;
 }
 
 export function useDomains(filters?: DomainFilters) {

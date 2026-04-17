@@ -67,14 +67,21 @@ async function calcDomainLifecycle(domainId: string) {
 router.get('/domains/stats', requireStaff, async (req: AuthRequest, res) => {
   try {
     const where = domainWhere(req)
-    const [total, completed, inProgress, incomplete, expiringSoon] = await Promise.all([
+    const now    = new Date()
+    const in30   = new Date(Date.now() + 30  * 86400000)
+    const in90   = new Date(Date.now() + 90  * 86400000)
+    const [total, completed, inProgress, incomplete, expiringSoon, expiringIn90, expired, totalWebsites, liveWebsites] = await Promise.all([
       prisma.domain.count({ where }),
       prisma.domain.count({ where: { ...where, lifecycleStatus: 'COMPLETED' } }),
       prisma.domain.count({ where: { ...where, lifecycleStatus: 'IN_PROGRESS' } }),
       prisma.domain.count({ where: { ...where, lifecycleStatus: 'INCOMPLETE' } }),
-      prisma.domain.count({ where: { ...where, expiryDate: { lte: new Date(Date.now() + 30 * 86400000), gt: new Date() } } }),
+      prisma.domain.count({ where: { ...where, expiryDate: { lte: in30, gt: now } } }),
+      prisma.domain.count({ where: { ...where, expiryDate: { lte: in90, gt: now } } }),
+      prisma.domain.count({ where: { ...where, expiryDate: { lte: now } } }),
+      prisma.website.count({}),
+      prisma.website.count({ where: { status: { contains: 'Live', mode: 'insensitive' } } }),
     ])
-    return ok(res, { total, completed, inProgress, incomplete, expiringSoon })
+    return ok(res, { total, completed, inProgress, incomplete, expiringSoon, expiringIn90, expired, totalWebsites, liveWebsites })
   } catch (err) { return serverError(res, err) }
 })
 
@@ -107,19 +114,50 @@ router.get('/domains', requireStaff, async (req: AuthRequest, res) => {
     const where = domainWhere(req, extra)
 
     // Sort
+    const dir = sortDir === 'desc' ? 'desc' : 'asc'
     const validSort: Record<string, any> = {
-      expiry:   { expiryDate: sortDir === 'desc' ? 'desc' : 'asc' },
-      name:     { domainName: sortDir === 'desc' ? 'desc' : 'asc' },
-      status:   { status: sortDir === 'desc' ? 'desc' : 'asc' },
-      niche:    { niche: sortDir === 'desc' ? 'desc' : 'asc' },
+      expiry:    { expiryDate: dir },
+      name:      { domainName: dir },
+      status:    { status: dir },
+      niche:     { niche: dir },
+      da:        { daScore: dir },
+      dr:        { drScore: dir },
+      traffic:   { monthlyTraffic: dir },
+      backlinks: { backlinksCount: dir },
+      age:       { registrationDate: dir },
     }
     const orderBy = validSort[sortBy ?? 'expiry'] ?? { expiryDate: 'asc' }
 
     const [domains, total] = await Promise.all([
-      prisma.domain.findMany({ where, skip, take: limit, orderBy }),
+      prisma.domain.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy,
+        // Include linked website details for portfolio cards
+        include: {
+          portalMember: false,
+        },
+      }),
       prisma.domain.count({ where }),
     ])
-    return ok(res, domains, buildMeta(total, page, limit))
+
+    // Attach linked website for each domain
+    const domainIds = domains.map((d: any) => d.id)
+    const websites  = domainIds.length
+      ? await prisma.website.findMany({
+          where: { domainId: { in: domainIds } },
+          select: { id: true, name: true, url: true, status: true, platform: true, cms: true,
+                    monthlyTraffic: true, uptimePercent: true, avgLoadTime: true,
+                    adsenseConnected: true, adsenseEarnings: true, analyticsId: true,
+                    sslStatus: true, domainId: true, lastUpdated: true, hostedOn: true },
+        })
+      : []
+
+    const websiteByDomainId = new Map(websites.map((w: any) => [w.domainId, w]))
+    const enriched = domains.map((d: any) => ({ ...d, linkedWebsite: websiteByDomainId.get(d.id) ?? null }))
+
+    return ok(res, enriched, buildMeta(total, page, limit))
   } catch (err) { return serverError(res, err) }
 })
 
