@@ -176,15 +176,38 @@ export function useWebsiteStats() {
   });
 }
 
-export function useDomains(params?: QueryParams) {
+export interface DomainFilters {
+  page?: number;
+  limit?: number;
+  q?: string;
+  status?: string;
+  niche?: string;
+  tag?: string;
+  sortBy?: 'expiry' | 'name' | 'status' | 'niche';
+  sortDir?: 'asc' | 'desc';
+}
+
+export function useDomains(filters?: DomainFilters) {
   return useQuery<PaginatedResponse<Domain>>({
-    queryKey: ['domains', params],
+    queryKey: ['domains', filters],
     queryFn: async () => {
-      const { data } = await api.get('/assets/domains', { params });
+      const { data } = await api.get('/assets/domains', { params: { limit: 25, ...filters } });
       const rows = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
-      const meta = data?.meta ?? { total: rows.length, page: 1, limit: 100, totalPages: 1 };
+      const meta = data?.meta ?? { total: rows.length, page: 1, limit: 25, totalPages: 1 };
       return { data: rows.map((item: RawDomain) => mapDomain(item)), meta };
     },
+    placeholderData: (prev) => prev,
+  });
+}
+
+export function useDomainNiches() {
+  return useQuery<{ niche: string; count: number }[]>({
+    queryKey: ['domain-niches'],
+    queryFn: async () => {
+      const { data } = await api.get('/assets/domains/niches');
+      return (data?.data ?? data) as { niche: string; count: number }[];
+    },
+    staleTime: 5 * 60 * 1000,
   });
 }
 

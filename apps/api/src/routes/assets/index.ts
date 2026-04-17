@@ -81,16 +81,59 @@ router.get('/domains/stats', requireStaff, async (req: AuthRequest, res) => {
 router.get('/domains', requireStaff, async (req: AuthRequest, res) => {
   try {
     const { page, limit, skip } = getPagination(req)
-    const { status, lifecycleStatus } = req.query as Record<string, string>
+    const { status, lifecycleStatus, niche, q, tag, sortBy, sortDir } = req.query as Record<string, string>
     const extra: any = {}
-    if (status) extra.status = status
+    if (status && status !== 'all') extra.status = { contains: status, mode: 'insensitive' }
     if (lifecycleStatus) extra.lifecycleStatus = lifecycleStatus
+    if (niche && niche !== 'all') extra.niche = { contains: niche, mode: 'insensitive' }
+    // Tag search: check niche OR notes for the tag keyword
+    if (tag) {
+      extra.OR = [
+        { niche:  { contains: tag, mode: 'insensitive' } },
+        { notes:  { contains: tag, mode: 'insensitive' } },
+        { domainName: { contains: tag, mode: 'insensitive' } },
+      ]
+    }
+    // Full-text search by domain name, registrar, niche, notes
+    if (q) {
+      const searchOr = [
+        { domainName: { contains: q, mode: 'insensitive' } },
+        { registrar:  { contains: q, mode: 'insensitive' } },
+        { niche:      { contains: q, mode: 'insensitive' } },
+        { notes:      { contains: q, mode: 'insensitive' } },
+      ]
+      extra.AND = extra.AND ? [...extra.AND, { OR: searchOr }] : [{ OR: searchOr }]
+    }
     const where = domainWhere(req, extra)
+
+    // Sort
+    const validSort: Record<string, any> = {
+      expiry:   { expiryDate: sortDir === 'desc' ? 'desc' : 'asc' },
+      name:     { domainName: sortDir === 'desc' ? 'desc' : 'asc' },
+      status:   { status: sortDir === 'desc' ? 'desc' : 'asc' },
+      niche:    { niche: sortDir === 'desc' ? 'desc' : 'asc' },
+    }
+    const orderBy = validSort[sortBy ?? 'expiry'] ?? { expiryDate: 'asc' }
+
     const [domains, total] = await Promise.all([
-      prisma.domain.findMany({ where, skip, take: limit, orderBy: { expiryDate: 'asc' } }),
+      prisma.domain.findMany({ where, skip, take: limit, orderBy }),
       prisma.domain.count({ where }),
     ])
     return ok(res, domains, buildMeta(total, page, limit))
+  } catch (err) { return serverError(res, err) }
+})
+
+// GET /assets/domains/niches — return all distinct niches + counts (for tag cloud)
+router.get('/domains/niches', requireStaff, async (req: AuthRequest, res) => {
+  try {
+    const where = domainWhere(req)
+    const niches = await prisma.domain.groupBy({
+      by: ['niche'],
+      where: { ...where, niche: { not: null } },
+      _count: { niche: true },
+      orderBy: { _count: { niche: 'desc' } },
+    })
+    return ok(res, niches.map((n) => ({ niche: n.niche ?? 'Other', count: n._count.niche })))
   } catch (err) { return serverError(res, err) }
 })
 
