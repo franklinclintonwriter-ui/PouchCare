@@ -10,7 +10,7 @@ import type { HeaderAction, FilterAction } from "@/types/header";
 import { AnimatePresence, motion } from "framer-motion";
 
 function Header() {
-  const { actions, title } = useHeaderStore();
+  const { actions } = useHeaderStore();
   const { openMobile } = useSidebarStore();
   const {
     unreadCount,
@@ -91,13 +91,8 @@ function Header() {
         </a>
 
         <div className="flex min-w-0 flex-1 items-center gap-2 lg:gap-3">
-          <div className="min-w-0 flex-1">
-            {title ? (
-              <h1 className="truncate pr-1 text-sm font-semibold leading-tight tracking-tight text-gray-900 dark:text-gray-100 lg:text-base">
-                {title}
-              </h1>
-            ) : null}
-          </div>
+          {/* Page title intentionally hidden — title shown inside each page */}
+          <div className="min-w-0 flex-1" />
 
           {otherActions.length > 0 ? (
             <div className="flex min-w-0 shrink-0 flex-wrap items-center justify-end gap-1 overflow-x-auto scrollbar-none">

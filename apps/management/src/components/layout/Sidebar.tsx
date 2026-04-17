@@ -23,7 +23,6 @@ import {
   Target,
   Globe,
   Server,
-  MonitorSmartphone,
   Megaphone,
   HeadphonesIcon,
   BellRing,
@@ -180,13 +179,8 @@ function Sidebar() {
     {
       label: "Assets & Services",
       items: [
-        { label: "Domains", icon: Globe, href: "/assets/domains" },
+        { label: "Web Portfolio", icon: Globe, href: "/assets/domains" },
         { label: "Servers", icon: Server, href: "/assets/servers" },
-        {
-          label: "Websites",
-          icon: MonitorSmartphone,
-          href: "/assets/websites",
-        },
         {
           label: "Monitor",
           icon: Cctv,
