@@ -7,9 +7,14 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const DEFAULT_PORT = 7000
 
 /**
- * Vite dev proxy target: same host/port as `PORT` in apps/api/.env (default 7000).
+ * Vite dev proxy target: same host/port as `PORT` in apps/api/.env (default 7000),
+ * or `POUCHCARE_API_DEV_ORIGIN` when the API runs elsewhere (e.g. Docker on :7001).
  */
 export function apiDevOrigin(): string {
+  const explicit = process.env.POUCHCARE_API_DEV_ORIGIN?.trim()
+  if (explicit) {
+    return explicit.replace(/\/$/, '')
+  }
   const envPath = path.resolve(__dirname, '../api/.env')
   let port = DEFAULT_PORT
   try {

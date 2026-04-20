@@ -123,13 +123,23 @@ export async function getEffectivePermissions(role: SystemRole): Promise<Record<
   if (hit) return hit
 
   const base = buildDefaultMatrix(role)
-  const overrides = await prisma.rolePermission.findMany({ where: { role } })
-  const merged = { ...base }
-  for (const o of overrides) {
-    if (ALL_KEYS.includes(o.key)) merged[o.key] = o.allowed
+  try {
+    const overrides = await prisma.rolePermission.findMany({ where: { role } })
+    const merged = { ...base }
+    for (const o of overrides) {
+      if (ALL_KEYS.includes(o.key)) merged[o.key] = o.allowed
+    }
+    cache.set(role, merged)
+    return merged
+  } catch (e) {
+    // e.g. `role_permissions` missing before `prisma migrate deploy` — do not break staff login
+    console.error(
+      "[getEffectivePermissions] using default matrix only (DB override table unavailable):",
+      e instanceof Error ? e.message : e,
+    )
+    cache.set(role, base)
+    return base
   }
-  cache.set(role, merged)
-  return merged
 }
 
 export async function isStaffAllowed(role: SystemRole, key: PermissionKey): Promise<boolean> {

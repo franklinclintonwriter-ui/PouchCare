@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
+import { Prisma } from "@prisma/client";
 import { validate } from "@/middleware/validate";
 import { authenticate, type AuthRequest } from "@/middleware/auth";
 import prisma from "@/lib/prisma";
@@ -105,6 +106,13 @@ router.post("/login", validate(loginSchema), async (req, res) => {
     if (isDbConnectionError(e)) {
       console.error("[auth/login] database unreachable");
       return serviceUnavailable(res, DB_UNAVAILABLE_MESSAGE);
+    }
+    if (e instanceof Prisma.PrismaClientKnownRequestError) {
+      if (e.code === "P2021" || e.code === "P2022") {
+        const msg = `Database schema is out of sync (Prisma ${e.code}). On the host, with Docker dev DB running: from repo root run  npm run db:migrate:pouchcare-dev  (or set DATABASE_URL to the dev database and in apps/api run: npx prisma migrate deploy), then restart pouchcare-dev-api.`;
+        console.error("[auth/login] schema / database mismatch", e.message);
+        return serverError(res, new Error(msg));
+      }
     }
     console.error("[auth/login]", e);
     return serverError(res, e);

@@ -135,11 +135,27 @@ api.interceptors.response.use(
       }
     }
 
-    // Extract error message from envelope
-    const message =
-      (error.response?.data as { error?: string })?.error ||
-      error.message ||
-      "Something went wrong";
+    // Extract error message: API returns { error, code }; axios default message is useless ("Request failed with status code 500")
+    const status = error.response?.status;
+    const raw = error.response?.data as unknown;
+    let message = error.message || "Something went wrong";
+
+    if (raw && typeof raw === "object" && raw !== null && "error" in raw) {
+      const e = (raw as { error?: unknown; prismaCode?: string }).error;
+      if (typeof e === "string" && e.length > 0) {
+        message = e;
+        const pc = (raw as { prismaCode?: string }).prismaCode;
+        if (import.meta.env.DEV && pc) message = `${message} (${pc})`;
+      }
+    } else if (status === 500) {
+      message =
+        "Server error (500). Is the API running? From apps/api run: npx prisma migrate deploy, then restart the API container.";
+    } else if (status === 503) {
+      message =
+        (raw && typeof raw === "object" && raw !== null && "error" in raw
+          ? String((raw as { error?: string }).error)
+          : null) || "Service unavailable (database or Redis may be down).";
+    }
 
     return Promise.reject(new Error(message));
   },

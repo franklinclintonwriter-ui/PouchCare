@@ -1,4 +1,6 @@
 import type { Response } from 'express'
+import { Prisma } from '@prisma/client'
+import { env } from '@/config/env'
 
 export function ok<T>(res: Response, data: T, meta?: object) {
   return res.json({ success: true, data, ...(meta && { meta }) })
@@ -26,6 +28,17 @@ export const badGateway = (res: Response, msg = 'Upstream service error') =>
   err(res, msg, 'BAD_GATEWAY', 502)
 // Accept unknown for catch(err) blocks
 export const serverError  = (res: Response, _err?: unknown) => {
-  const msg = _err instanceof Error ? _err.message : 'Internal server error'
-  return err(res, msg, 'SERVER_ERROR', 500)
+  const base = _err instanceof Error ? _err.message : 'Internal server error'
+  const isPrisma = _err instanceof Prisma.PrismaClientKnownRequestError
+  const body: Record<string, unknown> = {
+    success: false,
+    error: base,
+    code: 'SERVER_ERROR',
+  }
+  if (env.NODE_ENV === 'development' && isPrisma) {
+    body.prismaCode = _err.code
+    if (_err.meta && Object.keys(_err.meta as object).length)
+      body.prismaMeta = _err.meta
+  }
+  return res.status(500).json(body)
 }
