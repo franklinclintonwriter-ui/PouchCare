@@ -168,8 +168,12 @@
 
 /* —— Browser print (Ctrl+P): professional report layout —— */
 @media print {
+  /* Extra top margin so first content (e.g. invoice title) clears the sheet edge / browser trim */
   @page {
-    margin: 14mm 12mm;
+    margin-top: 18mm;
+    margin-bottom: 14mm;
+    margin-left: 12mm;
+    margin-right: 12mm;
     size: auto;
   }
 

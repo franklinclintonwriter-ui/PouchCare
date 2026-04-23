@@ -226,6 +226,14 @@ export interface Invoice {
   status: PaymentStatus;
   issueDate: string;
   dueDate: string;
+  /** From API when present */
+  service?: string;
+  notes?: string;
+  projectReference?: string;
+  paidDate?: string | null;
+  amountBdt?: number | null;
+  /** From API when present (e.g. Binance TRC20 - BPAY) */
+  paymentMethod?: string | null;
 }
 
 export interface Expense {

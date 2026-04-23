@@ -10,7 +10,7 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "pages:deploy": "npm run build:vite && wrangler pages deploy dist",
-    "pages:project:create": "wrangler pages project create pouchcare-management"
+    "pages:project:create": "wrangler pages project create pouchcarebd"
   },
   "dependencies": {
     "@codesandbox/sandpack-react": "^2.20.0",

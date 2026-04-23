@@ -1,5 +1,5 @@
 # Cloudflare Pages — Management SPA (m.pouchcare.com)
-# First time: npm run pages:project:create  (creates project "pouchcare-management")
+# First time: create Pages project "pouchcarebd" (matches .gitlab-ci.yml deploy:management)
 # Deploy:      npm run pages:deploy   — or from repo root: npm run pages:deploy:management
 # Requires:   wrangler login  and  apps/management/.env.production  (VITE_* for production API)
 name = "pouchcarebd"

@@ -1,6 +1,6 @@
 import { useMemo, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Trash2, Pencil } from "lucide-react";
+import { Trash2, Pencil, Printer, FileDown } from "lucide-react";
 import { useHeaderConfig } from "@/hooks/useHeaderConfig";
 import { useInvoice, useUpdateInvoice, useDeleteInvoice } from "@/api/finance";
 import { PageTransition } from "@/components/ui/PageTransition";
@@ -15,6 +15,9 @@ import { useCurrency } from "@/hooks/useCurrency";
 import { usePermission } from "@/hooks/usePermission";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { toast } from "sonner";
+import { cn } from "@/utils/cn";
+import { InvoiceOfficialPrintView } from "@/components/finance/InvoiceOfficialPrintView";
+import { downloadInvoicePdf } from "@/utils/invoicePdf";
 
 const STATUS_OPTIONS = [
   { label: "Unpaid", value: "UNPAID" },
@@ -108,6 +111,15 @@ export default function InvoiceDetail() {
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
       setForm((f) => ({ ...f, [k]: e.target.value }));
 
+  const formatUsd = useCallback((n: number) => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(n);
+  }, []);
+
   useHeaderConfig(
     useMemo(
       () => ({
@@ -161,8 +173,73 @@ export default function InvoiceDetail() {
     );
   }
 
+  const issueLabel = new Date(invoice.issueDate).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+  const dueLabel = new Date(invoice.dueDate).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+
   return (
     <PageTransition className="space-y-4">
+      <div className="mx-auto max-w-4xl print:max-w-none">
+        <div
+          className={cn(
+            "mb-4 flex flex-wrap items-center justify-end gap-2 print:hidden",
+          )}
+        >
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="gap-2 border-slate-200/90 bg-white/80 shadow-sm"
+              onClick={() => window.print()}
+            >
+              <Printer className="h-4 w-4 shrink-0" />
+              Print
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="gap-2 border-slate-200/90 bg-white/80 shadow-sm"
+              onClick={async () => {
+                try {
+                  await downloadInvoicePdf({
+                    invoice,
+                    formatCurrency: formatUsd,
+                  });
+                  toast.success("PDF downloaded");
+                } catch {
+                  toast.error("Could not generate PDF");
+                }
+              }}
+            >
+              <FileDown className="h-4 w-4 shrink-0" />
+              Download PDF
+            </Button>
+          </div>
+        </div>
+        <div
+          className={cn(
+            "overflow-hidden rounded-2xl border border-slate-200/70 bg-white",
+            "shadow-[0_2px_0_0_rgba(15,23,42,0.04),0_12px_40px_-12px_rgba(15,23,42,0.14)] ring-1 ring-slate-900/[0.05]",
+            "print:rounded-none print:border-0 print:shadow-none print:ring-0",
+          )}
+        >
+          <InvoiceOfficialPrintView
+            invoice={invoice}
+            formatUsd={formatUsd}
+            issueLabel={issueLabel}
+            dueLabel={dueLabel}
+          />
+        </div>
+      </div>
+
+      <div className="space-y-4 print:hidden">
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader>
@@ -301,6 +378,7 @@ export default function InvoiceDetail() {
         isLoading={deleteInvoice.isPending}
         onConfirm={handleDelete}
       />
+      </div>
     </PageTransition>
   );
 }

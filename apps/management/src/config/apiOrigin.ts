@@ -26,9 +26,25 @@ export function getAxiosBaseURL(): string {
  * WebSocket URL for attendance realtime. Prefer `VITE_WS_URL` when the API is on another host/port.
  * Example: `ws://127.0.0.1:7000/v1/realtime`
  *
+ * Dev note: the SPA is usually Vite on :3000 with HTTP `/v1` proxied to the API, but the WebSocket
+ * client may still get invalid frames if the upgrade hits the dev server. When `VITE_*` is unset on
+ * localhost, we point at the default API port (7000) so WS matches `apps/api` + `getApiDevOrigin`.
+ *
  * Token is sent as the first message after connection (not in the URL) to avoid
  * leaking credentials in browser history, server logs and referrer headers.
  */
+function httpOriginToWebSocketBase(origin: string): string | null {
+  try {
+    const u = new URL(origin);
+    const protocol = u.protocol === "https:" ? "wss:" : "ws:";
+    return `${protocol}//${u.host}`;
+  } catch {
+    return null;
+  }
+}
+
+const DEFAULT_DEV_API_WS = "ws://127.0.0.1:7000/v1/realtime";
+
 export function buildRealtimeWebSocketUrl(): string {
   const wsEnv = (import.meta.env.VITE_WS_URL as string | undefined)?.trim();
   if (wsEnv) {
@@ -36,7 +52,18 @@ export function buildRealtimeWebSocketUrl(): string {
       new URL(wsEnv); // validate
       return wsEnv;
     } catch {
-      /* fall through to same-origin */
+      /* fall through */
+    }
+  }
+  const api = (import.meta.env.VITE_API_URL as string | undefined)?.trim();
+  if (api) {
+    const base = httpOriginToWebSocketBase(api);
+    if (base) return `${base}/v1/realtime`;
+  }
+  if (typeof window !== "undefined") {
+    const h = window.location.hostname;
+    if (h === "localhost" || h === "127.0.0.1") {
+      return DEFAULT_DEV_API_WS;
     }
   }
   const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";

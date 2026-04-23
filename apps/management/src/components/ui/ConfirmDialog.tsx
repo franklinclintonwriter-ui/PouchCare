@@ -33,7 +33,7 @@ function ConfirmDialog({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="sm">
+    <Modal isOpen={isOpen} onClose={onClose} size="sm" overlayClassName="no-print">
       <div className="flex flex-col items-center text-center sm:flex-row sm:items-start sm:text-left">
         <div className={cn('rounded-full p-3', iconBg[variant])}>
           {variant === 'info' ? (

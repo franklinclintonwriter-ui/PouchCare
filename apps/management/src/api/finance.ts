@@ -14,6 +14,11 @@ type RawInvoice = {
   issueDate: string;
   dueDate?: string | null;
   paidDate?: string | null;
+  service?: string | null;
+  notes?: string | null;
+  projectReference?: string | null;
+  amountBdt?: number | null;
+  paymentMethod?: string | null;
 };
 
 type RawExpense = {
@@ -76,12 +81,21 @@ function mapInvoice(raw: RawInvoice): Invoice {
   const paidAmount =
     raw.paidAmount ??
     (status === "PAID" ? total : status === "PARTIAL" ? 0 : 0);
+  const serviceLabel =
+    raw.service?.trim() || "Professional services";
   return {
     id: raw.id,
     number: raw.invoiceNumber ?? raw.id.slice(0, 8).toUpperCase(),
     clientName: raw.clientName ?? "Client",
     clientEmail: raw.clientEmail ?? "-",
-    items: [],
+    items: [
+      {
+        description: serviceLabel,
+        quantity: 1,
+        rate: total,
+        amount: total,
+      },
+    ],
     subtotal: total,
     tax: 0,
     total,
@@ -89,6 +103,12 @@ function mapInvoice(raw: RawInvoice): Invoice {
     status,
     issueDate: raw.issueDate,
     dueDate: raw.dueDate ?? raw.issueDate,
+    service: raw.service ?? undefined,
+    notes: raw.notes ?? undefined,
+    projectReference: raw.projectReference ?? undefined,
+    paidDate: raw.paidDate ?? undefined,
+    amountBdt: raw.amountBdt ?? undefined,
+    paymentMethod: raw.paymentMethod ?? undefined,
   };
 }
 

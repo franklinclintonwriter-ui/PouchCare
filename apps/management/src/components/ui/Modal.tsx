@@ -15,6 +15,8 @@ interface ModalProps {
   size?: ModalSize;
   footer?: ReactNode;
   closeOnOverlay?: boolean;
+  /** Merged onto the root portal wrapper (e.g. `no-print` for invoice print layouts). */
+  overlayClassName?: string;
 }
 
 const sizeStyles: Record<ModalSize, string> = {
@@ -34,6 +36,7 @@ function Modal({
   size = 'md',
   footer,
   closeOnOverlay = true,
+  overlayClassName,
 }: ModalProps) {
   const [portalEl, setPortalEl] = useState<HTMLElement | null>(null);
 
@@ -70,6 +73,7 @@ function Modal({
             'fixed inset-0 z-50 flex min-h-0 flex-col',
             // Full dynamic viewport height (mobile toolbars / rotation)
             'min-h-[100dvh]',
+            overlayClassName,
           )}
         >
           {/* Full-display blur + dim — edge-to-edge under notches and home indicator */}

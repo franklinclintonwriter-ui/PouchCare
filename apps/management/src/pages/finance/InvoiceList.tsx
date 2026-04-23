@@ -26,7 +26,6 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { Skeleton } from "@/components/ui/Skeleton";
 import type { Invoice } from "@/types/models";
 import { toast } from "sonner";
-
 type ViewMode = "table" | "cards";
 
 export default function InvoiceList() {

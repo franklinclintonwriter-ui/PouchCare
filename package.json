@@ -13,7 +13,7 @@
     "test": "turbo run test",
     "type-check": "turbo run type-check",
     "dev:api": "turbo run dev --filter=api",
-    "dev:landing": "turbo run dev --filter=landing",
+    "dev:landing": "turbo run dev --filter=pouchcare.com",
     "dev:mgmt": "turbo run dev --filter=m.pouchcare.com",
     "start": "powershell -ExecutionPolicy Bypass -File scripts/dev-start.ps1",
     "dev:full": "powershell -ExecutionPolicy Bypass -File scripts/dev-full.ps1",
