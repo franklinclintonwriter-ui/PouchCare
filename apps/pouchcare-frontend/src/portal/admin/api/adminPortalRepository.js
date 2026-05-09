@@ -1,12 +1,96 @@
 import { validateBillingPayload, validateCompanyPayload, validateEvent, validateTeamPayload } from "./contracts";
+import { buildRequestHeaders as buildWpRestHeaders, parseResponseBody } from "../../shared/api/apiClient";
 
 const STORAGE_KEY = "pouchcare_admin_portal_data";
 const AUTH_TOKEN_KEYS = ["pouchcare_admin_token", "pouchcare_token", "auth_token"];
+const WP_DESIGN_TOKENS_PATH = "/wp-json/pouchcare/v1/admin/design-tokens";
 
 function getApiBase() {
   const envBase = typeof import.meta !== "undefined" ? import.meta.env?.VITE_ADMIN_API_BASE : "";
   const runtimeBase = typeof window !== "undefined" ? window.__POUCHCARE_ADMIN_API_BASE__ : "";
   return (runtimeBase || envBase || "").trim();
+}
+
+/** When the portal runs on another origin, set `VITE_WP_ORIGIN` or `window.__POUCHCARE_WP_ORIGIN__`. */
+function getWordPressOrigin() {
+  const envBase = typeof import.meta !== "undefined" ? import.meta.env?.VITE_WP_ORIGIN : "";
+  const runtimeBase = typeof window !== "undefined" ? window.__POUCHCARE_WP_ORIGIN__ : "";
+  return (runtimeBase || envBase || "").trim().replace(/\/$/, "");
+}
+
+function wordPressDesignTokensUrl() {
+  const origin = getWordPressOrigin();
+  return origin ? `${origin}${WP_DESIGN_TOKENS_PATH}` : WP_DESIGN_TOKENS_PATH;
+}
+
+function wordPressTokensSoftFailure(status) {
+  return status === 401 || status === 403 || status === 404;
+}
+
+/**
+ * WordPress `pouchcare/v1/admin/design-tokens` (theme option). Uses cookie + X-WP-Nonce when embedded in wp-admin.
+ */
+async function safeFetchWordPressDesignTokens(options = {}) {
+  const url = wordPressDesignTokensUrl();
+  try {
+    const res = await fetch(url, {
+      credentials: "include",
+      ...options,
+      headers: buildWpRestHeaders(AUTH_TOKEN_KEYS, "__POUCHCARE_ADMIN_TOKEN__", {
+        "Content-Type": "application/json",
+        ...(options.headers || {}),
+      }),
+    });
+    const data = await parseResponseBody(res);
+    if (!res.ok) {
+      return {
+        ok: false,
+        status: res.status,
+        response: res,
+        data,
+        softFail: wordPressTokensSoftFailure(res.status),
+        error: normalizeApiError({
+          status: res.status,
+          path: WP_DESIGN_TOKENS_PATH,
+          body: data,
+          message: messageFromBody(data),
+        }),
+      };
+    }
+    return { ok: true, status: res.status, response: res, data };
+  } catch (error) {
+    return {
+      ok: false,
+      failed: true,
+      softFail: true,
+      error: normalizeApiError({
+        kind: "network",
+        path: WP_DESIGN_TOKENS_PATH,
+        message: error?.message || "Network request failed",
+      }),
+    };
+  }
+}
+
+function mergeDualPersistResult(nodeRes, wpRes) {
+  const nodeOk = nodeRes.ok;
+  const nodeSkipped = !!nodeRes.skipped;
+  const wpOk = wpRes.ok;
+  const wpSoft = !!wpRes.softFail || !!wpRes.failed;
+
+  if (nodeOk || wpOk) {
+    return { ok: true, skipped: false, node: nodeRes, wp: wpRes };
+  }
+  if (nodeSkipped && wpSoft) {
+    return { ok: true, skipped: true, node: nodeRes, wp: wpRes };
+  }
+  return {
+    ok: false,
+    skipped: false,
+    error: nodeRes.error || wpRes.error,
+    node: nodeRes,
+    wp: wpRes,
+  };
 }
 
 function getRuntimeValue(key) {
@@ -157,24 +241,6 @@ function normalizeApiError({ kind = "unknown", status = 0, path = "", body = nul
   };
 }
 
-async function parseResponseBody(res) {
-  const contentType = res.headers.get("content-type") || "";
-  if (contentType.includes("application/json")) {
-    try {
-      return await res.json();
-    } catch {
-      return null;
-    }
-  }
-
-  try {
-    const text = await res.text();
-    return text || null;
-  } catch {
-    return null;
-  }
-}
-
 async function safeFetch(path, options = {}) {
   const apiBase = getApiBase();
   if (!apiBase) {
@@ -234,9 +300,15 @@ const DESIGN_TOKENS_LOCAL_KEY = "pouchcare_design_tokens";
  */
 export async function fetchDesignTokens(defaults) {
   const remote = await safeFetch("/admin/design-tokens");
-  if (remote.ok && remote.data?.tokens && typeof remote.data.tokens === "object") {
+  if (remote.ok && remote.data?.tokens != null && typeof remote.data.tokens === "object") {
     return { ...defaults, ...remote.data.tokens };
   }
+
+  const wp = await safeFetchWordPressDesignTokens({ method: "GET" });
+  if (wp.ok && wp.data?.tokens != null && typeof wp.data.tokens === "object") {
+    return { ...defaults, ...wp.data.tokens };
+  }
+
   try {
     const raw = localStorage.getItem(DESIGN_TOKENS_LOCAL_KEY);
     if (raw) {
@@ -261,10 +333,14 @@ export async function persistDesignTokens(tokens) {
   } catch {
     // ignore
   }
-  return safeFetch("/admin/design-tokens", {
-    method: "PUT",
-    body: JSON.stringify({ tokens }),
-  });
+
+  const body = JSON.stringify({ tokens });
+  const [node, wp] = await Promise.all([
+    safeFetch("/admin/design-tokens", { method: "PUT", body }),
+    safeFetchWordPressDesignTokens({ method: "PUT", body }),
+  ]);
+
+  return mergeDualPersistResult(node, wp);
 }
 
 /** Remove saved tokens from the API (Node or WordPress) and localStorage. */
@@ -274,7 +350,13 @@ export async function clearPersistedDesignTokens() {
   } catch {
     // ignore
   }
-  return safeFetch("/admin/design-tokens", { method: "DELETE" });
+
+  const [node, wp] = await Promise.all([
+    safeFetch("/admin/design-tokens", { method: "DELETE" }),
+    safeFetchWordPressDesignTokens({ method: "DELETE" }),
+  ]);
+
+  return mergeDualPersistResult(node, wp);
 }
 
 export async function fetchAdminSnapshot(fallback) {

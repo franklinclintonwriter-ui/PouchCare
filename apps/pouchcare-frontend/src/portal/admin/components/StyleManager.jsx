@@ -131,7 +131,7 @@ export default function StyleManager() {
   return (
     <PageShell
       title="Style Manager"
-      description="Edit design tokens for the PouchCare theme. Reset removes saved tokens from the server and this browser, then restores defaults from design-tokens.json."
+      description="Save updates the Node admin API when configured, syncs tokens to WordPress REST (same tab origin, or set VITE_WP_ORIGIN), and mirrors to this browser. Reset clears each store that accepts the request."
       actions={
         <div className="flex gap-2">
           <Button
