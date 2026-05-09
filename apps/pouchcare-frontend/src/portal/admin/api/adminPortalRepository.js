@@ -267,6 +267,16 @@ export async function persistDesignTokens(tokens) {
   });
 }
 
+/** Remove saved tokens from the API (Node or WordPress) and localStorage. */
+export async function clearPersistedDesignTokens() {
+  try {
+    localStorage.removeItem(DESIGN_TOKENS_LOCAL_KEY);
+  } catch {
+    // ignore
+  }
+  return safeFetch("/admin/design-tokens", { method: "DELETE" });
+}
+
 export async function fetchAdminSnapshot(fallback) {
   const remote = await safeFetch("/admin/snapshot");
   if (remote.ok) {

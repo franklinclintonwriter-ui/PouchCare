@@ -1,3 +1,47 @@
+/* Mirrors main.css token defaults so the Site Editor matches the front before/without saved overrides. */
+:root {
+  --pc-color-primary: #0a7aff;
+  --pc-color-primary-dark: #0062d6;
+  --pc-accent-cyan: #00c6ff;
+  --pc-accent-gold: #ffb800;
+  --pc-accent-orange: #ff8c00;
+  --pc-font-heading: "Plus Jakarta Sans", sans-serif;
+  --pc-font-body: Inter, sans-serif;
+  --pc-radius-card: 16px;
+  --pc-radius-button: 8px;
+  --pc-radius: var(--pc-radius-card);
+  --pc-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+}
+
+.editor-styles-wrapper {
+  font-family: var(--pc-font-body);
+}
+
+.editor-styles-wrapper .wp-site-blocks {
+  min-height: 100vh;
+}
+
+.editor-styles-wrapper .pouchcare-stack > * + * {
+  margin-top: 1rem;
+}
+
+.editor-styles-wrapper :where(h1, h2, h3, h4, h5, h6, .wp-block-heading) {
+  font-family: var(--pc-font-heading);
+}
+
 .editor-styles-wrapper .wp-block {
   max-width: 100%;
+}
+
+.wp-block-group.is-style-pouchcare-card {
+  border-radius: var(--pc-radius);
+  box-shadow: var(--pc-shadow);
+  padding: 1.25rem;
+  background: #ffffff;
+}
+
+.editor-styles-wrapper .wp-block-button__link:focus-visible,
+.editor-styles-wrapper .wp-element-button:focus-visible {
+  outline: 2px solid var(--pc-color-primary, #0a7aff);
+  outline-offset: 2px;
 }

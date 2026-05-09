@@ -7,6 +7,8 @@ class PouchCare_Admin_Api
 {
     private const OPTION_KEY = 'pouchcare_admin_snapshot';
     private const EVENTS_KEY = 'pouchcare_admin_events';
+    /** Saved Style Manager payload (flat token map); consumed by the theme as CSS variables. */
+    private const DESIGN_TOKENS_OPTION = 'pouchcare_design_tokens';
 
     public static function init(): void
     {
@@ -25,6 +27,24 @@ class PouchCare_Admin_Api
             [
                 'methods'             => 'PUT',
                 'callback'            => [self::class, 'put_snapshot'],
+                'permission_callback' => [PouchCare_Security::class, 'can_manage'],
+            ],
+        ]);
+
+        register_rest_route('pouchcare/v1', '/admin/design-tokens', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [self::class, 'get_design_tokens'],
+                'permission_callback' => [PouchCare_Security::class, 'can_manage'],
+            ],
+            [
+                'methods'             => 'PUT',
+                'callback'            => [self::class, 'put_design_tokens'],
+                'permission_callback' => [PouchCare_Security::class, 'can_manage'],
+            ],
+            [
+                'methods'             => 'DELETE',
+                'callback'            => [self::class, 'delete_design_tokens'],
                 'permission_callback' => [PouchCare_Security::class, 'can_manage'],
             ],
         ]);
@@ -189,6 +209,104 @@ class PouchCare_Admin_Api
         update_option(self::OPTION_KEY, $sanitized, false);
 
         return rest_ensure_response($sanitized);
+    }
+
+    public static function get_design_tokens(WP_REST_Request $request): WP_REST_Response
+    {
+        $raw = get_option(self::DESIGN_TOKENS_OPTION, null);
+        $tokens = is_array($raw) ? $raw : null;
+
+        return rest_ensure_response(['tokens' => $tokens]);
+    }
+
+    public static function put_design_tokens(WP_REST_Request $request): WP_REST_Response
+    {
+        $body = $request->get_json_params();
+        if (!is_array($body) || empty($body['tokens']) || !is_array($body['tokens'])) {
+            return new WP_REST_Response(
+                ['code' => 'invalid_body', 'message' => 'Expected JSON object with a "tokens" object.'],
+                400
+            );
+        }
+
+        $sanitized = self::sanitize_design_tokens($body['tokens']);
+        if (is_wp_error($sanitized)) {
+            return new WP_REST_Response(
+                ['code' => 'invalid_tokens', 'message' => $sanitized->get_error_message()],
+                400
+            );
+        }
+
+        update_option(self::DESIGN_TOKENS_OPTION, $sanitized, false);
+
+        return rest_ensure_response(['ok' => true]);
+    }
+
+    public static function delete_design_tokens(WP_REST_Request $request): WP_REST_Response
+    {
+        delete_option(self::DESIGN_TOKENS_OPTION);
+
+        return rest_ensure_response(['ok' => true]);
+    }
+
+    /**
+     * @param array<string, mixed> $input
+     * @return array<string, string>|\WP_Error
+     */
+    private static function sanitize_design_tokens(array $input)
+    {
+        $required = [
+            'primaryColor',
+            'primaryDark',
+            'accentCyan',
+            'accentGold',
+            'accentOrange',
+            'headingFont',
+            'bodyFont',
+            'borderRadiusCard',
+            'borderRadiusButton',
+        ];
+
+        $out = [];
+        foreach ($required as $key) {
+            if (!isset($input[$key]) || !is_string($input[$key]) || $input[$key] === '') {
+                return new \WP_Error('missing_field', sprintf('Missing or empty token: %s', $key));
+            }
+            $out[$key] = self::sanitize_token_value($key, $input[$key]);
+        }
+
+        return $out;
+    }
+
+    private static function sanitize_token_value(string $key, string $value): string
+    {
+        $value = trim(wp_strip_all_tags($value));
+        if (strlen($value) > 200) {
+            $value = substr($value, 0, 200);
+        }
+
+        $colorKeys = ['primaryColor', 'primaryDark', 'accentCyan', 'accentGold', 'accentOrange'];
+        if (in_array($key, $colorKeys, true)) {
+            if (preg_match('/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/', $value)) {
+                return sanitize_hex_color($value) ?: '#000000';
+            }
+            if (preg_match('/^rgba?\\(/', $value)) {
+                return preg_match('/^rgba?\\(\\s*\\d{1,3}\\s*,\\s*\\d{1,3}\\s*,\\s*\\d{1,3}(\\s*,\\s*[0-9.]+)?\\s*\\)$/', $value) ? $value : '#000000';
+            }
+
+            return sanitize_hex_color($value) ?: '#000000';
+        }
+
+        if (str_ends_with($key, 'Font')) {
+            return sanitize_text_field($value);
+        }
+
+        // border radius: 12px, 0.5rem, 9999px, etc.
+        if (preg_match('/^[0-9.]+(px|rem|em|%)?$/', $value) || preg_match('/^var\\(/', $value)) {
+            return sanitize_text_field($value);
+        }
+
+        return sanitize_text_field($value);
     }
 
     // -------------------------------------------------------------------------

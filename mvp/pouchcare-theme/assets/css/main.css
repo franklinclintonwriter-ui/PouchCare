@@ -1,5 +1,15 @@
 :root {
-  --pc-radius: 16px;
+  /* Defaults; overridden when Style Manager saves tokens (see theme functions.php). */
+  --pc-color-primary: #0a7aff;
+  --pc-color-primary-dark: #0062d6;
+  --pc-accent-cyan: #00c6ff;
+  --pc-accent-gold: #ffb800;
+  --pc-accent-orange: #ff8c00;
+  --pc-font-heading: "Plus Jakarta Sans", sans-serif;
+  --pc-font-body: Inter, sans-serif;
+  --pc-radius-card: 16px;
+  --pc-radius-button: 8px;
+  --pc-radius: var(--pc-radius-card);
   --pc-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
 }
 
@@ -20,6 +30,6 @@
 
 .wp-block-button__link:focus-visible,
 .wp-element-button:focus-visible {
-  outline: 2px solid #0f766e;
+  outline: 2px solid var(--pc-color-primary, #0a7aff);
   outline-offset: 2px;
 }

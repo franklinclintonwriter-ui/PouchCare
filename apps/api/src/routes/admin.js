@@ -485,6 +485,16 @@ router.put("/design-tokens", async (req, res, next) => {
   }
 });
 
+router.delete("/design-tokens", async (req, res, next) => {
+  try {
+    const key = adminDesignTokensKey(req.user.id);
+    await prisma.portalSnapshot.deleteMany({ where: { key } });
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.post("/events", async (req, res, next) => {
   try {
     eventSchema.parse(req.body);

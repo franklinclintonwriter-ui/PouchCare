@@ -6,7 +6,7 @@ import Select from "../../../components/ui/Select";
 import { OpsPanel } from "../../shared/components";
 import { Save, RotateCcw, Palette } from "lucide-react";
 import defaultTokens from "../../../../shared/schemas/design-tokens.json";
-import { fetchDesignTokens, persistDesignTokens } from "../api/adminPortalRepository";
+import { fetchDesignTokens, persistDesignTokens, clearPersistedDesignTokens } from "../api/adminPortalRepository";
 
 /**
  * @typedef {Object} TokenState
@@ -75,6 +75,7 @@ export default function StyleManager() {
   const [tokens, setTokens] = useState(getDefaults);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [resetting, setResetting] = useState(false);
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
@@ -101,9 +102,15 @@ export default function StyleManager() {
     []
   );
 
-  const handleReset = () => {
-    setTokens(getDefaults());
-    setSaved(false);
+  const handleReset = async () => {
+    setResetting(true);
+    try {
+      await clearPersistedDesignTokens();
+      setTokens(getDefaults());
+      setSaved(false);
+    } finally {
+      setResetting(false);
+    }
   };
 
   const handleSave = async () => {
@@ -124,17 +131,23 @@ export default function StyleManager() {
   return (
     <PageShell
       title="Style Manager"
-      description="Edit design tokens that drive the PouchCare theme appearance."
+      description="Edit design tokens for the PouchCare theme. Reset removes saved tokens from the server and this browser, then restores defaults from design-tokens.json."
       actions={
         <div className="flex gap-2">
-          <Button variant="secondary" size="sm" icon={RotateCcw} onClick={handleReset}>
-            Reset
+          <Button
+            variant="secondary"
+            size="sm"
+            icon={RotateCcw}
+            onClick={() => void handleReset()}
+            disabled={resetting || saving || loading}
+          >
+            {resetting ? "Resetting…" : "Reset to defaults"}
           </Button>
           <Button
             size="sm"
             icon={Save}
             onClick={handleSave}
-            disabled={saving || loading}
+            disabled={saving || loading || resetting}
           >
             {saving ? "Saving..." : saved ? "Saved" : "Save Tokens"}
           </Button>

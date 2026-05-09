@@ -11,9 +11,11 @@
       "defaultPalette": false,
       "palette": [
         { "slug": "primary", "color": "#0A7AFF", "name": "Primary" },
+        { "slug": "brand", "color": "#0A7AFF", "name": "Brand" },
         { "slug": "primary-dark", "color": "#0062D6", "name": "Primary Dark" },
         { "slug": "accent-cyan", "color": "#00C6FF", "name": "Accent Cyan" },
         { "slug": "accent-gold", "color": "#FFB800", "name": "Accent Gold" },
+        { "slug": "accent-orange", "color": "#FF8C00", "name": "Accent Orange" },
         { "slug": "surface", "color": "#F5F7FA", "name": "Surface" },
         { "slug": "text", "color": "#1A1A2E", "name": "Text" },
         { "slug": "white", "color": "#FFFFFF", "name": "White" }
@@ -61,6 +63,11 @@
       "link": {
         "color": {
           "text": "var(--wp--preset--color--primary)"
+        }
+      },
+      "button": {
+        "border": {
+          "radius": "var(--pc-radius-button)"
         }
       }
     },
