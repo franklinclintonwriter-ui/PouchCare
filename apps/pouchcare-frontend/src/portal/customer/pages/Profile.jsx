@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Button from "../../../components/ui/Button";
 import Input from "../../../components/ui/Input";
 import Card from "../../../components/ui/Card";
@@ -7,13 +7,17 @@ import { useCustomerPortal } from "../state/CustomerPortalContext";
 
 export default function ProfilePage() {
   const { data, updateProfile } = useCustomerPortal();
-  const [form, setForm] = useState(data.profile);
+  const [form, setForm] = useState(() => data.profile || {});
+
+  useEffect(() => {
+    setForm(data.profile || {});
+  }, [data.profile]);
 
   return (
     <AdminPage
       title="Profile"
       description="Personal profile, company details, and account identity."
-      actions={<Button size="sm" onClick={() => setForm(data.profile)}>Reset</Button>}
+      actions={<Button size="sm" onClick={() => setForm(data.profile || {})}>Reset</Button>}
     >
       <Card hover={false} className="p-5">
         <form

@@ -19,7 +19,7 @@ const FEATURE_PLANS = {
 };
 
 /** Plan hierarchy — higher index = higher tier. */
-const PLAN_HIERARCHY = ["community", "starter", "growth", "enterprise"];
+const PLAN_HIERARCHY = ["community", "starter", "growth", "agency", "enterprise"];
 
 /**
  * Get the numeric rank of a plan for comparison.
@@ -27,7 +27,8 @@ const PLAN_HIERARCHY = ["community", "starter", "growth", "enterprise"];
  * @returns {number}
  */
 function planRank(plan) {
-  const idx = PLAN_HIERARCHY.indexOf(plan);
+  const key = String(plan || "community").toLowerCase();
+  const idx = PLAN_HIERARCHY.indexOf(key);
   return idx >= 0 ? idx : 0;
 }
 
@@ -44,6 +45,12 @@ export function useFeatureGate(feature) {
   const { plan } = useLicense();
 
   return useMemo(() => {
+    const envFree =
+      import.meta.env.VITE_ALL_FEATURES_FREE === "1" ||
+      import.meta.env.VITE_ALL_FEATURES_FREE === "true";
+    if (envFree) {
+      return { allowed: true, currentPlan: plan, requiredPlan: "community" };
+    }
     const requiredPlan = FEATURE_PLANS[feature] ?? "community";
     const allowed = planRank(plan) >= planRank(requiredPlan);
     return { allowed, currentPlan: plan, requiredPlan };

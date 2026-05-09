@@ -225,6 +225,48 @@ function resultFromRemote(remote) {
   return { ok: false, mode: "fallback-local", status: remote.status || 0, error: remote.error || null, data: remote.data || null };
 }
 
+const DESIGN_TOKENS_LOCAL_KEY = "pouchcare_design_tokens";
+
+/**
+ * Load Style Manager token state: remote admin snapshot slice, then localStorage fallback.
+ * @param {Record<string, string>} defaults
+ * @returns {Promise<Record<string, string>>}
+ */
+export async function fetchDesignTokens(defaults) {
+  const remote = await safeFetch("/admin/design-tokens");
+  if (remote.ok && remote.data?.tokens && typeof remote.data.tokens === "object") {
+    return { ...defaults, ...remote.data.tokens };
+  }
+  try {
+    const raw = localStorage.getItem(DESIGN_TOKENS_LOCAL_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === "object") {
+        return { ...defaults, ...parsed };
+      }
+    }
+  } catch {
+    // ignore
+  }
+  return { ...defaults };
+}
+
+/**
+ * Persist design tokens to the admin API (merges into portal snapshot) and localStorage.
+ * @param {Record<string, string>} tokens
+ */
+export async function persistDesignTokens(tokens) {
+  try {
+    localStorage.setItem(DESIGN_TOKENS_LOCAL_KEY, JSON.stringify(tokens));
+  } catch {
+    // ignore
+  }
+  return safeFetch("/admin/design-tokens", {
+    method: "PUT",
+    body: JSON.stringify({ tokens }),
+  });
+}
+
 export async function fetchAdminSnapshot(fallback) {
   const remote = await safeFetch("/admin/snapshot");
   if (remote.ok) {

@@ -168,8 +168,8 @@ class PouchCare_Template_Importer
         $items = [];
 
         foreach ($roots as $rootPath => $rootLabel) {
-            $files = glob($rootPath . '/*/*.json');
-            if (!is_array($files) || empty($files)) {
+            $files = self::glob_template_json_files($rootPath);
+            if ($files === []) {
                 continue;
             }
 
@@ -195,6 +195,38 @@ class PouchCare_Template_Importer
             POUCHCARE_BUILDER_PATH . 'templates/free-starter' => 'Plugin Pack',
             dirname(POUCHCARE_BUILDER_PATH) . '/pouchcare-template-packs/free-starter' => 'External Pack',
         ];
+    }
+
+    /**
+     * Collect JSON template files under category subdirectories (e.g. saas/home.json).
+     * Uses per-directory globs so discovery works on Windows paths where a single
+     * "pack/*/*.json" glob can return no matches.
+     */
+    private static function glob_template_json_files(string $rootPath): array
+    {
+        $rootPath = untrailingslashit(wp_normalize_path($rootPath));
+        if ($rootPath === '' || !is_dir($rootPath)) {
+            return [];
+        }
+
+        $files = [];
+        $subdirs = glob($rootPath . '/*', GLOB_ONLYDIR);
+        if (!is_array($subdirs)) {
+            return [];
+        }
+
+        foreach ($subdirs as $dir) {
+            $dir = untrailingslashit(wp_normalize_path((string) $dir));
+            $found = glob($dir . '/*.json');
+            if (!is_array($found)) {
+                continue;
+            }
+            foreach ($found as $file) {
+                $files[] = $file;
+            }
+        }
+
+        return $files;
     }
 
     private static function parse_template_file(string $file, string $pack): ?array

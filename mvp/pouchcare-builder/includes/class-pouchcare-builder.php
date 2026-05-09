@@ -73,5 +73,12 @@ class PouchCare_Builder
     {
         wp_enqueue_style('pouchcare-builder-admin', POUCHCARE_BUILDER_URL . 'assets/css/admin.css', [], POUCHCARE_BUILDER_VERSION);
         wp_enqueue_script('pouchcare-builder-admin', POUCHCARE_BUILDER_URL . 'assets/js/admin.js', [], POUCHCARE_BUILDER_VERSION, true);
+
+        wp_localize_script('pouchcare-builder-admin', 'pouchcareBuilderRest', [
+            'root'           => esc_url_raw(rest_url()),
+            'namespace'      => 'pouchcare/v1',
+            'nonceWpRest'    => wp_create_nonce('wp_rest'),
+            'noncePouchcare' => wp_create_nonce('pouchcare_rest'),
+        ]);
     }
 }

@@ -146,7 +146,9 @@ export function buildRequestHeaders(tokenKeys, runtimeWindowKey, extra = {}) {
   const csrfToken = getCsrfToken();
   const wpNonce = getWpNonce();
   const extraHeaders =
-    extra instanceof Headers ? Object.fromEntries(extra.entries()) : extra;
+    typeof Headers !== "undefined" && extra instanceof Headers
+      ? Object.fromEntries(extra.entries())
+      : extra;
   const headers = {
     ...(!hasHeader(extraHeaders, "Content-Type")
       ? { "Content-Type": "application/json" }

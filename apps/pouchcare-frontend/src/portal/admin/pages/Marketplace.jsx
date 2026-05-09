@@ -1,33 +1,27 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import PageShell from "../../../components/ui/PageShell";
 import Input from "../../../components/ui/Input";
-import Button from "../../../components/ui/Button";
 import { MetricTile, StatusBadge } from "../../shared/components";
-import { useFeatureGate, FEATURE_PLANS, PLAN_HIERARCHY } from "../../shared/hooks/useFeatureGate.js";
+import { PLAN_HIERARCHY } from "../../shared/hooks/useFeatureGate.js";
 import { useLicense } from "../../shared/state/LicenseContext.jsx";
+import { buildRequestHeaders } from "../../shared/api/apiClient";
 
-/* ------------------------------------------------------------------ */
-/*  Seed data                                                          */
-/* ------------------------------------------------------------------ */
+const API_BASE = "/wp-json/pouchcare/v1/marketplace";
+const AUTH_TOKEN_KEYS = ["pouchcare_admin_token", "pouchcare_token", "auth_token"];
+const RUNTIME_TOKEN_KEY = "__POUCHCARE_ADMIN_TOKEN__";
 
 /** @type {Array<MarketplaceItem>} */
 const MARKETPLACE_ITEMS = [
-  // Starter Templates
   { id: "mp-001", name: "Business starter", description: "Professional business template with hero, services, and contact sections.", category: "Starter Templates", rating: 4.8, installs: 1240, requiredPlan: "starter", installed: false },
   { id: "mp-002", name: "Portfolio starter", description: "Clean portfolio layout with project gallery and about page.", category: "Starter Templates", rating: 4.6, installs: 890, requiredPlan: "starter", installed: true },
-  // Premium Blocks
   { id: "mp-003", name: "Testimonial carousel", description: "Animated testimonial slider with avatar, rating, and company info.", category: "Premium Blocks", rating: 4.9, installs: 2100, requiredPlan: "growth", installed: false },
   { id: "mp-004", name: "Pricing table pro", description: "Responsive pricing comparison table with toggle and feature list.", category: "Premium Blocks", rating: 4.7, installs: 1560, requiredPlan: "starter", installed: true },
-  // SEO Tools
   { id: "mp-005", name: "Schema markup generator", description: "Automatic JSON-LD schema generation for pages, posts, and products.", category: "SEO Tools", rating: 4.5, installs: 780, requiredPlan: "growth", installed: false },
   { id: "mp-006", name: "Meta tag optimizer", description: "Bulk edit meta titles and descriptions with AI suggestions.", category: "SEO Tools", rating: 4.4, installs: 650, requiredPlan: "growth", installed: false },
-  // E-Commerce
   { id: "mp-007", name: "WooCommerce quick view", description: "Ajax-powered product quick view modal for WooCommerce stores.", category: "E-Commerce", rating: 4.3, installs: 430, requiredPlan: "growth", installed: false },
   { id: "mp-008", name: "Cart abandonment recovery", description: "Automated email recovery for abandoned WooCommerce carts.", category: "E-Commerce", rating: 4.6, installs: 920, requiredPlan: "enterprise", installed: false },
-  // Analytics
   { id: "mp-009", name: "Heatmap tracker", description: "Visual heatmap recording of clicks, scrolls, and mouse movements.", category: "Analytics", rating: 4.2, installs: 340, requiredPlan: "enterprise", installed: false },
   { id: "mp-010", name: "Conversion funnel", description: "Track visitor journeys through custom conversion funnels.", category: "Analytics", rating: 4.5, installs: 510, requiredPlan: "growth", installed: false },
-  // Extra
   { id: "mp-011", name: "Form builder pro", description: "Drag-and-drop form builder with conditional logic and Zapier integration.", category: "Starter Templates", rating: 4.7, installs: 1870, requiredPlan: "starter", installed: true },
   { id: "mp-012", name: "White-label dashboard", description: "Remove PouchCare branding and apply your own logo and colors.", category: "Premium Blocks", rating: 4.9, installs: 210, requiredPlan: "enterprise", installed: false },
 ];
@@ -46,14 +40,6 @@ const CATEGORIES = ["All", "Starter Templates", "Premium Blocks", "SEO Tools", "
  * @property {boolean} installed
  */
 
-/* ------------------------------------------------------------------ */
-/*  Sub-components                                                     */
-/* ------------------------------------------------------------------ */
-
-/**
- * Render star icons for a numeric rating.
- * @param {{ value: number }} props
- */
 function Stars({ value }) {
   return (
     <span className="inline-flex items-center gap-0.5 text-amber-500" aria-label={`${value} stars`}>
@@ -67,38 +53,36 @@ function Stars({ value }) {
   );
 }
 
-/**
- * Plan requirement badge.
- * @param {{ plan: string }} props
- */
 function PlanBadge({ plan }) {
   const colorMap = {
     community: "bg-slate-100 text-slate-600",
     starter: "bg-sky-100 text-sky-700",
     growth: "bg-violet-100 text-violet-700",
+    agency: "bg-emerald-100 text-emerald-800",
     enterprise: "bg-amber-100 text-amber-700",
   };
-  const label = plan.charAt(0).toUpperCase() + plan.slice(1);
+  const key = String(plan || "community").toLowerCase();
+  const label = key.charAt(0).toUpperCase() + key.slice(1);
   return (
-    <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${colorMap[plan] ?? colorMap.community}`}>
+    <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${colorMap[key] ?? colorMap.community}`}>
       {label}
     </span>
   );
 }
 
-/**
- * Single marketplace card.
- * @param {{ item: MarketplaceItem, currentPlan: string, onInstall: (id: string) => void }} props
- */
-function MarketplaceCard({ item, currentPlan, onInstall }) {
-  const currentRank = PLAN_HIERARCHY.indexOf(currentPlan);
-  const requiredRank = PLAN_HIERARCHY.indexOf(item.requiredPlan);
-  const canInstall = currentRank >= requiredRank;
+function MarketplaceCard({ item, currentPlan, onInstall, isInstalling, mode }) {
+  const envFree =
+    import.meta.env.VITE_ALL_FEATURES_FREE === "1" ||
+    import.meta.env.VITE_ALL_FEATURES_FREE === "true";
+  const p = String(currentPlan || "community").toLowerCase();
+  const r = String(item.requiredPlan || "community").toLowerCase();
+  const currentRank = PLAN_HIERARCHY.indexOf(p);
+  const requiredRank = PLAN_HIERARCHY.indexOf(r);
+  const canInstall = envFree || (currentRank >= 0 && requiredRank >= 0 && currentRank >= requiredRank);
   const requiredLabel = item.requiredPlan.charAt(0).toUpperCase() + item.requiredPlan.slice(1);
 
   return (
     <div className="flex flex-col rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md">
-      {/* Icon placeholder */}
       <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 text-slate-400">
         <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" d="m21 7.5-9-5.25L3 7.5m18 0-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9" />
@@ -123,16 +107,21 @@ function MarketplaceCard({ item, currentPlan, onInstall }) {
         ) : canInstall ? (
           <button
             type="button"
+            disabled={isInstalling}
             onClick={() => onInstall(item.id)}
-            className="w-full rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-primary-dark"
+            className="w-full rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-70"
           >
-            Install
+            {isInstalling
+              ? "Installing..."
+              : mode === "live"
+                ? "Install"
+                : "Mark Installed (Preview)"}
           </button>
         ) : (
           <button
             type="button"
             disabled
-            className="w-full rounded-md border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-700 cursor-not-allowed"
+            className="w-full cursor-not-allowed rounded-md border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-700"
           >
             Upgrade to {requiredLabel}
           </button>
@@ -142,21 +131,80 @@ function MarketplaceCard({ item, currentPlan, onInstall }) {
   );
 }
 
-/* ------------------------------------------------------------------ */
-/*  Main page                                                          */
-/* ------------------------------------------------------------------ */
+async function parseJsonSafe(res) {
+  try {
+    return await res.json();
+  } catch {
+    return {};
+  }
+}
 
-/**
- * Marketplace page for the admin portal.
- *
- * Shows a grid of available plugins/themes with category filtering,
- * search, and plan-gated install buttons.
- */
+function normalizeItem(item) {
+  return {
+    id: String(item?.id || ""),
+    name: String(item?.name || "Untitled item"),
+    description: String(item?.description || ""),
+    category: String(item?.category || "Starter Templates"),
+    rating: Number(item?.rating || 0),
+    installs: Number(item?.installs || 0),
+    requiredPlan: String(item?.requiredPlan || "community").toLowerCase(),
+    installed: Boolean(item?.installed),
+  };
+}
+
 export default function Marketplace() {
   const { plan } = useLicense();
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All");
   const [items, setItems] = useState(MARKETPLACE_ITEMS);
+  const [isLoading, setIsLoading] = useState(true);
+  const [installingId, setInstallingId] = useState(/** @type {string|null} */ (null));
+  const [mode, setMode] = useState("preview");
+  const [notice, setNotice] = useState("Loading marketplace...");
+
+  const wpHeaders = useCallback(
+    (extra = {}) =>
+      buildRequestHeaders(AUTH_TOKEN_KEYS, RUNTIME_TOKEN_KEY, {
+        Accept: "application/json",
+        ...extra,
+      }),
+    []
+  );
+
+  const loadMarketplace = useCallback(async () => {
+    setIsLoading(true);
+
+    try {
+      const res = await fetch(API_BASE, {
+        credentials: "same-origin",
+        headers: wpHeaders(),
+      });
+
+      const data = await parseJsonSafe(res);
+
+      if (!res.ok || !Array.isArray(data?.items)) {
+        throw new Error(data?.message || data?.error || `HTTP ${res.status}`);
+      }
+
+      setItems(data.items.map(normalizeItem));
+      setMode("live");
+      setNotice(
+        "Connected to WP marketplace API. Install action is backend-simulated and records install status only."
+      );
+    } catch (err) {
+      setMode("preview");
+      setItems(MARKETPLACE_ITEMS);
+      setNotice(
+        `Marketplace API unavailable (${err instanceof Error ? err.message : "error"}). Showing preview catalog with local-only install state.`
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }, [wpHeaders]);
+
+  useEffect(() => {
+    loadMarketplace();
+  }, [loadMarketplace]);
 
   const filtered = useMemo(() => {
     let result = items;
@@ -174,28 +222,65 @@ export default function Marketplace() {
 
   const totalPlugins = items.length;
   const installedCount = items.filter((i) => i.installed).length;
-  const updatesAvailable = 2; // simulated
 
-  /** @param {string} id */
-  const handleInstall = (id) => {
-    setItems((prev) =>
-      prev.map((i) => (i.id === id ? { ...i, installed: true } : i))
-    );
-  };
+  const handleInstall = useCallback(
+    async (id) => {
+      if (mode !== "live") {
+        setItems((prev) => prev.map((i) => (i.id === id ? { ...i, installed: true } : i)));
+        setNotice("Preview mode: item marked installed locally only.");
+        return;
+      }
+
+      setInstallingId(id);
+      try {
+        const res = await fetch(`${API_BASE}/install`, {
+          method: "POST",
+          credentials: "same-origin",
+          headers: wpHeaders({ "Content-Type": "application/json" }),
+          body: JSON.stringify({ id }),
+        });
+
+        const data = await parseJsonSafe(res);
+        if (!res.ok) {
+          const requiredPlan = data?.requiredPlan ? ` Required plan: ${data.requiredPlan}.` : "";
+          throw new Error((data?.message || data?.error || `HTTP ${res.status}`) + requiredPlan);
+        }
+
+        const installedItem = normalizeItem(data?.item || {});
+        setItems((prev) =>
+          prev.map((i) => (i.id === id ? { ...i, ...installedItem, installed: true } : i))
+        );
+        setNotice(
+          "Install recorded by backend. This backend currently simulates installation and persists install state metadata."
+        );
+      } catch (err) {
+        setNotice(`Install failed: ${err instanceof Error ? err.message : "Unexpected error"}`);
+      } finally {
+        setInstallingId(null);
+      }
+    },
+    [mode, wpHeaders]
+  );
 
   return (
     <PageShell
       title="PouchCare Marketplace"
       description="Discover plugins, templates, and tools to extend your websites."
     >
-      {/* Metrics */}
+      <div className="mb-4 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+        {notice}
+      </div>
+
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <MetricTile label="Total Plugins" value={totalPlugins} hint="Available in marketplace" />
         <MetricTile label="Installed" value={installedCount} hint="Active on your sites" />
-        <MetricTile label="Updates Available" value={updatesAvailable} hint="Plugins with new versions" />
+        <MetricTile
+          label="Backend Mode"
+          value={mode === "live" ? "Live API" : "Preview"}
+          hint={mode === "live" ? "Connected to WP REST" : "Local catalog fallback"}
+        />
       </div>
 
-      {/* Search bar */}
       <div className="mt-4">
         <Input
           placeholder="Search marketplace..."
@@ -205,7 +290,6 @@ export default function Marketplace() {
       </div>
 
       <div className="mt-4 flex flex-col gap-4 lg:flex-row">
-        {/* Categories sidebar */}
         <aside className="w-full shrink-0 lg:w-48">
           <nav className="flex flex-row flex-wrap gap-1 lg:flex-col">
             {CATEGORIES.map((cat) => (
@@ -215,7 +299,7 @@ export default function Marketplace() {
                 onClick={() => setCategory(cat)}
                 className={`rounded-md px-3 py-1.5 text-left text-sm transition-colors ${
                   category === cat
-                    ? "bg-primary text-white font-medium"
+                    ? "bg-primary font-medium text-white"
                     : "text-slate-600 hover:bg-slate-100"
                 }`}
               >
@@ -225,9 +309,12 @@ export default function Marketplace() {
           </nav>
         </aside>
 
-        {/* Grid */}
         <div className="flex-1">
-          {filtered.length === 0 ? (
+          {isLoading ? (
+            <div className="rounded-lg border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500">
+              Loading marketplace...
+            </div>
+          ) : filtered.length === 0 ? (
             <div className="rounded-lg border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500">
               No items match your search.
             </div>
@@ -239,6 +326,8 @@ export default function Marketplace() {
                   item={item}
                   currentPlan={plan}
                   onInstall={handleInstall}
+                  isInstalling={installingId === item.id}
+                  mode={mode}
                 />
               ))}
             </div>

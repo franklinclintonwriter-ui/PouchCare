@@ -2,7 +2,7 @@
 import { createContext, useContext, useState, useEffect, useMemo } from "react";
 import { customerPortalSeed } from "../data/seed";
 import { withUpdated, nowLabel, createId, pushToList, createActivityEntry, createAuditEntry, ACTIVITY_CAP, AUDIT_CAP, NOTIFICATION_CAP } from "../../shared/utils";
-import { fetchCustomerSnapshot, persistCustomerSnapshot, syncWebsiteOperation, syncSubscriptionOperation, syncPluginOperation, syncProfileOperation, syncSettingsOperation, syncApiKeyOperation, syncTicketOperation, syncPaymentMethodOperation, switchCompanyScope, syncCompanyInvitation } from "../api/customerPortalRepository";
+import { fetchCustomerPortalData, persistCustomerSnapshot, syncWebsiteOperation, syncSubscriptionOperation, syncPluginOperation, syncProfileOperation, syncSettingsOperation, syncApiKeyOperation, syncTicketOperation, syncPaymentMethodOperation, switchCompanyScope, syncCompanyInvitation } from "../api/customerPortalRepository";
 
 const CustomerPortalContext = createContext(null);
 
@@ -29,8 +29,12 @@ export function CustomerPortalProvider({ children }) {
 
   useEffect(() => {
     let active = true;
-    fetchCustomerSnapshot(customerPortalSeed).then((snapshot) => {
-      if (active) setData(snapshot);
+    fetchCustomerPortalData(customerPortalSeed).then((snapshot) => {
+      if (!active) return;
+      setData(snapshot);
+      if (snapshot?.activeCompanyId) {
+        switchCompanyScope(snapshot.activeCompanyId);
+      }
     });
     return () => { active = false; };
   }, []);

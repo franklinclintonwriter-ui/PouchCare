@@ -17,7 +17,18 @@ export default async function authenticate(req, res, next) {
 
     const user = await prisma.user.findUnique({
       where: { id: payload.sub },
-      select: { id: true, email: true, name: true, plan: true, status: true, role: true, emailVerified: true },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        plan: true,
+        status: true,
+        role: true,
+        emailVerified: true,
+        company: true,
+        phone: true,
+        timezone: true,
+      },
     });
 
     if (!user) {

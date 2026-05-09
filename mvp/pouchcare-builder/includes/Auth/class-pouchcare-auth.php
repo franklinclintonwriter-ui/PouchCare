@@ -119,7 +119,8 @@ class PouchCare_Auth {
 
         $user = wp_get_current_user();
         $nonce = wp_create_nonce(self::NONCE_ACTION);
-        $plan = get_user_meta($user->ID, 'pouchcare_plan', true) ?: 'Starter';
+        $default_plan = PouchCare_Licensing::is_all_features_free() ? 'Enterprise' : 'Starter';
+        $plan = get_user_meta($user->ID, 'pouchcare_plan', true) ?: $default_plan;
 
         $auth_data = [
             'token' => $nonce,
@@ -152,20 +153,36 @@ class PouchCare_Auth {
      * Validate PouchCare token on REST API requests.
      */
     public static function validate_pouchcare_token($result) {
+        if (is_wp_error($result)) {
+            return $result;
+        }
+
         // If already authenticated by WP cookie, allow
-        if (is_user_logged_in()) return $result;
+        if (is_user_logged_in()) {
+            return $result;
+        }
 
-        // Check for Bearer token in Authorization header
+        // Only validate PouchCare nonces on PouchCare REST routes. A generic Bearer
+        // header (e.g. Application Passwords, other plugins) must not fail here.
+        if (!self::is_pouchcare_rest_request()) {
+            return $result;
+        }
+
         $auth_header = self::get_authorization_header();
-        if (!$auth_header) return $result;
+        if ($auth_header === '') {
+            return $result;
+        }
 
-        if (0 !== strpos($auth_header, 'Bearer ')) return $result;
+        if (stripos($auth_header, 'Bearer ') !== 0) {
+            return $result;
+        }
 
-        $token = substr($auth_header, 7);
+        $token = trim(substr($auth_header, 7));
+        if ($token === '') {
+            return $result;
+        }
 
-        // Verify as WP nonce
-        $nonce_valid = wp_verify_nonce($token, self::NONCE_ACTION);
-        if (!$nonce_valid) {
+        if (!wp_verify_nonce($token, self::NONCE_ACTION)) {
             return new \WP_Error(
                 'pouchcare_invalid_token',
                 __('Invalid or expired authentication token.', 'pouchcare-builder'),
@@ -203,7 +220,8 @@ class PouchCare_Auth {
 
         $user = wp_get_current_user();
         $role = self::map_wp_role($user);
-        $plan = get_user_meta($user->ID, 'pouchcare_plan', true) ?: 'Starter';
+        $default_plan = PouchCare_Licensing::is_all_features_free() ? 'Enterprise' : 'Starter';
+        $plan = get_user_meta($user->ID, 'pouchcare_plan', true) ?: $default_plan;
 
         return rest_ensure_response([
             'authenticated' => true,
@@ -265,6 +283,21 @@ class PouchCare_Auth {
             $headers = $apache['Authorization'] ?? '';
         }
         return is_string($headers) ? trim($headers) : '';
+    }
+
+    /**
+     * True when this HTTP request targets the PouchCare REST namespace.
+     */
+    private static function is_pouchcare_rest_request(): bool
+    {
+        $uri = isset($_SERVER['REQUEST_URI']) ? (string) $_SERVER['REQUEST_URI'] : '';
+        if ($uri === '') {
+            return false;
+        }
+
+        $decoded = rawurldecode($uri);
+
+        return strpos($decoded, '/pouchcare/v') !== false || strpos($uri, 'pouchcare%2Fv') !== false;
     }
 
     /**

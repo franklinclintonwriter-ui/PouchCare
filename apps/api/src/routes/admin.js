@@ -3,6 +3,7 @@ import { z } from "zod";
 import prisma from "../utils/prisma.js";
 import authenticate from "../middleware/authenticate.js";
 import requireAdmin from "../middleware/requireAdmin.js";
+import adminEntities from "./adminEntities.js";
 
 const router = Router();
 
@@ -399,6 +400,10 @@ function adminSnapshotKey(userId) {
   return `admin:${userId}`;
 }
 
+function adminDesignTokensKey(userId) {
+  return `admin:${userId}:design-tokens`;
+}
+
 router.get("/snapshot", async (req, res, next) => {
   try {
     const row = await prisma.portalSnapshot.findUnique({
@@ -431,6 +436,55 @@ router.put("/snapshot", async (req, res, next) => {
   }
 });
 
+// ─────────────── Design tokens (merged into portal snapshot) ───────────────
+
+const designTokensShape = z.object({
+  primaryColor: z.string(),
+  primaryDark: z.string(),
+  accentCyan: z.string(),
+  accentGold: z.string(),
+  accentOrange: z.string(),
+  headingFont: z.string(),
+  bodyFont: z.string(),
+  borderRadiusCard: z.string(),
+  borderRadiusButton: z.string(),
+});
+
+const designTokensPutSchema = z.object({
+  tokens: designTokensShape.passthrough(),
+});
+
+router.get("/design-tokens", async (req, res, next) => {
+  try {
+    const row = await prisma.portalSnapshot.findUnique({
+      where: { key: adminDesignTokensKey(req.user.id) },
+    });
+    const raw = row?.data;
+    const tokens = raw && typeof raw === "object" && !Array.isArray(raw) ? raw : null;
+    res.json({ tokens });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.put("/design-tokens", async (req, res, next) => {
+  try {
+    const body = designTokensPutSchema.parse(req.body);
+    const key = adminDesignTokensKey(req.user.id);
+    await prisma.portalSnapshot.upsert({
+      where: { key },
+      create: { key, data: body.tokens },
+      update: { data: body.tokens },
+    });
+    res.json({ ok: true });
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      return res.status(400).json({ error: err.errors[0]?.message || "Invalid design tokens" });
+    }
+    next(err);
+  }
+});
+
 router.post("/events", async (req, res, next) => {
   try {
     eventSchema.parse(req.body);
@@ -442,5 +496,7 @@ router.post("/events", async (req, res, next) => {
     next(err);
   }
 });
+
+router.use(adminEntities);
 
 export default router;

@@ -8,7 +8,10 @@ const LICENSE_STORAGE_KEY = "pouchcare_license_key";
  * as a standalone SPA, falls back to WP REST when embedded in WordPress.
  */
 const API_BASE = import.meta.env.VITE_API_URL || "";
-const LICENSE_API = API_BASE ? `${API_BASE}/licenses` : "/pouchcare/v1/license";
+const LICENSE_API = API_BASE ? `${API_BASE}/licenses` : "/wp-json/pouchcare/v1/license";
+/** Node uses /licenses/activate; WordPress uses POST /license on the same resource. */
+const LICENSE_ACTIVATE_URL = API_BASE ? `${LICENSE_API}/activate` : LICENSE_API;
+const LICENSE_DEACTIVATE_URL = API_BASE ? `${LICENSE_API}/deactivate` : LICENSE_API;
 
 /** @type {React.Context<LicenseContextValue | null>} */
 const LicenseContext = createContext(null);
@@ -41,6 +44,28 @@ const PLAN_FEATURES = {
   enterprise: ["CUSTOM_TEMPLATES", "API_ACCESS", "MARKETPLACE", "SEO_MANAGER", "ANALYTICS", "TEAM_MANAGEMENT", "MULTI_COMPANY", "WHITE_LABEL", "PRIORITY_SUPPORT", "CUSTOM_BLOCKS"],
 };
 
+function normalizePlanKey(plan) {
+  return String(plan || "community").toLowerCase();
+}
+
+/** Node GET /licenses returns { licenses: [...] } — derive UI plan + coarse limits */
+function fromLicenseList(licenses) {
+  if (!Array.isArray(licenses) || licenses.length === 0) {
+    return { plan: "community", limits: null };
+  }
+  const lic = licenses[0];
+  const plan = normalizePlanKey(lic.plan);
+  const limits = {
+    maxWebsites: typeof lic.maxSites === "number" ? lic.maxSites : 1,
+    maxSeats: -1,
+    templates: ["all"],
+    support: "email",
+    updates: true,
+    customBlocks: true,
+  };
+  return { plan, limits };
+}
+
 export function LicenseProvider({ children }) {
   const [plan, setPlan] = useState("community");
   const [limits, setLimits] = useState(null);
@@ -70,8 +95,17 @@ export function LicenseProvider({ children }) {
         return;
       }
       const data = await res.json();
-      setPlan(data.plan ?? "community");
-      setLimits(data.limits ?? null);
+      if (data.allFeaturesFree) {
+        setPlan("enterprise");
+        setLimits(data.limits ?? null);
+      } else if (Array.isArray(data.licenses)) {
+        const { plan, limits } = fromLicenseList(data.licenses);
+        setPlan(plan);
+        setLimits(limits);
+      } else {
+        setPlan(normalizePlanKey(data.plan ?? "community"));
+        setLimits(data.limits ?? null);
+      }
     } catch {
       setPlan("community");
       setLimits(null);
@@ -87,15 +121,23 @@ export function LicenseProvider({ children }) {
   const activate = useCallback(async (key) => {
     try {
       setIsLoading(true);
-      const res = await fetch(`${LICENSE_API}/activate`, {
+      const res = await fetch(LICENSE_ACTIVATE_URL, {
         method: "POST",
         headers: getHeaders(),
-        body: JSON.stringify({ licenseKey: key, siteUrl: window.location.origin }),
+        body: JSON.stringify(
+          API_BASE
+            ? { licenseKey: key, siteUrl: window.location.origin }
+            : { key },
+        ),
       });
       if (!res.ok) throw new Error("Activation failed");
       const data = await res.json();
       localStorage.setItem(LICENSE_STORAGE_KEY, key);
-      setPlan(data.site?.plan ?? data.license?.plan ?? "starter");
+      setPlan(
+        normalizePlanKey(
+          data.site?.plan ?? data.license?.plan ?? data.plan ?? "starter",
+        ),
+      );
       setLimits(data.limits ?? null);
     } finally {
       setIsLoading(false);
@@ -106,10 +148,12 @@ export function LicenseProvider({ children }) {
     try {
       setIsLoading(true);
       const storedKey = localStorage.getItem(LICENSE_STORAGE_KEY);
-      await fetch(`${LICENSE_API}/deactivate`, {
-        method: "POST",
+      await fetch(LICENSE_DEACTIVATE_URL, {
+        method: API_BASE ? "POST" : "DELETE",
         headers: getHeaders(),
-        body: JSON.stringify({ licenseKey: storedKey, siteUrl: window.location.origin }),
+        ...(API_BASE
+          ? { body: JSON.stringify({ licenseKey: storedKey, siteUrl: window.location.origin }) }
+          : {}),
       });
       localStorage.removeItem(LICENSE_STORAGE_KEY);
       setPlan("community");
@@ -119,7 +163,16 @@ export function LicenseProvider({ children }) {
     }
   }, [getHeaders]);
 
-  const features = useMemo(() => PLAN_FEATURES[plan] ?? PLAN_FEATURES.community, [plan]);
+  const features = useMemo(() => {
+    const envFree =
+      import.meta.env.VITE_ALL_FEATURES_FREE === "1" ||
+      import.meta.env.VITE_ALL_FEATURES_FREE === "true";
+    if (envFree) {
+      return PLAN_FEATURES.enterprise;
+    }
+    const key = normalizePlanKey(plan);
+    return PLAN_FEATURES[key] ?? PLAN_FEATURES.community;
+  }, [plan]);
 
   const value = useMemo(
     () => ({ plan, limits, features, isLoading, activate, deactivate }),

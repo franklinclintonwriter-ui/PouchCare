@@ -117,21 +117,24 @@ class PouchCare_Marketplace_Api
             ], 404);
         }
 
-        // Check plan requirement
-        $current_plan   = PouchCare_Licensing::get_current_plan();
-        $plan_hierarchy = ['community', 'starter', 'growth', 'enterprise'];
-        $current_rank   = array_search($current_plan, $plan_hierarchy, true);
-        $required_rank  = array_search($found['requiredPlan'], $plan_hierarchy, true);
+        if (!PouchCare_Licensing::is_all_features_free()) {
+            $current_plan   = PouchCare_Licensing::get_current_plan();
+            $plan_hierarchy = ['community', 'starter', 'growth', 'agency', 'enterprise'];
+            $current_rank   = array_search($current_plan, $plan_hierarchy, true);
+            $required_rank  = array_search($found['requiredPlan'], $plan_hierarchy, true);
+            $current_rank   = $current_rank === false ? -1 : $current_rank;
+            $required_rank  = $required_rank === false ? 0 : $required_rank;
 
-        if ($current_rank < $required_rank) {
-            return new \WP_REST_Response([
-                'error'        => 'Plan upgrade required.',
-                'requiredPlan' => $found['requiredPlan'],
-                'simulated'    => true,
-                'source'       => self::DATA_SOURCE_STATIC,
-                'operation'    => 'install_item',
-                'status'       => 'plan_restricted',
-            ], 403);
+            if ($current_rank < $required_rank) {
+                return new \WP_REST_Response([
+                    'error'        => 'Plan upgrade required.',
+                    'requiredPlan' => $found['requiredPlan'],
+                    'simulated'    => true,
+                    'source'       => self::DATA_SOURCE_STATIC,
+                    'operation'    => 'install_item',
+                    'status'       => 'plan_restricted',
+                ], 403);
+            }
         }
 
         // Mark as installed

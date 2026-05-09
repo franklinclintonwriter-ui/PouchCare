@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import PageShell from "../../../components/ui/PageShell";
 import Button from "../../../components/ui/Button";
 import Input from "../../../components/ui/Input";
@@ -6,6 +6,7 @@ import Select from "../../../components/ui/Select";
 import { OpsPanel } from "../../shared/components";
 import { Save, RotateCcw, Palette } from "lucide-react";
 import defaultTokens from "../../../../shared/schemas/design-tokens.json";
+import { fetchDesignTokens, persistDesignTokens } from "../api/adminPortalRepository";
 
 /**
  * @typedef {Object} TokenState
@@ -72,8 +73,24 @@ function ColorField({ label, value, onChange }) {
  */
 export default function StyleManager() {
   const [tokens, setTokens] = useState(getDefaults);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      const next = await fetchDesignTokens(getDefaults());
+      if (!cancelled) {
+        setTokens(next);
+        setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const update = useCallback(
     /** @param {keyof TokenState} key @param {string} value */
@@ -92,18 +109,13 @@ export default function StyleManager() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      // POST design tokens to API
-      const response = await fetch("/api/admin/design-tokens", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(tokens),
-      });
-      if (!response.ok) throw new Error("Save failed");
+      const remote = await persistDesignTokens(tokens);
+      if (!remote.ok && !remote.skipped) {
+        throw new Error(remote.error?.message || "Save failed");
+      }
       setSaved(true);
     } catch {
-      // Simulated save — in production this would post to WP REST API
-      await new Promise((r) => setTimeout(r, 500));
-      setSaved(true);
+      setSaved(false);
     } finally {
       setSaving(false);
     }
@@ -122,13 +134,16 @@ export default function StyleManager() {
             size="sm"
             icon={Save}
             onClick={handleSave}
-            disabled={saving}
+            disabled={saving || loading}
           >
             {saving ? "Saving..." : saved ? "Saved" : "Save Tokens"}
           </Button>
         </div>
       }
     >
+      {loading ? (
+        <p className="mb-4 text-sm text-slate-500">Loading saved design tokens…</p>
+      ) : null}
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Color tokens */}
         <OpsPanel title="Colors" subtitle="Brand and accent palette">

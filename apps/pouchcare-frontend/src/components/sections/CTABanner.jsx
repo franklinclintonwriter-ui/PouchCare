@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
-import { Sparkles, ArrowRight } from "lucide-react";
+import { Sparkles, ArrowRight, Download } from "lucide-react";
+import { downloadLinks } from "../../config/downloads";
 
 export default function CTABanner() {
   return (
@@ -23,13 +24,31 @@ export default function CTABanner() {
           Join thousands of creators using PouchCare to build incredible
           websites. Start your free trial today.
         </p>
-        <Link
-          to="/pricing"
-          className="inline-flex items-center gap-2 mt-6 bg-white text-primary font-semibold px-8 py-3.5 rounded-btn transition-all duration-200 hover:bg-gray-50 hover:scale-[1.02] shadow-lg group"
-        >
-          Get Started Free
-          <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" />
-        </Link>
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+          <a
+            href={downloadLinks.theme}
+            download
+            className="inline-flex items-center gap-2 rounded-btn border border-white/60 px-5 py-2.5 font-semibold text-white transition-all duration-200 hover:bg-white/10"
+          >
+            <Download className="w-4 h-4" />
+            Download Theme
+          </a>
+          <a
+            href={downloadLinks.plugin}
+            download
+            className="inline-flex items-center gap-2 rounded-btn border border-white/60 px-5 py-2.5 font-semibold text-white transition-all duration-200 hover:bg-white/10"
+          >
+            <Download className="w-4 h-4" />
+            Download Plugin
+          </a>
+          <Link
+            to="/pricing"
+            className="inline-flex items-center gap-2 bg-white text-primary font-semibold px-8 py-3.5 rounded-btn transition-all duration-200 hover:bg-gray-50 hover:scale-[1.02] shadow-lg group"
+          >
+            Get Started Free
+            <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" />
+          </Link>
+        </div>
       </div>
     </section>
   );

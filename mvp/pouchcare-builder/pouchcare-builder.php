@@ -20,6 +20,16 @@ define('POUCHCARE_BUILDER_FILE', __FILE__);
 define('POUCHCARE_BUILDER_PATH', plugin_dir_path(__FILE__));
 define('POUCHCARE_BUILDER_URL', plugin_dir_url(__FILE__));
 
+/**
+ * When true (default), plan gates are lifted: enterprise limits, marketplace installs,
+ * and template access behave as fully licensed. Disable in wp-config.php before
+ * plugins load when you are ready to sell plans again:
+ * define('POUCHCARE_ALL_FEATURES_FREE', false);
+ */
+if (!defined('POUCHCARE_ALL_FEATURES_FREE')) {
+    define('POUCHCARE_ALL_FEATURES_FREE', true);
+}
+
 require_once POUCHCARE_BUILDER_PATH . 'includes/class-pouchcare-builder.php';
 
 PouchCare_Builder::instance();

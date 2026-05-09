@@ -89,6 +89,21 @@ class PouchCare_Licensing
     public static function get_license_info(\WP_REST_Request $request): \WP_REST_Response
     {
         $license = self::get_stored_license();
+
+        if (self::is_all_features_free()) {
+            $plan = self::PLANS['enterprise'];
+            return rest_ensure_response([
+                'key'               => $license['key'] ?? '',
+                'plan'              => 'enterprise',
+                'planLabel'         => $plan['label'],
+                'status'            => 'active',
+                'expiresAt'         => null,
+                'limits'            => $plan,
+                'channel'           => POUCHCARE_LICENSE_CHANNEL,
+                'allFeaturesFree'   => true,
+            ]);
+        }
+
         $plan_key = $license['plan'] ?? POUCHCARE_LICENSE_CHANNEL;
         $plan = self::PLANS[$plan_key] ?? self::PLANS['community'];
 
@@ -188,8 +203,20 @@ class PouchCare_Licensing
         return rest_ensure_response(['message' => 'License deactivated.']);
     }
 
+    /**
+     * Whether plan-based restrictions are disabled (preview / pre-billing).
+     */
+    public static function is_all_features_free(): bool
+    {
+        return defined('POUCHCARE_ALL_FEATURES_FREE') && POUCHCARE_ALL_FEATURES_FREE;
+    }
+
     public static function get_current_plan(): string
     {
+        if (self::is_all_features_free()) {
+            return 'enterprise';
+        }
+
         $license = self::get_stored_license();
         if (empty($license['status']) || $license['status'] !== 'active') {
             return POUCHCARE_LICENSE_CHANNEL;
@@ -221,6 +248,10 @@ class PouchCare_Licensing
 
     public static function license_admin_notice(): void
     {
+        if (self::is_all_features_free()) {
+            return;
+        }
+
         $plan = self::get_current_plan();
         if ($plan !== 'community') return;
 

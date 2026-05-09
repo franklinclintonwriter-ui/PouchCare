@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Download } from "lucide-react";
+import { downloadLinks } from "../../config/downloads";
 
 export default function Hero() {
   return (
@@ -41,6 +42,22 @@ export default function Hero() {
               >
                 Explore Templates
               </Link>
+              <a
+                href={downloadLinks.theme}
+                download
+                className="inline-flex items-center gap-2 border-2 border-primary text-primary font-semibold px-7 py-3.5 rounded-btn transition-all duration-200 hover:bg-primary-light"
+              >
+                <Download className="w-4 h-4" />
+                Download Theme
+              </a>
+              <a
+                href={downloadLinks.plugin}
+                download
+                className="inline-flex items-center gap-2 border-2 border-primary text-primary font-semibold px-7 py-3.5 rounded-btn transition-all duration-200 hover:bg-primary-light"
+              >
+                <Download className="w-4 h-4" />
+                Download Plugin
+              </a>
               <a
                 href="#features"
                 className="inline-flex items-center gap-2 border-2 border-primary text-primary font-semibold px-7 py-3.5 rounded-btn transition-all duration-200 hover:bg-primary-light group"

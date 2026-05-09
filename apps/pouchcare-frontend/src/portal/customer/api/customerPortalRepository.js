@@ -66,6 +66,26 @@ export async function fetchCustomerSnapshot(fallback) {
   return readLocalStorage(STORAGE_KEY, fallback);
 }
 
+/**
+ * Snapshot (remote or local) plus authoritative profile fields from the API.
+ */
+export async function fetchCustomerPortalData(fallback) {
+  const snapshot = await fetchCustomerSnapshot(fallback);
+  const remote = await customerFetch("/customer/profile");
+  if (!remote.ok || remote.data?.profile == null || typeof remote.data.profile !== "object") {
+    return snapshot;
+  }
+  const merged = {
+    ...snapshot,
+    profile: {
+      ...(snapshot && typeof snapshot.profile === "object" ? snapshot.profile : {}),
+      ...remote.data.profile,
+    },
+  };
+  writeLocalStorage(STORAGE_KEY, merged);
+  return merged;
+}
+
 export async function persistCustomerSnapshot(snapshot) {
   writeLocalStorage(STORAGE_KEY, snapshot);
   const remote = await customerFetch("/customer/snapshot", {
