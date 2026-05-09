@@ -1,0 +1,11 @@
+.wrap .widefat td {
+  vertical-align: middle;
+}
+
+.wrap .notice {
+  margin: 12px 0;
+}
+
+.form-table th {
+  width: 260px;
+}

@@ -1,0 +1,35 @@
+.pouchcare-section {
+  border-radius: 16px;
+}
+
+.pouchcare-section .wp-element-button {
+  display: inline-block;
+  margin-top: 16px;
+  padding: 12px 18px;
+  border-radius: 10px;
+  background: #0f766e;
+  color: #ffffff;
+  text-decoration: none;
+}
+
+.pc-hide-desktop {
+  display: block;
+}
+
+@media (max-width: 1024px) {
+  .pc-hide-tablet {
+    display: none !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .pc-hide-mobile {
+    display: none !important;
+  }
+}
+
+@media (min-width: 1025px) {
+  .pc-hide-desktop {
+    display: none !important;
+  }
+}

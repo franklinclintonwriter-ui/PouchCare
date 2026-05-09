@@ -1,0 +1,67 @@
+{
+  "$schema": "https://design-tokens.org/schema.json",
+  "name": "PouchCare Design Tokens",
+  "version": "1.0.0",
+  "colors": {
+    "primary": {
+      "DEFAULT": "#0A7AFF",
+      "dark": "#0062D6",
+      "deeper": "#003F8A",
+      "light": "#EBF4FF"
+    },
+    "accent": {
+      "cyan": "#00C6FF",
+      "gold": "#FFB800",
+      "orange": "#FF8C00"
+    },
+    "surface": {
+      "light": "#F5F7FA",
+      "blue": "#EBF4FF",
+      "white": "#FFFFFF"
+    },
+    "text": {
+      "heading": "#1A1A2E",
+      "body": "#6B7280",
+      "muted": "#9CA3AF"
+    },
+    "footer": {
+      "bg": "#0D1B3E",
+      "text": "#CBD5E1"
+    },
+    "status": {
+      "success": "#10B981",
+      "warning": "#F59E0B",
+      "error": "#EF4444",
+      "info": "#3B82F6"
+    }
+  },
+  "typography": {
+    "fontFamilies": {
+      "heading": "Plus Jakarta Sans, sans-serif",
+      "body": "Inter, sans-serif"
+    },
+    "fontSizes": {
+      "sm": "0.875rem",
+      "md": "1rem",
+      "lg": "1.25rem",
+      "xl": "1.5rem",
+      "2xl": "2rem",
+      "3xl": "2.5rem"
+    }
+  },
+  "spacing": {
+    "unit": "rem",
+    "scale": 1.25,
+    "steps": 8
+  },
+  "borderRadius": {
+    "card": "12px",
+    "button": "8px",
+    "logo": "16px"
+  },
+  "shadows": {
+    "card": "0 4px 20px rgba(10, 122, 255, 0.08)",
+    "cardHover": "0 8px 32px rgba(10, 122, 255, 0.15)",
+    "nav": "0 2px 12px rgba(0, 0, 0, 0.06)"
+  }
+}

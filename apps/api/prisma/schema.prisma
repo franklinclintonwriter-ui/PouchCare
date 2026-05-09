@@ -1,0 +1,100 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────── Users ───────────────
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String
+  passwordHash  String
+  plan          String   @default("Starter")
+  status        String   @default("pending")  // pending | active | suspended
+  role          String   @default("customer")  // customer | admin | owner
+  emailVerified Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  verificationTokens  VerificationToken[]
+  passwordResetTokens PasswordResetToken[]
+  licenses            License[]
+}
+
+model VerificationToken {
+  id        String   @id @default(cuid())
+  code      String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([code])
+  @@index([userId, code])
+  @@index([expiresAt])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([token])
+}
+
+// ─────────────── Licenses ───────────────
+
+model License {
+  id        String   @id @default(cuid())
+  key       String   @unique          // e.g. PC-XXXX-XXXX-XXXX-XXXX
+  plan      String   @default("Starter") // Starter | Growth | Agency
+  maxSites  Int      @default(1)      // max activations allowed
+  status    String   @default("active")  // active | expired | revoked
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sites     Site[]
+
+  @@index([userId])
+  @@index([key])
+}
+
+// ─────────────── Connected Sites ───────────────
+
+model Site {
+  id             String   @id @default(cuid())
+  url            String                         // e.g. https://clientsite.com
+  name           String   @default("")          // site title from WP
+  wpVersion      String   @default("")
+  phpVersion     String   @default("")
+  pluginVersion  String   @default("")          // pouchcare-builder version
+  themeVersion   String   @default("")          // pouchcare-theme version
+  themeActive    Boolean  @default(false)       // is PouchCare theme active?
+  pluginActive   Boolean  @default(true)        // is PouchCare plugin active?
+  status         String   @default("active")    // active | inactive | deactivated
+  lastHeartbeat  DateTime @default(now())
+  licenseId      String
+  license        License  @relation(fields: [licenseId], references: [id], onDelete: Cascade)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([url, licenseId])
+  @@index([licenseId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([lastHeartbeat])
+}

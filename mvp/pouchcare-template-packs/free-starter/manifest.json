@@ -1,0 +1,39 @@
+{
+  "name": "Free Starter Pack",
+  "version": "1.2.0",
+  "templates": [
+    "saas-home",
+    "saas-pricing",
+    "saas-features",
+    "saas-contact",
+    "clinic-home",
+    "clinic-services",
+    "clinic-doctors",
+    "clinic-appointment",
+    "agency-home",
+    "agency-services",
+    "agency-portfolio",
+    "agency-contact",
+    "ecommerce-home",
+    "ecommerce-catalog",
+    "ecommerce-product-story",
+    "ecommerce-checkout-info",
+    "education-home",
+    "education-courses",
+    "education-instructors",
+    "education-admissions",
+    "nonprofit-home",
+    "nonprofit-mission",
+    "nonprofit-donate",
+    "nonprofit-events"
+  ],
+  "categories": [
+    "SaaS",
+    "Clinic",
+    "Agency",
+    "Ecommerce",
+    "Education",
+    "Nonprofit"
+  ],
+  "notes": "SEO-friendly, lightweight templates optimized for fast rendering using native WordPress blocks."
+}

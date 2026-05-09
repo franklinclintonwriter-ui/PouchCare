@@ -1,0 +1,70 @@
+﻿name: PouchCare CI
+
+on:
+  push:
+    paths:
+      - 'mvp/**'
+      - '.github/workflows/pouchcare-ci.yml'
+  pull_request:
+    paths:
+      - 'mvp/**'
+      - '.github/workflows/pouchcare-ci.yml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php-version: ['8.1', '8.2']
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+
+      - name: Validate JSON
+        shell: pwsh
+        run: ./mvp/tools/qa/validate-json.ps1
+
+      - name: Lint PHP
+        shell: pwsh
+        run: ./mvp/tools/qa/lint-php.ps1
+
+      - name: Validate Block Manifests
+        shell: pwsh
+        run: ./mvp/tools/qa/test-block-manifests.ps1
+
+      - name: Validate Template Contracts
+        shell: pwsh
+        run: ./mvp/tools/qa/test-template-contract.ps1
+
+      - name: Validate Branding Assets
+        shell: pwsh
+        run: ./mvp/tools/qa/test-branding-assets.ps1
+
+      - name: Validate Required Structure
+        shell: pwsh
+        run: ./mvp/tools/qa/smoke-structure.ps1
+
+  package:
+    runs-on: ubuntu-latest
+    needs: validate
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build Deterministic Packages
+        shell: pwsh
+        run: ./mvp/tools/scripts/package.ps1
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: pouchcare-packages
+          path: mvp/dist/*.zip
+
+

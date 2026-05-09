@@ -1,0 +1,14 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/theme.json",
+  "version": 3,
+  "title": "PouchCare Soft",
+  "settings": {
+    "color": {
+      "palette": [
+        { "slug": "brand", "name": "Brand", "color": "#0d9488" },
+        { "slug": "surface", "name": "Surface", "color": "#f0fdfa" },
+        { "slug": "text", "name": "Text", "color": "#042f2e" }
+      ]
+    }
+  }
+}

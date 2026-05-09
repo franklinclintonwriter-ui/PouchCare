@@ -1,0 +1,16 @@
+{
+    "core":  "WordPress/WordPress#6.6",
+    "plugins":  [
+                    "./pouchcare-builder"
+                ],
+    "themes":  [
+                   "./pouchcare-theme"
+               ],
+    "port":  8896,
+    "testsEnvironment":  false,
+    "config":  {
+                   "WP_DEBUG":  true,
+                   "WP_DEBUG_LOG":  true,
+                   "SCRIPT_DEBUG":  true
+               }
+}

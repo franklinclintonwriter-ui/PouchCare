@@ -1,0 +1,31 @@
+/*
+Theme Name: PouchCare
+Theme URI: https://pouchcare.com
+Author: PouchCare
+Author URI: https://pouchcare.com
+Description: PouchCare default block theme.
+Requires at least: 6.5
+Tested up to: 6.6
+Requires PHP: 8.1
+Version: 0.1.0
+License: GPL-2.0-or-later
+License URI: https://www.gnu.org/licenses/gpl-2.0.html
+Text Domain: pouchcare
+Tags: block-patterns, full-site-editing, custom-logo, custom-menu, translation-ready
+*/
+
+/*
+ * Color System
+ * -----------
+ * All brand colors are synced from shared/schemas/design-tokens.json
+ * (single source of truth for both React frontend and WP theme).
+ *
+ * Primary:      #0A7AFF
+ * Primary Dark: #0062D6
+ * Accent Cyan:  #00C6FF
+ * Accent Gold:  #FFB800
+ * Surface:      #F5F7FA
+ * Text:         #1A1A2E
+ *
+ * Typography: Plus Jakarta Sans (headings), Inter (body)
+ */

@@ -1,0 +1,41 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "pouchcare/contact",
+  "title": "PouchCare Contact",
+  "category": "widgets",
+  "icon": "email",
+  "description": "PouchCare Contact block.",
+  "textdomain": "pouchcare-builder",
+  "supports": {
+    "align": ["wide", "full"],
+    "spacing": {
+      "padding": true,
+      "margin": true
+    },
+    "color": {
+      "background": true,
+      "text": true
+    },
+    "typography": {
+      "fontSize": true,
+      "lineHeight": true
+    }
+  },
+  "attributes": {
+    "title": { "type": "string", "default": "Get in Touch" },
+    "description": { "type": "string", "default": "Keep your contact section clear, short, and useful." },
+    "ctaText": { "type": "string", "default": "Send Message" },
+    "backgroundColor": { "type": "string", "default": "#f8fafc" },
+    "textColor": { "type": "string", "default": "#0f172a" },
+    "contentAlign": { "type": "string", "default": "left" },
+    "paddingTop": { "type": "string", "default": "48px" },
+    "paddingBottom": { "type": "string", "default": "48px" },
+    "hideMobile": { "type": "boolean", "default": false },
+    "hideTablet": { "type": "boolean", "default": false },
+    "hideDesktop": { "type": "boolean", "default": false }
+  },
+  "editorScript": ["pouchcare-block-factory", "file:./index.js"],
+  "style": ["pouchcare-block-shared-style", "file:./style.css"],
+  "editorStyle": "file:./editor.css"
+}

@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+
+# Build & tooling
+dist/
+build/
+*.local
+
+# Vite / Vitest caches
+.vite/
+vite.config.js.timestamp-*.mjs
+coverage/
+
+# Logs & OS
+*.log
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+.env.*.local
