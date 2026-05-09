@@ -56,10 +56,13 @@ class PouchCare_Auth {
 
     private const NONCE_ACTION = 'pouchcare_rest';
     private const NONCE_LIFETIME = 24 * HOUR_IN_SECONDS;
+    private const ADMIN_SCRIPT_HANDLES = ['pouchcare-builder-admin', 'pouchcare-admin'];
+    private const FRONTEND_SCRIPT_HANDLES = ['pouchcare-main', 'pouchcare-theme'];
 
     public static function init(): void {
-        add_action('admin_enqueue_scripts', [__CLASS__, 'inject_admin_auth_globals']);
-        add_action('wp_enqueue_scripts', [__CLASS__, 'inject_frontend_auth_globals']);
+        // Run late so target script handles are already enqueued.
+        add_action('admin_enqueue_scripts', [__CLASS__, 'inject_admin_auth_globals'], 100);
+        add_action('wp_enqueue_scripts', [__CLASS__, 'inject_frontend_auth_globals'], 100);
         add_filter('rest_authentication_errors', [__CLASS__, 'validate_pouchcare_token'], 99);
         add_action('rest_api_init', [__CLASS__, 'register_auth_endpoints']);
     }
@@ -69,6 +72,9 @@ class PouchCare_Auth {
      */
     public static function inject_admin_auth_globals(): void {
         if (!is_user_logged_in()) return;
+
+        $target_handle = self::get_first_enqueued_script_handle(self::ADMIN_SCRIPT_HANDLES);
+        if ($target_handle === '') return;
 
         $user = wp_get_current_user();
         $nonce = wp_create_nonce(self::NONCE_ACTION);
@@ -91,11 +97,13 @@ class PouchCare_Auth {
         ];
 
         wp_add_inline_script(
-            'pouchcare-admin',
+            $target_handle,
             'window.__POUCHCARE_ADMIN_TOKEN__=' . wp_json_encode($nonce) . ';'
             . 'window.__POUCHCARE_CSRF_TOKEN__=' . wp_json_encode($nonce) . ';'
             . 'window.__POUCHCARE_ADMIN_USER__=' . wp_json_encode($auth_data['user']) . ';'
-            . 'window.__POUCHCARE_ADMIN_API_BASE__=' . wp_json_encode($auth_data['apiBase']) . ';',
+            . 'window.__POUCHCARE_ADMIN_API_BASE__=' . wp_json_encode($auth_data['apiBase']) . ';'
+            . 'window.__POUCHCARE_TOKEN__=' . wp_json_encode($nonce) . ';'
+            . 'window.pouchcareNonce=' . wp_json_encode($nonce) . ';',
             'before'
         );
     }
@@ -105,6 +113,9 @@ class PouchCare_Auth {
      */
     public static function inject_frontend_auth_globals(): void {
         if (!is_user_logged_in()) return;
+
+        $target_handle = self::get_first_enqueued_script_handle(self::FRONTEND_SCRIPT_HANDLES);
+        if ($target_handle === '') return;
 
         $user = wp_get_current_user();
         $nonce = wp_create_nonce(self::NONCE_ACTION);
@@ -126,11 +137,13 @@ class PouchCare_Auth {
         ];
 
         wp_add_inline_script(
-            'pouchcare-theme',
+            $target_handle,
             'window.__POUCHCARE_CUSTOMER_TOKEN__=' . wp_json_encode($nonce) . ';'
             . 'window.__POUCHCARE_CSRF_TOKEN__=' . wp_json_encode($nonce) . ';'
             . 'window.__POUCHCARE_CUSTOMER_USER__=' . wp_json_encode($auth_data['user']) . ';'
-            . 'window.__POUCHCARE_CUSTOMER_API_BASE__=' . wp_json_encode($auth_data['apiBase']) . ';',
+            . 'window.__POUCHCARE_CUSTOMER_API_BASE__=' . wp_json_encode($auth_data['apiBase']) . ';'
+            . 'window.__POUCHCARE_TOKEN__=' . wp_json_encode($nonce) . ';'
+            . 'window.pouchcareNonce=' . wp_json_encode($nonce) . ';',
             'before'
         );
     }
@@ -252,5 +265,17 @@ class PouchCare_Auth {
             $headers = $apache['Authorization'] ?? '';
         }
         return is_string($headers) ? trim($headers) : '';
+    }
+
+    /**
+     * Resolve the first currently enqueued script handle from a candidate list.
+     */
+    private static function get_first_enqueued_script_handle(array $candidates): string {
+        foreach ($candidates as $handle) {
+            if (wp_script_is($handle, 'enqueued')) {
+                return $handle;
+            }
+        }
+        return '';
     }
 }

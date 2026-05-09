@@ -26,6 +26,16 @@ model User {
   licenses            License[]
 }
 
+// ─────────────── Portal UI state (admin / customer dashboards) ───────────────
+
+model PortalSnapshot {
+  id        String   @id @default(cuid())
+  key       String   @unique // "admin:{userId}" | "customer:{userId}"
+  data      Json
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+}
+
 model VerificationToken {
   id        String   @id @default(cuid())
   code      String

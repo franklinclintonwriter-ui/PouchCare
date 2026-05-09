@@ -1,9 +1,10 @@
 import { useState, useCallback } from "react";
 import Button from "../../../components/ui/Button";
 import { OpsPanel, StatusBadge } from "../../shared/components";
+import { buildRequestHeaders } from "../../shared/api/apiClient";
 
 /**
- * @typedef {"idle"|"checking"|"downloading"|"installing"|"done"|"error"} UpdatePhase
+ * @typedef {"idle"|"checking"|"installing"|"done"|"error"} UpdatePhase
  */
 
 /**
@@ -24,136 +25,172 @@ import { OpsPanel, StatusBadge } from "../../shared/components";
  */
 
 const API_BASE = "/wp-json/pouchcare/v1/updates";
+const AUTH_TOKEN_KEYS = ["pouchcare_admin_token", "pouchcare_token", "auth_token"];
+const RUNTIME_TOKEN_KEY = "__POUCHCARE_ADMIN_TOKEN__";
 
-/** Map phase to a StatusBadge-friendly label */
+const SIMULATION_NOTE =
+  "Update apply and rollback are currently backend-simulated operations (version metadata and history only).";
+
+const DEFAULT_COMPONENTS = /** @type {ComponentInfo[]} */ ([
+  {
+    slug: "pouchcare-builder",
+    label: "PouchCare Builder (Plugin)",
+    currentVersion: "1.0.0",
+    latestVersion: "1.0.0",
+    checkedAt: null,
+    phase: "idle",
+    error: null,
+  },
+  {
+    slug: "pouchcare-theme",
+    label: "PouchCare Theme",
+    currentVersion: "1.0.0",
+    latestVersion: "1.0.0",
+    checkedAt: null,
+    phase: "idle",
+    error: null,
+  },
+]);
+
+const DEFAULT_ROLLBACK_VERSIONS = /** @type {RollbackEntry[]} */ ([
+  { version: "0.9.2", date: "2026-04-20" },
+  { version: "0.9.1", date: "2026-04-05" },
+  { version: "0.9.0", date: "2026-03-15" },
+]);
+
 const phaseLabel = /** @type {Record<UpdatePhase,string>} */ ({
   idle: "Up to date",
   checking: "Checking",
-  downloading: "Downloading",
   installing: "Installing",
   done: "Updated",
   error: "Error",
 });
 
-/** Map phase to StatusBadge value (matching shared statusMap keys) */
 const phaseStatus = /** @type {Record<UpdatePhase,string>} */ ({
   idle: "Active",
   checking: "Pending",
-  downloading: "Pending",
   installing: "Pending",
   done: "Active",
   error: "Overdue",
 });
 
-/**
- * Full update management panel for PouchCare components.
- * Shows version info, check / update / rollback controls, and progress states.
- */
+async function parseJsonSafe(res) {
+  try {
+    return await res.json();
+  } catch {
+    return {};
+  }
+}
+
 export default function UpdateManager() {
-  const [components, setComponents] = useState(
-    /** @type {ComponentInfo[]} */ ([
-      {
-        slug: "pouchcare-builder",
-        label: "PouchCare Builder (Plugin)",
-        currentVersion: "1.0.0",
-        latestVersion: "1.0.0",
-        checkedAt: null,
-        phase: "idle",
-        error: null,
-      },
-      {
-        slug: "pouchcare-theme",
-        label: "PouchCare Theme",
-        currentVersion: "1.0.0",
-        latestVersion: "1.0.0",
-        checkedAt: null,
-        phase: "idle",
-        error: null,
-      },
-    ])
-  );
+  const [components, setComponents] = useState(DEFAULT_COMPONENTS);
+  const [rollbackVersions, setRollbackVersions] = useState(DEFAULT_ROLLBACK_VERSIONS);
+  const [rollingBack, setRollingBack] = useState(/** @type {string|null} */ (null));
+  const [isChecking, setIsChecking] = useState(false);
+  const [statusMessage, setStatusMessage] = useState(SIMULATION_NOTE);
 
-  const [rollbackVersions] = useState(
-    /** @type {RollbackEntry[]} */ ([
-      { version: "0.9.2", date: "2026-04-20" },
-      { version: "0.9.1", date: "2026-04-05" },
-      { version: "0.9.0", date: "2026-03-15" },
-    ])
-  );
-
-  const [rollingBack, setRollingBack] = useState(
-    /** @type {string|null} */ (null)
-  );
-
-  /** Update a single component entry by slug */
-  const patchComponent = useCallback(
-    (slug, /** @type {Partial<ComponentInfo>} */ patch) => {
-      setComponents((prev) =>
-        prev.map((c) => (c.slug === slug ? { ...c, ...patch } : c))
-      );
-    },
+  const wpHeaders = useCallback(
+    (extra = {}) =>
+      buildRequestHeaders(AUTH_TOKEN_KEYS, RUNTIME_TOKEN_KEY, {
+        Accept: "application/json",
+        ...extra,
+      }),
     []
   );
 
-  /** Check for updates via the REST endpoint */
+  const patchComponent = useCallback((slug, /** @type {Partial<ComponentInfo>} */ patch) => {
+    setComponents((prev) => prev.map((c) => (c.slug === slug ? { ...c, ...patch } : c)));
+  }, []);
+
   const handleCheckUpdates = useCallback(async () => {
-    components.forEach((c) =>
-      patchComponent(c.slug, { phase: "checking", error: null })
-    );
+    setIsChecking(true);
+    setStatusMessage(SIMULATION_NOTE);
+
+    setComponents((prev) => prev.map((c) => ({ ...c, phase: "checking", error: null })));
 
     try {
-      const res = await fetch(API_BASE + "/check", { credentials: "same-origin" });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
+      const [checkRes, changelogRes] = await Promise.all([
+        fetch(`${API_BASE}/check`, {
+          credentials: "same-origin",
+          headers: wpHeaders(),
+        }),
+        fetch(`${API_BASE}/changelog`, {
+          credentials: "same-origin",
+          headers: wpHeaders(),
+        }),
+      ]);
+
+      if (!checkRes.ok) {
+        throw new Error(`HTTP ${checkRes.status}`);
+      }
+
+      const checkData = await parseJsonSafe(checkRes);
 
       patchComponent("pouchcare-builder", {
-        currentVersion: data.currentVersion ?? "1.0.0",
-        latestVersion: data.latestVersion ?? "1.0.0",
-        checkedAt: data.checkedAt ?? new Date().toISOString(),
-        phase: data.updateAvailable ? "idle" : "idle",
+        currentVersion: checkData.currentVersion ?? "1.0.0",
+        latestVersion: checkData.latestVersion ?? checkData.currentVersion ?? "1.0.0",
+        checkedAt: checkData.checkedAt ?? new Date().toISOString(),
+        phase: "idle",
         error: null,
       });
 
-      // Theme — no dedicated endpoint yet, keep current
       patchComponent("pouchcare-theme", {
         checkedAt: new Date().toISOString(),
         phase: "idle",
+        error: null,
       });
-    } catch (err) {
-      components.forEach((c) =>
-        patchComponent(c.slug, {
-          phase: "error",
-          error: err instanceof Error ? err.message : "Check failed",
-        })
-      );
-    }
-  }, [components, patchComponent]);
 
-  /** Trigger an update for one component */
+      if (changelogRes.ok) {
+        const changelogData = await parseJsonSafe(changelogRes);
+        const entries = Array.isArray(changelogData?.changelog)
+          ? changelogData.changelog
+              .filter((entry) => typeof entry?.version === "string")
+              .map((entry) => ({
+                version: entry.version,
+                date: typeof entry.date === "string" ? entry.date : "",
+              }))
+          : [];
+
+        if (entries.length > 0) {
+          setRollbackVersions(entries);
+        }
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Check failed";
+      setComponents((prev) => prev.map((c) => ({ ...c, phase: "error", error: msg })));
+      setStatusMessage(`Unable to load updates from backend: ${msg}`);
+    } finally {
+      setIsChecking(false);
+    }
+  }, [patchComponent, wpHeaders]);
+
   const handleUpdate = useCallback(
     async (slug) => {
-      patchComponent(slug, { phase: "downloading", error: null });
+      patchComponent(slug, { phase: "installing", error: null });
 
       try {
-        // Simulate download phase
-        await new Promise((r) => setTimeout(r, 1200));
-        patchComponent(slug, { phase: "installing" });
-
-        const res = await fetch(API_BASE + "/apply", {
+        const res = await fetch(`${API_BASE}/apply`, {
           method: "POST",
           credentials: "same-origin",
-          headers: { "Content-Type": "application/json" },
+          headers: wpHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({ component: slug }),
         });
 
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
+        const data = await parseJsonSafe(res);
+        if (!res.ok) {
+          throw new Error(data?.message || data?.error || `HTTP ${res.status}`);
+        }
 
+        const nextVersion = data?.newVersion ?? "unknown";
         patchComponent(slug, {
           phase: "done",
-          currentVersion: data.newVersion ?? "unknown",
-          latestVersion: data.newVersion ?? "unknown",
+          currentVersion: nextVersion,
+          latestVersion: nextVersion,
+          checkedAt: data?.updatedAt || new Date().toISOString(),
+          error: null,
         });
+
+        setStatusMessage(SIMULATION_NOTE);
       } catch (err) {
         patchComponent(slug, {
           phase: "error",
@@ -161,36 +198,44 @@ export default function UpdateManager() {
         });
       }
     },
-    [patchComponent]
+    [patchComponent, wpHeaders]
   );
 
-  /** Rollback to a previous version */
   const handleRollback = useCallback(
     async (version) => {
       setRollingBack(version);
 
       try {
-        const res = await fetch(API_BASE + "/rollback", {
+        const res = await fetch(`${API_BASE}/rollback`, {
           method: "POST",
           credentials: "same-origin",
-          headers: { "Content-Type": "application/json" },
+          headers: wpHeaders({ "Content-Type": "application/json" }),
           body: JSON.stringify({ previous_version: version }),
         });
 
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
+        const data = await parseJsonSafe(res);
+        if (!res.ok) {
+          throw new Error(data?.message || data?.error || `HTTP ${res.status}`);
+        }
 
         patchComponent("pouchcare-builder", {
-          currentVersion: data.rolledBackTo ?? version,
+          currentVersion: data?.rolledBackTo ?? version,
+          latestVersion: data?.rolledBackTo ?? version,
+          checkedAt: data?.rolledBackAt || new Date().toISOString(),
           phase: "idle",
+          error: null,
         });
-      } catch {
-        // Silently handled — user sees no phase change
+
+        setStatusMessage(SIMULATION_NOTE);
+      } catch (err) {
+        setStatusMessage(
+          `Rollback failed: ${err instanceof Error ? err.message : "Unexpected error"}`
+        );
       } finally {
         setRollingBack(null);
       }
     },
-    [patchComponent]
+    [patchComponent, wpHeaders]
   );
 
   const isUpdatable = (/** @type {ComponentInfo} */ c) =>
@@ -198,16 +243,24 @@ export default function UpdateManager() {
 
   return (
     <div className="space-y-6">
-      {/* ─── Component versions ─── */}
       <OpsPanel
         title="Installed Components"
         subtitle="PouchCare plugin and theme versions"
         actions={
-          <Button size="sm" variant="secondary" onClick={handleCheckUpdates}>
-            Check for Updates
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={handleCheckUpdates}
+            disabled={isChecking}
+          >
+            {isChecking ? "Checking..." : "Check for Updates"}
           </Button>
         }
       >
+        <p className="mb-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+          {statusMessage}
+        </p>
+
         <div className="divide-y divide-slate-100">
           {components.map((c) => (
             <div
@@ -218,16 +271,12 @@ export default function UpdateManager() {
                 <p className="text-sm font-medium text-slate-900">{c.label}</p>
                 <p className="mt-0.5 text-xs text-slate-500">
                   Current:&nbsp;
-                  <span className="font-semibold text-slate-700">
-                    v{c.currentVersion}
-                  </span>
+                  <span className="font-semibold text-slate-700">v{c.currentVersion}</span>
                   {c.currentVersion !== c.latestVersion && (
                     <>
                       <span className="mx-1">&rarr;</span>
                       Latest:&nbsp;
-                      <span className="font-semibold text-emerald-600">
-                        v{c.latestVersion}
-                      </span>
+                      <span className="font-semibold text-emerald-600">v{c.latestVersion}</span>
                     </>
                   )}
                 </p>
@@ -240,9 +289,7 @@ export default function UpdateManager() {
 
               <div className="flex items-center gap-2">
                 <StatusBadge value={phaseStatus[c.phase]} className="text-[11px]" />
-                <span className="text-[11px] text-slate-500">
-                  {phaseLabel[c.phase]}
-                </span>
+                <span className="text-[11px] text-slate-500">{phaseLabel[c.phase]}</span>
 
                 {isUpdatable(c) && (
                   <Button size="sm" onClick={() => handleUpdate(c.slug)}>
@@ -250,20 +297,17 @@ export default function UpdateManager() {
                   </Button>
                 )}
 
-                {(c.phase === "downloading" || c.phase === "installing") && (
+                {c.phase === "checking" || c.phase === "installing" ? (
                   <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                )}
+                ) : null}
 
-                {c.error && (
-                  <span className="text-xs text-rose-600">{c.error}</span>
-                )}
+                {c.error ? <span className="text-xs text-rose-600">{c.error}</span> : null}
               </div>
             </div>
           ))}
         </div>
       </OpsPanel>
 
-      {/* ─── Rollback ─── */}
       <OpsPanel
         title="Rollback"
         subtitle="Revert PouchCare Builder to a previous version"
@@ -278,9 +322,7 @@ export default function UpdateManager() {
                 className="flex items-center justify-between py-2.5 first:pt-0 last:pb-0"
               >
                 <div>
-                  <p className="text-sm font-medium text-slate-800">
-                    v{rv.version}
-                  </p>
+                  <p className="text-sm font-medium text-slate-800">v{rv.version}</p>
                   <p className="text-[11px] text-slate-400">{rv.date}</p>
                 </div>
                 <Button
@@ -289,7 +331,9 @@ export default function UpdateManager() {
                   disabled={rollingBack !== null}
                   onClick={() => handleRollback(rv.version)}
                 >
-                  {rollingBack === rv.version ? "Rolling back..." : `Rollback to v${rv.version}`}
+                  {rollingBack === rv.version
+                    ? "Rolling back..."
+                    : `Rollback to v${rv.version}`}
                 </Button>
               </div>
             ))}

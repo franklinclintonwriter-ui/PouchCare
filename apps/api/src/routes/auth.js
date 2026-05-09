@@ -113,19 +113,20 @@ router.post("/verify-email", async (req, res, next) => {
       return res.status(400).json({ error: "Invalid or expired verification code" });
     }
 
-    await prisma.user.update({
+    const verifiedUser = await prisma.user.update({
       where: { id: user.id },
       data: { emailVerified: true, status: "active" },
+      select: { id: true, email: true, name: true, plan: true, role: true, status: true },
     });
 
     await prisma.verificationToken.deleteMany({ where: { userId: user.id } });
 
-    const token = signToken(user);
+    const token = signToken(verifiedUser);
 
     res.json({
       message: "Email verified successfully",
       token,
-      user: { id: user.id, email: user.email, name: user.name, plan: user.plan, role: user.role },
+      user: verifiedUser,
     });
   } catch (err) {
     if (err instanceof z.ZodError) {

@@ -7,6 +7,8 @@ class PouchCare_Security
 {
     /** Transient prefix for rate limiting */
     private const RATE_LIMIT_PREFIX = 'pouchcare_rl_';
+    private const REST_NONCE_ACTIONS = ['wp_rest', 'pouchcare_rest'];
+    private const REST_NONCE_HEADERS = ['X-WP-Nonce', 'X-CSRF-Token'];
 
     public static function init(): void
     {
@@ -38,7 +40,7 @@ class PouchCare_Security
 
     /**
      * Enforce WP nonce on authenticated PouchCare REST endpoints.
-     * Skips public endpoints like heartbeat and license activation.
+     * Skips read-only endpoints.
      */
     public static function enforce_rest_nonce($result, \WP_REST_Server $server, \WP_REST_Request $request)
     {
@@ -49,43 +51,27 @@ class PouchCare_Security
             return $result;
         }
 
-        // Skip public endpoints (no auth required)
-        $public_routes = [
-            '/pouchcare/v1/license/activate',
-            '/pouchcare/v1/license/heartbeat',
-            '/pouchcare/v1/templates',
+        $read_only_routes = [
             '/pouchcare/v1/blocks',
+            '/pouchcare/v1/patterns',
+            '/pouchcare/v1/templates',
         ];
 
-        foreach ($public_routes as $public_route) {
-            if (strpos($route, $public_route) === 0 && $request->get_method() === 'GET') {
+        foreach ($read_only_routes as $read_only_route) {
+            if (strpos($route, $read_only_route) === 0 && $request->get_method() === 'GET') {
                 return $result;
             }
         }
 
-        // For write operations from authenticated users, verify nonce
+        // For write operations from authenticated users, verify nonce.
+        // Frontends may send X-WP-Nonce and/or X-CSRF-Token.
         if (in_array($request->get_method(), ['POST', 'PUT', 'PATCH', 'DELETE'], true)) {
-            if (is_user_logged_in() && !wp_verify_nonce($request->get_header('X-WP-Nonce'), 'wp_rest')) {
-                // Allow only valid Bearer or Basic auth to bypass nonce.
-                // A garbage Authorization header does NOT bypass the check.
-                $auth_header = $request->get_header('Authorization');
-                $has_valid_auth = false;
-
-                if (!empty($auth_header)) {
-                    // Only skip nonce for real auth schemes (Bearer token or Basic auth)
-                    $has_valid_auth = (
-                        preg_match('/^Bearer\s+[A-Za-z0-9\-._~+\/]+=*$/i', $auth_header) ||
-                        preg_match('/^Basic\s+[A-Za-z0-9+\/]+=*$/i', $auth_header)
-                    );
-                }
-
-                if (!$has_valid_auth) {
-                    return new \WP_Error(
-                        'rest_cookie_invalid_nonce',
-                        __('Cookie nonce is invalid.', 'pouchcare-builder'),
-                        ['status' => 403]
-                    );
-                }
+            if (is_user_logged_in() && !self::has_valid_rest_nonce($request) && !self::has_compatible_auth_header($request)) {
+                return new \WP_Error(
+                    'rest_cookie_invalid_nonce',
+                    __('Cookie nonce is invalid.', 'pouchcare-builder'),
+                    ['status' => 403]
+                );
             }
         }
 
@@ -206,5 +192,56 @@ class PouchCare_Security
         }
         $uri = $_SERVER['REQUEST_URI'] ?? '';
         return strpos($uri, '/pouchcare/') !== false;
+    }
+
+    /**
+     * Validate nonce from accepted REST headers against supported actions.
+     */
+    private static function has_valid_rest_nonce(\WP_REST_Request $request): bool
+    {
+        foreach (self::REST_NONCE_HEADERS as $header_name) {
+            $nonce = trim((string) $request->get_header($header_name));
+            if ($nonce === '') {
+                continue;
+            }
+
+            foreach (self::REST_NONCE_ACTIONS as $action) {
+                if (wp_verify_nonce($nonce, $action)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Preserve backward-compatible auth header bypass while preferring nonce verification.
+     */
+    private static function has_compatible_auth_header(\WP_REST_Request $request): bool
+    {
+        $auth_header = trim((string) $request->get_header('Authorization'));
+        if ($auth_header === '') {
+            return false;
+        }
+
+        if (preg_match('/^Bearer\s+(.+)$/i', $auth_header, $matches)) {
+            $token = trim($matches[1]);
+            if ($token === '') {
+                return false;
+            }
+
+            foreach (self::REST_NONCE_ACTIONS as $action) {
+                if (wp_verify_nonce($token, $action)) {
+                    return true;
+                }
+            }
+
+            // Legacy compatibility for non-nonce bearer tokens (e.g. external integrations).
+            return preg_match('/^[A-Za-z0-9\-._~+\/]+=*$/', $token) === 1;
+        }
+
+        // Preserve support for valid Basic auth headers.
+        return preg_match('/^Basic\s+[A-Za-z0-9+\/]+=*$/i', $auth_header) === 1;
     }
 }

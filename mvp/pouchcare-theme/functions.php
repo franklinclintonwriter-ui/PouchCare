@@ -33,7 +33,7 @@ function pouchcare_theme_assets(): void
 {
     wp_enqueue_style('pouchcare-main', get_template_directory_uri() . '/assets/css/main.css', [], '0.1.0');
 
-    if (is_singular() || is_archive() || is_search()) {
+    if (is_user_logged_in() || is_singular() || is_archive() || is_search()) {
         wp_enqueue_script('pouchcare-main', get_template_directory_uri() . '/assets/js/theme.js', [], '0.1.0', true);
     }
 }

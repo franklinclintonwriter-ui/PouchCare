@@ -5,6 +5,8 @@ if (!defined('ABSPATH')) {
 
 class PouchCare_Analytics_Api
 {
+    private const DATA_SOURCE_DEMO = 'demo_fixture';
+
     public static function init(): void
     {
         add_action('rest_api_init', [self::class, 'register_routes']);
@@ -93,6 +95,14 @@ class PouchCare_Analytics_Api
                 ['label' => 'Leads',     'count' => 1028,  'percentage' => 8],
                 ['label' => 'Customers', 'count' => 411,   'percentage' => 3.2],
             ],
+            'simulated' => true,
+            'source' => self::DATA_SOURCE_DEMO,
+            'capabilities' => [
+                'liveDataProvider' => false,
+                'historicalSync'   => false,
+                'dateFiltering'    => 'input_echo_only',
+            ],
+            'notes' => ['Analytics values are demo data for UI preview and integration scaffolding.'],
         ];
 
         return rest_ensure_response($data);
@@ -110,36 +120,48 @@ class PouchCare_Analytics_Api
                 'views'      => 4210,
                 'bounceRate' => 32,
                 'avgTime'    => 135,
+                'simulated'  => true,
+                'source'     => self::DATA_SOURCE_DEMO,
             ],
             [
                 'page'       => '/pricing',
                 'views'      => 2830,
                 'bounceRate' => 28,
                 'avgTime'    => 182,
+                'simulated'  => true,
+                'source'     => self::DATA_SOURCE_DEMO,
             ],
             [
                 'page'       => '/templates',
                 'views'      => 1940,
                 'bounceRate' => 41,
                 'avgTime'    => 108,
+                'simulated'  => true,
+                'source'     => self::DATA_SOURCE_DEMO,
             ],
             [
                 'page'       => '/docs',
                 'views'      => 1620,
                 'bounceRate' => 25,
                 'avgTime'    => 250,
+                'simulated'  => true,
+                'source'     => self::DATA_SOURCE_DEMO,
             ],
             [
                 'page'       => '/blog/getting-started',
                 'views'      => 1150,
                 'bounceRate' => 38,
                 'avgTime'    => 155,
+                'simulated'  => true,
+                'source'     => self::DATA_SOURCE_DEMO,
             ],
             [
                 'page'       => '/blog/seo-tips',
                 'views'      => 1097,
                 'bounceRate' => 35,
                 'avgTime'    => 202,
+                'simulated'  => true,
+                'source'     => self::DATA_SOURCE_DEMO,
             ],
         ];
 
@@ -163,6 +185,13 @@ class PouchCare_Analytics_Api
                 ['month' => 'Apr', 'amount' => 3800],
                 ['month' => 'May', 'amount' => 4250],
             ],
+            'simulated' => true,
+            'source' => self::DATA_SOURCE_DEMO,
+            'capabilities' => [
+                'liveRevenueSync' => false,
+                'bookingsLink'    => false,
+            ],
+            'notes' => ['Revenue values are demo-only and are not sourced from transactions.'],
         ];
 
         return rest_ensure_response($revenue);

@@ -148,7 +148,7 @@ class PouchCare_Licensing
             // API returns the plan info — use it instead of guessing from key prefix
             $api_plan = strtolower($body['site']['plan'] ?? $body['plan'] ?? 'starter');
             // Map API plan names to our internal plan keys
-            $plan_map = ['starter' => 'starter', 'growth' => 'growth', 'agency' => 'enterprise'];
+            $plan_map = ['starter' => 'starter', 'growth' => 'growth', 'agency' => 'agency'];
             $plan = $plan_map[$api_plan] ?? 'starter';
 
             $license = [

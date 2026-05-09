@@ -338,6 +338,34 @@ export function switchCompanyScope(companyId) {
 }
 
 /**
+ * Try a sequence of request candidates, falling back across 404/405 route mismatches.
+ * @param {Array<{ method: string, path: string, body?: object }>} candidates
+ * @returns {Promise<ReturnType<typeof resultFromRemote>>}
+ */
+async function runRouteFallback(candidates) {
+  let lastRemote = null;
+
+  for (const req of candidates) {
+    const remote = await customerFetch(req.path, {
+      method: req.method,
+      ...(req.body ? { body: JSON.stringify(req.body) } : {}),
+    });
+
+    lastRemote = remote;
+
+    if (remote.ok) return resultFromRemote(remote);
+
+    const status = remote.status || 0;
+    const isRouteMismatch = status === 404 || status === 405;
+    if (!isRouteMismatch || remote.failed || remote.skipped) {
+      return resultFromRemote(remote);
+    }
+  }
+
+  return resultFromRemote(lastRemote || { ok: false, status: 404 });
+}
+
+/**
  * Sync a company invitation event to the backend.
  *
  * @param {{ type: string, payload: { id: string, email: string, role: string, companyId: string } }} event
@@ -345,17 +373,49 @@ export function switchCompanyScope(companyId) {
  */
 export async function syncCompanyInvitation(event) {
   const { type, payload } = event || {};
-  const map = {
-    "company.invitation.create": { method: "POST", path: "/customer/invitations", body: payload },
-    "company.invitation.revoke": { method: "DELETE", path: `/customer/invitations/${payload?.id}` },
-  };
+  const invitationId = payload?.id || payload?.invitationId || "";
+  const companyId = payload?.companyId || _activeCompanyId || "";
+  const candidates = [];
 
-  const req = map[type];
-  if (!req) return { ok: false, mode: "unknown" };
+  if (type === "company.invitation.create") {
+    if (!payload?.email || !payload?.role) {
+      return { ok: false, mode: "invalid", reason: "Invitation email and role are required." };
+    }
 
-  const remote = await customerFetch(req.path, {
-    method: req.method,
-    ...(req.body ? { body: JSON.stringify(req.body) } : {}),
-  });
-  return resultFromRemote(remote);
+    candidates.push({ method: "POST", path: "/customer/invitations", body: payload });
+    if (companyId) {
+      candidates.push({
+        method: "POST",
+        path: `/customer/companies/${companyId}/invitations`,
+        body: payload,
+      });
+    }
+  } else if (
+    type === "company.invitation.revoke" ||
+    type === "company.invitation.cancel" ||
+    type === "company.invitation.delete"
+  ) {
+    if (!invitationId) {
+      return { ok: false, mode: "invalid", reason: "Invitation id is required." };
+    }
+
+    candidates.push({ method: "DELETE", path: `/customer/invitations/${invitationId}` });
+    candidates.push({
+      method: "POST",
+      path: `/customer/invitations/${invitationId}/revoke`,
+      body: { id: invitationId },
+    });
+    if (companyId) {
+      candidates.push({
+        method: "DELETE",
+        path: `/customer/companies/${companyId}/invitations/${invitationId}`,
+      });
+    }
+  } else {
+    return { ok: false, mode: "unknown" };
+  }
+
+  const crud = await runRouteFallback(candidates);
+  if (crud.ok && crud.mode === "remote") return crud;
+  return persistCustomerEvent(event);
 }

@@ -7,6 +7,7 @@ class PouchCare_Customer_Api
 {
     private const OPTION_PREFIX = 'pouchcare_customer_snapshot_';
     private const EVENTS_PREFIX = 'pouchcare_customer_events_';
+    private const COMPANY_SCOPE_HEADER = 'X-PouchCare-Company-Id';
 
     public static function init(): void
     {
@@ -225,6 +226,33 @@ class PouchCare_Customer_Api
             'callback'            => [self::class, 'delete_payment_method'],
             'permission_callback' => [self::class, 'can_read'],
         ]);
+
+        // Invitations CRUD.
+        register_rest_route('pouchcare/v1', '/customer/invitations', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [self::class, 'list_invitations'],
+                'permission_callback' => [self::class, 'can_read'],
+            ],
+            [
+                'methods'             => 'POST',
+                'callback'            => [self::class, 'create_invitation'],
+                'permission_callback' => [self::class, 'can_read'],
+            ],
+        ]);
+
+        register_rest_route('pouchcare/v1', '/customer/invitations/(?P<id>[\\w-]+)', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [self::class, 'get_invitation'],
+                'permission_callback' => [self::class, 'can_read'],
+            ],
+            [
+                'methods'             => 'DELETE',
+                'callback'            => [self::class, 'delete_invitation'],
+                'permission_callback' => [self::class, 'can_read'],
+            ],
+        ]);
     }
 
     // -------------------------------------------------------------------------
@@ -283,6 +311,10 @@ class PouchCare_Customer_Api
             'timestamp' => gmdate('c'),
             'user_id'   => $user_id,
         ];
+        $company_scope = self::get_company_scope($request);
+        if ($company_scope !== '') {
+            $event['companyId'] = $company_scope;
+        }
 
         $events = get_option(self::EVENTS_PREFIX . $user_id, []);
         if (!is_array($events)) {
@@ -307,7 +339,7 @@ class PouchCare_Customer_Api
 
     public static function list_websites(WP_REST_Request $request): WP_REST_Response
     {
-        return rest_ensure_response(self::get_collection('websites'));
+        return rest_ensure_response(self::get_collection('websites', $request));
     }
 
     public static function get_website(WP_REST_Request $request): WP_REST_Response
@@ -329,7 +361,7 @@ class PouchCare_Customer_Api
         $item = self::sanitize_recursive($body);
         $item['url'] = esc_url_raw($body['url']);
 
-        return self::create_item('websites', $item);
+        return self::create_item('websites', $item, $request);
     }
 
     public static function update_website(WP_REST_Request $request): WP_REST_Response
@@ -355,7 +387,7 @@ class PouchCare_Customer_Api
 
     public static function list_subscriptions(WP_REST_Request $request): WP_REST_Response
     {
-        return rest_ensure_response(self::get_collection('subscriptions'));
+        return rest_ensure_response(self::get_collection('subscriptions', $request));
     }
 
     public static function get_subscription(WP_REST_Request $request): WP_REST_Response
@@ -374,7 +406,7 @@ class PouchCare_Customer_Api
             );
         }
 
-        return self::create_item('subscriptions', self::sanitize_recursive($body));
+        return self::create_item('subscriptions', self::sanitize_recursive($body), $request);
     }
 
     public static function update_subscription(WP_REST_Request $request): WP_REST_Response
@@ -393,7 +425,7 @@ class PouchCare_Customer_Api
 
     public static function list_plugins(WP_REST_Request $request): WP_REST_Response
     {
-        return rest_ensure_response(self::get_collection('plugins'));
+        return rest_ensure_response(self::get_collection('plugins', $request));
     }
 
     public static function get_plugin(WP_REST_Request $request): WP_REST_Response
@@ -412,7 +444,7 @@ class PouchCare_Customer_Api
             );
         }
 
-        return self::create_item('plugins', self::sanitize_recursive($body));
+        return self::create_item('plugins', self::sanitize_recursive($body), $request);
     }
 
     public static function update_plugin(WP_REST_Request $request): WP_REST_Response
@@ -491,7 +523,7 @@ class PouchCare_Customer_Api
 
     public static function list_api_keys(WP_REST_Request $request): WP_REST_Response
     {
-        return rest_ensure_response(self::get_collection('apiKeys'));
+        return rest_ensure_response(self::get_collection('apiKeys', $request));
     }
 
     public static function create_api_key(WP_REST_Request $request): WP_REST_Response
@@ -512,7 +544,7 @@ class PouchCare_Customer_Api
         $item['prefix']    = substr($item['key'], 0, 8) . '...';
         $item['lastUsed']  = null;
 
-        $response = self::create_item('apiKeys', $item);
+        $response = self::create_item('apiKeys', $item, $request);
 
         return $response;
     }
@@ -528,7 +560,7 @@ class PouchCare_Customer_Api
 
     public static function list_tickets(WP_REST_Request $request): WP_REST_Response
     {
-        return rest_ensure_response(self::get_collection('tickets'));
+        return rest_ensure_response(self::get_collection('tickets', $request));
     }
 
     public static function get_ticket(WP_REST_Request $request): WP_REST_Response
@@ -555,7 +587,7 @@ class PouchCare_Customer_Api
             $item['description'] = sanitize_textarea_field($body['description']);
         }
 
-        return self::create_item('tickets', $item);
+        return self::create_item('tickets', $item, $request);
     }
 
     public static function update_ticket(WP_REST_Request $request): WP_REST_Response
@@ -574,7 +606,7 @@ class PouchCare_Customer_Api
 
     public static function list_payment_methods(WP_REST_Request $request): WP_REST_Response
     {
-        return rest_ensure_response(self::get_collection('paymentMethods'));
+        return rest_ensure_response(self::get_collection('paymentMethods', $request));
     }
 
     public static function create_payment_method(WP_REST_Request $request): WP_REST_Response
@@ -591,7 +623,7 @@ class PouchCare_Customer_Api
         $item = self::sanitize_recursive($body);
         $item['isDefault'] = $item['isDefault'] ?? false;
 
-        return self::create_item('paymentMethods', $item);
+        return self::create_item('paymentMethods', $item, $request);
     }
 
     public static function delete_payment_method(WP_REST_Request $request): WP_REST_Response
@@ -600,26 +632,80 @@ class PouchCare_Customer_Api
     }
 
     // -------------------------------------------------------------------------
+    // Invitations CRUD
+    // -------------------------------------------------------------------------
+
+    public static function list_invitations(WP_REST_Request $request): WP_REST_Response
+    {
+        return rest_ensure_response(self::get_collection('invitations', $request));
+    }
+
+    public static function get_invitation(WP_REST_Request $request): WP_REST_Response
+    {
+        return self::get_item('invitations', $request);
+    }
+
+    public static function create_invitation(WP_REST_Request $request): WP_REST_Response
+    {
+        $body = $request->get_json_params();
+
+        if (empty($body['email'])) {
+            return new WP_REST_Response(
+                ['code' => 'missing_fields', 'message' => 'Invitation email is required.'],
+                400
+            );
+        }
+
+        $item = self::sanitize_recursive($body);
+        $item['email'] = sanitize_email($body['email']);
+        $item['role'] = $item['role'] ?? 'member';
+        $item['status'] = $item['status'] ?? 'pending';
+        $item['invitedByUserId'] = get_current_user_id();
+
+        return self::create_item('invitations', $item, $request);
+    }
+
+    public static function delete_invitation(WP_REST_Request $request): WP_REST_Response
+    {
+        return self::delete_item('invitations', $request);
+    }
+
+    // -------------------------------------------------------------------------
     // Generic CRUD helpers (per-user snapshot)
     // -------------------------------------------------------------------------
 
-    private static function get_collection(string $key): array
+    private static function get_collection(string $key, ?WP_REST_Request $request = null): array
     {
         $user_id  = get_current_user_id();
         $snapshot = get_option(self::OPTION_PREFIX . $user_id, []);
+        $items = isset($snapshot[$key]) && is_array($snapshot[$key]) ? array_values($snapshot[$key]) : [];
+        $company_scope = self::get_company_scope($request);
 
-        return isset($snapshot[$key]) && is_array($snapshot[$key]) ? array_values($snapshot[$key]) : [];
+        if ($company_scope === '') {
+            return $items;
+        }
+
+        $filtered = [];
+        foreach ($items as $item) {
+            if (self::is_item_in_scope($item, $company_scope)) {
+                $filtered[] = $item;
+            }
+        }
+
+        return array_values($filtered);
     }
 
     private static function get_item(string $key, WP_REST_Request $request): WP_REST_Response
     {
-        $id         = sanitize_text_field($request->get_param('id'));
-        $collection = self::get_collection($key);
+        $id = sanitize_text_field($request->get_param('id'));
+        $user_id = get_current_user_id();
+        $snapshot = get_option(self::OPTION_PREFIX . $user_id, []);
+        $items = isset($snapshot[$key]) && is_array($snapshot[$key]) ? $snapshot[$key] : [];
+        $company_scope = self::get_company_scope($request);
+        $index = self::find_item_index($items, $id, $company_scope);
 
-        foreach ($collection as $item) {
-            if (($item['id'] ?? '') === $id) {
-                return rest_ensure_response($item);
-            }
+        if ($index !== null) {
+            return rest_ensure_response($items[$index]);
         }
 
         return new WP_REST_Response(
@@ -628,13 +714,18 @@ class PouchCare_Customer_Api
         );
     }
 
-    private static function create_item(string $key, array $item): WP_REST_Response
+    private static function create_item(string $key, array $item, ?WP_REST_Request $request = null): WP_REST_Response
     {
         $user_id  = get_current_user_id();
         $snapshot = get_option(self::OPTION_PREFIX . $user_id, []);
+        $company_scope = self::get_company_scope($request);
 
         if (!isset($snapshot[$key]) || !is_array($snapshot[$key])) {
             $snapshot[$key] = [];
+        }
+
+        if ($company_scope !== '') {
+            $item['companyId'] = $company_scope;
         }
 
         $item['id']        = $item['id'] ?? wp_generate_uuid4();
@@ -662,14 +753,8 @@ class PouchCare_Customer_Api
         $user_id  = get_current_user_id();
         $snapshot = get_option(self::OPTION_PREFIX . $user_id, []);
         $items    = $snapshot[$key] ?? [];
-        $index    = null;
-
-        foreach ($items as $i => $item) {
-            if (($item['id'] ?? '') === $id) {
-                $index = $i;
-                break;
-            }
-        }
+        $company_scope = self::get_company_scope($request);
+        $index = self::find_item_index($items, $id, $company_scope);
 
         if ($index === null) {
             return new WP_REST_Response(
@@ -680,6 +765,11 @@ class PouchCare_Customer_Api
 
         $sanitized = self::sanitize_recursive($body);
         unset($sanitized['id']);
+        unset($sanitized['createdAt']);
+
+        if ($company_scope !== '') {
+            $sanitized['companyId'] = $company_scope;
+        }
 
         $snapshot[$key][$index] = array_merge($snapshot[$key][$index], $sanitized);
         $snapshot[$key][$index]['updatedAt'] = gmdate('c');
@@ -696,14 +786,8 @@ class PouchCare_Customer_Api
 
         $snapshot = get_option(self::OPTION_PREFIX . $user_id, []);
         $items    = $snapshot[$key] ?? [];
-        $index    = null;
-
-        foreach ($items as $i => $item) {
-            if (($item['id'] ?? '') === $id) {
-                $index = $i;
-                break;
-            }
-        }
+        $company_scope = self::get_company_scope($request);
+        $index = self::find_item_index($items, $id, $company_scope);
 
         if ($index === null) {
             return new WP_REST_Response(
@@ -716,6 +800,50 @@ class PouchCare_Customer_Api
         update_option(self::OPTION_PREFIX . $user_id, $snapshot, false);
 
         return new WP_REST_Response(null, 204);
+    }
+
+    private static function get_company_scope(?WP_REST_Request $request = null): string
+    {
+        if ($request === null) {
+            return '';
+        }
+
+        return sanitize_text_field((string) $request->get_header(self::COMPANY_SCOPE_HEADER));
+    }
+
+    private static function is_item_in_scope($item, string $company_scope): bool
+    {
+        if ($company_scope === '') {
+            return true;
+        }
+
+        if (!is_array($item)) {
+            return false;
+        }
+
+        return isset($item['companyId']) && sanitize_text_field((string) $item['companyId']) === $company_scope;
+    }
+
+    private static function find_item_index(array $items, string $id, string $company_scope = ''): ?int
+    {
+        foreach ($items as $i => $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+
+            $item_id = isset($item['id']) ? sanitize_text_field((string) $item['id']) : '';
+            if ($item_id !== $id) {
+                continue;
+            }
+
+            if (!self::is_item_in_scope($item, $company_scope)) {
+                continue;
+            }
+
+            return $i;
+        }
+
+        return null;
     }
 
     // -------------------------------------------------------------------------

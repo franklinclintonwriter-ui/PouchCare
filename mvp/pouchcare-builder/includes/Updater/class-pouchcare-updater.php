@@ -8,6 +8,10 @@ class PouchCare_Updater
     private const UPDATE_API = 'https://api.pouchcare.com/v1/updates';
     private const CACHE_KEY = 'pouchcare_update_check';
     private const CACHE_TTL = 12 * HOUR_IN_SECONDS;
+    private const OP_SOURCE_REMOTE = 'remote_update_api';
+    private const OP_SOURCE_NONE = 'unavailable';
+    private const OP_SOURCE_LOCAL_OPTION = 'local_option_store';
+    private const OP_MODE_SIMULATED = 'simulated';
 
     public static function init(): void
     {
@@ -126,14 +130,27 @@ class PouchCare_Updater
         delete_transient(self::CACHE_KEY);
         $update = self::fetch_update_info();
         $current = defined('POUCHCARE_BUILDER_VERSION') ? POUCHCARE_BUILDER_VERSION : '0.0.0';
+        $has_remote_update = is_array($update) && !empty($update['version']);
+        $latest = $update['version'] ?? $current;
 
         return rest_ensure_response([
             'currentVersion'  => $current,
-            'latestVersion'   => $update['version'] ?? $current,
-            'updateAvailable' => $update ? version_compare($current, $update['version'], '<') : false,
+            'latestVersion'   => $latest,
+            'updateAvailable' => $has_remote_update ? version_compare($current, $latest, '<') : false,
             'downloadUrl'     => $update['download_url'] ?? null,
             'changelog'       => $update['changelog'] ?? null,
             'checkedAt'       => current_time('c'),
+            'simulated'       => !$has_remote_update,
+            'source'          => $has_remote_update ? self::OP_SOURCE_REMOTE : self::OP_SOURCE_NONE,
+            'capabilities'    => [
+                'check'        => true,
+                'apply'        => self::OP_MODE_SIMULATED,
+                'rollback'     => self::OP_MODE_SIMULATED,
+                'realUpgrader' => false,
+            ],
+            'notes'           => $has_remote_update
+                ? []
+                : ['Update API unavailable; using safe no-update fallback.'],
         ]);
     }
 
@@ -208,6 +225,16 @@ class PouchCare_Updater
             'success'    => true,
             'newVersion' => $new_version,
             'updatedAt'  => current_time('c'),
+            'simulated'  => true,
+            'operation'  => 'apply_update',
+            'status'     => 'simulated_applied',
+            'source'     => self::OP_SOURCE_LOCAL_OPTION,
+            'capabilities' => [
+                'realUpgrader'       => false,
+                'writesPluginFiles'  => false,
+                'recordsUpdateEvent' => true,
+            ],
+            'notes' => ['No plugin files were modified. This endpoint records a simulated update only.'],
         ]);
     }
 
@@ -243,6 +270,16 @@ class PouchCare_Updater
             'success'      => true,
             'rolledBackTo' => $previous_version,
             'rolledBackAt' => current_time('c'),
+            'simulated'    => true,
+            'operation'    => 'rollback_update',
+            'status'       => 'simulated_rollback',
+            'source'       => self::OP_SOURCE_LOCAL_OPTION,
+            'capabilities' => [
+                'realRollback'       => false,
+                'writesPluginFiles'  => false,
+                'recordsUpdateEvent' => true,
+            ],
+            'notes' => ['No plugin files were modified. This endpoint records a simulated rollback only.'],
         ]);
     }
 
@@ -254,6 +291,11 @@ class PouchCare_Updater
     {
         return rest_ensure_response([
             'changelog' => self::get_changelog(),
+            'simulated' => true,
+            'source'    => 'static_changelog',
+            'capabilities' => [
+                'remoteChangelog' => false,
+            ],
         ]);
     }
 

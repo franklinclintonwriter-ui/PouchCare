@@ -5,6 +5,7 @@ import authRoutes from "./routes/auth.js";
 import licenseRoutes from "./routes/licenses.js";
 import siteRoutes from "./routes/sites.js";
 import adminRoutes from "./routes/admin.js";
+import customerRoutes from "./routes/customer.js";
 import { apiLimiter, authLimiter } from "./middleware/rateLimiter.js";
 
 const app = express();
@@ -37,6 +38,7 @@ app.use("/auth", authLimiter, authRoutes);
 app.use("/licenses", licenseRoutes);
 app.use("/sites", siteRoutes);
 app.use("/admin", adminRoutes);
+app.use("/customer", customerRoutes);
 
 // --------------- 404 catch-all ---------------
 app.use((_req, res) => {

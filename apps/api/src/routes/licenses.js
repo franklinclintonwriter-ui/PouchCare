@@ -7,6 +7,21 @@ import requireAdmin from "../middleware/requireAdmin.js";
 
 const router = Router();
 
+/** JSON shape expected by the WordPress plugin (plan / expiresAt on `site` and top-level fallbacks). */
+function activationResponse(license, site, message, activations) {
+  const plan = license.plan;
+  const expiresAt = license.expiresAt;
+  const sitePayload = { ...site, plan, expiresAt };
+  const body = {
+    message,
+    site: sitePayload,
+    plan,
+    expiresAt,
+  };
+  if (activations) body.activations = activations;
+  return body;
+}
+
 // ─────────────── POST /licenses/generate (admin) ───────────────
 // Admin generates a license key for a customer
 
@@ -107,7 +122,7 @@ router.post("/activate", async (req, res, next) => {
           lastHeartbeat: new Date(),
         },
       });
-      return res.json({ message: "Site re-activated", site: updated });
+      return res.json(activationResponse(license, updated, "Site re-activated"));
     }
 
     // Check activation limit
@@ -132,11 +147,12 @@ router.post("/activate", async (req, res, next) => {
       },
     });
 
-    res.status(201).json({
-      message: "Site activated successfully",
-      site,
-      activations: { used: activeSites + 1, max: license.maxSites },
-    });
+    res.status(201).json(
+      activationResponse(license, site, "Site activated successfully", {
+        used: activeSites + 1,
+        max: license.maxSites,
+      })
+    );
   } catch (err) {
     if (err instanceof z.ZodError) {
       return res.status(400).json({ error: err.errors[0].message });

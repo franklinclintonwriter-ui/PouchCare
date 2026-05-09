@@ -94,26 +94,76 @@ export function getCsrfToken() {
 }
 
 /**
+ * Resolve WP REST nonce from runtime global, cookie, or meta tag.
+ * @returns {string}
+ */
+export function getWpNonce() {
+  const runtimeKeys = [
+    "__POUCHCARE_WP_NONCE__",
+    "__POUCHCARE_NONCE__",
+    "pouchcareNonce",
+  ];
+
+  for (const key of runtimeKeys) {
+    const runtimeNonce = getRuntimeValue(key);
+    if (runtimeNonce) return runtimeNonce;
+  }
+
+  const cookieNonce = readCookie("wp_rest_nonce") || readCookie("pouchcare_nonce");
+  if (cookieNonce) return cookieNonce;
+
+  if (typeof document !== "undefined") {
+    const selectors = ["meta[name='wp-rest-nonce']", "meta[name='x-wp-nonce']"];
+    for (const selector of selectors) {
+      const content = document.querySelector(selector)?.getAttribute("content") || "";
+      if (content.trim()) return content.trim();
+    }
+  }
+
+  return "";
+}
+
+/**
+ * Check whether a header exists on a plain object (case-insensitive).
+ * @param {object} headers
+ * @param {string} name
+ * @returns {boolean}
+ */
+function hasHeader(headers, name) {
+  const target = String(name || "").toLowerCase();
+  return Object.keys(headers || {}).some((key) => key.toLowerCase() === target);
+}
+
+/**
  * Build request headers with auth token, CSRF token, and any extras.
  * @param {string[]} tokenKeys - Auth token storage keys
  * @param {string} [runtimeWindowKey] - Optional window global for auth token
- * @param {object} [extra] - Additional headers
+ * @param {object|Headers} [extra] - Additional headers
  * @returns {object}
  */
 export function buildRequestHeaders(tokenKeys, runtimeWindowKey, extra = {}) {
   const authToken = getAuthToken(tokenKeys, runtimeWindowKey);
   const csrfToken = getCsrfToken();
+  const wpNonce = getWpNonce();
+  const extraHeaders =
+    extra instanceof Headers ? Object.fromEntries(extra.entries()) : extra;
   const headers = {
-    "Content-Type": "application/json",
-    ...extra,
+    ...(!hasHeader(extraHeaders, "Content-Type")
+      ? { "Content-Type": "application/json" }
+      : {}),
+    ...extraHeaders,
   };
 
-  if (authToken && !headers.Authorization) {
+  if (authToken && !hasHeader(headers, "Authorization")) {
     headers.Authorization = `Bearer ${authToken}`;
   }
 
-  if (csrfToken && !headers["X-CSRF-Token"]) {
+  if (csrfToken && !hasHeader(headers, "X-CSRF-Token")) {
     headers["X-CSRF-Token"] = csrfToken;
+  }
+
+  if (wpNonce && !hasHeader(headers, "X-WP-Nonce")) {
+    headers["X-WP-Nonce"] = wpNonce;
   }
 
   return headers;

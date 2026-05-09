@@ -14,6 +14,8 @@ if (!defined('ABSPATH')) {
 class PouchCare_Marketplace_Api
 {
     private const OPTION_KEY = 'pouchcare_marketplace_installed';
+    private const DATA_SOURCE_STATIC = 'static_catalog';
+    private const OP_MODE_SIMULATED = 'simulated';
 
     public static function init(): void
     {
@@ -46,6 +48,8 @@ class PouchCare_Marketplace_Api
         // Mark installed items
         foreach ($items as &$item) {
             $item['installed'] = in_array($item['id'], $installed, true);
+            $item['source'] = self::DATA_SOURCE_STATIC;
+            $item['installationMode'] = self::OP_MODE_SIMULATED;
         }
         unset($item);
 
@@ -67,6 +71,13 @@ class PouchCare_Marketplace_Api
         return rest_ensure_response([
             'items' => $items,
             'total' => count($items),
+            'simulated' => true,
+            'source' => self::DATA_SOURCE_STATIC,
+            'capabilities' => [
+                'list'          => 'real',
+                'install'       => self::OP_MODE_SIMULATED,
+                'realInstaller' => false,
+            ],
         ]);
     }
 
@@ -77,7 +88,13 @@ class PouchCare_Marketplace_Api
     {
         $item_id = sanitize_text_field($request->get_param('id'));
         if (empty($item_id)) {
-            return new \WP_REST_Response(['error' => 'Item ID is required.'], 400);
+            return new \WP_REST_Response([
+                'error'      => 'Item ID is required.',
+                'simulated'  => true,
+                'source'     => self::DATA_SOURCE_STATIC,
+                'operation'  => 'install_item',
+                'status'     => 'invalid_request',
+            ], 400);
         }
 
         // Verify item exists in catalog
@@ -91,7 +108,13 @@ class PouchCare_Marketplace_Api
         }
 
         if (!$found) {
-            return new \WP_REST_Response(['error' => 'Item not found.'], 404);
+            return new \WP_REST_Response([
+                'error'      => 'Item not found.',
+                'simulated'  => true,
+                'source'     => self::DATA_SOURCE_STATIC,
+                'operation'  => 'install_item',
+                'status'     => 'not_found',
+            ], 404);
         }
 
         // Check plan requirement
@@ -104,6 +127,10 @@ class PouchCare_Marketplace_Api
             return new \WP_REST_Response([
                 'error'        => 'Plan upgrade required.',
                 'requiredPlan' => $found['requiredPlan'],
+                'simulated'    => true,
+                'source'       => self::DATA_SOURCE_STATIC,
+                'operation'    => 'install_item',
+                'status'       => 'plan_restricted',
             ], 403);
         }
 
@@ -117,6 +144,16 @@ class PouchCare_Marketplace_Api
         return rest_ensure_response([
             'message' => 'Item installed successfully.',
             'item'    => array_merge($found, ['installed' => true]),
+            'simulated'  => true,
+            'source'     => self::DATA_SOURCE_STATIC,
+            'operation'  => 'install_item',
+            'status'     => 'simulated_installed',
+            'capabilities' => [
+                'realInstaller'      => false,
+                'writesPluginFiles'  => false,
+                'recordsInstallFlag' => true,
+            ],
+            'notes' => ['No package download or filesystem install is performed by this endpoint.'],
         ]);
     }
 

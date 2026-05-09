@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { z } from "zod";
 import prisma from "../utils/prisma.js";
 import authenticate from "../middleware/authenticate.js";
 import requireAdmin from "../middleware/requireAdmin.js";
@@ -380,6 +381,64 @@ router.get("/analytics", async (req, res, next) => {
       dailySignups,
     });
   } catch (err) {
+    next(err);
+  }
+});
+
+// ─────────────── Portal snapshot (dashboard localStorage sync) ───────────────
+
+const snapshotPutSchema = z.object({
+  data: z.unknown(),
+});
+
+const eventSchema = z.object({
+  type: z.string().min(1),
+}).passthrough();
+
+function adminSnapshotKey(userId) {
+  return `admin:${userId}`;
+}
+
+router.get("/snapshot", async (req, res, next) => {
+  try {
+    const row = await prisma.portalSnapshot.findUnique({
+      where: { key: adminSnapshotKey(req.user.id) },
+    });
+    if (!row) {
+      return res.status(404).json({ error: "No snapshot stored yet" });
+    }
+    res.json({ data: row.data });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.put("/snapshot", async (req, res, next) => {
+  try {
+    const body = snapshotPutSchema.parse(req.body);
+    const key = adminSnapshotKey(req.user.id);
+    await prisma.portalSnapshot.upsert({
+      where: { key },
+      create: { key, data: body.data },
+      update: { data: body.data },
+    });
+    res.json({ ok: true });
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      return res.status(400).json({ error: err.errors[0]?.message || "Invalid body" });
+    }
+    next(err);
+  }
+});
+
+router.post("/events", async (req, res, next) => {
+  try {
+    eventSchema.parse(req.body);
+    res.status(202).json({ ok: true, accepted: true });
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      return res.status(400).json({ error: err.errors[0]?.message || "Invalid event" });
+    }
     next(err);
   }
 });
