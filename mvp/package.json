@@ -6,6 +6,7 @@
     "wpenv:start": "npx @wordpress/env start",
     "wpenv:stop": "npx @wordpress/env stop",
     "wpenv:destroy": "npx @wordpress/env destroy",
+    "smoke:wp": "node scripts/smoke-wp.mjs",
     "uat:run": "powershell -ExecutionPolicy Bypass -File ./tools/uat/run-uat.ps1",
     "uat:multisite": "powershell -ExecutionPolicy Bypass -File ./tools/uat/run-multisite-smoke.ps1",
     "uat:rollback": "powershell -ExecutionPolicy Bypass -File ./tools/uat/run-rollback-smoke.ps1",

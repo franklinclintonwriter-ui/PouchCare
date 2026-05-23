@@ -4,8 +4,7 @@ import Button from "../../../components/ui/Button";
 import Input from "../../../components/ui/Input";
 import { MetricTile, OpsPanel } from "../../shared/components";
 import { useAdminAuth } from "../auth/AdminAuthContext";
-
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:4000";
+import { getNodeApiBase } from "../../../config/apiBase";
 import {
   Mail, KeyRound, FileText, RefreshCw, Package,
   MessageSquare, AlertTriangle, Building2, Eye, EyeOff,
@@ -100,7 +99,7 @@ export default function EmailTemplatesPage() {
     setSaving(true);
     try {
       const tmpl = templates[selected];
-      const res = await fetch(`${API_BASE}/admin/email-templates/${selected}`, {
+      const res = await fetch(`${getNodeApiBase()}/admin/email-templates/${selected}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ subject: tmpl.subject, body: tmpl.body }),
@@ -132,7 +131,7 @@ export default function EmailTemplatesPage() {
   const handleSendTest = useCallback(async () => {
     setTesting(true);
     try {
-      await fetch(`${API_BASE}/admin/email-templates/${selected}/test`, {
+      await fetch(`${getNodeApiBase()}/admin/email-templates/${selected}/test`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       });

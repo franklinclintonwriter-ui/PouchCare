@@ -1,3 +1,67 @@
+/**
+ * ══════════════════════════════════════════════════════════════════════════════
+ * Customer Portal Repository — Data Source Strategy
+ * ══════════════════════════════════════════════════════════════════════════════
+ *
+ * This repository provides a unified data access layer for the customer portal.
+ * It supports two runtime modes with automatic detection:
+ *
+ * ┌─────────────────────────────────────────────────────────────────────────────┐
+ * │ MODE: node (standalone)                                                     │
+ * ├─────────────────────────────────────────────────────────────────────────────┤
+ * │ When: VITE_API_URL or VITE_CUSTOMER_API_BASE is set to a Node/Express URL   │
+ * │       OR running in Vite dev mode (defaults to http://localhost:7481)       │
+ * │                                                                             │
+ * │ All requests route to the Node API at /customer/* endpoints:                │
+ * │   • GET  /customer/snapshot       → fetchCustomerSnapshot                   │
+ * │   • PUT  /customer/snapshot       → persistCustomerSnapshot                 │
+ * │   • GET  /customer/profile        → fetchCustomerPortalData (profile merge) │
+ * │   • PATCH /customer/profile       → syncProfileOperation                    │
+ * │   • PATCH /customer/settings      → syncSettingsOperation                   │
+ * │   • POST /customer/events         → persistCustomerEvent (offline sync)     │
+ * │                                                                             │
+ * │ Entity CRUD (websites, subscriptions, plugins, tickets, etc.):              │
+ * │   • POST   /customer/{entity}           → create                            │
+ * │   • PATCH  /customer/{entity}/{id}      → update                            │
+ * │   • DELETE /customer/{entity}/{id}      → delete                            │
+ * │                                                                             │
+ * │ Invitations (multi-path fallback for API flexibility):                      │
+ * │   • POST   /customer/invitations                                            │
+ * │   • POST   /customer/companies/:companyId/invitations                       │
+ * │   • DELETE /customer/invitations/:id                                        │
+ * │   • POST   /customer/invitations/:id/revoke                                 │
+ * └─────────────────────────────────────────────────────────────────────────────┘
+ *
+ * ┌─────────────────────────────────────────────────────────────────────────────┐
+ * │ MODE: wordpress (embedded)                                                  │
+ * ├─────────────────────────────────────────────────────────────────────────────┤
+ * │ When: No explicit API base is set AND not in Vite dev mode                  │
+ * │       (e.g., React app bundled into a WordPress plugin/theme)               │
+ * │                                                                             │
+ * │ Requests use relative paths, resolved by the WP REST API:                   │
+ * │   • /wp-json/pouchcare/v1/customer/*                                        │
+ * │                                                                             │
+ * │ The WordPress plugin should register matching REST routes that either:      │
+ * │   a) Proxy to the Node API (hybrid architecture)                            │
+ * │   b) Implement equivalent logic using WP database                           │
+ * │                                                                             │
+ * │ NOTE: As of this version, WP REST routes for customer portal are NOT        │
+ * │ implemented. Track D in COMPLETION-PLAN.md tracks this work.                │
+ * └─────────────────────────────────────────────────────────────────────────────┘
+ *
+ * ┌─────────────────────────────────────────────────────────────────────────────┐
+ * │ Local Storage Fallback                                                      │
+ * ├─────────────────────────────────────────────────────────────────────────────┤
+ * │ All snapshot/profile fetches cache to localStorage (STORAGE_KEY).           │
+ * │ When the remote API fails, cached data is returned as a fallback.           │
+ * │ Event persistence (persistCustomerEvent) provides offline-first sync.       │
+ * └─────────────────────────────────────────────────────────────────────────────┘
+ *
+ * @see apps/api/src/routes/customer.js        — Node API profile/snapshot routes
+ * @see apps/api/src/routes/customerEntities.js — Node API CRUD entity routes
+ * @see docs/COMPLETION-PLAN.md                — Track C (this file), Track D (WP)
+ */
+
 import {
   safeFetch,
   resultFromRemote,
@@ -6,6 +70,7 @@ import {
   getApiBase,
   normalizeApiError,
 } from "../../shared/api/apiClient";
+import { getNodeApiBase } from "../../../config/apiBase.js";
 
 import {
   validateEvent,
@@ -33,8 +98,49 @@ const LABEL = "Customer API";
  */
 let _activeCompanyId = null;
 
+// ---------------------------------------------------------------------------
+// Portal mode detection
+// ---------------------------------------------------------------------------
+
+/**
+ * Detect the current portal operating mode based on configuration.
+ *
+ * @returns {'node' | 'wordpress' | 'hybrid'} The detected mode:
+ *   - 'node': Standalone Node/Express API (explicit URL or dev default)
+ *   - 'wordpress': Embedded in WordPress (no API base, using relative WP REST)
+ *   - 'hybrid': Both Node API and WP REST are available (future use)
+ */
+export function getPortalMode() {
+  const explicitCustomerBase = getApiBase(ENV_KEY, WINDOW_KEY);
+  const nodeBase = getNodeApiBase();
+  const hasWpRest =
+    typeof window !== "undefined" &&
+    (typeof window.__POUCHCARE_WP_REST__ === "string" ||
+      typeof window.wpApiSettings === "object");
+
+  if (explicitCustomerBase || nodeBase) {
+    if (hasWpRest) {
+      return "hybrid";
+    }
+    return "node";
+  }
+
+  return "wordpress";
+}
+
+/**
+ * Check if the portal is running in a specific mode.
+ * @param {'node' | 'wordpress' | 'hybrid'} mode
+ * @returns {boolean}
+ */
+export function isPortalMode(mode) {
+  return getPortalMode() === mode;
+}
+
 function apiBase() {
-  return getApiBase(ENV_KEY, WINDOW_KEY);
+  const explicit = getApiBase(ENV_KEY, WINDOW_KEY);
+  if (explicit) return explicit;
+  return getNodeApiBase();
 }
 
 function fetchConfig() {

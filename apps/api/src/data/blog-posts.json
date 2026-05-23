@@ -1,0 +1,213 @@
+{
+  "categories": [
+    { "slug": "all", "label": "All Posts" },
+    { "slug": "tutorials", "label": "Tutorials" },
+    { "slug": "design", "label": "Design" },
+    { "slug": "development", "label": "Development" },
+    { "slug": "business", "label": "Business" },
+    { "slug": "updates", "label": "Product Updates" },
+    { "slug": "case-studies", "label": "Case Studies" }
+  ],
+  "authors": {
+    "alex-morgan": {
+      "name": "Alex Morgan",
+      "role": "Lead Developer",
+      "bio": "Full-stack developer with 10+ years of WordPress experience. Passionate about building tools that empower creators.",
+      "color": "#0A7AFF"
+    },
+    "sarah-chen": {
+      "name": "Sarah Chen",
+      "role": "UX Designer",
+      "bio": "Design systems specialist who believes in beautiful, functional interfaces. Previously at Figma and Shopify.",
+      "color": "#00C6FF"
+    },
+    "marcus-johnson": {
+      "name": "Marcus Johnson",
+      "role": "Content Strategist",
+      "bio": "Former journalist turned content strategist. Helps brands tell their story through compelling web experiences.",
+      "color": "#FFB800"
+    },
+    "emily-rodriguez": {
+      "name": "Emily Rodriguez",
+      "role": "Product Manager",
+      "bio": "Product leader focused on building tools that simplify the web development workflow.",
+      "color": "#E84393"
+    },
+    "david-kim": {
+      "name": "David Kim",
+      "role": "Performance Engineer",
+      "bio": "Speed enthusiast who optimizes WordPress sites to load in under one second.",
+      "color": "#00B894"
+    }
+  },
+  "posts": [
+    {
+      "id": 1,
+      "slug": "ultimate-guide-wordpress-performance",
+      "title": "The Ultimate Guide to WordPress Performance Optimization",
+      "excerpt": "Learn how to optimize your WordPress site for blazing-fast load times with these proven techniques and tools.",
+      "content": "## Why Performance Matters\n\nSite speed directly impacts user experience and SEO rankings. Google uses Core Web Vitals as a ranking factor, making performance optimization essential.\n\n## Key Optimization Strategies\n\n- **Enable caching** at both server and browser levels\n- **Optimize images** using WebP format and lazy loading\n- **Minify CSS and JavaScript** to reduce file sizes\n- **Use a CDN** to serve assets from edge locations\n\n## Database Optimization\n\nClean up post revisions, transients, and spam comments regularly. Consider using object caching with Redis or Memcached for database-heavy sites.\n\n### Measuring Results\n\nUse tools like Lighthouse, GTmetrix, and WebPageTest to benchmark your improvements.",
+      "category": "tutorials",
+      "author": "david-kim",
+      "date": "2025-05-01",
+      "readTime": "12 min read",
+      "featured": true,
+      "tags": ["Performance", "Speed", "Caching"],
+      "color": "#0A7AFF"
+    },
+    {
+      "id": 2,
+      "slug": "design-system-wordpress",
+      "title": "Building a Design System for WordPress Projects",
+      "excerpt": "Create a scalable design system that ensures consistency across all your WordPress themes and plugins.",
+      "content": "## What Is a Design System?\n\nA design system is a collection of reusable components, guided by clear standards, that can be assembled to build any number of applications.\n\n## Core Components\n\n- **Typography scale** with consistent sizing and spacing\n- **Color tokens** for brand consistency across themes\n- **Spacing system** using a base unit multiplier\n- **Component library** with buttons, cards, and forms\n\n## Implementation in WordPress\n\nUse theme.json to define your design tokens. Create block patterns that reference your system tokens for consistent styling.\n\n### Maintaining Your System\n\nDocument every component with usage guidelines and examples. Review and update quarterly to keep things fresh.",
+      "category": "design",
+      "author": "sarah-chen",
+      "date": "2025-04-28",
+      "readTime": "9 min read",
+      "featured": false,
+      "tags": ["Design System", "UI/UX", "Components"],
+      "color": "#00C6FF"
+    },
+    {
+      "id": 3,
+      "slug": "headless-wordpress-react",
+      "title": "Going Headless: WordPress with React Frontend",
+      "excerpt": "Discover how to use WordPress as a headless CMS paired with a modern React frontend for maximum flexibility.",
+      "content": "## Why Go Headless?\n\nDecoupling the frontend from WordPress gives you full control over the user experience while keeping the familiar CMS editing workflow.\n\n## Setting Up the Stack\n\n- **WordPress REST API** or **WPGraphQL** for data fetching\n- **Next.js** or **Gatsby** for the React frontend\n- **Incremental Static Regeneration** for performance\n\n## Authentication and Previews\n\nImplement JWT authentication for secure API access. Set up preview mode so editors can see draft content before publishing.\n\n### Deployment Tips\n\nHost your React frontend on Vercel or Netlify. Keep WordPress on managed hosting with good uptime and automatic backups.",
+      "category": "development",
+      "author": "alex-morgan",
+      "date": "2025-04-25",
+      "readTime": "11 min read",
+      "featured": false,
+      "tags": ["Headless", "React", "API"],
+      "color": "#6C5CE7"
+    },
+    {
+      "id": 4,
+      "slug": "seo-best-practices-2025",
+      "title": "WordPress SEO Best Practices for 2025",
+      "excerpt": "Stay ahead of the curve with the latest SEO strategies tailored specifically for WordPress websites.",
+      "content": "## SEO in 2025\n\nSearch engines now prioritize user experience signals, content quality, and technical health more than ever.\n\n## On-Page Essentials\n\n- **Structured data** markup for rich snippets\n- **Internal linking** strategy with descriptive anchors\n- **Content clusters** organized around pillar pages\n- **Alt text** for every image\n\n## Technical SEO\n\nEnsure your XML sitemap is clean and submitted. Use canonical URLs to prevent duplicate content issues. Implement hreflang tags for multilingual sites.\n\n### Content Quality\n\nFocus on E-E-A-T principles: Experience, Expertise, Authoritativeness, and Trustworthiness. Update older posts with fresh data regularly.",
+      "category": "tutorials",
+      "author": "marcus-johnson",
+      "date": "2025-04-22",
+      "readTime": "8 min read",
+      "featured": false,
+      "tags": ["SEO", "Marketing", "Traffic"],
+      "color": "#FFB800"
+    },
+    {
+      "id": 5,
+      "slug": "pouchcare-v3-release",
+      "title": "Introducing PouchCare v3: Faster, Smarter, Better",
+      "excerpt": "PouchCare v3 brings a redesigned dashboard, AI-powered suggestions, and 3x faster site scanning.",
+      "content": "## What's New in v3\n\nWe have completely rebuilt PouchCare from the ground up with performance and usability as our top priorities.\n\n## Key Features\n\n- **Redesigned dashboard** with real-time analytics\n- **AI-powered optimization** suggestions\n- **3x faster scanning** engine\n- **One-click fixes** for common issues\n\n## Migration Guide\n\nUpgrading from v2 is seamless. Your settings and data transfer automatically. Just update the plugin and the migration runs in the background.\n\n### What's Next\n\nWe are already working on v3.1 with team collaboration features and advanced reporting tools.",
+      "category": "updates",
+      "author": "emily-rodriguez",
+      "date": "2025-04-20",
+      "readTime": "5 min read",
+      "featured": false,
+      "tags": ["Release", "Features", "Update"],
+      "color": "#0062D6"
+    },
+    {
+      "id": 6,
+      "slug": "client-project-workflow",
+      "title": "How We Streamlined Our Client Project Workflow",
+      "excerpt": "A behind-the-scenes look at how our agency reduced project delivery time by 40% using PouchCare.",
+      "content": "## The Challenge\n\nOur agency was juggling dozens of client sites with inconsistent processes. Deployments were slow and error-prone.\n\n## Our Solution\n\n- **Standardized starter templates** for common project types\n- **Automated staging environments** for every project\n- **PouchCare monitoring** across all client sites\n- **Weekly automated reports** sent to clients\n\n## Results\n\nProject delivery time dropped by 40%. Client satisfaction scores increased significantly. Support tickets decreased by half.\n\n### Lessons Learned\n\nInvest in automation early. Document everything. Use consistent tooling across all projects to reduce context switching.",
+      "category": "case-studies",
+      "author": "alex-morgan",
+      "date": "2025-04-18",
+      "readTime": "7 min read",
+      "featured": false,
+      "tags": ["Workflow", "Agency", "Productivity"],
+      "color": "#E17055"
+    },
+    {
+      "id": 7,
+      "slug": "responsive-design-patterns",
+      "title": "Modern Responsive Design Patterns That Actually Work",
+      "excerpt": "Explore battle-tested responsive design patterns that deliver great experiences across all devices.",
+      "content": "## Beyond Media Queries\n\nModern CSS gives us powerful layout tools that reduce our reliance on traditional breakpoints.\n\n## Essential Patterns\n\n- **CSS Grid auto-fit** for flexible card layouts\n- **Clamp()** for fluid typography scaling\n- **Container queries** for component-level responsiveness\n- **Aspect-ratio** property for consistent media sizing\n\n## Mobile-First Strategy\n\nStart with the smallest screen and progressively enhance. This ensures core content is always accessible and performant.\n\n### Testing Approach\n\nTest on real devices, not just browser dev tools. Use BrowserStack or similar services for comprehensive device coverage.",
+      "category": "design",
+      "author": "sarah-chen",
+      "date": "2025-04-15",
+      "readTime": "10 min read",
+      "featured": false,
+      "tags": ["Responsive", "CSS", "Layout"],
+      "color": "#00B894"
+    },
+    {
+      "id": 8,
+      "slug": "wordpress-security-hardening",
+      "title": "WordPress Security Hardening: A Complete Checklist",
+      "excerpt": "Protect your WordPress site from common threats with this comprehensive security hardening checklist.",
+      "content": "## Security Fundamentals\n\nWordPress powers over 40% of the web, making it a prime target for attackers. Proactive hardening is essential.\n\n## Hardening Checklist\n\n- **Keep core, themes, and plugins** updated\n- **Use strong passwords** and two-factor authentication\n- **Disable XML-RPC** if not needed\n- **Limit login attempts** to prevent brute force attacks\n- **Install an SSL certificate** for encrypted connections\n\n## File Security\n\nSet correct file permissions: 644 for files and 755 for directories. Protect wp-config.php by moving it above the web root.\n\n### Monitoring\n\nUse security plugins to monitor file changes and scan for malware regularly.",
+      "category": "development",
+      "author": "david-kim",
+      "date": "2025-04-12",
+      "readTime": "9 min read",
+      "featured": false,
+      "tags": ["Security", "Hardening", "SSL"],
+      "color": "#D63031"
+    },
+    {
+      "id": 9,
+      "slug": "content-strategy-small-business",
+      "title": "Content Strategy for Small Business Websites",
+      "excerpt": "Build a content strategy that drives traffic and converts visitors into customers for your small business.",
+      "content": "## Why Content Matters\n\nFor small businesses, content is the most cost-effective way to attract and retain customers online.\n\n## Building Your Strategy\n\n- **Define your audience** with detailed buyer personas\n- **Research keywords** your customers actually search for\n- **Create a content calendar** with consistent publishing\n- **Repurpose content** across blog, email, and social media\n\n## Types of Content That Convert\n\nHow-to guides, case studies, and comparison posts tend to perform best for small business sites. Focus on solving real problems.\n\n### Measuring Success\n\nTrack organic traffic, time on page, and conversion rates. Adjust your strategy based on what the data tells you.",
+      "category": "business",
+      "author": "marcus-johnson",
+      "date": "2025-04-10",
+      "readTime": "7 min read",
+      "featured": false,
+      "tags": ["Content", "Strategy", "Small Business"],
+      "color": "#FF8C00"
+    },
+    {
+      "id": 10,
+      "slug": "custom-gutenberg-blocks",
+      "title": "Creating Custom Gutenberg Blocks with PouchCare",
+      "excerpt": "Learn how to build custom Gutenberg blocks that integrate seamlessly with the PouchCare ecosystem.",
+      "content": "## Why Custom Blocks?\n\nCustom Gutenberg blocks let you create tailored editing experiences that match your exact design requirements.\n\n## Getting Started\n\n- **Use @wordpress/create-block** to scaffold your plugin\n- **Define block.json** with attributes and supports\n- **Build the Edit component** for the editor interface\n- **Create the Save component** for frontend output\n\n## PouchCare Integration\n\nPouchCare provides block templates and performance monitoring for custom blocks. Use the PouchCare SDK to add analytics tracking.\n\n### Advanced Techniques\n\nUse InnerBlocks for nested content. Implement block variations for different layouts from a single block definition.",
+      "category": "tutorials",
+      "author": "alex-morgan",
+      "date": "2025-04-08",
+      "readTime": "13 min read",
+      "featured": false,
+      "tags": ["Gutenberg", "Blocks", "Custom"],
+      "color": "#A29BFE"
+    },
+    {
+      "id": 11,
+      "slug": "ecommerce-conversion-tips",
+      "title": "10 WooCommerce Conversion Tips That Doubled Our Sales",
+      "excerpt": "Real conversion optimization strategies that helped an online store double revenue in just three months.",
+      "content": "## The Conversion Challenge\n\nOur client's WooCommerce store had good traffic but poor conversion rates. We implemented ten targeted changes.\n\n## Top Strategies\n\n- **Simplified checkout** reduced to a single page\n- **Trust badges** added near the buy button\n- **Product reviews** displayed prominently\n- **Free shipping threshold** to increase average order value\n- **Exit-intent popups** with discount offers\n\n## Results\n\nConversion rate improved from 1.8% to 3.9%. Average order value increased by 22%. Total revenue doubled within three months.\n\n### Key Takeaway\n\nSmall, data-driven changes compound into significant revenue gains. Test one change at a time to measure impact.",
+      "category": "case-studies",
+      "author": "emily-rodriguez",
+      "date": "2025-04-05",
+      "readTime": "8 min read",
+      "featured": false,
+      "tags": ["WooCommerce", "Conversion", "Sales"],
+      "color": "#FDCB6E"
+    },
+    {
+      "id": 12,
+      "slug": "landing-page-best-practices",
+      "title": "High-Converting Landing Pages: A Step-by-Step Guide",
+      "excerpt": "Design and build landing pages that convert visitors into leads using proven best practices and psychology.",
+      "content": "## Anatomy of a Great Landing Page\n\nEvery high-converting landing page shares common elements that guide visitors toward a single action.\n\n## Essential Elements\n\n- **Clear headline** that matches the ad or link copy\n- **Compelling hero image** or video above the fold\n- **Social proof** with testimonials and logos\n- **Single call-to-action** that stands out visually\n- **Minimal navigation** to reduce distractions\n\n## Copywriting Tips\n\nFocus on benefits over features. Use power words that create urgency. Keep paragraphs short and scannable.\n\n### A/B Testing\n\nTest one element at a time: headline, CTA color, form length. Run tests for at least two weeks to get reliable data.",
+      "category": "business",
+      "author": "marcus-johnson",
+      "date": "2025-04-02",
+      "readTime": "10 min read",
+      "featured": false,
+      "tags": ["Landing Pages", "Conversion", "Marketing"],
+      "color": "#003F8A"
+    }
+  ]
+}

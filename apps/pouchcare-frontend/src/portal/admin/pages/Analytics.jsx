@@ -10,7 +10,7 @@ import Select from "../../../components/ui/Select";
 import { MetricTile, OpsPanel, SparkLine, BarChart, DonutChart } from "../../shared/components";
 import { useAdminAuth } from "../auth/AdminAuthContext";
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:4000";
+import { getNodeApiBase } from "../../../config/apiBase";
 
 const PLAN_COLORS = {
   starter: "#6366f1",
@@ -36,7 +36,7 @@ export default function AnalyticsPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${API_BASE}/admin/analytics`, {
+      const res = await fetch(`${getNodeApiBase()}/admin/analytics`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);

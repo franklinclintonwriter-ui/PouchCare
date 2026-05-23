@@ -6,8 +6,7 @@ import Button from "../../../components/ui/Button";
 import Input from "../../../components/ui/Input";
 import { StatusBadge } from "../../shared/components";
 import { useAdminAuth } from "../../shared/auth/AuthContext.jsx";
-
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:4000";
+import { getNodeApiBase } from "../../../config/apiBase";
 
 export default function CustomersPage() {
   const { token } = useAdminAuth();
@@ -23,7 +22,7 @@ export default function CustomersPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${API_BASE}/admin/customers?search=${encodeURIComponent(search)}`, {
+      const res = await fetch(`${getNodeApiBase()}/admin/customers?search=${encodeURIComponent(search)}`, {
         headers: { Authorization: `Bearer ${token || ""}` },
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -45,7 +44,7 @@ export default function CustomersPage() {
     setSelected(id);
     setDetailLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/admin/customers/${id}`, {
+      const res = await fetch(`${getNodeApiBase()}/admin/customers/${id}`, {
         headers: { Authorization: `Bearer ${token || ""}` },
       });
       if (!res.ok) throw new Error("Failed");
@@ -59,7 +58,7 @@ export default function CustomersPage() {
   };
 
   return (
-    <AdminPage title="Customers" description="All registered customers, their licenses, and connected sites.">
+    <AdminPage title="Customers" description="Platform accounts from the API (Prisma). Sales/CRM-style rows live under Companies.">
       <div className="mb-4 flex gap-3">
         <div className="flex-1">
           <Input

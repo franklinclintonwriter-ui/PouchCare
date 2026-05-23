@@ -1,20 +1,37 @@
-/* Mirrors main.css token defaults so the Site Editor matches the front before/without saved overrides. */
+/* 
+ * Editor Styles
+ * Mirrors main.css token defaults so the Site Editor matches the front
+ * before/without saved overrides.
+ * 
+ * Professional Services Design System - Enterprise aesthetic
+ */
 :root {
-  --pc-color-primary: #0a7aff;
-  --pc-color-primary-dark: #0062d6;
-  --pc-accent-cyan: #00c6ff;
-  --pc-accent-gold: #ffb800;
-  --pc-accent-orange: #ff8c00;
+  --pc-color-primary: #1e3a5f;
+  --pc-color-primary-dark: #152a45;
+  --pc-color-primary-light: #f0f4f8;
+  --pc-accent-cyan: #5b8fa8;
+  --pc-accent-gold: #b8860b;
+  --pc-accent-orange: #c17817;
+  --pc-color-text: #1f2937;
+  --pc-color-text-muted: #6b7280;
+  --pc-color-surface: #fafafa;
   --pc-font-heading: "Plus Jakarta Sans", sans-serif;
   --pc-font-body: Inter, sans-serif;
-  --pc-radius-card: 16px;
-  --pc-radius-button: 8px;
+  --pc-radius-card: 6px;
+  --pc-radius-button: 4px;
   --pc-radius: var(--pc-radius-card);
-  --pc-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  --pc-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --pc-shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --pc-border-subtle: 1px solid rgba(0, 0, 0, 0.06);
+  --pc-transition: 300ms ease;
 }
 
 .editor-styles-wrapper {
   font-family: var(--pc-font-body);
+  color: var(--pc-color-text);
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .editor-styles-wrapper .wp-site-blocks {
@@ -27,21 +44,82 @@
 
 .editor-styles-wrapper :where(h1, h2, h3, h4, h5, h6, .wp-block-heading) {
   font-family: var(--pc-font-heading);
+  color: var(--pc-color-text);
+  font-weight: 600;
+}
+
+.editor-styles-wrapper :where(h1, .wp-block-heading[data-level="1"]) {
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.editor-styles-wrapper :where(h2, .wp-block-heading[data-level="2"]) {
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+.editor-styles-wrapper :where(h6, .wp-block-heading[data-level="6"]) {
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--pc-color-text-muted);
 }
 
 .editor-styles-wrapper .wp-block {
   max-width: 100%;
 }
 
-.wp-block-group.is-style-pouchcare-card {
+.editor-styles-wrapper .wp-block-group.is-style-pouchcare-card {
   border-radius: var(--pc-radius);
   box-shadow: var(--pc-shadow);
-  padding: 1.25rem;
+  border: var(--pc-border-subtle);
+  padding: 1.5rem;
   background: #ffffff;
+}
+
+.editor-styles-wrapper .wp-block-button__link,
+.editor-styles-wrapper .wp-element-button {
+  border-radius: var(--pc-radius-button);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  padding: 0.75rem 1.5rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .editor-styles-wrapper .wp-block-button__link:focus-visible,
 .editor-styles-wrapper .wp-element-button:focus-visible {
-  outline: 2px solid var(--pc-color-primary, #0a7aff);
+  outline: 1px solid var(--pc-color-primary);
   outline-offset: 2px;
+}
+
+.editor-styles-wrapper .wp-block-button.is-style-outline .wp-block-button__link {
+  border: 1px solid currentColor;
+  background: transparent;
+}
+
+.editor-styles-wrapper .wp-block-separator {
+  border-color: rgba(0, 0, 0, 0.08);
+  border-width: 1px 0 0;
+}
+
+.editor-styles-wrapper blockquote,
+.editor-styles-wrapper .wp-block-quote {
+  border-left: 3px solid var(--pc-accent-gold);
+  padding-left: 1.5rem;
+  font-style: italic;
+  color: var(--pc-color-text-muted);
+}
+
+.editor-styles-wrapper .wp-block-quote cite {
+  font-style: normal;
+  font-weight: 500;
+  color: var(--pc-color-text);
+  display: block;
+  margin-top: 0.75rem;
+}
+
+.editor-styles-wrapper .wp-block-image img {
+  border-radius: var(--pc-radius);
 }

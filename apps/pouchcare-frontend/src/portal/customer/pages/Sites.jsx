@@ -4,7 +4,7 @@ import Card from "../../../components/ui/Card";
 import { StatusBadge } from "../../shared/components";
 import { useCustomerAuth } from "../auth/CustomerAuthContext";
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:4000";
+import { getNodeApiBase } from "../../../config/apiBase";
 
 function timeAgo(dateStr) {
   if (!dateStr) return "Never";
@@ -34,7 +34,7 @@ export default function SitesPage() {
 
   const fetchSites = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE}/sites`, {
+      const res = await fetch(`${getNodeApiBase()}/sites`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error("Failed to load sites");

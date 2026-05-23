@@ -3,11 +3,11 @@ Theme Name: PouchCare
 Theme URI: https://pouchcare.com
 Author: PouchCare
 Author URI: https://pouchcare.com
-Description: PouchCare default block theme.
+Description: PouchCare enterprise block theme with a professional services aesthetic.
 Requires at least: 6.5
 Tested up to: 6.6
 Requires PHP: 8.1
-Version: 0.1.0
+Version: 2.0.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Text Domain: pouchcare
@@ -15,17 +15,23 @@ Tags: block-patterns, full-site-editing, custom-logo, custom-menu, translation-r
 */
 
 /*
- * Color System
- * -----------
- * All brand colors are synced from shared/schemas/design-tokens.json
+ * Enterprise Design System
+ * ------------------------
+ * Professional Services aesthetic: refined, conservative, trust-building.
+ * All brand colors synced from shared/schemas/design-tokens.json
  * (single source of truth for both React frontend and WP theme).
  *
- * Primary:      #0A7AFF
- * Primary Dark: #0062D6
- * Accent Cyan:  #00C6FF
- * Accent Gold:  #FFB800
- * Surface:      #F5F7FA
- * Text:         #1A1A2E
+ * Primary:       #1E3A5F (Deep Navy - authority, trust)
+ * Primary Dark:  #152A45 (Darker navy for hover states)
+ * Primary Light: #F0F4F8 (Warm neutral background)
+ * Accent Teal:   #5B8FA8 (Muted teal - sophistication)
+ * Accent Gold:   #B8860B (Subdued brass - premium feel)
+ * Surface:       #FAFAFA (Pure neutral surface)
+ * Text:          #1F2937 (Softer charcoal)
+ * Text Muted:    #6B7280 (Secondary text)
+ * Footer BG:     #111827 (Refined dark gray)
  *
  * Typography: Plus Jakarta Sans (headings), Inter (body)
+ * Border Radius: 6px cards, 4px buttons (subtle, professional)
+ * Shadows: Neutral gray, minimal depth
  */

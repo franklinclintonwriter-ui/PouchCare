@@ -137,15 +137,15 @@ function pouchcare_build_design_token_root_css(): string
             : esc_attr($fallback);
     };
 
-    $primary = $pick('primaryColor', '#0A7AFF');
-    $primaryDark = $pick('primaryDark', '#0062D6');
-    $cyan = $pick('accentCyan', '#00C6FF');
-    $gold = $pick('accentGold', '#FFB800');
-    $orange = $pick('accentOrange', '#FF8C00');
+    $primary = $pick('primaryColor', '#1E3A5F');
+    $primaryDark = $pick('primaryDark', '#152A45');
+    $cyan = $pick('accentCyan', '#5B8FA8');
+    $gold = $pick('accentGold', '#B8860B');
+    $orange = $pick('accentOrange', '#C17817');
     $heading = $pick('headingFont', 'Plus Jakarta Sans, sans-serif');
     $body = $pick('bodyFont', 'Inter, sans-serif');
-    $rCard = $pick('borderRadiusCard', '16px');
-    $rBtn = $pick('borderRadiusButton', '8px');
+    $rCard = $pick('borderRadiusCard', '6px');
+    $rBtn = $pick('borderRadiusButton', '4px');
 
     return ':root{'
         . '--pc-color-primary:' . $primary . ';'

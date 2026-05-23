@@ -1,7 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react";
-
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:4000";
+import { getNodeApiBase } from "../../../config/apiBase";
 const ADMIN_KEY = "pouchcare_admin_user";
 const ADMIN_TOKEN_KEY = "pouchcare_admin_token";
 const CUSTOMER_KEY = "pouchcare_customer_token";
@@ -21,7 +20,7 @@ function readStorage(key) {
 // ─────────────── API helpers ───────────────
 
 async function apiPost(path, body) {
-  const res = await fetch(`${API_BASE}${path}`, {
+  const res = await fetch(`${getNodeApiBase()}${path}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -38,7 +37,7 @@ async function apiPost(path, body) {
 }
 
 async function apiGet(path, token) {
-  const res = await fetch(`${API_BASE}${path}`, {
+  const res = await fetch(`${getNodeApiBase()}${path}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   const data = await res.json();

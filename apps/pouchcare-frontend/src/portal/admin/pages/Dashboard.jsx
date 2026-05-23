@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Button from "../../../components/ui/Button";
 import AdminPage from "../../../components/ui/PageShell";
 import StatCard from "../../../components/ui/StatCard";
@@ -6,6 +6,10 @@ import DataTable from "../../../components/ui/DataTable";
 import { StatusBadge } from "../../shared/components";
 import { useAdminPortal } from "../state/AdminPortalContext";
 import UpdateNotice from "../components/UpdateNotice";
+import { useAdminAuth } from "../../shared/auth/AuthContext";
+import { getNodeApiBase } from "../../../config/apiBase";
+import { Link } from "react-router-dom";
+import { adminPath } from "../../../config/runtime";
 
 /**
  * Check whether an update notice should be shown.
@@ -27,8 +31,46 @@ function getUpdateInfo() {
 
 export default function AdminDashboardPage() {
   const { data } = useAdminPortal();
-  const activeCompanies = data.companies.filter((c) => c.status === "Active").length;
+  const { token } = useAdminAuth();
+  const [platformStats, setPlatformStats] = useState(null);
+  const [statsLoadError, setStatsLoadError] = useState(false);
+  const [statsLoading, setStatsLoading] = useState(false);
+
   const monthlyRevenue = data.companies.reduce((sum, c) => sum + (Number(c.mrr) || 0), 0);
+  const openInvoices = data.billingRecords.filter((b) => b.status !== "Paid").length;
+
+  useEffect(() => {
+    if (!token) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        setStatsLoading(true);
+        const base = getNodeApiBase();
+        if (!base) return;
+        const res = await fetch(`${base}/admin/stats`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = await res.json();
+        if (!cancelled) {
+          setPlatformStats(json);
+          setStatsLoadError(false);
+        }
+      } catch {
+        if (!cancelled) {
+          setPlatformStats(null);
+          setStatsLoadError(true);
+        }
+      } finally {
+        if (!cancelled) setStatsLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [token]);
+
+  const ov = platformStats?.overview;
 
   const [updateInfo] = useState(getUpdateInfo);
   const [updateDismissed, setUpdateDismissed] = useState(false);
@@ -50,8 +92,12 @@ export default function AdminDashboardPage() {
   return (
     <AdminPage
       title="Dashboard"
-      description="Operational overview for all companies, billing health, and platform activity."
-      actions={<Button size="sm">Create Company</Button>}
+      description="Database metrics (top) when the API is available; workspace snapshot (CRM) in the table below."
+      actions={
+        <Button as={Link} to={adminPath("/companies")} size="sm">
+          Manage companies
+        </Button>
+      }
     >
       {updateInfo.available && !updateDismissed && (
         <UpdateNotice
@@ -63,11 +109,52 @@ export default function AdminDashboardPage() {
         />
       )}
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Total Companies" value={String(data.companies.length)} hint="Managed accounts" />
-        <StatCard label="Active Companies" value={String(activeCompanies)} hint="Live on production" />
-        <StatCard label="Monthly Revenue" value={`$${monthlyRevenue}`} hint="Approx MRR" />
-        <StatCard label="Open Invoices" value={String(data.billingRecords.filter((b) => b.status !== "Paid").length)} hint="Needs follow-up" />
+        <StatCard
+          label="Customers (platform)"
+          value={
+            ov
+              ? String(ov.totalCustomers)
+              : !token
+                ? "—"
+                : statsLoading
+                  ? "…"
+                  : statsLoadError
+                    ? "—"
+                    : "—"
+          }
+          hint={
+            ov
+              ? "Users with customer role"
+              : !token
+                ? "Log in for live API metrics"
+                : statsLoadError
+                  ? "API unreachable"
+                  : statsLoading
+                    ? "Loading…"
+                    : "No data"
+          }
+        />
+        <StatCard
+          label="Active licenses"
+          value={ov ? String(ov.activeLicenses) : !token ? "—" : statsLoading ? "…" : statsLoadError ? "—" : "—"}
+          hint={ov ? `of ${ov.totalLicenses} total` : "From API when available"}
+        />
+        <StatCard
+          label="Connected sites"
+          value={ov ? String(ov.activeSites) : !token ? "—" : statsLoading ? "…" : statsLoadError ? "—" : "—"}
+          hint={ov ? `${ov.recentlyActive} sites with heartbeat in 24h` : "From API when available"}
+        />
+        <StatCard label="MRR (snapshot)" value={`$${monthlyRevenue}`} hint="Approx from workspace" />
       </div>
+
+      {openInvoices > 0 ? (
+        <p className="mt-3 text-sm text-slate-600">
+          Open invoices (snapshot): <strong>{openInvoices}</strong>
+        </p>
+      ) : null}
+
+      <h3 className="mt-8 text-sm font-semibold text-slate-800">Workspace companies (CRM snapshot)</h3>
+      <p className="mb-3 text-xs text-slate-500">Synced via admin snapshot; not the same as platform customer accounts.</p>
 
       <DataTable
         columns={[

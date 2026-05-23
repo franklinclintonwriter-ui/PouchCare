@@ -1,16 +1,39 @@
 :root {
-  /* Defaults; overridden when Style Manager saves tokens (see theme functions.php). */
-  --pc-color-primary: #0a7aff;
-  --pc-color-primary-dark: #0062d6;
-  --pc-accent-cyan: #00c6ff;
-  --pc-accent-gold: #ffb800;
-  --pc-accent-orange: #ff8c00;
+  /* Professional Services Design Tokens
+   * Defaults; overridden when Style Manager saves tokens (see theme functions.php).
+   * Color palette: Deep navy, muted accents for trust and authority
+   */
+  --pc-color-primary: #1e3a5f;
+  --pc-color-primary-dark: #152a45;
+  --pc-color-primary-light: #f0f4f8;
+  --pc-accent-cyan: #5b8fa8;
+  --pc-accent-gold: #b8860b;
+  --pc-accent-orange: #c17817;
+  --pc-color-text: #1f2937;
+  --pc-color-text-muted: #6b7280;
+  --pc-color-surface: #fafafa;
   --pc-font-heading: "Plus Jakarta Sans", sans-serif;
   --pc-font-body: Inter, sans-serif;
-  --pc-radius-card: 16px;
-  --pc-radius-button: 8px;
+  --pc-radius-card: 6px;
+  --pc-radius-button: 4px;
   --pc-radius: var(--pc-radius-card);
-  --pc-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  --pc-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --pc-shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --pc-shadow-nav: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --pc-border-subtle: 1px solid rgba(0, 0, 0, 0.06);
+  --pc-transition: 300ms ease;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--pc-font-body);
+  color: var(--pc-color-text);
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .wp-site-blocks {
@@ -24,12 +47,145 @@
 .wp-block-group.is-style-pouchcare-card {
   border-radius: var(--pc-radius);
   box-shadow: var(--pc-shadow);
-  padding: 1.25rem;
+  border: var(--pc-border-subtle);
+  padding: 1.5rem;
   background: #ffffff;
+  transition: box-shadow var(--pc-transition), border-color var(--pc-transition);
+}
+
+.wp-block-group.is-style-pouchcare-card:hover {
+  box-shadow: var(--pc-shadow-hover);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+a {
+  color: var(--pc-color-primary);
+  text-decoration: none;
+  transition: color var(--pc-transition);
+}
+
+a:hover {
+  color: var(--pc-color-primary-dark);
+}
+
+.wp-block-button__link,
+.wp-element-button {
+  border-radius: var(--pc-radius-button);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  padding: 0.75rem 1.5rem;
+  transition: background-color var(--pc-transition), box-shadow var(--pc-transition);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.wp-block-button__link:hover,
+.wp-element-button:hover {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .wp-block-button__link:focus-visible,
 .wp-element-button:focus-visible {
-  outline: 2px solid var(--pc-color-primary, #0a7aff);
+  outline: 1px solid var(--pc-color-primary);
   outline-offset: 2px;
+}
+
+.wp-block-button.is-style-outline .wp-block-button__link {
+  border: 1px solid currentColor;
+  background: transparent;
+}
+
+.wp-block-button.is-style-outline .wp-block-button__link:hover {
+  background: var(--pc-color-primary-light);
+}
+
+h1, h2, h3, h4, h5, h6,
+.wp-block-heading {
+  font-family: var(--pc-font-heading);
+  color: var(--pc-color-text);
+  font-weight: 600;
+}
+
+h1, .wp-block-heading[data-level="1"] {
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+h2, .wp-block-heading[data-level="2"] {
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+h6, .wp-block-heading[data-level="6"] {
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--pc-color-text-muted);
+}
+
+.wp-block-separator {
+  border-color: rgba(0, 0, 0, 0.08);
+  border-width: 1px 0 0;
+}
+
+.wp-block-navigation a {
+  font-weight: 500;
+  transition: color var(--pc-transition);
+}
+
+.wp-block-navigation a:hover {
+  color: var(--pc-color-primary);
+}
+
+.has-surface-background-color {
+  background-color: var(--pc-color-surface) !important;
+}
+
+.wp-block-columns {
+  gap: 2rem;
+}
+
+@media (min-width: 782px) {
+  .wp-block-columns {
+    gap: 2.5rem;
+  }
+}
+
+.wp-block-image img {
+  border-radius: var(--pc-radius);
+}
+
+blockquote,
+.wp-block-quote {
+  border-left: 3px solid var(--pc-accent-gold);
+  padding-left: 1.5rem;
+  font-style: italic;
+  color: var(--pc-color-text-muted);
+}
+
+.wp-block-quote cite {
+  font-style: normal;
+  font-weight: 500;
+  color: var(--pc-color-text);
+  display: block;
+  margin-top: 0.75rem;
+}
+
+.alignfull {
+  margin-left: calc(-50vw + 50%);
+  margin-right: calc(-50vw + 50%);
+  max-width: 100vw;
+  width: 100vw;
+}
+
+.alignwide {
+  max-width: 1140px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+::selection {
+  background: var(--pc-color-primary);
+  color: #ffffff;
 }

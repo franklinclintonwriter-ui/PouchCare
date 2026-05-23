@@ -199,8 +199,8 @@ class PouchCare_Template_Importer
 
     /**
      * Collect JSON template files under category subdirectories (e.g. saas/home.json).
-     * Uses per-directory globs so discovery works on Windows paths where a single
-     * "pack/*/*.json" glob can return no matches.
+     * Uses per-directory globs so discovery works on Windows paths where one deep
+     * glob across category folders (pack wildcard slash wildcard dot json) can return no matches.
      */
     private static function glob_template_json_files(string $rootPath): array
     {

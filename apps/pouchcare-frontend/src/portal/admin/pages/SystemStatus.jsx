@@ -5,7 +5,7 @@ import DataTable from "../../../components/ui/DataTable";
 import { StatusBadge, MetricTile, OpsPanel } from "../../shared/components";
 import { useAdminAuth } from "../auth/AdminAuthContext";
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:4000";
+import { getNodeApiBase } from "../../../config/apiBase";
 
 export default function SystemStatusPage() {
   const { token } = useAdminAuth();
@@ -18,7 +18,7 @@ export default function SystemStatusPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${API_BASE}/admin/system`, {
+      const res = await fetch(`${getNodeApiBase()}/admin/system`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);

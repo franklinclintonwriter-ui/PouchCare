@@ -4,6 +4,7 @@ import prisma from "../utils/prisma.js";
 import authenticate from "../middleware/authenticate.js";
 import requireAdmin from "../middleware/requireAdmin.js";
 import adminEntities from "./adminEntities.js";
+import { validateAdminSnapshotData } from "../utils/validateAdminSnapshot.js";
 
 const router = Router();
 
@@ -421,6 +422,10 @@ router.get("/snapshot", async (req, res, next) => {
 router.put("/snapshot", async (req, res, next) => {
   try {
     const body = snapshotPutSchema.parse(req.body);
+    const check = validateAdminSnapshotData(body.data);
+    if (!check.ok) {
+      return res.status(400).json({ error: check.error });
+    }
     const key = adminSnapshotKey(req.user.id);
     await prisma.portalSnapshot.upsert({
       where: { key },

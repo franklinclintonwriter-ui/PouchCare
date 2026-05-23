@@ -1,3 +1,25 @@
 /MISMATCH-AUDIT-AND-FIX-PLAN.md
 /setup-pouchcare.sh
 /setup-v2.sh
+
+# Local environment
+.env
+.env.*
+!.env.example
+!.env.sample
+
+# Dependencies
+node_modules/
+vendor/
+
+# App build and test output
+apps/**/dist/
+apps/**/build/
+apps/**/coverage/
+apps/**/playwright-report/
+apps/**/test-results/
+
+# Logs and OS files
+*.log
+.DS_Store
+Thumbs.db

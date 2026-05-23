@@ -68,7 +68,7 @@ export default function CompaniesPage() {
   return (
     <AdminPage
       title="Companies"
-      description="Centralized company lifecycle management, plans, account status, suspension reasons, limits, and ownership."
+      description="Workspace CRM snapshot (plans, MRR, limits). For registered platform users and licenses, use Customers & Installations."
       actions={<Button size="sm">Export Companies</Button>}
     >
       <div className="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 md:grid-cols-3">

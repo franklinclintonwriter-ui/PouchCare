@@ -3,8 +3,7 @@ import { useState } from "react";
 import Button from "../../components/ui/Button";
 import Input from "../../components/ui/Input";
 import { adminPath } from "../../config/runtime";
-
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:4000";
+import { getNodeApiBase } from "../../config/apiBase";
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -27,7 +26,7 @@ export default function Signup() {
 
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/auth/register`, {
+      const res = await fetch(`${getNodeApiBase()}/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, email, password }),

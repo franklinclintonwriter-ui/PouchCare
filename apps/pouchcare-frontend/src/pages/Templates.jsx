@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Star,
   Download,
@@ -9,7 +9,11 @@ import {
   SlidersHorizontal,
   X,
 } from "lucide-react";
-import { categories, templates } from "../data/templates";
+import {
+  categories as staticCategories,
+  templates as staticTemplates,
+} from "../data/templates";
+import { getNodeApiBase } from "../config/apiBase";
 
 function formatDownloads(num) {
   if (num >= 1000) {
@@ -50,17 +54,37 @@ function StarRating({ rating }) {
 }
 
 export default function Templates() {
+  const [templates, setTemplates] = useState(staticTemplates);
+  const [categories, setCategories] = useState(staticCategories);
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("All");
   const [sortBy, setSortBy] = useState("popular");
   const [currentPage, setCurrentPage] = useState(1);
   const perPage = 6;
 
+  useEffect(() => {
+    const base = getNodeApiBase();
+    if (!base) return;
+    const ctl = new AbortController();
+    fetch(`${base}/catalog/templates`, { signal: ctl.signal })
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+      .then((data) => {
+        if (Array.isArray(data.templates) && data.templates.length) {
+          setTemplates(data.templates);
+        }
+        if (Array.isArray(data.categories) && data.categories.length) {
+          setCategories(data.categories);
+        }
+      })
+      .catch(() => {});
+    return () => ctl.abort();
+  }, []);
+
   const featuredTemplates = useMemo(() => {
     return [...templates]
       .sort((a, b) => b.downloads - a.downloads)
       .slice(0, 3);
-  }, []);
+  }, [templates]);
 
   const filtered = useMemo(() => {
     let result = [...templates];
@@ -99,7 +123,7 @@ export default function Templates() {
     }
 
     return result;
-  }, [search, activeCategory, sortBy]);
+  }, [search, activeCategory, sortBy, templates]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
   const safePage = Math.min(currentPage, totalPages);

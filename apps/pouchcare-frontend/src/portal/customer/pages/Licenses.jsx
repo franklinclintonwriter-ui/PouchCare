@@ -5,7 +5,7 @@ import DataTable from "../../../components/ui/DataTable";
 import { StatusBadge } from "../../shared/components";
 import { useCustomerAuth } from "../auth/CustomerAuthContext";
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:4000";
+import { getNodeApiBase } from "../../../config/apiBase";
 
 export default function LicensesPage() {
   const { token } = useCustomerAuth();
@@ -16,7 +16,7 @@ export default function LicensesPage() {
 
   const fetchLicenses = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE}/licenses`, {
+      const res = await fetch(`${getNodeApiBase()}/licenses`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error("Failed to load licenses");

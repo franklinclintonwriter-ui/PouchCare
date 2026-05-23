@@ -1,38 +1,38 @@
 {
   "$schema": "https://design-tokens.org/schema.json",
   "name": "PouchCare Design Tokens",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "colors": {
     "primary": {
-      "DEFAULT": "#0A7AFF",
-      "dark": "#0062D6",
-      "deeper": "#003F8A",
-      "light": "#EBF4FF"
+      "DEFAULT": "#1E3A5F",
+      "dark": "#152A45",
+      "deeper": "#0F1F33",
+      "light": "#F0F4F8"
     },
     "accent": {
-      "cyan": "#00C6FF",
-      "gold": "#FFB800",
-      "orange": "#FF8C00"
+      "cyan": "#5B8FA8",
+      "gold": "#B8860B",
+      "orange": "#C17817"
     },
     "surface": {
-      "light": "#F5F7FA",
-      "blue": "#EBF4FF",
+      "light": "#FAFAFA",
+      "blue": "#F0F4F8",
       "white": "#FFFFFF"
     },
     "text": {
-      "heading": "#1A1A2E",
-      "body": "#6B7280",
-      "muted": "#9CA3AF"
+      "heading": "#1F2937",
+      "body": "#4B5563",
+      "muted": "#6B7280"
     },
     "footer": {
-      "bg": "#0D1B3E",
-      "text": "#CBD5E1"
+      "bg": "#111827",
+      "text": "#D1D5DB"
     },
     "status": {
-      "success": "#10B981",
-      "warning": "#F59E0B",
-      "error": "#EF4444",
-      "info": "#3B82F6"
+      "success": "#059669",
+      "warning": "#D97706",
+      "error": "#DC2626",
+      "info": "#2563EB"
     }
   },
   "typography": {
@@ -41,12 +41,25 @@
       "body": "Inter, sans-serif"
     },
     "fontSizes": {
+      "xs": "0.75rem",
       "sm": "0.875rem",
       "md": "1rem",
-      "lg": "1.25rem",
-      "xl": "1.5rem",
-      "2xl": "2rem",
-      "3xl": "2.5rem"
+      "lg": "1.125rem",
+      "xl": "1.25rem",
+      "2xl": "1.5rem",
+      "3xl": "2rem",
+      "4xl": "2.5rem",
+      "display": "3.75rem"
+    },
+    "lineHeight": {
+      "tight": "1.2",
+      "normal": "1.5",
+      "relaxed": "1.7"
+    },
+    "letterSpacing": {
+      "tight": "-0.02em",
+      "normal": "0",
+      "wide": "0.05em"
     }
   },
   "spacing": {
@@ -55,13 +68,13 @@
     "steps": 8
   },
   "borderRadius": {
-    "card": "12px",
-    "button": "8px",
-    "logo": "16px"
+    "card": "6px",
+    "button": "4px",
+    "logo": "8px"
   },
   "shadows": {
-    "card": "0 4px 20px rgba(10, 122, 255, 0.08)",
-    "cardHover": "0 8px 32px rgba(10, 122, 255, 0.15)",
-    "nav": "0 2px 12px rgba(0, 0, 0, 0.06)"
+    "card": "0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06)",
+    "cardHover": "0 4px 12px rgba(0, 0, 0, 0.08)",
+    "nav": "0 1px 2px rgba(0, 0, 0, 0.04)"
   }
 }

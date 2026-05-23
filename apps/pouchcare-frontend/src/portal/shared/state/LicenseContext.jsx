@@ -1,17 +1,25 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { getNodeApiBase } from "../../../config/apiBase";
 
 const LICENSE_STORAGE_KEY = "pouchcare_license_key";
 
-/**
- * License API base — uses the Node.js API via VITE_API_URL when running
- * as a standalone SPA, falls back to WP REST when embedded in WordPress.
- */
-const API_BASE = import.meta.env.VITE_API_URL || "";
-const LICENSE_API = API_BASE ? `${API_BASE}/licenses` : "/wp-json/pouchcare/v1/license";
-/** Node uses /licenses/activate; WordPress uses POST /license on the same resource. */
-const LICENSE_ACTIVATE_URL = API_BASE ? `${LICENSE_API}/activate` : LICENSE_API;
-const LICENSE_DEACTIVATE_URL = API_BASE ? `${LICENSE_API}/deactivate` : LICENSE_API;
+function licenseListUrl() {
+  const base = getNodeApiBase();
+  return base ? `${base}/licenses` : "/wp-json/pouchcare/v1/license";
+}
+
+function licenseActivateUrl() {
+  const base = getNodeApiBase();
+  if (base) return `${base}/licenses/activate`;
+  return "/wp-json/pouchcare/v1/license";
+}
+
+function licenseDeactivateUrl() {
+  const base = getNodeApiBase();
+  if (base) return `${base}/licenses/deactivate`;
+  return "/wp-json/pouchcare/v1/license";
+}
 
 /** @type {React.Context<LicenseContextValue | null>} */
 const LicenseContext = createContext(null);
@@ -74,13 +82,11 @@ export function LicenseProvider({ children }) {
   /** Build auth headers — Node.js API uses Bearer token, WP uses nonce */
   const getHeaders = useCallback(() => {
     const headers = { "Content-Type": "application/json" };
-    if (API_BASE) {
-      // Standalone SPA — use JWT from localStorage
+    if (getNodeApiBase()) {
       const token = localStorage.getItem("pouchcare_admin_token") || localStorage.getItem("pouchcare_token");
-      if (token) headers["Authorization"] = `Bearer ${token}`;
+      if (token) headers.Authorization = `Bearer ${token}`;
     } else {
-      // WordPress embedded — use nonce
-      headers["X-WP-Nonce"] = window.pouchcareNonce ?? "";
+      headers["X-WP-Nonce"] = typeof window !== "undefined" ? window.pouchcareNonce ?? "" : "";
     }
     return headers;
   }, []);
@@ -88,7 +94,7 @@ export function LicenseProvider({ children }) {
   const fetchLicense = useCallback(async () => {
     try {
       setIsLoading(true);
-      const res = await fetch(LICENSE_API, { headers: getHeaders() });
+      const res = await fetch(licenseListUrl(), { headers: getHeaders() });
       if (!res.ok) {
         setPlan("community");
         setLimits(null);
@@ -121,11 +127,11 @@ export function LicenseProvider({ children }) {
   const activate = useCallback(async (key) => {
     try {
       setIsLoading(true);
-      const res = await fetch(LICENSE_ACTIVATE_URL, {
+      const res = await fetch(licenseActivateUrl(), {
         method: "POST",
         headers: getHeaders(),
         body: JSON.stringify(
-          API_BASE
+          getNodeApiBase()
             ? { licenseKey: key, siteUrl: window.location.origin }
             : { key },
         ),
@@ -148,10 +154,10 @@ export function LicenseProvider({ children }) {
     try {
       setIsLoading(true);
       const storedKey = localStorage.getItem(LICENSE_STORAGE_KEY);
-      await fetch(LICENSE_DEACTIVATE_URL, {
-        method: API_BASE ? "POST" : "DELETE",
+      await fetch(licenseDeactivateUrl(), {
+        method: getNodeApiBase() ? "POST" : "DELETE",
         headers: getHeaders(),
-        ...(API_BASE
+        ...(getNodeApiBase()
           ? { body: JSON.stringify({ licenseKey: storedKey, siteUrl: window.location.origin }) }
           : {}),
       });

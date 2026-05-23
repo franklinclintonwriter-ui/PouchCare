@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   Search,
@@ -11,7 +11,12 @@ import {
   TrendingUp,
   BookOpen,
 } from "lucide-react";
-import { blogCategories, blogPosts, blogAuthors } from "../data/blog";
+import {
+  blogCategories as staticCategories,
+  blogPosts as staticPosts,
+  blogAuthors as staticAuthors,
+} from "../data/blog";
+import { getNodeApiBase } from "../config/apiBase";
 
 const POSTS_PER_PAGE = 6;
 
@@ -24,8 +29,8 @@ function formatDate(dateStr) {
   });
 }
 
-function getAuthor(authorKey) {
-  return blogAuthors[authorKey] || Object.values(blogAuthors)[0];
+function getAuthor(authorKey, authors) {
+  return authors[authorKey] || Object.values(authors)[0];
 }
 
 function getInitials(name) {
@@ -50,8 +55,8 @@ function AuthorAvatar({ author, size = "w-8 h-8", textSize = "text-xs" }) {
 }
 
 /* ─── Featured Post Hero ─── */
-function FeaturedPostHero({ post }) {
-  const author = getAuthor(post.author);
+function FeaturedPostHero({ post, authors, categories }) {
+  const author = getAuthor(post.author, authors);
   return (
     <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-12">
       <Link
@@ -68,7 +73,7 @@ function FeaturedPostHero({ post }) {
           >
             <div className="absolute top-4 left-4">
               <span className="bg-white/20 backdrop-blur-sm text-white text-xs font-semibold px-3 py-1 rounded-full">
-                {blogCategories.find((c) => c.slug === post.category)?.label ||
+                {categories.find((c) => c.slug === post.category)?.label ||
                   post.category}
               </span>
             </div>
@@ -82,7 +87,7 @@ function FeaturedPostHero({ post }) {
           {/* Right: details */}
           <div className="lg:w-[45%] p-6 lg:p-8 flex flex-col justify-center">
             <span className="inline-block bg-primary/10 text-primary rounded-full px-3 py-1 text-xs font-semibold w-fit mb-3">
-              {blogCategories.find((c) => c.slug === post.category)?.label ||
+              {categories.find((c) => c.slug === post.category)?.label ||
                 post.category}
             </span>
             <h3 className="font-heading text-xl lg:text-2xl font-bold text-heading">
@@ -123,10 +128,10 @@ function FeaturedPostHero({ post }) {
 }
 
 /* ─── Blog Card ─── */
-function BlogCard({ post }) {
-  const author = getAuthor(post.author);
+function BlogCard({ post, authors, categories }) {
+  const author = getAuthor(post.author, authors);
   const categoryName =
-    blogCategories.find((c) => c.slug === post.category)?.label || post.category;
+    categories.find((c) => c.slug === post.category)?.label || post.category;
 
   return (
     <Link
@@ -200,7 +205,7 @@ function BlogCard({ post }) {
 }
 
 /* ─── Sidebar ─── */
-function Sidebar({ categories, tagCounts, onCategoryClick }) {
+function Sidebar({ categories, tagCounts, onCategoryClick, posts }) {
   const topTags = useMemo(() => {
     return Object.entries(tagCounts)
       .sort((a, b) => b[1] - a[1])
@@ -209,11 +214,11 @@ function Sidebar({ categories, tagCounts, onCategoryClick }) {
 
   const categoryCounts = useMemo(() => {
     const counts = {};
-    blogPosts.forEach((p) => {
+    posts.forEach((p) => {
       counts[p.category] = (counts[p.category] || 0) + 1;
     });
     return counts;
-  }, []);
+  }, [posts]);
 
   return (
     <aside className="w-72 hidden lg:block shrink-0">
@@ -338,9 +343,33 @@ function Pagination({ currentPage, totalPages, onPageChange }) {
 
 /* ─── Main Blog Page ─── */
 export default function Blog() {
+  const [blogPosts, setBlogPosts] = useState(staticPosts);
+  const [blogCategories, setBlogCategories] = useState(staticCategories);
+  const [blogAuthors, setBlogAuthors] = useState(staticAuthors);
   const [activeCategory, setActiveCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+
+  useEffect(() => {
+    const base = getNodeApiBase();
+    if (!base) return;
+    const ctl = new AbortController();
+    fetch(`${base}/blog/posts`, { signal: ctl.signal })
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+      .then((data) => {
+        if (Array.isArray(data.posts) && data.posts.length) {
+          setBlogPosts(data.posts);
+        }
+        if (Array.isArray(data.categories) && data.categories.length) {
+          setBlogCategories(data.categories);
+        }
+        if (data.authors && typeof data.authors === "object") {
+          setBlogAuthors(data.authors);
+        }
+      })
+      .catch(() => {});
+    return () => ctl.abort();
+  }, []);
 
   // Compute tag counts across all posts
   const tagCounts = useMemo(() => {
@@ -351,12 +380,12 @@ export default function Blog() {
       });
     });
     return counts;
-  }, []);
+  }, [blogPosts]);
 
   // Featured post
   const featuredPost = useMemo(
     () => blogPosts.find((p) => p.featured),
-    []
+    [blogPosts]
   );
 
   // Filtered & sorted posts (exclude featured from grid)
@@ -370,7 +399,7 @@ export default function Blog() {
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       posts = posts.filter((p) => {
-        const author = getAuthor(p.author);
+        const author = getAuthor(p.author, blogAuthors);
         return (
           p.title.toLowerCase().includes(q) ||
           p.excerpt.toLowerCase().includes(q) ||
@@ -384,7 +413,7 @@ export default function Blog() {
     posts.sort((a, b) => new Date(b.date) - new Date(a.date));
 
     return posts;
-  }, [activeCategory, searchQuery]);
+  }, [activeCategory, searchQuery, blogPosts, blogAuthors]);
 
   // Pagination
   const totalPages = Math.ceil(filteredPosts.length / POSTS_PER_PAGE);
@@ -446,7 +475,7 @@ export default function Blog() {
       {/* ── Featured Post ── */}
       {featuredPost && !searchQuery && activeCategory === "all" && (
         <div className="mt-10">
-          <FeaturedPostHero post={featuredPost} />
+          <FeaturedPostHero post={featuredPost} authors={blogAuthors} categories={blogCategories} />
         </div>
       )}
 
@@ -477,7 +506,7 @@ export default function Blog() {
             {paginatedPosts.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {paginatedPosts.map((post) => (
-                  <BlogCard key={post.id} post={post} />
+                  <BlogCard key={post.id} post={post} authors={blogAuthors} categories={blogCategories} />
                 ))}
               </div>
             ) : (
@@ -516,6 +545,7 @@ export default function Blog() {
             categories={blogCategories}
             tagCounts={tagCounts}
             onCategoryClick={handleCategoryChange}
+            posts={blogPosts}
           />
         </div>
       </section>

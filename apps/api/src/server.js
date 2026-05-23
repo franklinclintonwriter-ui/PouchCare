@@ -6,13 +6,15 @@ import licenseRoutes from "./routes/licenses.js";
 import siteRoutes from "./routes/sites.js";
 import adminRoutes from "./routes/admin.js";
 import customerRoutes from "./routes/customer.js";
+import catalogRoutes from "./routes/catalog.js";
+import blogRoutes from "./routes/blog.js";
 import { apiLimiter, authLimiter } from "./middleware/rateLimiter.js";
 
 const app = express();
 const PORT = process.env.PORT || 4000;
 
 // --------------- Middleware ---------------
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || process.env.FRONTEND_URL || "http://localhost:5173")
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || process.env.FRONTEND_URL || "http://localhost:5173,http://localhost:9284")
   .split(",")
   .map((o) => o.trim())
   .filter(Boolean);
@@ -32,6 +34,10 @@ app.use(apiLimiter);
 
 // --------------- Health check ---------------
 app.get("/health", (_req, res) => res.json({ status: "ok", time: new Date().toISOString() }));
+
+// Public marketing catalog (no auth)
+app.use("/catalog", catalogRoutes);
+app.use("/blog", blogRoutes);
 
 // --------------- Routes ---------------
 app.use("/auth", authLimiter, authRoutes);

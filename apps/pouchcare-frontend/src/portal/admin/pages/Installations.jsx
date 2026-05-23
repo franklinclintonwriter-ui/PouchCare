@@ -5,8 +5,7 @@ import StatCard from "../../../components/ui/StatCard";
 import Button from "../../../components/ui/Button";
 import { StatusBadge } from "../../shared/components";
 import { useAdminAuth } from "../../shared/auth/AuthContext.jsx";
-
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:4000";
+import { getNodeApiBase } from "../../../config/apiBase";
 
 function timeAgo(dateStr) {
   if (!dateStr) return "Never";
@@ -33,8 +32,8 @@ export default function InstallationsPage() {
     try {
       const headers = { Authorization: `Bearer ${token || ""}` };
       const [statsRes, sitesRes] = await Promise.all([
-        fetch(`${API_BASE}/admin/stats`, { headers }),
-        fetch(`${API_BASE}/admin/sites?limit=50`, { headers }),
+        fetch(`${getNodeApiBase()}/admin/stats`, { headers }),
+        fetch(`${getNodeApiBase()}/admin/sites?limit=50`, { headers }),
       ]);
 
       if (!statsRes.ok && !sitesRes.ok) throw new Error(`HTTP ${statsRes.status}`);
