@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Settings2, Save, History } from 'lucide-react';
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
 import { PageTransition } from '@/components/ui/PageTransition';
@@ -7,11 +8,38 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Toggle } from '@/components/ui/Toggle';
-import { useSystemSettings, useUpdateSystemSettings, useSystemAuditLogs, type SettingValue } from '@/api/system-config';
+import { useSystemSettings, useUpdateSystemSettings, useSystemAuditLogs, type SettingValue, type SystemSetting } from '@/api/system-config';
+import ServerStatusPanel from '@/pages/settings/ServerStatusPanel';
 import { toast } from 'sonner';
 
+/** Keys edited per tab — may span multiple DB groups (e.g. portal.* lives in general group). */
+const TAB_KEYS: Record<string, string[]> = {
+  general: ['company.name', 'company.email', 'company.phone', 'company.timezone'],
+  financial: ['portal.commission_rate', 'portal.commission_hold_days', 'portal.min_payout_usd', 'finance.tax_rate'],
+  security: ['security.two_factor_required', 'security.session_ttl_hours', 'security.ip_whitelist_enabled'],
+  modules: [
+    'modules.portal_enabled',
+    'modules.crm_enabled',
+    'modules.hr_enabled',
+    'modules.plugins_enabled',
+    'modules.tools_enabled',
+    'modules.monitoring_enabled',
+  ],
+  integrations: ['integrations.smtp_host', 'integrations.smtp_port', 'integrations.whatsapp_enabled', 'integrations.cloudflare_proxy'],
+};
+
+function getSettingMeta(settings: SystemSetting[] | undefined, key: string): Pick<SystemSetting, 'type' | 'group'> {
+  const found = settings?.find((s) => s.key === key);
+  return {
+    type: found?.type ?? 'string',
+    group: found?.group ?? key.split('.')[0] ?? 'general',
+  };
+}
+
 export default function SystemConfig() {
-  const [activeTab, setActiveTab] = useState('general');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialTab = searchParams.get('tab') ?? 'general';
+  const [activeTab, setActiveTab] = useState(initialTab);
   const { data: settings, isLoading } = useSystemSettings();
   const updateMutation = useUpdateSystemSettings();
 
@@ -27,6 +55,16 @@ export default function SystemConfig() {
     }
   }, [settings]);
 
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab) setActiveTab(tab);
+  }, [searchParams]);
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    setSearchParams(tab === 'general' ? {} : { tab }, { replace: true });
+  };
+
   const headerConfig = useMemo(() => ({
     title: 'System Configurations',
     breadcrumbs: [
@@ -38,25 +76,25 @@ export default function SystemConfig() {
 
   useHeaderConfig(headerConfig);
 
-  const handleSave = async (group: string) => {
+  const handleSave = async (tab: string) => {
     if (!settings) return;
 
-    // find what changed in this group
+    const keys = TAB_KEYS[tab] ?? [];
     const updates: { key: string; value: SettingValue; type: string; group: string }[] = [];
-    settings.filter(s => s.group === group).forEach(s => {
-      if (localState[s.key] !== s.value) {
-        updates.push({
-          key: s.key,
-          value: localState[s.key],
-          type: s.type,
-          group: s.group,
-        });
-      }
-    });
 
-    // Also check for new keys that might have been added to localState but don't exist yet
-    // For this simple implementation, we assume keys are predefined or added via seed.
-    // If we need to dynamically add keys, we can do that here.
+    keys.forEach((key) => {
+      const original = settings.find((s) => s.key === key);
+      const current = localState[key];
+      if (current === undefined) return;
+      if (original && original.value === current) return;
+      const meta = getSettingMeta(settings, key);
+      updates.push({
+        key,
+        value: current,
+        type: meta.type,
+        group: meta.group,
+      });
+    });
 
     if (updates.length === 0) {
       toast.info('No changes to save.');
@@ -72,7 +110,7 @@ export default function SystemConfig() {
   };
 
   const handleUpdate = (key: string, value: SettingValue) => {
-    setLocalState(prev => ({ ...prev, [key]: value }));
+    setLocalState((prev) => ({ ...prev, [key]: value }));
   };
 
   if (isLoading) {
@@ -89,13 +127,13 @@ export default function SystemConfig() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">System Configurations Hub</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            Global system settings, module toggles, and security policies. Only the CEO can access this area.
+            Global system settings, server status, and security policies. Accessible to CEO and Co-MD.
           </p>
         </div>
 
         <Tabs
           value={activeTab}
-          onChange={setActiveTab}
+          onChange={handleTabChange}
           variant="wrap"
           tabs={[
             { label: 'General', value: 'general' },
@@ -103,6 +141,7 @@ export default function SystemConfig() {
             { label: 'Security', value: 'security' },
             { label: 'Modules', value: 'modules' },
             { label: 'Integrations', value: 'integrations' },
+            { label: 'Server', value: 'server' },
             { label: 'Audit Log', value: 'audit' },
           ]}
           className="mb-6"
@@ -110,191 +149,208 @@ export default function SystemConfig() {
 
         {activeTab === 'general' && (
           <Card>
-              <CardHeader>
-                <CardTitle>General & Branding</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Input
-                  label="Company Name"
-                  value={String(localState['company_name'] || '')}
-                  onChange={(e) => handleUpdate('company_name', e.target.value)}
-                />
-                <Input
-                  label="Support Email"
-                  value={String(localState['support_email'] || '')}
-                  onChange={(e) => handleUpdate('support_email', e.target.value)}
-                />
-                <Input
-                  label="Support Phone"
-                  value={String(localState['support_phone'] || '')}
-                  onChange={(e) => handleUpdate('support_phone', e.target.value)}
-                />
-                <Input
-                  label="Default Timezone"
-                  value={String(localState['default_timezone'] || 'UTC')}
-                  onChange={(e) => handleUpdate('default_timezone', e.target.value)}
-                />
-                <div className="flex justify-end pt-4">
-                  <Button onClick={() => handleSave('general')} disabled={updateMutation.isPending}>
-                    <Save className="mr-2 h-4 w-4" /> Save General
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            <CardHeader>
+              <CardTitle>General & Branding</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Input
+                label="Company Name"
+                value={String(localState['company.name'] ?? '')}
+                onChange={(e) => handleUpdate('company.name', e.target.value)}
+              />
+              <Input
+                label="Support Email"
+                value={String(localState['company.email'] ?? '')}
+                onChange={(e) => handleUpdate('company.email', e.target.value)}
+              />
+              <Input
+                label="Support Phone"
+                value={String(localState['company.phone'] ?? '')}
+                onChange={(e) => handleUpdate('company.phone', e.target.value)}
+              />
+              <Input
+                label="Default Timezone"
+                value={String(localState['company.timezone'] ?? 'UTC')}
+                onChange={(e) => handleUpdate('company.timezone', e.target.value)}
+              />
+              <div className="flex justify-end pt-4">
+                <Button onClick={() => handleSave('general')} disabled={updateMutation.isPending}>
+                  <Save className="mr-2 h-4 w-4" /> Save General
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         )}
 
         {activeTab === 'financial' && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Financial & Commission Engine</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Input
-                  type="number"
-                  label="Global Default Commission Rate (%)"
-                  value={Number(localState['commission_rate'] ?? 20)}
-                  onChange={(e) => handleUpdate('commission_rate', Number(e.target.value))}
-                />
-                <Input
-                  type="number"
-                  label="Commission Hold Period (Days)"
-                  value={Number(localState['commission_hold_days'] ?? 14)}
-                  onChange={(e) => handleUpdate('commission_hold_days', Number(e.target.value))}
-                />
-                <Input
-                  type="number"
-                  label="Minimum Payout Threshold (USD)"
-                  value={Number(localState['min_payout_threshold'] ?? 50)}
-                  onChange={(e) => handleUpdate('min_payout_threshold', Number(e.target.value))}
-                />
-                <div className="flex items-center justify-between border-t border-gray-100 pt-4 dark:border-gray-800">
-                  <div>
-                    <p className="font-medium text-gray-900 dark:text-white">Enable Crypto Payments</p>
-                    <p className="text-sm text-gray-500">Allow USDT/Binance for payouts</p>
-                  </div>
-                  <Toggle
-                    checked={Boolean(localState['crypto_payments_enabled'] ?? true)}
-                    onChange={(v) => handleUpdate('crypto_payments_enabled', v)}
-                  />
-                </div>
-                <div className="flex justify-end pt-4">
-                  <Button onClick={() => handleSave('financial')} disabled={updateMutation.isPending}>
-                    <Save className="mr-2 h-4 w-4" /> Save Financial
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Financial & Commission Engine</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Input
+                type="number"
+                label="Global Default Commission Rate (decimal, e.g. 0.2 = 20%)"
+                step="0.01"
+                min="0"
+                max="1"
+                value={Number(localState['portal.commission_rate'] ?? 0.2)}
+                onChange={(e) => handleUpdate('portal.commission_rate', Number(e.target.value))}
+              />
+              <Input
+                type="number"
+                label="Commission Hold Period (Days)"
+                value={Number(localState['portal.commission_hold_days'] ?? 14)}
+                onChange={(e) => handleUpdate('portal.commission_hold_days', Number(e.target.value))}
+              />
+              <Input
+                type="number"
+                label="Minimum Payout Threshold (USD)"
+                value={Number(localState['portal.min_payout_usd'] ?? 50)}
+                onChange={(e) => handleUpdate('portal.min_payout_usd', Number(e.target.value))}
+              />
+              <Input
+                type="number"
+                label="Default Tax Rate (decimal, e.g. 0.05 = 5%)"
+                step="0.01"
+                min="0"
+                max="1"
+                value={Number(localState['finance.tax_rate'] ?? 0.05)}
+                onChange={(e) => handleUpdate('finance.tax_rate', Number(e.target.value))}
+              />
+              <div className="flex justify-end pt-4">
+                <Button onClick={() => handleSave('financial')} disabled={updateMutation.isPending}>
+                  <Save className="mr-2 h-4 w-4" /> Save Financial
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         )}
 
         {activeTab === 'security' && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Security & Access Control</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium text-gray-900 dark:text-white">Global 2FA Enforcement</p>
-                    <p className="text-sm text-gray-500">Force all staff to use Two-Factor Authentication</p>
-                  </div>
-                  <Toggle
-                    checked={Boolean(localState['force_2fa'] ?? false)}
-                    onChange={(v) => handleUpdate('force_2fa', v)}
-                  />
+          <Card>
+            <CardHeader>
+              <CardTitle>Security & Access Control</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-gray-900 dark:text-white">Global 2FA Enforcement</p>
+                  <p className="text-sm text-gray-500">Force all staff to use Two-Factor Authentication</p>
                 </div>
-                <Input
-                  type="number"
-                  label="Session Timeout (Minutes)"
-                  value={Number(localState['session_timeout'] ?? 120)}
-                  onChange={(e) => handleUpdate('session_timeout', Number(e.target.value))}
+                <Toggle
+                  checked={Boolean(localState['security.two_factor_required'] ?? false)}
+                  onChange={(v) => handleUpdate('security.two_factor_required', v)}
                 />
-                <Input
-                  label="Whitelisted Office IPs (Comma separated)"
-                  placeholder="e.g. 192.168.1.1, 10.0.0.1"
-                  value={String(localState['whitelisted_ips'] || '')}
-                  onChange={(e) => handleUpdate('whitelisted_ips', e.target.value)}
-                />
-                <div className="flex justify-end pt-4">
-                  <Button onClick={() => handleSave('security')} disabled={updateMutation.isPending}>
-                    <Save className="mr-2 h-4 w-4" /> Save Security
-                  </Button>
+              </div>
+              <Input
+                type="number"
+                label="Session TTL (Hours)"
+                value={Number(localState['security.session_ttl_hours'] ?? 168)}
+                onChange={(e) => handleUpdate('security.session_ttl_hours', Number(e.target.value))}
+              />
+              <div className="flex items-center justify-between border-t border-gray-100 pt-4 dark:border-gray-800">
+                <div>
+                  <p className="font-medium text-gray-900 dark:text-white">IP Whitelist Enabled</p>
+                  <p className="text-sm text-gray-500">Restrict admin panel access by IP</p>
                 </div>
-              </CardContent>
-            </Card>
+                <Toggle
+                  checked={Boolean(localState['security.ip_whitelist_enabled'] ?? false)}
+                  onChange={(v) => handleUpdate('security.ip_whitelist_enabled', v)}
+                />
+              </div>
+              <div className="flex justify-end pt-4">
+                <Button onClick={() => handleSave('security')} disabled={updateMutation.isPending}>
+                  <Save className="mr-2 h-4 w-4" /> Save Security
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         )}
 
         {activeTab === 'modules' && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Feature & Module Master Switches</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {[
-                  { key: 'module_crm', label: 'CRM Module', desc: 'Enable/Disable CRM entirely' },
-                  { key: 'module_hr', label: 'HR Module', desc: 'Enable/Disable HR features' },
-                  { key: 'module_plugins', label: 'Plugin Marketplace', desc: 'Enable/Disable Plugins' },
-                  { key: 'module_tools', label: 'SEO Tools', desc: 'Enable/Disable Marketing Tools' },
-                  { key: 'module_cctv', label: 'CCTV Integration', desc: 'Enable/Disable Vigi CCTV integration' },
-                ].map((mod) => (
-                  <div key={mod.key} className="flex items-center justify-between border-b border-gray-100 pb-4 dark:border-gray-800">
-                    <div>
-                      <p className="font-medium text-gray-900 dark:text-white">{mod.label}</p>
-                      <p className="text-sm text-gray-500">{mod.desc}</p>
-                    </div>
-                    <Toggle
-                      checked={Boolean(localState[mod.key] ?? true)}
-                      onChange={(v) => handleUpdate(mod.key, v)}
-                    />
+          <Card>
+            <CardHeader>
+              <CardTitle>Feature & Module Master Switches</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {[
+                { key: 'modules.portal_enabled', label: 'Client Portal', desc: 'Enable/Disable client portal' },
+                { key: 'modules.crm_enabled', label: 'CRM Module', desc: 'Enable/Disable CRM entirely' },
+                { key: 'modules.hr_enabled', label: 'HR Module', desc: 'Enable/Disable HR features' },
+                { key: 'modules.plugins_enabled', label: 'Plugin Marketplace', desc: 'Enable/Disable Plugins' },
+                { key: 'modules.tools_enabled', label: 'SEO Tools', desc: 'Enable/Disable Marketing Tools' },
+                { key: 'modules.monitoring_enabled', label: 'CCTV Integration', desc: 'Enable/Disable Vigi CCTV integration' },
+              ].map((mod) => (
+                <div key={mod.key} className="flex items-center justify-between border-b border-gray-100 pb-4 dark:border-gray-800">
+                  <div>
+                    <p className="font-medium text-gray-900 dark:text-white">{mod.label}</p>
+                    <p className="text-sm text-gray-500">{mod.desc}</p>
                   </div>
-                ))}
-                <div className="flex justify-end pt-4">
-                  <Button onClick={() => handleSave('modules')} disabled={updateMutation.isPending}>
-                    <Save className="mr-2 h-4 w-4" /> Save Modules
-                  </Button>
+                  <Toggle
+                    checked={Boolean(localState[mod.key] ?? true)}
+                    onChange={(v) => handleUpdate(mod.key, v)}
+                  />
                 </div>
-              </CardContent>
-            </Card>
+              ))}
+              <div className="flex justify-end pt-4">
+                <Button onClick={() => handleSave('modules')} disabled={updateMutation.isPending}>
+                  <Save className="mr-2 h-4 w-4" /> Save Modules
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         )}
 
         {activeTab === 'integrations' && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Integrations & API</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Input
-                  label="SMTP Host"
-                  value={String(localState['smtp_host'] || '')}
-                  onChange={(e) => handleUpdate('smtp_host', e.target.value)}
-                />
-                <Input
-                  label="SMTP User"
-                  value={String(localState['smtp_user'] || '')}
-                  onChange={(e) => handleUpdate('smtp_user', e.target.value)}
-                />
-                <Input
-                  type="password"
-                  label="SMTP Password"
-                  value={String(localState['smtp_pass'] || '')}
-                  onChange={(e) => handleUpdate('smtp_pass', e.target.value)}
-                />
-                <Input
-                  label="WhatsApp API Key"
-                  value={String(localState['whatsapp_api_key'] || '')}
-                  onChange={(e) => handleUpdate('whatsapp_api_key', e.target.value)}
-                />
-                <div className="flex justify-end pt-4">
-                  <Button onClick={() => handleSave('integrations')} disabled={updateMutation.isPending}>
-                    <Save className="mr-2 h-4 w-4" /> Save Integrations
-                  </Button>
+          <Card>
+            <CardHeader>
+              <CardTitle>Integrations & API</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Input
+                label="SMTP Host"
+                value={String(localState['integrations.smtp_host'] ?? '')}
+                onChange={(e) => handleUpdate('integrations.smtp_host', e.target.value)}
+              />
+              <Input
+                type="number"
+                label="SMTP Port"
+                value={Number(localState['integrations.smtp_port'] ?? 587)}
+                onChange={(e) => handleUpdate('integrations.smtp_port', Number(e.target.value))}
+              />
+              <div className="flex items-center justify-between border-t border-gray-100 pt-4 dark:border-gray-800">
+                <div>
+                  <p className="font-medium text-gray-900 dark:text-white">WhatsApp Alerts</p>
+                  <p className="text-sm text-gray-500">Enable WhatsApp notification integration</p>
                 </div>
-              </CardContent>
-            </Card>
+                <Toggle
+                  checked={Boolean(localState['integrations.whatsapp_enabled'] ?? false)}
+                  onChange={(v) => handleUpdate('integrations.whatsapp_enabled', v)}
+                />
+              </div>
+              <div className="flex items-center justify-between border-b border-gray-100 pb-4 dark:border-gray-800">
+                <div>
+                  <p className="font-medium text-gray-900 dark:text-white">Cloudflare Proxy</p>
+                  <p className="text-sm text-gray-500">Enable Cloudflare proxy on assets</p>
+                </div>
+                <Toggle
+                  checked={Boolean(localState['integrations.cloudflare_proxy'] ?? true)}
+                  onChange={(v) => handleUpdate('integrations.cloudflare_proxy', v)}
+                />
+              </div>
+              <div className="flex justify-end pt-4">
+                <Button onClick={() => handleSave('integrations')} disabled={updateMutation.isPending}>
+                  <Save className="mr-2 h-4 w-4" /> Save Integrations
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         )}
 
-        {activeTab === 'audit' && (
-            <AuditLogTab />
-        )}
+        {activeTab === 'server' && <ServerStatusPanel />}
+
+        {activeTab === 'audit' && <AuditLogTab />}
       </div>
     </PageTransition>
   );

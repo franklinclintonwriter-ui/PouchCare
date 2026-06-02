@@ -82,6 +82,11 @@ export const STATUS_COLORS: Record<string, string> = {
   Waiting: 'bg-gray-100 text-gray-700 dark:bg-gray-700/50 dark:text-gray-300',
   Resolved: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
   Closed: 'bg-gray-100 text-gray-600 dark:bg-gray-700/50 dark:text-gray-400',
+
+  // Server / service health
+  healthy: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
+  degraded: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
+  down: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
 };
 
 export const STATUS_DOT_COLORS: Record<string, string> = {
@@ -102,6 +107,9 @@ export const STATUS_DOT_COLORS: Record<string, string> = {
   waiting: 'bg-gray-400',
   resolved: 'bg-emerald-500',
   closed: 'bg-gray-400',
+  healthy: 'bg-emerald-500',
+  degraded: 'bg-amber-500',
+  down: 'bg-red-500',
 };
 
 export const PRIORITY_ICONS: Record<string, { color: string; label: string }> = {

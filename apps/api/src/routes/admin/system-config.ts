@@ -1,22 +1,16 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { prisma } from '../../lib/prisma';
 // Import requireAuth from correct path
-import { requireAuth } from '../../middleware/auth';
+import { authenticate, isCEO } from '../../middleware/auth';
 import { z } from 'zod';
 import { validate } from '../../middleware/validate';
-import { ok, serverError, forbidden } from '../../lib/response';
+import { ok, serverError } from '../../lib/response';
 import { clearSystemSettingsCache, parseSettingValue, serializeSettingValue } from '../../lib/systemConfig';
 
 const router = Router();
 
-// Only CEO can access system config
-router.use(requireAuth);
-router.use((req: Request, res: Response, next: NextFunction) => {
-  if (req.user?.role !== 'CEO') {
-    return forbidden(res, 'CEO access required');
-  }
-  next();
-});
+// CEO and Co-MD can access system config
+router.use(authenticate, isCEO);
 
 // GET /api/admin/system-config
 router.get('/', async (req: Request, res: Response, next: NextFunction) => {

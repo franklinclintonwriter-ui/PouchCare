@@ -93,6 +93,8 @@ export const ROUTES = {
   SETTINGS_SECURITY: "/settings/security",
   SETTINGS_PREFERENCES: "/settings/preferences",
   SETTINGS_ROLE_PERMISSIONS: "/settings/role-permissions",
+  SETTINGS_SYSTEM: "/settings/system",
+  SETTINGS_SERVER: "/settings/system?tab=server",
 
   // Portal
   PORTAL_DASHBOARD: "/portal",

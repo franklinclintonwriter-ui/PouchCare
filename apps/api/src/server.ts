@@ -46,6 +46,7 @@ import portalNotificationsRouter from "@/routes/portal/notifications";
 import adminPortalRouter from "@/routes/admin/portal";
 import adminRolePermissionsRouter from "@/routes/admin/role-permissions";
 import adminSystemConfigRouter from "@/routes/admin/system-config";
+import adminSystemStatusRouter from "@/routes/admin/system-status";
 import adminResourcesRouter from "@/routes/admin/resources";
 import adminClientsRouter from "@/routes/admin/clients";
 import adminOrdersRouter from "@/routes/admin/orders";
@@ -66,6 +67,7 @@ import fileManagerRouter from "@/routes/fileManager";
 import { setupWebSocket } from "@/lib/websocket";
 import { startJobs } from "@/jobs/index";
 import prisma from "@/lib/prisma";
+import { redis } from "@/lib/redis";
 import {
   assertProductionStorageOrExit,
   isLocalUploadFallbackEnabled,
@@ -144,19 +146,34 @@ app.get("/health", (_, res) => {
   res.json({ status: "ok", ts: new Date().toISOString(), version: "1.0.0" });
 });
 
-/** Returns 200 only when PostgreSQL accepts a query (use for readiness probes). */
+/** Returns 200 only when PostgreSQL and Redis are reachable (use for readiness probes). */
 app.get("/health/ready", async (_, res) => {
+  let db = false;
+  let redisOk = false;
   try {
     await prisma.$queryRaw`SELECT 1`;
-    return res.json({ ok: true, db: true, ts: new Date().toISOString() });
+    db = true;
   } catch {
+    db = false;
+  }
+  try {
+    const pong = await redis.ping();
+    redisOk = pong === "PONG";
+  } catch {
+    redisOk = false;
+  }
+  const ok = db && redisOk;
+  if (!ok) {
     return res.status(503).json({
       ok: false,
-      db: false,
-      error: "database_unreachable",
-      hint: "Start PostgreSQL and run prisma db push + db seed (see README)",
+      db,
+      redis: redisOk,
+      error: !db ? "database_unreachable" : "redis_unreachable",
+      hint: "Start PostgreSQL + Redis and run prisma db push + db seed (see README)",
+      ts: new Date().toISOString(),
     });
   }
+  return res.json({ ok: true, db: true, redis: true, ts: new Date().toISOString() });
 });
 
 /** Under `/v1` so the Vite dev proxy (`/v1` → API) can hit a liveness check from the management app origin. */
@@ -219,6 +236,7 @@ app.use(`${v1}/portal/notifications`, portalNotificationsRouter);
 app.use(`${v1}/admin/portal`, adminPortalRouter);
 app.use(`${v1}/admin/role-permissions`, adminRolePermissionsRouter);
 app.use(`${v1}/admin/system-config`, adminSystemConfigRouter);
+app.use(`${v1}/admin/system-status`, adminSystemStatusRouter);
 // Admin Panel — unified clients/orders/overview surface (Phase 0–4)
 app.use(`${v1}/admin/overview`, adminOverviewRouter);
 app.use(`${v1}/admin/clients`, adminClientsRouter);

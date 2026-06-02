@@ -1,6 +1,8 @@
 # Build from repository root:
 #   docker build -f deploy/Dockerfile.api -t pouchcare-api .
 FROM node:20-bookworm-slim AS builder
+ARG GIT_SHA=unknown
+ARG BUILD_TIME=unknown
 WORKDIR /app
 RUN apt-get update && apt-get install -y openssl ca-certificates && rm -rf /var/lib/apt/lists/*
 
@@ -25,6 +27,8 @@ RUN npm install -g tsc-alias@1.8.10 \
   && npx tsc-alias -p tsconfig.json
 
 FROM node:20-bookworm-slim AS runner
+ARG GIT_SHA=unknown
+ARG BUILD_TIME=unknown
 WORKDIR /app
 RUN apt-get update && apt-get install -y openssl ca-certificates wget && rm -rf /var/lib/apt/lists/* \
   && npm install -g prisma@5.10.0
@@ -47,6 +51,8 @@ ENV DATABASE_URL="postgresql://pouchcare:pouchcare@localhost:5432/pouchcare"
 RUN npx prisma generate
 
 ENV NODE_ENV=production
+ENV GIT_SHA=$GIT_SHA
+ENV BUILD_TIME=$BUILD_TIME
 EXPOSE 7000
 # Inline entrypoint avoids CRLF issues when the image is built on Windows checkouts.
 ENTRYPOINT ["/bin/sh", "-c", "set -e; cd /app/apps/api; prisma migrate deploy; exec node dist/server.js"]

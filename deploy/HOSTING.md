@@ -59,6 +59,7 @@ docker compose -f docker-compose.hosting.yml up -d --build
 This starts Postgres, Redis, the API (port **7000** on the host), and Caddy on **80** and **443**.
 
 - Direct API (LAN / health checks): `http://localhost:7000/health`
+- Readiness (DB + Redis): `http://localhost:7000/health/ready`
 - Public HTTPS (after DNS and firewall): `https://api.pouchcare.com/health`
 
 First start runs `prisma migrate deploy` inside the API container.
@@ -105,6 +106,28 @@ Rebuild after code changes:
 ```bash
 docker compose -f docker-compose.hosting.yml up -d --build
 ```
+
+### Build metadata (Git SHA / build time)
+
+The API Docker image accepts optional build args so the **Management → Settings → System Config → Server** tab can show deploy identity:
+
+```bash
+docker compose -f docker-compose.hosting.yml build \
+  --build-arg GIT_SHA="$(git rev-parse --short HEAD)" \
+  --build-arg BUILD_TIME="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+docker compose -f docker-compose.hosting.yml up -d
+```
+
+On Windows PowerShell:
+
+```powershell
+docker compose -f docker-compose.hosting.yml build `
+  --build-arg GIT_SHA=(git rev-parse --short HEAD) `
+  --build-arg BUILD_TIME=(Get-Date -Format o)
+docker compose -f docker-compose.hosting.yml up -d
+```
+
+If omitted, the Server tab shows `unknown` for Git SHA and build time.
 
 ## 6. Migrations & entrypoint
 
