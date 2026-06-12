@@ -21,6 +21,31 @@ export interface ApkJob {
   downloadUrl: string | null;
 }
 
+/** Plan catalog served by the API — the single source of truth for the picker. */
+export interface ApkPlan {
+  id: "free" | "pro" | "enterprise";
+  name: string;
+  blurb: string;
+  monthlyUsd: number;
+  maxConversions: number | null;
+  features: string[];
+  popular?: boolean;
+  maxApkSizeMb: number;
+  maxConcurrent: number;
+}
+
+export function useApkPlans() {
+  return useQuery({
+    queryKey: ["portal", "web-to-apk", "plans"],
+    queryFn: async () => {
+      const res = await api.get<ApkPlan[]>("/portal/web-to-apk/plans");
+      return res.data as unknown as ApkPlan[];
+    },
+    // Catalog rarely changes — cache aggressively.
+    staleTime: 1000 * 60 * 60,
+  });
+}
+
 function unwrapPaginated<T>(res: {
   data: { data: T[]; meta: PaginatedMeta };
 }): {

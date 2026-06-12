@@ -19,14 +19,12 @@ import {
   Trash2,
 } from "lucide-react";
 import {
-  WEB_TO_APK_PLANS,
-} from "@/data/mockWebToApk";
-import {
   APK_STATUS_LABEL,
   APK_STATUS_VARIANT,
 } from "@/data/constants";
 import {
   useApkJobs,
+  useApkPlans,
   useCreateApkJob,
   useApkJob,
   useDeleteApkJob,
@@ -173,13 +171,18 @@ function JobMobileCard({ job, onDelete }: { job: ApkJob; onDelete?: () => void }
 export default function WebToApkPage() {
   const [url, setUrl] = useState("");
   const [appName, setAppName] = useState("");
-  const [planId, setPlanId] = useState(WEB_TO_APK_PLANS[1]?.id ?? "starter");
+  const [planId, setPlanId] = useState("");
   const [deleteConfirmJobId, setDeleteConfirmJobId] = useState<string | null>(null);
 
   const jobs = useApkJobs(1, 100);
+  const plansQuery = useApkPlans();
   const createJob = useCreateApkJob();
   const deleteJob = useDeleteApkJob();
-  const selectedPlan = WEB_TO_APK_PLANS.find((p) => p.id === planId) ?? WEB_TO_APK_PLANS[0]!;
+
+  const plans = plansQuery.data ?? [];
+  // Default to the "popular" tier (falling back to the first) until the user picks.
+  const selectedPlan =
+    plans.find((p) => p.id === planId) ?? plans.find((p) => p.popular) ?? plans[0];
 
   const handleDeleteJob = async (jobId: string) => {
     try {
@@ -201,12 +204,16 @@ export default function WebToApkPage() {
       toast.error("Enter an app name");
       return;
     }
+    if (!selectedPlan) {
+      toast.error("Plans are still loading, please try again");
+      return;
+    }
 
     try {
       await createJob.mutateAsync({
         appName: appName.trim(),
         url: url.trim(),
-        plan: selectedPlan.name,
+        plan: selectedPlan.id,
       });
       setUrl("");
       setAppName("");
@@ -232,9 +239,11 @@ export default function WebToApkPage() {
             </Link>
           </p>
         </div>
-        <Badge variant="info">
-          {selectedPlan.name} plan
-        </Badge>
+        {selectedPlan && (
+          <Badge variant="info">
+            {selectedPlan.name} plan
+          </Badge>
+        )}
       </div>
 
       {/* ── Panel 1: Convert form ─────────────────────────────────────── */}
@@ -276,12 +285,13 @@ export default function WebToApkPage() {
               <Label htmlFor="apk-plan">Hosting plan</Label>
               <Select
                 id="apk-plan"
-                value={planId}
+                value={selectedPlan?.id ?? ""}
                 onChange={(e) => setPlanId(e.target.value)}
                 className="mt-1 min-h-[48px]"
-                disabled={createJob.isPending}
+                disabled={createJob.isPending || plansQuery.isLoading || plans.length === 0}
               >
-                {WEB_TO_APK_PLANS.map((p: typeof WEB_TO_APK_PLANS[0]) => (
+                {plansQuery.isLoading && <option value="">Loading plans…</option>}
+                {plans.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.name}
                     {p.monthlyUsd > 0 ? ` — ${formatUsd(p.monthlyUsd)}/mo` : " — Free"}
@@ -295,24 +305,26 @@ export default function WebToApkPage() {
           </div>
 
           {/* Plan features preview */}
-          <div className="rounded-xl border border-primary-100 bg-primary-50/40 p-4">
-            <p className="mb-2 text-xs font-semibold text-primary-700">
-              {selectedPlan.name} plan includes:
-            </p>
-            <ul className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
-              {selectedPlan.features.slice(0, 4).map((f: string) => (
-                <li key={f} className="flex items-center gap-2 text-xs text-gray-700 dark:text-gray-300">
-                  <Check className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
-                  {f}
-                </li>
-              ))}
-            </ul>
-          </div>
+          {selectedPlan && (
+            <div className="rounded-xl border border-primary-100 bg-primary-50/40 p-4">
+              <p className="mb-2 text-xs font-semibold text-primary-700">
+                {selectedPlan.name} plan includes:
+              </p>
+              <ul className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+                {selectedPlan.features.slice(0, 4).map((f: string) => (
+                  <li key={f} className="flex items-center gap-2 text-xs text-gray-700 dark:text-gray-300">
+                    <Check className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           <Button
             type="submit"
             variant="primary"
-            disabled={createJob.isPending}
+            disabled={createJob.isPending || !selectedPlan}
             className="min-h-[52px] w-full touch-manipulation sm:w-auto sm:min-w-[200px]"
             icon={
               createJob.isPending ? (
