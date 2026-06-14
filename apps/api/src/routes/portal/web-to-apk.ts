@@ -9,11 +9,79 @@ import { validate } from '@/middleware/validate'
 const router = Router()
 router.use(authenticate, requirePortal)
 
+// ── Plan catalog (single source of truth) ─────────────────────────────
+// `id` is what gets persisted on ApkJob.plan and accepted by POST /jobs.
+// The dashboard plan picker renders name/pricing/features from this list,
+// and the concurrency/size limits below are enforced on job creation.
+export interface ApkPlanDef {
+  id: 'free' | 'pro' | 'enterprise'
+  name: string
+  blurb: string
+  monthlyUsd: number
+  maxConversions: number | null
+  features: string[]
+  popular?: boolean
+  maxApkSizeMb: number
+  maxConcurrent: number
+}
+
+const WEB_TO_APK_PLANS: ApkPlanDef[] = [
+  {
+    id: 'free',
+    name: 'Starter',
+    blurb: 'Perfect for testing or small projects',
+    monthlyUsd: 0,
+    maxConversions: 1,
+    features: ['1 APK conversion/month', 'Basic customization', 'Email support', '7-day expiry'],
+    maxApkSizeMb: 50,
+    maxConcurrent: 1,
+  },
+  {
+    id: 'pro',
+    name: 'Professional',
+    blurb: 'For growing projects and small businesses',
+    monthlyUsd: 29,
+    maxConversions: 20,
+    features: [
+      '20 APK conversions/month',
+      'Full customization',
+      'Priority email support',
+      '30-day expiry',
+      'Custom icon & splash screen',
+    ],
+    popular: true,
+    maxApkSizeMb: 150,
+    maxConcurrent: 5,
+  },
+  {
+    id: 'enterprise',
+    name: 'Enterprise',
+    blurb: 'Unlimited capacity for large teams',
+    monthlyUsd: 99,
+    maxConversions: null,
+    features: [
+      'Unlimited APK conversions',
+      'Full customization',
+      '24/7 phone & email support',
+      '90-day expiry',
+      'Custom icon, splash & themes',
+      'API access',
+    ],
+    maxApkSizeMb: 500,
+    maxConcurrent: 20,
+  },
+]
+
 // Validation schemas
 const createJobSchema = z.object({
   appName: z.string().min(1).max(100),
   url: z.string().url(),
   plan: z.enum(['free', 'pro', 'enterprise']).default('free'),
+})
+
+// GET /portal/web-to-apk/plans — Plan catalog for the conversion picker
+router.get('/plans', (_req, res) => {
+  return ok(res, WEB_TO_APK_PLANS)
 })
 
 // GET /portal/web-to-apk/jobs — List APK jobs for member
@@ -56,14 +124,8 @@ router.post('/jobs', validate(createJobSchema), async (req: AuthRequest, res) =>
       return badRequest(res, 'Invalid URL')
     }
 
-    // Check plan limits
-    const planLimits: Record<string, { maxApkSize: number; maxConcurrent: number }> = {
-      free: { maxApkSize: 50, maxConcurrent: 1 },
-      pro: { maxApkSize: 150, maxConcurrent: 5 },
-      enterprise: { maxApkSize: 500, maxConcurrent: 20 },
-    }
-
-    const limit = planLimits[plan]
+    // Check plan limits (validated by zod, so the plan is always in the catalog)
+    const planDef = WEB_TO_APK_PLANS.find((p) => p.id === plan)!
     const activeJobs = await prisma.apkJob.count({
       where: {
         portalMemberId: req.user!.id,
@@ -71,8 +133,8 @@ router.post('/jobs', validate(createJobSchema), async (req: AuthRequest, res) =>
       },
     })
 
-    if (activeJobs >= limit.maxConcurrent) {
-      return badRequest(res, `Plan ${plan} limited to ${limit.maxConcurrent} concurrent jobs`)
+    if (activeJobs >= planDef.maxConcurrent) {
+      return badRequest(res, `Plan ${plan} limited to ${planDef.maxConcurrent} concurrent jobs`)
     }
 
     // Create APK job
