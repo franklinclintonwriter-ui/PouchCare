@@ -23,6 +23,7 @@ const Blog = lazy(() => import("@/pages/Blog"));
 const BlogPost = lazy(() => import("@/pages/BlogPost"));
 const Terms = lazy(() => import("@/pages/Terms"));
 const Privacy = lazy(() => import("@/pages/Privacy"));
+const NotFound = lazy(() => import("@/pages/NotFound"));
 
 const LoginPage = lazy(() => import("@/pages/portal/LoginPage"));
 const RegisterPage = lazy(() => import("@/pages/portal/RegisterPage"));
@@ -174,9 +175,8 @@ export default function App() {
               <Route path="/blog/:slug" element={<BlogPost />} />
               <Route path="/terms" element={<Terms />} />
               <Route path="/privacy" element={<Privacy />} />
+              <Route path="*" element={<NotFound />} />
             </Route>
-
-            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>
       </ErrorBoundary>
