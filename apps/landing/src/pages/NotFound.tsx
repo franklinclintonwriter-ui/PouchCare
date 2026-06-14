@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ArrowLeft, Home, LifeBuoy, Search } from "lucide-react";
+import { Home, LifeBuoy, Search } from "lucide-react";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
 import { SectionLabel, SectionHeading } from "@/components/ui/SectionLabel";
 import { PageSEO } from "@/components/seo/PageSEO";
@@ -78,16 +78,6 @@ export default function NotFound() {
                   ))}
                 </div>
               </div>
-            </ScrollReveal>
-
-            <ScrollReveal delay={200}>
-              <Link
-                to="/"
-                className="mt-10 inline-flex items-center gap-1.5 text-sm font-medium text-primary-600 hover:text-primary-700"
-              >
-                <ArrowLeft size={15} />
-                Return to homepage
-              </Link>
             </ScrollReveal>
           </div>
         </div>
