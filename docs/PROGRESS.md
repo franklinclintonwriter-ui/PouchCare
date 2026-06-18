@@ -12,7 +12,7 @@
 Status values: `TODO` · `WIP` · `IN_REVIEW` · `MERGED`.
 
 ## Phase 0 — Ledger + type-health
-- [ ] PR-0.1 Ledger scaffold — branch:ent/p0-ledger — status:IN_REVIEW — pr:#TBD — owner:ai — verify:files render, all PRs listed
+- [ ] PR-0.1 Ledger scaffold — branch:ent/p0-ledger — status:IN_REVIEW — pr:#4 — owner:ai — verify:files render, all PRs listed
 - [ ] PR-0.2 RBAC KEY_LABELS (39 keys) — branch:ent/p0-rbac-labels — status:TODO — pr:#— — owner:ai — verify:RolePermissions.tsx + StaffRolePermissionsPanel.tsx type-clean
 - [ ] PR-0.3 Clear management tsc errors + CI guard — branch:ent/p0-typehealth — status:TODO — pr:#— — owner:ai — verify:`npm run type-check` green (api+mgmt+landing)
 
