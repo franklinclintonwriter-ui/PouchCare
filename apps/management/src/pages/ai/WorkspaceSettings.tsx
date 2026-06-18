@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useHeaderConfig } from '@/hooks/useHeaderConfig'
 import { PageTransition } from '@/components/ui/PageTransition'
@@ -8,11 +8,11 @@ import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
 import {
   useWorkspace, useWorkspaceSkills, useCreateSkill, useUpdateSkill, useDeleteSkill,
-  useWorkspaceSettings, useSaveWorkspaceSettings, type WorkspaceSkill,
+  useWorkspaceSettings, useSaveWorkspaceSettings,
 } from '@/api/workspace'
 import {
-  Settings, BookOpen, Plus, Trash2, Check, X, Zap, Code2, FileText, PenTool,
-  Shield, Globe, Lightbulb, GripVertical, ToggleLeft, ToggleRight, Save, ArrowLeft,
+  Settings, BookOpen, Plus, Trash2, Code2, FileText, PenTool,
+  Shield, Globe, Lightbulb, ToggleLeft, ToggleRight, Save, ArrowLeft,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/utils/cn'
@@ -97,7 +97,7 @@ export default function WorkspaceSettings() {
   const [skillCategory, setSkillCategory] = useState('custom')
 
   // Settings state
-  const [aiModel, setAiModel] = useState((settings as any)?.aiModel ?? '')
+  const [aiModel] = useState((settings as any)?.aiModel ?? '')
   const [autoSave, setAutoSave] = useState((settings as any)?.autoSave ?? true)
   const [tabSize, setTabSize] = useState(String((settings as any)?.tabSize ?? 2))
   const [fontSize, setFontSize] = useState(String((settings as any)?.fontSize ?? 13))
@@ -242,7 +242,7 @@ export default function WorkspaceSettings() {
                 <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Auto-save</p>
                 <p className="text-[11px] text-gray-500 dark:text-gray-400">Save files automatically when switching tabs or losing focus</p>
               </div>
-              <button onClick={() => setAutoSave((v) => !v)}>
+              <button onClick={() => setAutoSave((v: boolean) => !v)}>
                 {autoSave ? <ToggleRight className="h-6 w-6 text-emerald-500" /> : <ToggleLeft className="h-6 w-6 text-gray-400" />}
               </button>
             </div>

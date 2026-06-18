@@ -59,6 +59,15 @@ quality:typecheck:
   rules:
     - if: $CI_COMMIT_BRANCH
 
+# Enterprise ledger guard — a code MR must also update docs/PROGRESS.md
+quality:ledger:
+  stage: verify
+  script:
+    - git fetch origin "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" || true
+    - node scripts/check-ledger.mjs
+  rules:
+    - if: $CI_MERGE_REQUEST_IID
+
 # Build all apps
 build:all:
   stage: build

@@ -32,3 +32,30 @@
 - **Verify:** `cd apps/management && npx tsc --noEmit` — both files now clean; repo-wide
   non-deprecation errors 42 → 40 (the rest are cleared in PR-0.3).
 - **Follow-ups:** none.
+
+---
+
+### PR-0.3 — Management type-health to zero + CI ledger guard
+- **Branch:** `ent/p0-typehealth` → `ent/p0-rbac-labels` (stacked)
+- **What:** Cleared all remaining `apps/management` `tsc` errors (40 → 0) across 16 files,
+  and wired the ledger guard promised in PR-0.1.
+- **Key fixes:** re-added optional `onSearch?` (Enter-triggered) to shared `SearchInput`
+  (fixes 4 call sites at the source); corrected `Select` `onChange` to read `e.target.value`
+  (native select emits a `ChangeEvent`) in ClientsList/OrdersList/AuditLog; `Leaderboard`
+  column `render` → 2-arg `(row, index)`; relaxed `exportCsv` generic to `<T>`; added required
+  `lifecycleStatus` to `mockDomains`; destructured `refetch` in `MonitorDashboard`; broadened
+  `Positions` `set` to include `HTMLTextAreaElement`; removed genuinely-unused imports/vars
+  across AiExecutivePage/WorkspaceSettings/TeamAttendance/FileManager/RecruitmentAnalytics/
+  PayrollList/assets.
+- **CI guard:** `scripts/check-ledger.mjs` + `quality:ledger` GitLab job (merge-requests only)
+  fail a code MR that doesn't update `docs/PROGRESS.md`.
+- **Decisions:** component-level `onSearch` fix (one change) over editing N call sites; the
+  `Select` fix is also a latent runtime-bug fix (was passing the event object as the filter
+  value). Removed the orphaned `usePermission` import in RecruitmentAnalytics (its only
+  consumer `perm` was removed).
+- **Verify:** `cd apps/management && npx tsc --noEmit` exits 0; `vite build` succeeds.
+- **Follow-ups:** the removed `normalizeDomainStatus`/`normalizeWebsiteStatus` were dead code
+  (never called); `mapDomain`/`mapWebsite` (`apps/management/src/api/assets.ts`) pass API
+  `status` through unchanged. A **pre-existing** status-casing mismatch may exist between API
+  values (`Active`/`Live`) and the lowercase `<Select>` options in DomainDetail/WebsiteDetail —
+  flag for a Phase-3 polish PR (out of scope for type-health). **End of Phase 0 — green baseline.**

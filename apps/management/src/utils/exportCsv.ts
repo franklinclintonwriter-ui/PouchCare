@@ -1,7 +1,7 @@
 /**
  * Export tabular data as a CSV file. Triggers a browser download.
  */
-export function exportCsv<T extends Record<string, unknown>>(
+export function exportCsv<T>(
   rows: T[],
   columns: {
     key: keyof T;
