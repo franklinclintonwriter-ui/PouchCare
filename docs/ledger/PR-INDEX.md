@@ -1,13 +1,13 @@
 # PR Index — append-only decision log
 
-> One entry per merged enterprise PR. Append; never edit prior entries. This is the
-> compaction-proof memory: decisions made, files touched, scope dropped, follow-ups deferred.
+> One entry per enterprise PR. Append as part of each PR; never edit prior entries after
+> merge. Live status lives in `PROGRESS.md`. This is the compaction-proof memory: decisions
+> made, files touched, scope dropped, follow-ups deferred.
 
 ---
 
 ### PR-0.1 — Ledger scaffold
 - **Branch:** `ent/p0-ledger` → `enterprise/main`
-- **Status:** in review
 - **What:** Added the persistent progress ledger and contribution scaffolding:
   `docs/ROADMAP.md` (static plan), `docs/PROGRESS.md` (living checklist + RESUME block),
   `docs/ledger/PR-INDEX.md` (this file), `.github/pull_request_template.md`,
