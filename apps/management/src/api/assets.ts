@@ -51,6 +51,13 @@ type RawWebsite = Record<string, unknown> & {
   lastUpdated?: string | null;
 };
 
+function normalizeDomainStatus(value?: string | null): Domain['status'] {
+  const s = (value ?? '').toLowerCase();
+  if (s === 'expired') return 'expired';
+  if (s === 'transferred') return 'transferred';
+  return 'active';
+}
+
 function mapDomain(raw: RawDomain): Domain {
   return {
     id: raw.id,
@@ -60,7 +67,7 @@ function mapDomain(raw: RawDomain): Domain {
     expiryDate: raw.expiryDate ?? new Date().toISOString(),
     registrationDate: raw.registrationDate as string | undefined,
     autoRenew: true,
-    status: raw.status ?? 'Active',
+    status: normalizeDomainStatus(raw.status),
     lifecycleStatus: (raw.lifecycleStatus as Domain['lifecycleStatus']) ?? 'INCOMPLETE',
     dnsProvider: raw.hostingServer ?? 'Unknown',
     annualCost: raw.annualRenewalCost ?? 0,
@@ -111,6 +118,14 @@ function mapServer(raw: RawServer): ServerAsset {
   };
 }
 
+function normalizeWebsiteStatus(value?: string | null): WebsiteAsset['status'] {
+  const s = (value ?? '').toLowerCase();
+  if (s === 'staging') return 'staging';
+  if (s === 'down' || s === 'offline') return 'down';
+  if (s === 'maintenance') return 'maintenance';
+  return 'live';
+}
+
 function mapWebsite(raw: RawWebsite): WebsiteAsset {
   return {
     id: raw.id,
@@ -120,7 +135,7 @@ function mapWebsite(raw: RawWebsite): WebsiteAsset {
     serverName: raw.hostedOn ?? '-',
     domainId: raw.domainId ?? raw.domainLinked ?? '',
     domainName: raw.domainLinked ?? '-',
-    status: raw.status ?? 'Live',
+    status: normalizeWebsiteStatus(raw.status),
     platform: raw.platform,
     cms: raw.cms as string | null | undefined,
     programmingLang: raw.programmingLang as string | null | undefined,
