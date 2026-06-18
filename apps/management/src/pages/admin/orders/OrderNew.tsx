@@ -39,7 +39,7 @@ export default function OrderNew() {
     limit: 8,
   })
 
-  const { data: services, isLoading: servicesLoading, isError: servicesError, refetch: refetchServices } = useAdminServices()
+  const { data: services, isLoading: servicesLoading, isError: servicesError, isFetching: servicesFetching, refetch: refetchServices } = useAdminServices()
 
   // Catalog filtered by the search box (name/category); featured + ordered first.
   const filteredServices = useMemo(() => {
@@ -208,62 +208,66 @@ export default function OrderNew() {
                 placeholder="Search the service catalog by name or category"
               />
               <div className="max-h-72 divide-y divide-gray-100 overflow-y-auto rounded-md border border-gray-200 dark:divide-gray-800 dark:border-gray-800">
-                {servicesLoading && <div className="p-3 text-sm text-gray-400">Loading catalog…</div>}
-                {servicesError && !servicesLoading && (
+                {servicesError ? (
+                  /* Hard error: show only the error + Retry — never stale rows or the custom
+                     escape hatch (useAdminServices keeps placeholderData across an error). */
                   <div className="flex items-center justify-between gap-3 p-3 text-sm">
                     <span className="text-red-600 dark:text-red-400">Couldn’t load the service catalog.</span>
                     <button
                       type="button"
                       onClick={() => refetchServices()}
-                      className="rounded-md border border-gray-200 px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+                      disabled={servicesFetching}
+                      className="rounded-md border border-gray-200 px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
                     >
-                      Retry
+                      {servicesFetching ? 'Retrying…' : 'Retry'}
                     </button>
                   </div>
-                )}
-                {!servicesLoading && !servicesError && filteredServices.length === 0 && !serviceSearch.trim() && (
-                  <div className="p-3 text-sm text-gray-400">No services in the catalog yet.</div>
-                )}
-                {filteredServices.map((s) => {
-                  const isActive = (s.status ?? 'Active') === 'Active'
-                  return (
-                    <button
-                      key={s.id}
-                      onClick={() => selectService(s)}
-                      className={`flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-800 ${
-                        selectedServiceId === s.id ? 'bg-primary-50 dark:bg-primary-900/20' : ''
-                      }`}
-                    >
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="truncate font-medium">{s.name}</span>
-                          {s.featured && <Badge variant="success" size="sm">Featured</Badge>}
-                          {!isActive && s.status && <Badge variant="warning" size="sm">{s.status}</Badge>}
-                        </div>
-                        {s.category && <div className="truncate text-xs text-gray-500">{s.category}</div>}
-                      </div>
-                      {typeof s.basePriceUsd === 'number' && s.basePriceUsd > 0 && (
-                        <span className="shrink-0 font-mono text-xs text-gray-500">{formatCurrency(s.basePriceUsd)}</span>
-                      )}
-                    </button>
-                  )
-                })}
-                {/* Escape hatch: keep the previous free-text capability for one-off services.
-                    Only once the catalog has SUCCESSFULLY loaded (services defined) — so we
-                    never offer "custom" for a name still being fetched, nor when the load
-                    failed (the error state above prompts a retry instead). */}
-                {services && serviceSearch.trim() && !hasExactMatch && (
-                  <button
-                    onClick={useCustomService}
-                    className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-800 ${
-                      selectedServiceId === null && serviceName === serviceSearch.trim()
-                        ? 'bg-primary-50 dark:bg-primary-900/20'
-                        : ''
-                    }`}
-                  >
-                    <Plus className="h-3.5 w-3.5 shrink-0 text-gray-400" />
-                    Use “{serviceSearch.trim()}” as a custom service
-                  </button>
+                ) : servicesLoading ? (
+                  <div className="p-3 text-sm text-gray-400">Loading catalog…</div>
+                ) : (
+                  <>
+                    {filteredServices.length === 0 && !serviceSearch.trim() && (
+                      <div className="p-3 text-sm text-gray-400">No services in the catalog yet.</div>
+                    )}
+                    {filteredServices.map((s) => {
+                      const isActive = (s.status ?? 'Active') === 'Active'
+                      return (
+                        <button
+                          key={s.id}
+                          onClick={() => selectService(s)}
+                          className={`flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-800 ${
+                            selectedServiceId === s.id ? 'bg-primary-50 dark:bg-primary-900/20' : ''
+                          }`}
+                        >
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="truncate font-medium">{s.name}</span>
+                              {s.featured && <Badge variant="success" size="sm">Featured</Badge>}
+                              {!isActive && s.status && <Badge variant="warning" size="sm">{s.status}</Badge>}
+                            </div>
+                            {s.category && <div className="truncate text-xs text-gray-500">{s.category}</div>}
+                          </div>
+                          {typeof s.basePriceUsd === 'number' && s.basePriceUsd > 0 && (
+                            <span className="shrink-0 font-mono text-xs text-gray-500">{formatCurrency(s.basePriceUsd)}</span>
+                          )}
+                        </button>
+                      )
+                    })}
+                    {/* Escape hatch: free-text fallback for one-off services not in the catalog. */}
+                    {serviceSearch.trim() && !hasExactMatch && (
+                      <button
+                        onClick={useCustomService}
+                        className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-800 ${
+                          selectedServiceId === null && serviceName === serviceSearch.trim()
+                            ? 'bg-primary-50 dark:bg-primary-900/20'
+                            : ''
+                        }`}
+                      >
+                        <Plus className="h-3.5 w-3.5 shrink-0 text-gray-400" />
+                        Use “{serviceSearch.trim()}” as a custom service
+                      </button>
+                    )}
+                  </>
                 )}
               </div>
               {serviceName && (
