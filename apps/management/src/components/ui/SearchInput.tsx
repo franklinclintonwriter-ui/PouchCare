@@ -5,6 +5,7 @@ import { cn } from '@/utils/cn';
 interface SearchInputProps {
   value: string;
   onChange: (value: string) => void;
+  onSearch?: () => void;
   placeholder?: string;
   className?: string;
   size?: 'sm' | 'md';
@@ -14,6 +15,7 @@ interface SearchInputProps {
 function SearchInput({
   value,
   onChange,
+  onSearch,
   placeholder = 'Search...',
   className,
   size = 'sm',
@@ -32,6 +34,7 @@ function SearchInput({
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        onKeyDown={(e) => { if (e.key === 'Enter') onSearch?.(); }}
         placeholder={placeholder}
         autoFocus={autoFocus}
         className={cn(

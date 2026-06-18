@@ -7,10 +7,8 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { StatsRow } from "@/components/shared/StatsRow";
 import { DataTable, type Column } from "@/components/ui/DataTable";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { usePermission } from "@/hooks/usePermission";
 
 export default function RecruitmentAnalytics() {
-  const perm = usePermission();
   const { data: metrics, isLoading: metricsLoading } = useRecruitmentMetrics();
   const { data: sourceAnalytics, isLoading: sourceLoading } =
     useApplicationsBySource();

@@ -51,13 +51,6 @@ type RawWebsite = Record<string, unknown> & {
   lastUpdated?: string | null;
 };
 
-function normalizeDomainStatus(value?: string | null): Domain['status'] {
-  const s = (value ?? '').toLowerCase();
-  if (s === 'expired') return 'expired';
-  if (s === 'transferred') return 'transferred';
-  return 'active';
-}
-
 function mapDomain(raw: RawDomain): Domain {
   return {
     id: raw.id,
@@ -116,14 +109,6 @@ function mapServer(raw: RawServer): ServerAsset {
     monthlyCost: raw.monthlyCostUsd ?? 0,
     websiteCount: 0,
   };
-}
-
-function normalizeWebsiteStatus(value?: string | null): WebsiteAsset['status'] {
-  const s = (value ?? '').toLowerCase();
-  if (s === 'staging') return 'staging';
-  if (s === 'down' || s === 'offline') return 'down';
-  if (s === 'maintenance') return 'maintenance';
-  return 'live';
 }
 
 function mapWebsite(raw: RawWebsite): WebsiteAsset {

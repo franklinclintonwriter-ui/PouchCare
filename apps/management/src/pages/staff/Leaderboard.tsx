@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Trophy, Star, CheckSquare, Users, TrendingUp } from "lucide-react";
+import { Trophy, Star, CheckSquare, Users } from "lucide-react";
 import { useHeaderConfig } from "@/hooks/useHeaderConfig";
 import { useStaffLeaderboard } from "@/api/staff";
 import { PageTransition } from "@/components/ui/PageTransition";
@@ -112,13 +112,13 @@ export default function StaffLeaderboard() {
       key: "rank" as keyof LeaderboardRow,
       label: "#",
       width: "60px",
-      render: (_row, _col, index) => <RankBadge rank={(index ?? 0) + 1} />,
+      render: (_row, index) => <RankBadge rank={(index ?? 0) + 1} />,
     },
     {
       key: "name",
       label: "Shoulder",
       sticky: true,
-      render: (row, _col, index) => (
+      render: (row, index) => (
         <div className="flex items-center gap-3">
           <div className="relative">
             <Avatar name={row.name} size="sm" />

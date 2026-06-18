@@ -90,7 +90,7 @@ export default function AuditLog() {
           />
           <Select
             value={resourceKind}
-            onChange={(v) => setParam('resourceKind', v || undefined)}
+            onChange={(e) => setParam('resourceKind', e.target.value || undefined)}
             options={KIND_OPTIONS}
             placeholder="Resource"
             className="w-[180px]"

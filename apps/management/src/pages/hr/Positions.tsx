@@ -210,7 +210,7 @@ export default function Positions() {
 
   const set =
     (k: string) =>
-    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
       setForm((f) => ({ ...f, [k]: e.target.value }));
 
   const headerConfig = useMemo(
@@ -428,7 +428,7 @@ export default function Positions() {
             rows={4}
             placeholder="Describe responsibilities, requirements, and benefits..."
             value={form.jobDescription}
-            onChange={set("jobDescription") as React.ChangeEventHandler<HTMLTextAreaElement>}
+            onChange={set("jobDescription")}
           />
         </div>
       </Modal>

@@ -569,7 +569,7 @@ export default function MonitorDashboard() {
   const [guideOpen, setGuideOpen] = useState(false);
   const [lastRefreshedAt, setLastRefreshedAt] = useState<Date | null>(null);
 
-  const { data, isLoading, isError, error } = useMonitorSummary({
+  const { data, isLoading, isError, error, refetch } = useMonitorSummary({
     refetchInterval: 45_000,
   });
 

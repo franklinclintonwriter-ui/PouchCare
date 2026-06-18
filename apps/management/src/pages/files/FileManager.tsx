@@ -7,7 +7,7 @@ import { useFileList, useCreateFolder, useUploadFiles, useDeleteFile, useDownloa
 import {
   FolderOpen, File, Upload, FolderPlus, Trash2, Download, ArrowLeft,
   FileText, Image, FileCode, FileSpreadsheet, Film, Music, Archive,
-  ChevronRight, MoreVertical, RefreshCw, HardDrive,
+  ChevronRight, RefreshCw, HardDrive,
 } from 'lucide-react'
 import { cn } from '@/utils/cn'
 import { toast } from 'sonner'
@@ -37,7 +37,6 @@ function formatSize(bytes: number): string {
 
 export default function FileManager() {
   const [currentPath, setCurrentPath] = useState('')
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const { data, isLoading, refetch } = useFileList(currentPath)
   const createFolder = useCreateFolder()
   const uploadFiles = useUploadFiles()

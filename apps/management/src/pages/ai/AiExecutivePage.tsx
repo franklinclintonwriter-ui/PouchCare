@@ -133,15 +133,6 @@ export default function AiExecutivePage() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const reset = useCallback(() => {
-    abortRef.current?.abort();
-    setMessages([]);
-    setConversationId(null);
-    setError(null);
-    setStreaming(false);
-    setInput("");
-  }, []);
-
   const send = useCallback(
     async (text: string) => {
       if (!text.trim() || streaming) return;
