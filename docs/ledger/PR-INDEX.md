@@ -22,7 +22,6 @@
 
 ### PR-0.2 — RBAC KEY_LABELS completeness + single source
 - **Branch:** `ent/p0-rbac-labels` → `ent/p0-ledger` (stacked)
-- **Status:** in review
 - **What:** Added `PERMISSION_LABELS: Record<PermissionKey, string>` (all 39 keys) to
   `apps/management/src/constants/permissionKeys.ts` as the single source of truth, and
   pointed both consumers at it: `pages/settings/RolePermissions.tsx` and
