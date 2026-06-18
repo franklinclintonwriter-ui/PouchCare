@@ -41,3 +41,49 @@ export const PERMISSION_KEYS = [
 ] as const;
 
 export type PermissionKey = (typeof PERMISSION_KEYS)[number];
+
+/**
+ * Human-readable label for every permission key. Single source of truth for UI.
+ * Because it is typed `Record<PermissionKey, string>`, adding a key to
+ * `PERMISSION_KEYS` without a label here is a compile error.
+ */
+export const PERMISSION_LABELS: Record<PermissionKey, string> = {
+  'staff.branches': 'Branches',
+  'staff.manage_profiles': 'Staff profiles (view/edit other users)',
+  'payroll.access': 'Payroll',
+  'finance.access': 'Finance (invoices, expenses, revenue, forecast)',
+  'finance.exchange_rates': 'Exchange rates',
+  'crm.client_accounts': 'CRM client accounts',
+  'hr.recruitment': 'HR (positions & applications)',
+  'hr.performance': 'Performance reviews',
+  'assets.devices': 'Device inventory',
+  'monitor.view': 'CCTV / Monitor',
+  'broadcast.access': 'Broadcasts',
+  'analytics.access': 'Analytics',
+  'admin_portal.access': 'Member portal admin',
+  'settings.role_permissions': 'Edit role permissions (this screen)',
+  // ── Admin Panel (clients/orders/services unified surface) ──
+  'admin.overview.read': 'Admin: overview',
+  'admin.clients.read': 'Admin: view clients',
+  'admin.clients.write': 'Admin: edit clients',
+  'admin.clients.wallet.adjust': 'Admin: adjust client wallet',
+  'admin.clients.merge': 'Admin: merge clients',
+  'admin.orders.read': 'Admin: view orders',
+  'admin.orders.write': 'Admin: edit orders',
+  'admin.orders.reassign': 'Admin: reassign orders',
+  'admin.orders.refund': 'Admin: refund orders',
+  'admin.services.read': 'Admin: view services',
+  'admin.services.write': 'Admin: edit services',
+  'admin.services.publish': 'Admin: publish services',
+  'admin.services.pricing': 'Admin: service pricing',
+  'admin.billing.read': 'Admin: view billing',
+  'admin.billing.approve': 'Admin: approve billing (deposits/payouts)',
+  'admin.support.read': 'Admin: view support tickets',
+  'admin.support.reply': 'Admin: reply to support tickets',
+  'admin.support.close': 'Admin: close support tickets',
+  'admin.assets.read': 'Admin: view assets (domains/servers/sites)',
+  'admin.assets.write': 'Admin: edit assets',
+  'admin.broadcast.write': 'Admin: send broadcasts',
+  'admin.audit.read': 'Admin: view audit log',
+  'admin.settings.write': 'Admin: edit system settings',
+};
