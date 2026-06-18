@@ -96,6 +96,15 @@ export default function OrderNew() {
     setServiceName(serviceSearch.trim())
   }
 
+  const onServiceSearchChange = (value: string) => {
+    setServiceSearch(value)
+    // If a custom name was confirmed, drop it once the search text diverges so a
+    // stale label can never be submitted — the admin must re-confirm the new text.
+    if (selectedServiceId === null && serviceName && serviceName !== value.trim()) {
+      setServiceName('')
+    }
+  }
+
   const submit = async () => {
     if (!client?.portalMemberId) {
       toast.error('Pick a portal-member-backed client')
@@ -195,7 +204,7 @@ export default function OrderNew() {
             <div className="space-y-3">
               <SearchInput
                 value={serviceSearch}
-                onChange={setServiceSearch}
+                onChange={onServiceSearchChange}
                 placeholder="Search the service catalog by name or category"
               />
               <div className="max-h-72 divide-y divide-gray-100 overflow-y-auto rounded-md border border-gray-200 dark:divide-gray-800 dark:border-gray-800">
@@ -227,8 +236,10 @@ export default function OrderNew() {
                     </button>
                   )
                 })}
-                {/* Escape hatch: keep the previous free-text capability for one-off services. */}
-                {serviceSearch.trim() && !hasExactMatch && (
+                {/* Escape hatch: keep the previous free-text capability for one-off services.
+                    Wait for the catalog to finish loading so we never offer "custom" for a
+                    name that actually matches a service that is still being fetched. */}
+                {!servicesLoading && serviceSearch.trim() && !hasExactMatch && (
                   <button
                     onClick={useCustomService}
                     className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-800 ${
