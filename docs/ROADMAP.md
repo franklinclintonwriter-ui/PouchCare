@@ -32,7 +32,7 @@ Legend: **[CP]** critical-path (AI-owned) · **[||]** parallelizable (Copilot).
 | PR | Title | Dep | Owner |
 |----|-------|-----|-------|
 | 0.1 [CP] | Ledger scaffold (ROADMAP/PROGRESS/PR-INDEX + templates) | — | ai |
-| 0.2 [CP] | Complete RBAC `KEY_LABELS` for all 39 permission keys | 0.1 | ai |
+| 0.2 [CP] | Complete RBAC permission labels for every key (single source) | 0.1 | ai |
 | 0.3 [CP] | Clear remaining management `tsc` errors; green baseline + CI ledger guard | 0.2 | ai |
 
 ### Phase 1 — Infra cutover (MySQL fresh + R2 + drop Supabase)
@@ -68,5 +68,5 @@ verify command (+ `tsc` & `audit:coverage` clean) · ledger duty · out-of-scope
 
 ## Owner actions (cannot run in the build sandbox)
 - Provide secrets: `DATABASE_URL` (mysql), R2 `S3_*`, `JWT_*`, `RESEND_API_KEY`.
-- Run once per env: `prisma migrate dev --name init` (generates `0_init`), then `migrate deploy` + seed.
+- Run once per env: `prisma migrate dev --name 0_init` (generates the initial migration), then `migrate deploy` + seed.
 - Confirm seed-after-Phase-2 sequencing (recommended).

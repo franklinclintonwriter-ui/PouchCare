@@ -22,11 +22,11 @@
 
 ### PR-0.2 — RBAC KEY_LABELS completeness + single source
 - **Branch:** `ent/p0-rbac-labels` → `ent/p0-ledger` (stacked)
-- **What:** Added `PERMISSION_LABELS: Record<PermissionKey, string>` (all 39 keys) to
-  `apps/management/src/constants/permissionKeys.ts` as the single source of truth, and
-  pointed both consumers at it: `pages/settings/RolePermissions.tsx` and
-  `components/staff/StaffRolePermissionsPanel.tsx` (each previously held a duplicated
-  14-key map → `tsc` error against the 39-key `PermissionKey` type).
+- **What:** Added `PERMISSION_LABELS: Record<PermissionKey, string>` (a label for **every**
+  key in `PERMISSION_KEYS`) to `apps/management/src/constants/permissionKeys.ts` as the single
+  source of truth, and pointed both consumers at it: `pages/settings/RolePermissions.tsx` and
+  `components/staff/StaffRolePermissionsPanel.tsx` (each previously held a duplicated,
+  incomplete label map → `tsc` error against the full `PermissionKey` union).
 - **Decisions:** Labels live with the keys so adding a key without a label is a compile
   error forever. Removed the two local `KEY_LABELS` maps.
 - **Verify:** `cd apps/management && npx tsc --noEmit` — both files now clean; repo-wide
