@@ -3,9 +3,9 @@
 <!-- Any agent/session: READ THIS BLOCK FIRST to resume work. Keep it accurate in every PR. -->
 ## CURRENT STATE / RESUME HERE
 - **Integration branch:** `enterprise/main` (off `main` @ 953cd99)
-- **Active branch:** `ent/p0-ledger`
-- **Last merged enterprise PR:** _(none yet)_
-- **Next action:** finish PR-0.1 (this PR), then start PR-0.2 (RBAC `KEY_LABELS`).
+- **Active branch:** `ent/p0-rbac-labels` (stacked on `ent/p0-ledger`)
+- **Last merged enterprise PR:** _(none yet — PR-0.1 #4 in review)_
+- **Next action:** finish PR-0.2 (this PR), then start PR-0.3 (clear remaining management `tsc` errors + CI ledger guard).
 - **Known-broken / notes:** `apps/management` has ~41 pre-existing `tsc` errors (cleared in PR-0.2/0.3). PR #3 (service picker, on `claude/brave-newton-vqbm3u`) is a separate, unrelated PR.
 - **Protocol reminder:** every PR must (1) flip its line below, (2) update this block, (3) append to `ledger/PR-INDEX.md`. CI enforces that code PRs touch this file.
 
@@ -13,7 +13,7 @@ Status values: `TODO` · `WIP` · `IN_REVIEW` · `MERGED`.
 
 ## Phase 0 — Ledger + type-health
 - [ ] PR-0.1 Ledger scaffold — branch:ent/p0-ledger — status:IN_REVIEW — pr:#4 — owner:ai — verify:files render, all PRs listed
-- [ ] PR-0.2 RBAC KEY_LABELS (39 keys) — branch:ent/p0-rbac-labels — status:TODO — pr:#— — owner:ai — verify:RolePermissions.tsx + StaffRolePermissionsPanel.tsx type-clean
+- [ ] PR-0.2 RBAC KEY_LABELS (39 keys) — branch:ent/p0-rbac-labels — status:IN_REVIEW — pr:#TBD — owner:ai — verify:RolePermissions.tsx + StaffRolePermissionsPanel.tsx type-clean
 - [ ] PR-0.3 Clear management tsc errors + CI guard — branch:ent/p0-typehealth — status:TODO — pr:#— — owner:ai — verify:`npm run type-check` green (api+mgmt+landing)
 
 ## Phase 1 — Infra cutover (MySQL fresh + R2 + drop Supabase)

@@ -17,3 +17,19 @@
 - **Deferred / out-of-scope:** CI ledger-presence guard lands in PR-0.3 (alongside the
   green typecheck baseline).
 - **Follow-ups:** none.
+
+---
+
+### PR-0.2 — RBAC KEY_LABELS completeness + single source
+- **Branch:** `ent/p0-rbac-labels` → `ent/p0-ledger` (stacked)
+- **Status:** in review
+- **What:** Added `PERMISSION_LABELS: Record<PermissionKey, string>` (all 39 keys) to
+  `apps/management/src/constants/permissionKeys.ts` as the single source of truth, and
+  pointed both consumers at it: `pages/settings/RolePermissions.tsx` and
+  `components/staff/StaffRolePermissionsPanel.tsx` (each previously held a duplicated
+  14-key map → `tsc` error against the 39-key `PermissionKey` type).
+- **Decisions:** Labels live with the keys so adding a key without a label is a compile
+  error forever. Removed the two local `KEY_LABELS` maps.
+- **Verify:** `cd apps/management && npx tsc --noEmit` — both files now clean; repo-wide
+  non-deprecation errors 42 → 40 (the rest are cleared in PR-0.3).
+- **Follow-ups:** none.
