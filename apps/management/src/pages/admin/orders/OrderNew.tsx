@@ -39,7 +39,7 @@ export default function OrderNew() {
     limit: 8,
   })
 
-  const { data: services, isLoading: servicesLoading } = useAdminServices()
+  const { data: services, isLoading: servicesLoading, isError: servicesError, refetch: refetchServices } = useAdminServices()
 
   // Catalog filtered by the search box (name/category); featured + ordered first.
   const filteredServices = useMemo(() => {
@@ -209,7 +209,19 @@ export default function OrderNew() {
               />
               <div className="max-h-72 divide-y divide-gray-100 overflow-y-auto rounded-md border border-gray-200 dark:divide-gray-800 dark:border-gray-800">
                 {servicesLoading && <div className="p-3 text-sm text-gray-400">Loading catalog…</div>}
-                {!servicesLoading && filteredServices.length === 0 && !serviceSearch.trim() && (
+                {servicesError && !servicesLoading && (
+                  <div className="flex items-center justify-between gap-3 p-3 text-sm">
+                    <span className="text-red-600 dark:text-red-400">Couldn’t load the service catalog.</span>
+                    <button
+                      type="button"
+                      onClick={() => refetchServices()}
+                      className="rounded-md border border-gray-200 px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+                    >
+                      Retry
+                    </button>
+                  </div>
+                )}
+                {!servicesLoading && !servicesError && filteredServices.length === 0 && !serviceSearch.trim() && (
                   <div className="p-3 text-sm text-gray-400">No services in the catalog yet.</div>
                 )}
                 {filteredServices.map((s) => {
@@ -237,9 +249,10 @@ export default function OrderNew() {
                   )
                 })}
                 {/* Escape hatch: keep the previous free-text capability for one-off services.
-                    Wait for the catalog to finish loading so we never offer "custom" for a
-                    name that actually matches a service that is still being fetched. */}
-                {!servicesLoading && serviceSearch.trim() && !hasExactMatch && (
+                    Only once the catalog has SUCCESSFULLY loaded (services defined) — so we
+                    never offer "custom" for a name still being fetched, nor when the load
+                    failed (the error state above prompts a retry instead). */}
+                {services && serviceSearch.trim() && !hasExactMatch && (
                   <button
                     onClick={useCustomService}
                     className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-800 ${
