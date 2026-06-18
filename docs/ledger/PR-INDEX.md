@@ -73,3 +73,20 @@
   so the lib is not yet orphaned.
 - **Verify:** `grep -c supabase apps/api/src/lib/storage.ts` → 0; `cd apps/api && npx tsc --noEmit` → 0 errors.
 - **Follow-ups:** PR-1.2 ports `fileManager.ts` off Supabase; PR-1.3 deletes `lib/supabase.ts` + deps + env.
+
+---
+
+### PR-1.2 — fileManager → R2
+- **Branch:** `ent/p1-filemanager-r2` → `ent/p1-storage-r2` (stacked)
+- **What:** Rewrote all 7 `apps/api/src/routes/fileManager.ts` handlers off Supabase Storage onto
+  Cloudflare R2 via `@aws-sdk/client-s3`, reusing the now-exported `s3Client`/`s3Bucket` from
+  `lib/storage.ts`. S3 has no folders, so folders are key prefixes: list uses `ListObjectsV2`
+  with `Delimiter: '/'` (CommonPrefixes = folders, filtering the `.keep` placeholder); create-folder
+  writes an empty `.keep`; download returns a presigned `GetObject` URL; delete is recursive via
+  `ListObjectsV2` + batched `DeleteObjects`; move is `CopyObject` (URL-encoded CopySource) + delete;
+  usage now reports real `usedBytes`/`fileCount`.
+- **Decisions:** Reuse the configured R2 bucket (`env.S3_BUCKET`) under the existing `users/<id>/`
+  prefix instead of the old separate `staff-files` bucket. Private bucket → upload returns `url: null`;
+  access is via the signed `/files/download` endpoint.
+- **Verify:** `grep -c supabase apps/api/src/routes/fileManager.ts` → 0; `cd apps/api && npx tsc --noEmit` → 0 errors. Live R2 smoke test pending owner secrets.
+- **Follow-ups:** PR-1.3 removes `lib/supabase.ts` + `@supabase/*` deps + `SUPABASE_*` env + the AI NL→SQL route.

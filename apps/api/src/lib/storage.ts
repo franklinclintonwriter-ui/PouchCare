@@ -7,7 +7,7 @@ import fs from 'fs/promises'
 
 const s3AccessKey = env.S3_ACCESS_KEY || env.S3_ACCESS_KEY_ID
 const s3SecretKey = env.S3_SECRET_KEY || env.S3_SECRET_ACCESS_KEY
-const s3Bucket = env.S3_BUCKET
+export const s3Bucket = env.S3_BUCKET
 const s3Region = env.S3_REGION
 const s3Endpoint = env.S3_ENDPOINT.trim()
 
@@ -27,7 +27,7 @@ export const isLocalUploadFallbackEnabled = allowLocalDisk
 
 const LOCAL_UPLOADS_DIR = path.join(process.cwd(), 'uploads')
 
-const s3Client = isCloudflareR2Configured
+export const s3Client = isCloudflareR2Configured
   ? new S3Client({
       region: s3Region,
       endpoint: s3Endpoint,
