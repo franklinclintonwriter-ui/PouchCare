@@ -7,9 +7,9 @@
 <!-- Bullet the key changes with file paths. -->
 
 ## PR (roadmap)
-- Roadmap ID: PR-<phase>.<n>
-- Critical-path or Parallelizable: <CP | ||>
-- Depends on (must merge first): PR-<…>
+- Roadmap ID: `PR-{phase}.{n}`
+- Critical-path or Parallelizable: `CP` or `||`
+- Depends on (must merge first): `PR-{…}`
 
 ## Verification
 <!-- Exact commands/steps. DB/storage PRs: prisma validate + generate + tsc here; live migrate/seed steps documented for the owner. -->

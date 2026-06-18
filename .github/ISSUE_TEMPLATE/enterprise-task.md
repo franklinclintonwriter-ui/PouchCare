@@ -8,7 +8,7 @@ labels: ["enterprise", "copilot"]
 <!-- A Copilot brief must be self-contained. Fill EVERY section. -->
 
 ## Roadmap reference
-- Roadmap ID: **PR-<phase>.<n>** (see `docs/ROADMAP.md`)
+- Roadmap ID: `PR-{phase}.{n}` (see `docs/ROADMAP.md`)
 - **Base branch:** `<the exact merged commit/branch to branch FROM>`
 - **Target branch:** `<branch to open the PR INTO>`
 
@@ -18,7 +18,7 @@ labels: ["enterprise", "copilot"]
 ## Scope fence (hard limits)
 - Allowed files/dirs: `<list>`
 - **Do NOT touch:** `apps/api/prisma/schema.prisma`, `apps/api/prisma/migrations/**`,
-  auth (`apps/api/src/routes/auth`, `middleware/auth.ts`), env (`apps/api/src/config/env.ts`).
+  auth (`apps/api/src/routes/auth`, `apps/api/src/middleware/auth.ts`), env (`apps/api/src/config/env.ts`).
 
 ## Pattern to follow
 <!-- Point at an existing analog, e.g. "mirror audit() usage in apps/api/src/routes/admin/clients.ts". -->
