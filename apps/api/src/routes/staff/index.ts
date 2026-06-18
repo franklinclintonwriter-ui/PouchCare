@@ -377,30 +377,6 @@ router.put('/members/:id', requireStaff, async (req, res, next) => {
     })
     const rolePermissions = await getEffectivePermissions(member.systemRole)
 
-    // Mirror to Supabase
-    try {
-      const { mirrorToSupabase } = require('@/lib/supabase')
-      mirrorToSupabase('staff_profiles', {
-        staff_id: member.id,
-        member_id: member.memberId,
-        name: member.name,
-        email: member.email,
-        system_role: member.systemRole,
-        branch: member.branch,
-        phone: member.phone,
-        department: member.jobRole,
-        status: member.status,
-        avatar_url: member.avatarUrl,
-        join_date: member.joinDate,
-        primary_skill: member.primarySkill,
-        certifications: member.certifications,
-        performance_score: member.performanceScore,
-        tasks_assigned: member.tasksAssigned,
-        tasks_completed: member.tasksCompleted,
-        synced_at: new Date().toISOString(),
-      })
-    } catch {}
-
     return ok(res, { ...member, rolePermissions, profileAdmin: true })
   } catch (err) { serverError(res, err) }
 })

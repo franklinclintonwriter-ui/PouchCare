@@ -62,7 +62,6 @@ import workspaceRouter from "@/routes/ai/workspace";
 import githubRouter from "@/routes/ai/github";
 import integrationsRouter from "@/routes/ai/integrations";
 import sshRouter from "@/routes/ai/ssh";
-import supabaseRouter from "@/routes/ai/supabase";
 import fileManagerRouter from "@/routes/fileManager";
 import { setupWebSocket } from "@/lib/websocket";
 import { startJobs } from "@/jobs/index";
@@ -255,7 +254,6 @@ app.use(`${v1}/ai/workspace`, workspaceRouter);
 app.use(`${v1}/ai/github`, githubRouter);
 app.use(`${v1}/ai/integrations`, integrationsRouter);
 app.use(`${v1}/ai/ssh`, sshRouter);
-app.use(`${v1}/ai/supabase`, supabaseRouter);
 app.use(`${v1}/file-manager`, fileManagerRouter);
 
 // ── Error handler ──────────────────────────────────────────────
