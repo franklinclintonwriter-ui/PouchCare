@@ -54,4 +54,8 @@
   value). Removed the orphaned `usePermission` import in RecruitmentAnalytics (its only
   consumer `perm` was removed).
 - **Verify:** `cd apps/management && npx tsc --noEmit` exits 0; `vite build` succeeds.
-- **Follow-ups:** none. **End of Phase 0 — green baseline for the stack.**
+- **Follow-ups:** the removed `normalizeDomainStatus`/`normalizeWebsiteStatus` were dead code
+  (never called); `mapDomain`/`mapWebsite` (`apps/management/src/api/assets.ts`) pass API
+  `status` through unchanged. A **pre-existing** status-casing mismatch may exist between API
+  values (`Active`/`Live`) and the lowercase `<Select>` options in DomainDetail/WebsiteDetail —
+  flag for a Phase-3 polish PR (out of scope for type-health). **End of Phase 0 — green baseline.**
