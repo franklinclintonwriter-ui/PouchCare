@@ -12,8 +12,9 @@ the append-only decision log is [`ledger/PR-INDEX.md`](./ledger/PR-INDEX.md).
 
 ## Branching model
 - Integration branch **`enterprise/main`** (off `main`). Merges to `main` after Phase 1 + 2.
-- Critical-path PRs **stack** (each branches off the previous). Parallelizable PRs branch off
-  the lowest merged critical-path commit they depend on, staying independently green.
+- Critical-path PRs **stack** in dependency order (each branches off the merged CP PR listed
+  in its `Dep` column). Parallelizable PRs branch off the lowest merged critical-path commit
+  they depend on, staying independently green.
 - Naming: `ent/p{phase}-{slug}` (e.g. `ent/p1-mysql-cutover`).
 - Merge gate: CI `quality:typecheck` green from PR-0.3 onward + ledger-update guard.
 
