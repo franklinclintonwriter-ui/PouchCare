@@ -1,4 +1,4 @@
-# Production API stack: Postgres + Redis + API + Caddy (https://api.pouchcare.com).
+# Production API stack: MySQL 8 + Redis + API + Caddy (https://api.pouchcare.com).
 # Development API (separate DB): docker-compose.hosting.dev.yml → https://api-dev.pouchcare.com (via Caddy → :7001).
 #
 # 1. Copy apps/api/.env and set at least: JWT_SECRET, JWT_REFRESH_SECRET (32+ chars each).
@@ -19,20 +19,22 @@
 # Compose sets DATABASE_URL, REDIS_URL, NODE_ENV, PORT, and API_URL (defaults to https://api.pouchcare.com).
 
 services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: pouchcare-postgres
+  mysql:
+    image: mysql:8
+    container_name: pouchcare-mysql
     restart: unless-stopped
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
     environment:
-      POSTGRES_USER: pouchcare
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pouchcare}
-      POSTGRES_DB: pouchcare
+      MYSQL_DATABASE: pouchcare
+      MYSQL_USER: pouchcare
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-pouchcare}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-pouchcare}
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - "${MYSQL_PORT:-3306}:3306"
     volumes:
-      - pouchcare_pg_data:/var/lib/postgresql/data
+      - pouchcare_mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U pouchcare -d pouchcare"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -62,7 +64,7 @@ services:
     container_name: pouchcare-api
     restart: unless-stopped
     depends_on:
-      postgres:
+      mysql:
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -71,7 +73,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: "7000"
-      DATABASE_URL: postgresql://pouchcare:${POSTGRES_PASSWORD:-pouchcare}@postgres:5432/pouchcare
+      DATABASE_URL: mysql://pouchcare:${MYSQL_PASSWORD:-pouchcare}@mysql:3306/pouchcare
       REDIS_URL: redis://redis:6379
       # Public URL for redirects, signed links, uploads — overrides localhost in apps/api/.env inside the container.
       API_URL: ${API_URL:-https://api.pouchcare.com}
@@ -123,7 +125,7 @@ services:
       - "host.docker.internal:host-gateway"
 
 volumes:
-  pouchcare_pg_data:
+  pouchcare_mysql_data:
   pouchcare_redis_data:
   pouchcare_api_uploads:
   caddy_data:

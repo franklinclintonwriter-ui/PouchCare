@@ -1,25 +1,27 @@
-# Local development: PostgreSQL + Redis (matches apps/api/.env.example)
+# Local development: MySQL 8 + Redis (matches apps/api/.env.example)
 # Usage: docker compose up -d
-# Then from repo root: cd apps/api && npx prisma db push && npm run db:seed
+# Then from repo root: cd apps/api && npx prisma migrate dev --name 0_init && npm run db:seed -w api
 
 services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: pouchcare-postgres
+  mysql:
+    image: mysql:8
+    container_name: pouchcare-mysql
     restart: unless-stopped
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
     environment:
-      POSTGRES_USER: pouchcare
-      POSTGRES_PASSWORD: pouchcare
-      POSTGRES_DB: pouchcare
+      MYSQL_DATABASE: pouchcare
+      MYSQL_USER: pouchcare
+      MYSQL_PASSWORD: pouchcare
+      MYSQL_ROOT_PASSWORD: pouchcare
     ports:
-      - "5432:5432"
+      - "3306:3306"
     volumes:
-      - pouchcare_pg_data:/var/lib/postgresql/data
+      - pouchcare_mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U pouchcare -d pouchcare"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1"]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
 
   redis:
     image: redis:7-alpine
@@ -37,5 +39,5 @@ services:
       retries: 5
 
 volumes:
-  pouchcare_pg_data:
+  pouchcare_mysql_data:
   pouchcare_redis_data:
