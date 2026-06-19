@@ -82,22 +82,7 @@ export async function uploadFile(
   const fileName = `${randomUUID()}${ext}`
   const key = `${folder}/${fileName}`
 
-  // Supabase Storage (preferred when configured)
-  try {
-    const { getSupabase, isSupabaseConfigured } = require('@/lib/supabase')
-    if (isSupabaseConfigured()) {
-      const supabase = getSupabase()
-      if (supabase) {
-        const bucket = 'staff-files'
-        const { error } = await supabase.storage.from(bucket).upload(key, buffer, { contentType: mimeType, upsert: true })
-        if (!error) {
-          const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(key)
-          return { fileUrl: urlData.publicUrl, fileName, fileSize: buffer.length, mimeType }
-        }
-      }
-    }
-  } catch { /* fall through to R2 or local */ }
-
+  // Cloudflare R2 (sole object-storage backend; see assertProductionStorageOrExit).
   if (isCloudflareR2Configured && s3Client) {
     await s3Client.send(
       new PutObjectCommand({
@@ -141,19 +126,6 @@ export async function uploadFile(
 }
 
 export async function deleteFile(fileUrl: string): Promise<void> {
-  if (fileUrl.includes('supabase.co')) {
-    try {
-      const { getSupabase } = require('@/lib/supabase')
-      const supabase = getSupabase()
-      if (supabase) {
-        const match = fileUrl.match(/\/storage\/v1\/object\/public\/([^/]+)\/(.+)/)
-        if (match) {
-          await supabase.storage.from(match[1]).remove([match[2]])
-        }
-      }
-    } catch {}
-    return
-  }
   if (isCloudflareR2Configured && s3Client && fileUrl.includes(s3Bucket)) {
     const key = extractS3Key(fileUrl)
     if (key) {

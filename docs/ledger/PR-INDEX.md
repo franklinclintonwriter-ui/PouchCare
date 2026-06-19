@@ -59,3 +59,17 @@
   `status` through unchanged. A **pre-existing** status-casing mismatch may exist between API
   values (`Active`/`Live`) and the lowercase `<Select>` options in DomainDetail/WebsiteDetail —
   flag for a Phase-3 polish PR (out of scope for type-health). **End of Phase 0 — green baseline.**
+
+---
+
+### PR-1.1 — R2 sole storage
+- **Branch:** `ent/p1-storage-r2` → `ent/p0-typehealth` (stacked)
+- **What:** Removed the Supabase branches from `apps/api/src/lib/storage.ts` — both the
+  upload path (`uploadFile`) and the `supabase.co` branch in `deleteFile`. Cloudflare R2 is
+  now the sole object-storage backend (with the dev-only local-disk fallback unchanged), as
+  already mandated in prod by `assertProductionStorageOrExit`.
+- **Decisions:** `storage.ts` no longer references Supabase at all. `apps/api/src/lib/supabase.ts`
+  and the `@supabase/*` dep remain until PR-1.2 (fileManager refactor) and PR-1.3 (dep/env removal),
+  so the lib is not yet orphaned.
+- **Verify:** `grep -c supabase apps/api/src/lib/storage.ts` → 0; `cd apps/api && npx tsc --noEmit` → 0 errors.
+- **Follow-ups:** PR-1.2 ports `fileManager.ts` off Supabase; PR-1.3 deletes `lib/supabase.ts` + deps + env.
