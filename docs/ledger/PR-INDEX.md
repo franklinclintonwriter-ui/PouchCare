@@ -109,3 +109,20 @@
   + `SUPABASE_*` env + `@supabase/supabase-js` (both apps) + remove the `useSupabase*` hooks and
   the DB-query/presence panel in `WorkspaceEditor.tsx`. The management `useSupabase*` hooks now
   call the removed `/ai/supabase/*` endpoints (runtime 404 until PR-1.3b cleans them).
+
+---
+
+### PR-1.3b — Finish Supabase removal (workspace → R2)
+- **Branch:** `ent/p1-drop-supabase-2` → `enterprise/main`
+- **What:** Ported `routes/ai/workspace.ts` binary/large-file uploads from Supabase Storage
+  (`workspace-files` bucket) to R2: `PutObjectCommand` keyed `workspace/<wsId>/<path>`, storing
+  the **object key** in `WorkspaceFile.storageKey`. The single read site (`GET /:id/files/:fileId/download`)
+  now issues a short-lived presigned `GetObject` URL (mirrors `fileManager`); inline-text fallback
+  unchanged. Deleted `lib/supabase.ts`, removed the `SUPABASE_*` env block, removed `@supabase/supabase-js`
+  from **both** package.json. Frontend: removed the 5 `useSupabase*` hooks (`api/workspace.ts`) and the
+  `WorkspaceEditor` "Database Agent" panel + its activity-bar button + state + the unused `Database` icon.
+- **Decisions:** Workspace binary storage preserved (ported to R2, per owner). The DB-agent + presence
+  are gone (Supabase-only). `storageKey` holds an object key, not a URL (private bucket).
+- **Verify:** `grep -rniE supabase apps/*/src` → none; `grep -rn @supabase apps` → none; `apps/api` + `apps/management` `tsc --noEmit` → 0 errors each.
+- **Note:** `@supabase` dropped from both manifests — owner/CI regenerates `package-lock.json` via `npm install`. The deleted frontend hooks targeted `/ai/supabase/*` routes already removed in PR-1.3 (dead client code).
+- **Follow-ups:** **Supabase is now fully removed.** Next: PR-1.4 (Prisma → MySQL).

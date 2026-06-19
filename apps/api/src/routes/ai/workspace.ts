@@ -10,7 +10,9 @@ import { validate } from '@/middleware/validate'
 import { ok, badRequest, serverError, notFound, forbidden } from '@/lib/response'
 import { aiRateLimit } from '@/middleware/rateLimit'
 import { resolveProvider, resolveModel } from '@/lib/ai/config'
-import { getSupabase, isSupabaseConfigured, mirrorToSupabase } from '@/lib/supabase'
+import { isCloudflareR2Configured, s3Client, s3Bucket } from '@/lib/storage'
+import { PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3'
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { getProvider } from '@/lib/ai/providers'
 
 const router = Router()
@@ -277,14 +279,15 @@ router.post('/:id/upload', upload.single('file'), async (req: AuthRequest, res) 
     let content: string | null = null
     let storageKey: string | null = null
 
-    if ((isBinary || isLarge) && isSupabaseConfigured()) {
-      const supabase = getSupabase()!
+    if ((isBinary || isLarge) && isCloudflareR2Configured && s3Client) {
       const key = `workspace/${wsId}/${filePath}`
-      const { error } = await supabase.storage.from('workspace-files').upload(key, uploaded.buffer, { contentType: uploaded.mimetype, upsert: true })
-      if (!error) {
-        const { data: urlData } = supabase.storage.from('workspace-files').getPublicUrl(key)
-        storageKey = urlData.publicUrl
-      } else {
+      try {
+        await s3Client.send(
+          new PutObjectCommand({ Bucket: s3Bucket, Key: key, Body: uploaded.buffer, ContentType: uploaded.mimetype })
+        )
+        // Bucket is private — store the object key; reads issue a short-lived presigned URL.
+        storageKey = key
+      } catch {
         content = uploaded.size < 500_000 ? uploaded.buffer.toString('utf8') : null
       }
     } else {
@@ -308,8 +311,14 @@ router.get('/:id/files/:fileId/download', async (req: AuthRequest, res) => {
     const file = await prisma.workspaceFile.findFirst({ where: { id: req.params.fileId, workspaceId: wsId } })
     if (!file || file.isDirectory) return notFound(res, 'File')
 
-    if (file.storageKey?.startsWith('http')) {
-      return res.redirect(file.storageKey)
+    // Binary/large files live in R2 (storageKey = object key) — redirect to a short-lived presigned URL.
+    if (file.storageKey && isCloudflareR2Configured && s3Client) {
+      const url = await getSignedUrl(
+        s3Client,
+        new GetObjectCommand({ Bucket: s3Bucket, Key: file.storageKey }),
+        { expiresIn: 3600 }
+      )
+      return res.redirect(url)
     }
     res.setHeader('Content-Disposition', `attachment; filename="${file.name}"`)
     res.setHeader('Content-Type', file.mimeType || 'application/octet-stream')
