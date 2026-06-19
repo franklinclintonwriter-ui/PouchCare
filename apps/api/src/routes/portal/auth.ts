@@ -67,7 +67,7 @@ function generateOtp() {
 /** Request bodies normalize email to lowercase; DB may store mixed case — match case-insensitively. */
 function findPortalMemberByEmail(normalizedEmail: string) {
   return prisma.portalMember.findFirst({
-    where: { email: { equals: normalizedEmail, mode: "insensitive" } },
+    where: { email: { equals: normalizedEmail } },
   });
 }
 

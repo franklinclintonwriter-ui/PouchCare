@@ -129,7 +129,7 @@ router.get("/summary", async (_, res) => {
       // Staff
       prisma.staffMember.count(),
       prisma.staffMember.count({
-        where: { status: { equals: "Active", mode: "insensitive" } },
+        where: { status: { equals: "Active" } },
       }),
       prisma.staffMember.count({
         where: { status: { in: ["On Leave", "ON_LEAVE", "on_leave"] } },
@@ -137,7 +137,7 @@ router.get("/summary", async (_, res) => {
       prisma.staffMember.count({ where: { createdAt: { gte: thisMonth } } }),
       prisma.staffMember.count({
         where: {
-          status: { equals: "Active", mode: "insensitive" },
+          status: { equals: "Active" },
           createdAt: { gte: lastMonthStart, lte: lastMonthEnd },
         },
       }),
@@ -201,7 +201,7 @@ router.get("/summary", async (_, res) => {
       // Leaderboards
       prisma.staffMember.findMany({
         where: {
-          status: { equals: "Active", mode: "insensitive" },
+          status: { equals: "Active" },
           averageTaskRating: { not: null },
         },
         orderBy: { averageTaskRating: "desc" },
@@ -430,7 +430,7 @@ router.get("/health", async (_, res) => {
         where: { status: "PRESENT", date: { gte: today } },
       }),
       prisma.staffMember.count({
-        where: { status: { equals: "Active", mode: "insensitive" } },
+        where: { status: { equals: "Active" } },
       }),
       prisma.crmLead.count({ where: { stage: "WON" } }),
       prisma.crmLead.count(),
@@ -507,7 +507,7 @@ router.get("/staff", async (_, res) => {
     const [total, active, onLeave, newThisMonth] = await Promise.all([
       prisma.staffMember.count(),
       prisma.staffMember.count({
-        where: { status: { equals: "Active", mode: "insensitive" } },
+        where: { status: { equals: "Active" } },
       }),
       prisma.staffMember.count({
         where: { status: { in: ["On Leave", "ON_LEAVE", "on_leave"] } },
@@ -580,7 +580,7 @@ router.get("/leaderboard", async (_, res) => {
     const [staffLb, referrerLb] = await Promise.all([
       prisma.staffMember.findMany({
         where: {
-          status: { equals: "Active", mode: "insensitive" },
+          status: { equals: "Active" },
           averageTaskRating: { not: null },
         },
         orderBy: { averageTaskRating: "desc" },

@@ -130,9 +130,9 @@ router.get('/', requirePermission('admin.clients.read'), async (req, res) => {
     // Member-side where
     const memberWhere: any = {}
     if (q) memberWhere.OR = [
-      { fullName: { contains: q, mode: 'insensitive' } },
-      { email: { contains: q, mode: 'insensitive' } },
-      { referralCode: { contains: q, mode: 'insensitive' } },
+      { fullName: { contains: q } },
+      { email: { contains: q } },
+      { referralCode: { contains: q } },
     ]
     if (country) memberWhere.country = country
     if (status) {
@@ -148,8 +148,8 @@ router.get('/', requirePermission('admin.clients.read'), async (req, res) => {
     // Account-side where
     const accountWhere: any = {}
     if (q) accountWhere.OR = [
-      { clientName: { contains: q, mode: 'insensitive' } },
-      { email: { contains: q, mode: 'insensitive' } },
+      { clientName: { contains: q } },
+      { email: { contains: q } },
     ]
     if (country) accountWhere.country = country
     if (manager) accountWhere.assignedManager = manager
@@ -224,12 +224,12 @@ router.get('/:id', requirePermission('admin.clients.read'), async (req, res) => 
     const email = (member?.email ?? account?.email ?? '').toLowerCase()
     if (email && !pairedMember) {
       pairedMember = await prisma.portalMember.findFirst({
-        where: { email: { equals: email, mode: 'insensitive' } },
+        where: { email: { equals: email } },
       })
     }
     if (email && !pairedAccount) {
       pairedAccount = await prisma.clientAccount.findFirst({
-        where: { email: { equals: email, mode: 'insensitive' } },
+        where: { email: { equals: email } },
       })
     }
 

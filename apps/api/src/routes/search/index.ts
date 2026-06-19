@@ -14,35 +14,34 @@ router.get('/', requireStaff, async (req, res) => {
     const { q = '', type } = req.query as Record<string, string>
     if (!q || q.length < 2) return ok(res, { results: [] })
 
-    const mode = 'insensitive' as const
     const results: Record<string, any[]> = {}
     const role = req.user!.role as SystemRole
     const canPipeline = MANAGER_ROLES.includes(role)
 
     if (!type || type === 'staff') {
       results.staff = await prisma.staffMember.findMany({
-        where: { OR: [{ name: { contains: q, mode } }, { email: { contains: q, mode } }] },
+        where: { OR: [{ name: { contains: q } }, { email: { contains: q } }] },
         take: 5,
         select: { id: true, name: true, email: true, systemRole: true, branch: true },
       })
     }
     if (!type || type === 'task') {
       results.tasks = await prisma.task.findMany({
-        where: { title: { contains: q, mode } },
+        where: { title: { contains: q } },
         take: 5,
         select: { id: true, taskId: true, title: true, status: true, priority: true },
       })
     }
     if (!type || type === 'project') {
       results.projects = await prisma.project.findMany({
-        where: { OR: [{ name: { contains: q, mode } }, { clientName: { contains: q, mode } }] },
+        where: { OR: [{ name: { contains: q } }, { clientName: { contains: q } }] },
         take: 5,
         select: { id: true, projectId: true, name: true, status: true },
       })
     }
     if ((!type || type === 'lead') && canPipeline) {
       const textWhere: Prisma.CrmLeadWhereInput = {
-        OR: [{ company: { contains: q, mode } }, { contactName: { contains: q, mode } }],
+        OR: [{ company: { contains: q } }, { contactName: { contains: q } }],
       }
       const scope = crmLeadScopeWhere(req.user!.id, role)
       const where = mergeLeadWhere(textWhere, scope)
@@ -56,7 +55,7 @@ router.get('/', requireStaff, async (req, res) => {
       const canPortal = await isStaffAllowed(role, 'admin_portal.access')
       if (canPortal) {
         results.clients = await prisma.portalMember.findMany({
-          where: { OR: [{ fullName: { contains: q, mode } }, { email: { contains: q, mode } }] },
+          where: { OR: [{ fullName: { contains: q } }, { email: { contains: q } }] },
           take: 5,
           select: { id: true, fullName: true, email: true, status: true },
         })
@@ -65,7 +64,7 @@ router.get('/', requireStaff, async (req, res) => {
     // Domain hits are staff global search over `Domain` rows (same table may include portal-linked rows; route remains staff `/v1/search`).
     if (!type || type === 'domain') {
       results.domains = await prisma.domain.findMany({
-        where: { domainName: { contains: q, mode } },
+        where: { domainName: { contains: q } },
         take: 5,
         select: { id: true, domainName: true, status: true },
       })
