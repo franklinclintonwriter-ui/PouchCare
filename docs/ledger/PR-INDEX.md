@@ -89,4 +89,23 @@
   prefix instead of the old separate `staff-files` bucket. Private bucket → upload returns `url: null`;
   access is via the signed `/files/download` endpoint.
 - **Verify:** `grep -c supabase apps/api/src/routes/fileManager.ts` → 0; `cd apps/api && npx tsc --noEmit` → 0 errors. Live R2 smoke test pending owner secrets.
-- **Follow-ups:** PR-1.3 removes `lib/supabase.ts` + `@supabase/*` deps + `SUPABASE_*` env + the AI NL→SQL route.
+- **Follow-ups:** PR-1.3 removes the analytics mirrors + NL→SQL route; PR-1.3b finishes the rest.
+
+---
+
+### PR-1.3 — Remove Supabase analytics mirrors + NL→SQL route
+- **Branch:** `ent/p1-drop-supabase` → `ent/p1-filemanager-r2` (stacked)
+- **What:** Removed the fire-and-forget `mirrorToSupabase(...)` analytics calls from
+  `lib/tools/logToolRun.ts`, `routes/ai/index.ts`, `routes/staff/index.ts`,
+  `routes/staff/documents.ts`; deleted the CEO-only NL→SQL "DB agent" route
+  `routes/ai/supabase.ts` and unmounted it in `server.ts`.
+- **Decision (owner):** Supabase removal is **split**. The NL→SQL DB-agent + realtime presence
+  are dropped outright (Supabase-only — no backend once Supabase is gone). The **workspace
+  binary-file storage** (`routes/ai/workspace.ts`, `workspace-files` bucket) will be **ported to
+  R2** in PR-1.3b. So `lib/supabase.ts`, `SUPABASE_*` env, the `@supabase/*` dep, and the
+  management `WorkspaceEditor` Supabase UI remain until **PR-1.3b**.
+- **Verify:** the 5 edited files are supabase-free; `cd apps/api && npx tsc --noEmit` → 0 errors.
+- **Follow-ups:** **PR-1.3b** — port `workspace.ts` uploads to R2, then delete `lib/supabase.ts`
+  + `SUPABASE_*` env + `@supabase/supabase-js` (both apps) + remove the `useSupabase*` hooks and
+  the DB-query/presence panel in `WorkspaceEditor.tsx`. The management `useSupabase*` hooks now
+  call the removed `/ai/supabase/*` endpoints (runtime 404 until PR-1.3b cleans them).

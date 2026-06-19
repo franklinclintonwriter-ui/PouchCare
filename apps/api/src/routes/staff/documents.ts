@@ -126,21 +126,6 @@ router.post(
         },
       })
 
-      // Mirror document metadata to Supabase
-      try {
-        const { mirrorToSupabase } = require('@/lib/supabase')
-        mirrorToSupabase('staff_documents', {
-          staff_id: staffId,
-          document_type: documentType,
-          title,
-          file_url: uploadResult.fileUrl,
-          file_size: uploadResult.fileSize,
-          mime_type: uploadResult.mimeType,
-          category,
-          is_verified: false,
-        })
-      } catch {}
-
       return created(res, document)
     } catch (err) {
       console.error('Document upload error:', err)
