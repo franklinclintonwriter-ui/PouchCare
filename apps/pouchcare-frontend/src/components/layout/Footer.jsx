@@ -33,10 +33,14 @@ const footerSections = [
 ];
 
 const socialLinks = [
-  { icon: Github, href: "https://github.com", label: "GitHub" },
-  { icon: Twitter, href: "https://twitter.com", label: "Twitter" },
-  { icon: Linkedin, href: "https://linkedin.com", label: "LinkedIn" },
-  { icon: Dribbble, href: "https://dribbble.com", label: "Dribbble" },
+  { icon: Github, href: "https://github.com/pouchcare", label: "GitHub" },
+  { icon: Twitter, href: "https://x.com/pouchcare", label: "Twitter" },
+  {
+    icon: Linkedin,
+    href: "https://linkedin.com/company/pouchcare",
+    label: "LinkedIn",
+  },
+  { icon: Dribbble, href: "https://dribbble.com/pouchcare", label: "Dribbble" },
 ];
 
 export default function Footer() {
@@ -92,7 +96,7 @@ export default function Footer() {
 
         {/* Bottom bar */}
         <div className="mt-12 pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-footer-text/50">
-          <p>&copy; 2025 PouchCare. All rights reserved.</p>
+          <p>&copy; 2026 PouchCare. All rights reserved.</p>
           <div className="flex items-center gap-4">
             <Link to="/terms" className="hover:text-white transition-colors">
               Terms

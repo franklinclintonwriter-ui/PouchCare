@@ -11,26 +11,6 @@ import {
 } from "lucide-react";
 import { plans, faqs } from "../data/pricing";
 
-/* ── Design Tokens ── */
-const tokens = {
-  primary: "#0A7AFF",
-  primaryDark: "#0062D6",
-  primaryLight: "#EBF4FF",
-  accentCyan: "#00C6FF",
-  accentGold: "#FFB800",
-  accentOrange: "#FF8C00",
-  surfaceLight: "#F5F7FA",
-  heading: "#1A1A2E",
-  body: "#6B7280",
-  muted: "#9CA3AF",
-  fontHeading: "'Inter', sans-serif",
-  fontBody: "'Inter', sans-serif",
-  shadowCard: "0 2px 8px rgba(0,0,0,0.06)",
-  shadowCardHover: "0 8px 24px rgba(0,0,0,0.12)",
-  roundedCard: "16px",
-  roundedBtn: "12px",
-};
-
 /* ── Avatar colours for trust bar ── */
 const avatarColors = ["#0A7AFF", "#00C6FF", "#FFB800", "#FF8C00", "#6366F1"];
 
@@ -56,62 +36,24 @@ const comparisonFeatures = [
 /* ── FAQ Item Sub-component ── */
 function FAQItem({ faq, isOpen, onToggle }) {
   return (
-    <div
-      style={{
-        borderBottom: "1px solid #E5E7EB",
-      }}
-    >
+    <div className="border-b border-gray-200">
       <button
         onClick={onToggle}
-        style={{
-          width: "100%",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          padding: "20px 0",
-          background: "none",
-          border: "none",
-          cursor: "pointer",
-          textAlign: "left",
-        }}
+        className="flex w-full items-center justify-between border-0 bg-transparent py-5 text-left"
       >
-        <span
-          style={{
-            fontSize: "16px",
-            fontWeight: 600,
-            color: tokens.heading,
-            fontFamily: tokens.fontHeading,
-          }}
-        >
-          {faq.q}
-        </span>
+        <span className="font-heading text-base font-semibold text-heading">{faq.q}</span>
         <ChevronDown
-          className="w-5 h-5 flex-shrink-0"
-          style={{
-            color: tokens.muted,
-            transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
-            transition: "transform 0.3s ease",
-          }}
+          className={`h-5 w-5 flex-shrink-0 text-muted transition-transform duration-300 ${
+            isOpen ? "rotate-180" : "rotate-0"
+          }`}
         />
       </button>
       <div
-        style={{
-          maxHeight: isOpen ? "200px" : "0",
-          overflow: "hidden",
-          transition: "max-height 0.3s ease",
-        }}
+        className={`overflow-hidden transition-[max-height] duration-300 ${
+          isOpen ? "max-h-[200px]" : "max-h-0"
+        }`}
       >
-        <p
-          style={{
-            paddingBottom: "20px",
-            fontSize: "15px",
-            lineHeight: 1.7,
-            color: tokens.body,
-            fontFamily: tokens.fontBody,
-          }}
-        >
-          {faq.a}
-        </p>
+        <p className="pb-5 text-[15px] leading-[1.7] text-body">{faq.a}</p>
       </div>
     </div>
   );
@@ -124,132 +66,36 @@ function PricingCard({ plan, isAnnual }) {
 
   return (
     <div
-      style={{
-        position: "relative",
-        background: "#fff",
-        borderRadius: tokens.roundedCard,
-        padding: "32px",
-        boxShadow: tokens.shadowCard,
-        border: plan.featured
-          ? `2px solid ${tokens.primary}`
-          : "1px solid #E5E7EB",
-        transition: "box-shadow 0.3s ease, transform 0.3s ease",
-        display: "flex",
-        flexDirection: "column",
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.boxShadow = tokens.shadowCardHover;
-        e.currentTarget.style.transform = "translateY(-4px)";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.boxShadow = tokens.shadowCard;
-        e.currentTarget.style.transform = "translateY(0)";
-      }}
+      className={[
+        "relative flex flex-col rounded-card bg-white p-8 shadow-card transition-[box-shadow,transform] duration-300 hover:-translate-y-1 hover:shadow-card-hover",
+        plan.featured ? "border-2 border-primary" : "border border-gray-200",
+      ].join(" ")}
     >
       {plan.badge && (
-        <div
-          style={{
-            position: "absolute",
-            top: "-14px",
-            left: "50%",
-            transform: "translateX(-50%)",
-            background: `linear-gradient(135deg, ${tokens.primary}, ${tokens.accentCyan})`,
-            color: "#fff",
-            fontSize: "13px",
-            fontWeight: 600,
-            padding: "4px 16px",
-            borderRadius: "20px",
-            whiteSpace: "nowrap",
-          }}
-        >
+        <div className="absolute left-1/2 top-[-14px] -translate-x-1/2 whitespace-nowrap rounded-full bg-gradient-to-br from-primary to-accent-cyan px-4 py-1 text-[13px] font-semibold text-white">
           {plan.badge}
         </div>
       )}
 
-      <h3
-        style={{
-          fontSize: "22px",
-          fontWeight: 700,
-          color: tokens.heading,
-          fontFamily: tokens.fontHeading,
-          marginBottom: "4px",
-        }}
-      >
-        {plan.name}
-      </h3>
-      <p
-        style={{
-          fontSize: "14px",
-          color: tokens.body,
-          marginBottom: "24px",
-          fontFamily: tokens.fontBody,
-        }}
-      >
-        {plan.description}
-      </p>
+      <h3 className="mb-1 font-heading text-[22px] font-bold text-heading">{plan.name}</h3>
+      <p className="mb-6 text-sm text-body">{plan.description}</p>
 
-      <div style={{ marginBottom: "24px" }}>
-        <span
-          style={{
-            fontSize: "48px",
-            fontWeight: 800,
-            color: tokens.heading,
-            fontFamily: tokens.fontHeading,
-            lineHeight: 1,
-          }}
-        >
+      <div className="mb-6">
+        <span className="font-heading text-5xl font-extrabold leading-none text-heading">
           {price === 0 ? "Free" : `$${price}`}
         </span>
-        {price !== 0 && (
-          <span
-            style={{
-              fontSize: "16px",
-              color: tokens.muted,
-              fontFamily: tokens.fontBody,
-            }}
-          >
-            {period}
-          </span>
-        )}
+        {price !== 0 && <span className="text-base text-muted">{period}</span>}
       </div>
 
-      <ul
-        style={{
-          listStyle: "none",
-          padding: 0,
-          margin: 0,
-          marginBottom: "32px",
-          flex: 1,
-        }}
-      >
+      <ul className="mb-8 list-none p-0">
         {plan.features.map((feature, i) => (
-          <li
-            key={i}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "10px",
-              padding: "8px 0",
-            }}
-          >
+          <li key={i} className="flex items-center gap-2.5 py-2">
             {feature.included ? (
-              <Check
-                className="w-4 h-4 flex-shrink-0"
-                style={{ color: "#10B981" }}
-              />
+              <Check className="h-4 w-4 flex-shrink-0 text-emerald-500" />
             ) : (
-              <X
-                className="w-4 h-4 flex-shrink-0"
-                style={{ color: tokens.muted }}
-              />
+              <X className="h-4 w-4 flex-shrink-0 text-muted" />
             )}
-            <span
-              style={{
-                fontSize: "14px",
-                color: feature.included ? tokens.heading : tokens.muted,
-                fontFamily: tokens.fontBody,
-              }}
-            >
+            <span className={feature.included ? "text-sm text-heading" : "text-sm text-muted"}>
               {feature.text}
             </span>
           </li>
@@ -257,40 +103,15 @@ function PricingCard({ plan, isAnnual }) {
       </ul>
 
       <button
-        style={{
-          width: "100%",
-          padding: "14px 24px",
-          borderRadius: tokens.roundedBtn,
-          border: plan.featured ? "none" : `1px solid ${tokens.primary}`,
-          background: plan.featured ? tokens.primary : "#fff",
-          color: plan.featured ? "#fff" : tokens.primary,
-          fontSize: "15px",
-          fontWeight: 600,
-          cursor: "pointer",
-          fontFamily: tokens.fontBody,
-          transition: "background 0.2s ease, transform 0.2s ease",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: "8px",
-        }}
-        onMouseEnter={(e) => {
-          if (plan.featured) {
-            e.currentTarget.style.background = tokens.primaryDark;
-          } else {
-            e.currentTarget.style.background = tokens.primaryLight;
-          }
-        }}
-        onMouseLeave={(e) => {
-          if (plan.featured) {
-            e.currentTarget.style.background = tokens.primary;
-          } else {
-            e.currentTarget.style.background = "#fff";
-          }
-        }}
+        className={[
+          "mt-auto flex w-full items-center justify-center gap-2 rounded-btn px-6 py-3.5 text-[15px] font-semibold transition-colors duration-200",
+          plan.featured
+            ? "bg-primary text-white hover:bg-primary-dark"
+            : "border border-primary bg-white text-primary hover:bg-primary-light",
+        ].join(" ")}
       >
         {plan.cta}
-        <ArrowRight className="w-4 h-4" />
+        <ArrowRight className="h-4 w-4" />
       </button>
     </div>
   );
@@ -302,177 +123,72 @@ export default function Pricing() {
   const [openFaq, setOpenFaq] = useState(null);
 
   return (
-    <div style={{ fontFamily: tokens.fontBody }}>
+    <div className="font-body">
       {/* ─── A. Header ─── */}
-      <section
-        style={{
-          background: tokens.surfaceLight,
-          padding: "64px 24px",
-          textAlign: "center",
-        }}
-      >
-        <h1
-          style={{
-            fontSize: "clamp(32px, 5vw, 48px)",
-            fontWeight: 800,
-            color: tokens.heading,
-            fontFamily: tokens.fontHeading,
-            marginBottom: "16px",
-          }}
-        >
+      <section className="bg-surface-light px-6 py-16 text-center">
+        <h1 className="mb-4 font-heading text-[clamp(32px,5vw,48px)] font-extrabold text-heading">
           Simple, Transparent Pricing
         </h1>
-        <p
-          style={{
-            fontSize: "18px",
-            color: tokens.body,
-            maxWidth: "600px",
-            margin: "0 auto 32px",
-            lineHeight: 1.6,
-          }}
-        >
+        <p className="mx-auto mb-8 max-w-[600px] text-lg leading-[1.6] text-body">
           Choose the perfect plan for your needs. No hidden fees, no surprises.
           Start free and scale as you grow.
         </p>
 
         {/* Trust line */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "16px",
-            flexWrap: "wrap",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center" }}>
+        <div className="flex flex-wrap items-center justify-center gap-4">
+          <div className="flex items-center">
             {avatarColors.map((color, i) => (
               <div
                 key={i}
-                style={{
-                  width: "36px",
-                  height: "36px",
-                  borderRadius: "50%",
-                  background: color,
-                  border: "2px solid #fff",
-                  marginLeft: i === 0 ? 0 : "-10px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
+                className={`flex h-9 w-9 items-center justify-center rounded-full border-2 border-white ${
+                  i === 0 ? "ml-0" : "-ml-[10px]"
+                }`}
+                style={{ backgroundColor: color }}
               >
-                <Users className="w-4 h-4" style={{ color: "#fff" }} />
+                <Users className="h-4 w-4 text-white" />
               </div>
             ))}
           </div>
-          <span
-            style={{
-              fontSize: "14px",
-              color: tokens.body,
-              fontWeight: 500,
-            }}
-          >
-            Trusted by 10,000+ agencies
-          </span>
-          <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+          <span className="text-sm font-medium text-body">Trusted by 10,000+ agencies</span>
+          <div className="flex items-center gap-1">
             {[...Array(5)].map((_, i) => (
-              <Star
-                key={i}
-                className="w-4 h-4"
-                style={{ color: tokens.accentGold, fill: tokens.accentGold }}
-              />
+              <Star key={i} className="h-4 w-4 fill-accent-gold text-accent-gold" />
             ))}
-            <span
-              style={{
-                fontSize: "14px",
-                color: tokens.body,
-                fontWeight: 500,
-                marginLeft: "4px",
-              }}
-            >
-              4.9/5 from 2,000+ reviews
-            </span>
+            <span className="ml-1 text-sm font-medium text-body">4.9/5 from 2,000+ reviews</span>
           </div>
         </div>
       </section>
 
       {/* ─── B. Billing Toggle ─── */}
-      <section style={{ padding: "48px 24px 0", textAlign: "center" }}>
-        <div
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "12px",
-            background: tokens.surfaceLight,
-            borderRadius: "999px",
-            padding: "4px",
-          }}
-        >
+      <section className="px-6 pb-0 pt-12 text-center">
+        <div className="inline-flex items-center gap-3 rounded-full bg-surface-light p-1">
           <button
             onClick={() => setIsAnnual(false)}
-            style={{
-              padding: "10px 24px",
-              borderRadius: "999px",
-              border: "none",
-              background: !isAnnual ? tokens.primary : "transparent",
-              color: !isAnnual ? "#fff" : tokens.body,
-              fontSize: "14px",
-              fontWeight: 600,
-              cursor: "pointer",
-              transition: "all 0.2s ease",
-              fontFamily: tokens.fontBody,
-            }}
+            className={[
+              "rounded-full px-6 py-2.5 text-sm font-semibold transition-all duration-200",
+              !isAnnual ? "bg-primary text-white" : "bg-transparent text-body",
+            ].join(" ")}
           >
             Monthly
           </button>
           <button
             onClick={() => setIsAnnual(true)}
-            style={{
-              padding: "10px 24px",
-              borderRadius: "999px",
-              border: "none",
-              background: isAnnual ? tokens.primary : "transparent",
-              color: isAnnual ? "#fff" : tokens.body,
-              fontSize: "14px",
-              fontWeight: 600,
-              cursor: "pointer",
-              transition: "all 0.2s ease",
-              fontFamily: tokens.fontBody,
-            }}
+            className={[
+              "rounded-full px-6 py-2.5 text-sm font-semibold transition-all duration-200",
+              isAnnual ? "bg-primary text-white" : "bg-transparent text-body",
+            ].join(" ")}
           >
             Annual
           </button>
-          <span
-            style={{
-              background: `linear-gradient(135deg, ${tokens.accentGold}, ${tokens.accentOrange})`,
-              color: "#fff",
-              fontSize: "12px",
-              fontWeight: 700,
-              padding: "4px 10px",
-              borderRadius: "20px",
-            }}
-          >
+          <span className="rounded-[20px] bg-gradient-to-br from-accent-gold to-accent-orange px-2.5 py-1 text-xs font-bold text-white">
             Save 20%
           </span>
         </div>
       </section>
 
       {/* ─── C. Pricing Cards ─── */}
-      <section
-        style={{
-          maxWidth: "1100px",
-          margin: "0 auto",
-          padding: "48px 24px",
-        }}
-      >
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
-            gap: "24px",
-            alignItems: "stretch",
-          }}
-        >
+      <section className="mx-auto max-w-[1100px] px-6 py-12">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(300px,1fr))] items-stretch gap-6">
           {plans.map((plan, i) => (
             <PricingCard key={i} plan={plan} isAnnual={isAnnual} />
           ))}
@@ -480,135 +196,45 @@ export default function Pricing() {
       </section>
 
       {/* ─── D. Feature Comparison Table ─── */}
-      <section
-        style={{
-          maxWidth: "1100px",
-          margin: "0 auto",
-          padding: "48px 24px",
-        }}
-      >
-        <h2
-          style={{
-            fontSize: "28px",
-            fontWeight: 700,
-            color: tokens.heading,
-            fontFamily: tokens.fontHeading,
-            textAlign: "center",
-            marginBottom: "40px",
-          }}
-        >
+      <section className="mx-auto max-w-[1100px] px-6 py-12">
+        <h2 className="mb-10 text-center font-heading text-[28px] font-bold text-heading">
           Feature Comparison
         </h2>
 
         {/* Desktop table */}
-        <div
-          className="hidden md:block"
-          style={{
-            background: "#fff",
-            borderRadius: tokens.roundedCard,
-            boxShadow: tokens.shadowCard,
-            overflow: "hidden",
-          }}
-        >
-          <table
-            style={{
-              width: "100%",
-              borderCollapse: "collapse",
-              fontSize: "14px",
-              fontFamily: tokens.fontBody,
-            }}
-          >
+        <div className="hidden overflow-hidden rounded-card bg-white shadow-card md:block">
+          <table className="w-full border-collapse text-sm">
             <thead>
-              <tr
-                style={{
-                  background: tokens.surfaceLight,
-                  borderBottom: "2px solid #E5E7EB",
-                }}
-              >
-                <th
-                  style={{
-                    padding: "16px 20px",
-                    textAlign: "left",
-                    fontWeight: 700,
-                    color: tokens.heading,
-                  }}
-                >
-                  Feature
-                </th>
-                <th
-                  style={{
-                    padding: "16px 20px",
-                    textAlign: "center",
-                    fontWeight: 700,
-                    color: tokens.heading,
-                  }}
-                >
-                  Starter
-                </th>
-                <th
-                  style={{
-                    padding: "16px 20px",
-                    textAlign: "center",
-                    fontWeight: 700,
-                    color: tokens.primary,
-                  }}
-                >
-                  Pro
-                </th>
-                <th
-                  style={{
-                    padding: "16px 20px",
-                    textAlign: "center",
-                    fontWeight: 700,
-                    color: tokens.heading,
-                  }}
-                >
-                  Agency
-                </th>
+              <tr className="border-b-2 border-gray-200 bg-surface-light">
+                <th className="px-5 py-4 text-left font-bold text-heading">Feature</th>
+                <th className="px-5 py-4 text-center font-bold text-heading">Starter</th>
+                <th className="px-5 py-4 text-center font-bold text-primary">Pro</th>
+                <th className="px-5 py-4 text-center font-bold text-heading">Agency</th>
               </tr>
             </thead>
             <tbody>
               {comparisonFeatures.map((feat, i) => (
                 <tr
                   key={i}
-                  style={{
-                    background: i % 2 === 0 ? "#fff" : tokens.surfaceLight,
-                    borderBottom: "1px solid #E5E7EB",
-                  }}
+                  className={i % 2 === 0 ? "border-b border-gray-200 bg-white" : "border-b border-gray-200 bg-surface-light"}
                 >
-                  <td
-                    style={{
-                      padding: "14px 20px",
-                      color: tokens.heading,
-                      fontWeight: 500,
-                    }}
-                  >
-                    {feat.name}
-                  </td>
+                  <td className="px-5 py-3.5 font-medium text-heading">{feat.name}</td>
                   {["starter", "pro", "agency"].map((tier) => (
                     <td
                       key={tier}
-                      style={{
-                        padding: "14px 20px",
-                        textAlign: "center",
-                        color:
-                          feat[tier] === true
-                            ? "#10B981"
-                            : feat[tier] === false
-                            ? tokens.muted
-                            : tokens.heading,
-                      }}
+                      className={[
+                        "px-5 py-3.5 text-center",
+                        feat[tier] === true
+                          ? "text-emerald-500"
+                          : feat[tier] === false
+                            ? "text-muted"
+                            : "text-heading",
+                      ].join(" ")}
                     >
                       {feat[tier] === true ? (
-                        <Check
-                          className="w-4 h-4 inline-block"
-                          style={{ color: "#10B981" }}
-                        />
+                        <Check className="inline-block h-4 w-4 text-emerald-500" />
                       ) : feat[tier] === false ? (
-                        <X
-                          className="w-4 h-4 inline-block"
-                          style={{ color: tokens.muted }}
-                        />
+                        <X className="inline-block h-4 w-4 text-muted" />
                       ) : (
                         feat[tier]
                       )}
@@ -621,54 +247,19 @@ export default function Pricing() {
         </div>
 
         {/* Mobile cards */}
-        <div className="md:hidden" style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+        <div className="flex flex-col gap-4 md:hidden">
           {comparisonFeatures.map((feat, i) => (
-            <div
-              key={i}
-              style={{
-                background: "#fff",
-                borderRadius: "12px",
-                padding: "16px",
-                boxShadow: tokens.shadowCard,
-              }}
-            >
-              <h4
-                style={{
-                  fontSize: "15px",
-                  fontWeight: 600,
-                  color: tokens.heading,
-                  marginBottom: "12px",
-                }}
-              >
-                {feat.name}
-              </h4>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(3, 1fr)",
-                  gap: "8px",
-                  textAlign: "center",
-                  fontSize: "13px",
-                }}
-              >
+            <div key={i} className="rounded-[12px] bg-white p-4 shadow-card">
+              <h4 className="mb-3 text-[15px] font-semibold text-heading">{feat.name}</h4>
+              <div className="grid grid-cols-3 gap-2 text-center text-[13px]">
                 {["starter", "pro", "agency"].map((tier) => (
                   <div key={tier}>
-                    <div
-                      style={{
-                        fontSize: "11px",
-                        fontWeight: 600,
-                        color: tokens.muted,
-                        textTransform: "uppercase",
-                        marginBottom: "4px",
-                      }}
-                    >
-                      {tier}
-                    </div>
-                    <div style={{ color: feat[tier] === false ? tokens.muted : tokens.heading }}>
+                    <div className="mb-1 text-[11px] font-semibold uppercase text-muted">{tier}</div>
+                    <div className={feat[tier] === false ? "text-muted" : "text-heading"}>
                       {feat[tier] === true ? (
-                        <Check className="w-4 h-4 inline-block" style={{ color: "#10B981" }} />
+                        <Check className="inline-block h-4 w-4 text-emerald-500" />
                       ) : feat[tier] === false ? (
-                        <X className="w-4 h-4 inline-block" style={{ color: tokens.muted }} />
+                        <X className="inline-block h-4 w-4 text-muted" />
                       ) : (
                         feat[tier]
                       )}
@@ -682,23 +273,8 @@ export default function Pricing() {
       </section>
 
       {/* ─── E. FAQ Accordion ─── */}
-      <section
-        style={{
-          maxWidth: "720px",
-          margin: "0 auto",
-          padding: "48px 24px",
-        }}
-      >
-        <h2
-          style={{
-            fontSize: "28px",
-            fontWeight: 700,
-            color: tokens.heading,
-            fontFamily: tokens.fontHeading,
-            textAlign: "center",
-            marginBottom: "40px",
-          }}
-        >
+      <section className="mx-auto max-w-[720px] px-6 py-12">
+        <h2 className="mb-10 text-center font-heading text-[28px] font-bold text-heading">
           Frequently Asked Questions
         </h2>
         <div>
@@ -714,51 +290,15 @@ export default function Pricing() {
       </section>
 
       {/* ─── F. Money-Back Guarantee ─── */}
-      <section style={{ padding: "48px 24px" }}>
-        <div
-          style={{
-            background: tokens.surfaceLight,
-            padding: "48px 32px",
-            borderRadius: tokens.roundedCard,
-            maxWidth: "720px",
-            margin: "0 auto",
-            textAlign: "center",
-          }}
-        >
-          <div
-            style={{
-              width: "64px",
-              height: "64px",
-              borderRadius: "50%",
-              background: "#D1FAE5",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              margin: "0 auto 20px",
-            }}
-          >
-            <Shield className="w-7 h-7" style={{ color: "#10B981" }} />
+      <section className="px-6 py-12">
+        <div className="mx-auto max-w-[720px] rounded-card bg-surface-light px-8 py-12 text-center">
+          <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
+            <Shield className="h-7 w-7 text-emerald-500" />
           </div>
-          <h3
-            style={{
-              fontSize: "24px",
-              fontWeight: 700,
-              color: tokens.heading,
-              fontFamily: tokens.fontHeading,
-              marginBottom: "12px",
-            }}
-          >
+          <h3 className="mb-3 font-heading text-2xl font-bold text-heading">
             30-Day Money-Back Guarantee
           </h3>
-          <p
-            style={{
-              fontSize: "15px",
-              lineHeight: 1.7,
-              color: tokens.body,
-              maxWidth: "520px",
-              margin: "0 auto",
-            }}
-          >
+          <p className="mx-auto max-w-[520px] text-[15px] leading-[1.7] text-body">
             Try any paid plan risk-free for 30 days. If you are not completely
             satisfied, contact us for a full refund. No questions asked, no
             hassle.
@@ -767,159 +307,54 @@ export default function Pricing() {
       </section>
 
       {/* ─── G. Enterprise Section ─── */}
-      <section
-        style={{
-          maxWidth: "1100px",
-          margin: "0 auto",
-          padding: "64px 24px",
-        }}
-      >
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
-            gap: "48px",
-            alignItems: "center",
-          }}
-        >
+      <section className="mx-auto max-w-[1100px] px-6 py-16">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(320px,1fr))] items-center gap-12">
           {/* Left */}
           <div>
-            <h2
-              style={{
-                fontSize: "32px",
-                fontWeight: 800,
-                color: tokens.heading,
-                fontFamily: tokens.fontHeading,
-                marginBottom: "16px",
-              }}
-            >
+            <h2 className="mb-4 font-heading text-[32px] font-extrabold text-heading">
               Need a Custom Solution?
             </h2>
-            <p
-              style={{
-                fontSize: "16px",
-                lineHeight: 1.7,
-                color: tokens.body,
-                marginBottom: "24px",
-              }}
-            >
+            <p className="mb-6 text-base leading-[1.7] text-body">
               We work with enterprise teams to create tailored solutions that
               fit your exact workflow, security, and scaling needs.
             </p>
-            <ul
-              style={{
-                listStyle: "none",
-                padding: 0,
-                margin: "0 0 32px 0",
-                display: "flex",
-                flexDirection: "column",
-                gap: "12px",
-              }}
-            >
+            <ul className="mb-8 flex list-none flex-col gap-3 p-0">
               {[
                 "Custom integrations & API access",
                 "Dedicated account manager",
                 "Custom SLA & uptime guarantee",
                 "On-premise deployment options",
               ].map((item, i) => (
-                <li
-                  key={i}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "10px",
-                    fontSize: "15px",
-                    color: tokens.heading,
-                  }}
-                >
-                  <Check
-                    className="w-5 h-5 flex-shrink-0"
-                    style={{ color: "#10B981" }}
-                  />
+                <li key={i} className="flex items-center gap-2.5 text-[15px] text-heading">
+                  <Check className="h-5 w-5 flex-shrink-0 text-emerald-500" />
                   {item}
                 </li>
               ))}
             </ul>
-            <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
-              <button
-                style={{
-                  padding: "14px 28px",
-                  borderRadius: tokens.roundedBtn,
-                  border: "none",
-                  background: tokens.primary,
-                  color: "#fff",
-                  fontSize: "15px",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                  fontFamily: tokens.fontBody,
-                  transition: "background 0.2s ease",
-                }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.background = tokens.primaryDark)
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.background = tokens.primary)
-                }
-              >
+            <div className="flex flex-wrap gap-3">
+              <button className="flex items-center gap-2 rounded-btn bg-primary px-7 py-3.5 text-[15px] font-semibold text-white transition-colors duration-200 hover:bg-primary-dark">
                 Contact Sales
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="h-4 w-4" />
               </button>
-              <button
-                style={{
-                  padding: "14px 28px",
-                  borderRadius: tokens.roundedBtn,
-                  border: `1px solid ${tokens.primary}`,
-                  background: "#fff",
-                  color: tokens.primary,
-                  fontSize: "15px",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  fontFamily: tokens.fontBody,
-                  transition: "background 0.2s ease",
-                }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.background = tokens.primaryLight)
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.background = "#fff")
-                }
-              >
+              <button className="rounded-btn border border-primary bg-white px-7 py-3.5 text-[15px] font-semibold text-primary transition-colors duration-200 hover:bg-primary-light">
                 Schedule a Demo
               </button>
             </div>
           </div>
 
           {/* Right — placeholder illustration */}
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(3, 1fr)",
-              gap: "16px",
-            }}
-          >
+          <div className="grid grid-cols-3 gap-4">
             {[
-              { icon: <Users className="w-8 h-8" />, color: tokens.primary },
-              { icon: <Shield className="w-8 h-8" />, color: tokens.accentCyan },
-              { icon: <Star className="w-8 h-8" />, color: tokens.accentGold },
-              { icon: <Sparkles className="w-8 h-8" />, color: tokens.accentOrange },
-              { icon: <Check className="w-8 h-8" />, color: "#10B981" },
-              { icon: <ArrowRight className="w-8 h-8" />, color: "#6366F1" },
+              { icon: <Users className="h-8 w-8" />, colorClass: "text-primary" },
+              { icon: <Shield className="h-8 w-8" />, colorClass: "text-accent-cyan" },
+              { icon: <Star className="h-8 w-8" />, colorClass: "text-accent-gold" },
+              { icon: <Sparkles className="h-8 w-8" />, colorClass: "text-accent-orange" },
+              { icon: <Check className="h-8 w-8" />, colorClass: "text-emerald-500" },
+              { icon: <ArrowRight className="h-8 w-8" />, colorClass: "text-indigo-500" },
             ].map((item, i) => (
               <div
                 key={i}
-                style={{
-                  background: tokens.surfaceLight,
-                  borderRadius: tokens.roundedCard,
-                  padding: "32px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  aspectRatio: "1",
-                  color: item.color,
-                }}
+                className={`flex aspect-square items-center justify-center rounded-card bg-surface-light p-8 ${item.colorClass}`}
               >
                 {item.icon}
               </div>
@@ -929,67 +364,18 @@ export default function Pricing() {
       </section>
 
       {/* ─── H. CTA Banner ─── */}
-      <section
-        style={{
-          background: tokens.primary,
-          padding: "64px 24px",
-          textAlign: "center",
-        }}
-      >
-        <Sparkles
-          className="w-10 h-10"
-          style={{ color: tokens.accentGold, margin: "0 auto 16px" }}
-        />
-        <h2
-          style={{
-            fontSize: "clamp(28px, 4vw, 40px)",
-            fontWeight: 800,
-            color: "#fff",
-            fontFamily: tokens.fontHeading,
-            marginBottom: "16px",
-          }}
-        >
+      <section className="bg-primary px-6 py-16 text-center">
+        <Sparkles className="mx-auto mb-4 h-10 w-10 text-accent-gold" />
+        <h2 className="mb-4 font-heading text-[clamp(28px,4vw,40px)] font-extrabold text-white">
           Start Building Today
         </h2>
-        <p
-          style={{
-            fontSize: "16px",
-            color: "rgba(255,255,255,0.85)",
-            maxWidth: "500px",
-            margin: "0 auto 32px",
-            lineHeight: 1.6,
-          }}
-        >
+        <p className="mx-auto mb-8 max-w-[500px] text-base leading-[1.6] text-white/85">
           Join thousands of agencies building beautiful WordPress sites with
           PouchCare. Get started in minutes.
         </p>
-        <button
-          style={{
-            padding: "14px 32px",
-            borderRadius: tokens.roundedBtn,
-            border: "none",
-            background: "#fff",
-            color: tokens.primary,
-            fontSize: "16px",
-            fontWeight: 700,
-            cursor: "pointer",
-            fontFamily: tokens.fontBody,
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "8px",
-            transition: "transform 0.2s ease, box-shadow 0.2s ease",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = "translateY(-2px)";
-            e.currentTarget.style.boxShadow = "0 8px 20px rgba(0,0,0,0.2)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = "translateY(0)";
-            e.currentTarget.style.boxShadow = "none";
-          }}
-        >
+        <button className="inline-flex items-center gap-2 rounded-btn bg-white px-8 py-3.5 text-base font-bold text-primary transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_20px_rgba(0,0,0,0.2)]">
           Get Started Free
-          <ArrowRight className="w-5 h-5" />
+          <ArrowRight className="h-5 w-5" />
         </button>
       </section>
     </div>

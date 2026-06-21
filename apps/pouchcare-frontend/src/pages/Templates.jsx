@@ -1,4 +1,5 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Star,
   Download,
@@ -54,6 +55,8 @@ function StarRating({ rating }) {
 }
 
 export default function Templates() {
+  const navigate = useNavigate();
+  const filtersRef = useRef(null);
   const [templates, setTemplates] = useState(staticTemplates);
   const [categories, setCategories] = useState(staticCategories);
   const [search, setSearch] = useState("");
@@ -147,6 +150,20 @@ export default function Templates() {
     setCurrentPage(1);
   }
 
+  function scrollToTop() {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function scrollToFilters() {
+    filtersRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function handleUseTemplate(templateName) {
+    navigate("/customer/register", {
+      state: { template: templateName },
+    });
+  }
+
   function pageNumbers() {
     const pages = [];
     for (let i = 1; i <= totalPages; i++) {
@@ -203,7 +220,10 @@ export default function Templates() {
                         {formatDownloads(t.downloads)}
                       </span>
                     </div>
-                    <button className="bg-white text-[#0A7AFF] font-semibold px-6 py-2.5 rounded-lg hover:bg-blue-50 transition-colors text-sm">
+                    <button
+                      onClick={() => handleUseTemplate(t.name)}
+                      className="bg-white text-[#0A7AFF] font-semibold px-6 py-2.5 rounded-lg hover:bg-blue-50 transition-colors text-sm"
+                    >
                       Use Template
                     </button>
                   </div>
@@ -215,7 +235,10 @@ export default function Templates() {
       </section>
 
       {/* ── Search + Filters ── */}
-      <section className="max-w-6xl mx-auto px-4 -mt-6 relative z-10">
+      <section
+        ref={filtersRef}
+        className="max-w-6xl mx-auto px-4 -mt-6 relative z-10"
+      >
         <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
           {/* Search bar */}
           <div className="relative mb-5">
@@ -362,11 +385,17 @@ export default function Templates() {
 
                   {/* Footer buttons */}
                   <div className="flex gap-3">
-                    <button className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg border border-gray-200 text-[#6B7280] hover:border-[#0A7AFF] hover:text-[#0A7AFF] transition-all text-sm font-medium">
+                    <button
+                      onClick={scrollToTop}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg border border-gray-200 text-[#6B7280] hover:border-[#0A7AFF] hover:text-[#0A7AFF] transition-all text-sm font-medium"
+                    >
                       <Eye className="w-4 h-4" />
                       Preview
                     </button>
-                    <button className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg bg-[#0A7AFF] text-white hover:bg-[#0062D6] transition-all text-sm font-medium shadow-sm hover:shadow-md">
+                    <button
+                      onClick={() => handleUseTemplate(t.name)}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg bg-[#0A7AFF] text-white hover:bg-[#0062D6] transition-all text-sm font-medium shadow-sm hover:shadow-md"
+                    >
                       <Download className="w-4 h-4" />
                       Use Template
                     </button>
@@ -452,12 +481,18 @@ export default function Templates() {
             WordPress site in minutes — no coding required.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <button className="px-8 py-3.5 bg-white text-[#0A7AFF] font-semibold rounded-lg hover:bg-blue-50 transition-colors shadow-lg text-sm">
+            <button
+              onClick={scrollToFilters}
+              className="px-8 py-3.5 bg-white text-[#0A7AFF] font-semibold rounded-lg hover:bg-blue-50 transition-colors shadow-lg text-sm"
+            >
               Browse All Templates
             </button>
-            <button className="px-8 py-3.5 border-2 border-white/40 text-white font-semibold rounded-lg hover:bg-white/10 transition-colors text-sm">
+            <Link
+              to="/contact"
+              className="px-8 py-3.5 border-2 border-white/40 text-white font-semibold rounded-lg hover:bg-white/10 transition-colors text-sm"
+            >
               Request a Custom Template
-            </button>
+            </Link>
           </div>
         </div>
       </section>

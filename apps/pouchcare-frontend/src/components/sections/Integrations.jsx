@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { useIntersection } from "../../hooks/useIntersection";
 import { ArrowRight } from "lucide-react";
 
@@ -59,13 +60,13 @@ export default function Integrations() {
 
         <div className="text-center mt-10">
           <p className="text-body mb-2">And 100+ more integrations</p>
-          <a
-            href="#"
+          <Link
+            to="/docs"
             className="inline-flex items-center gap-1.5 text-primary font-semibold text-sm hover:underline"
           >
             View All Integrations
             <ArrowRight className="w-4 h-4" />
-          </a>
+          </Link>
         </div>
       </div>
     </section>

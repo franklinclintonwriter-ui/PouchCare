@@ -7,6 +7,17 @@ import Pricing from "./pages/Pricing";
 import Docs from "./pages/Docs";
 import Blog from "./pages/Blog";
 import BlogPost from "./pages/BlogPost";
+import About from "./pages/About";
+import Contact from "./pages/Contact";
+import Careers from "./pages/Careers";
+import PartnersPage from "./pages/PartnersPage";
+import SupportCenter from "./pages/SupportCenter";
+import Changelog from "./pages/Changelog";
+import ApiReference from "./pages/ApiReference";
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
+import Cookies from "./pages/Cookies";
+import NotFound from "./pages/NotFound";
 import Login from "./pages/auth/Login";
 import Signup from "./pages/auth/Signup";
 import { AuthProvider } from "./portal/shared/auth/AuthContext";
@@ -172,9 +183,19 @@ function MixedMainRoutes() {
                 <Route path="/docs" element={<Docs />} />
                 <Route path="/blog" element={<Blog />} />
                 <Route path="/blog/:slug" element={<BlogPost />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/contact" element={<Contact />} />
+                <Route path="/careers" element={<Careers />} />
+                <Route path="/partners" element={<PartnersPage />} />
+                <Route path="/support" element={<SupportCenter />} />
+                <Route path="/changelog" element={<Changelog />} />
+                <Route path="/api" element={<ApiReference />} />
+                <Route path="/terms" element={<Terms />} />
+                <Route path="/privacy" element={<Privacy />} />
+                <Route path="/cookies" element={<Cookies />} />
                 <Route path="/login" element={<Navigate to="/customer/login" replace />} />
                 <Route path="/signup" element={<Navigate to="/customer/register" replace />} />
-                <Route path="*" element={<Navigate to="/" replace />} />
+                <Route path="*" element={<NotFound />} />
               </Routes>
             </main>
             <Footer />

@@ -16,7 +16,7 @@ function ProjectCard({ project, index }) {
   return (
     <div
       ref={ref}
-      className={`group relative rounded-card overflow-hidden shadow-card transition-all duration-300 hover:shadow-card-hover hover:scale-[1.03] cursor-pointer ${
+      className={`group relative rounded-card overflow-hidden shadow-card transition-all duration-300 hover:shadow-card-hover hover:scale-[1.03] ${
         isVisible ? "animate-fadeUp" : "opacity-0"
       }`}
       style={{ animationDelay: `${index * 100}ms` }}
@@ -41,7 +41,7 @@ function ProjectCard({ project, index }) {
         {/* Hover overlay */}
         <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
           <span className="inline-flex items-center gap-2 bg-white text-heading font-semibold px-5 py-2.5 rounded-btn text-sm">
-            View Project
+            Coming Soon
             <ExternalLink className="w-4 h-4" />
           </span>
         </div>

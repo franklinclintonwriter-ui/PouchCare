@@ -1,8 +1,17 @@
-import { Send } from "lucide-react";
+import { CheckCircle, Send } from "lucide-react";
+import { useState } from "react";
 import { useIntersection } from "../../hooks/useIntersection";
 
 export default function NewsletterSignup() {
   const [ref, isVisible] = useIntersection();
+  const [email, setEmail] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    if (!email.trim()) return;
+    setSubmitted(true);
+  }
 
   return (
     <section className="bg-gradient-to-r from-primary to-primary-dark py-16">
@@ -26,26 +35,39 @@ export default function NewsletterSignup() {
 
           {/* Right side — form */}
           <div className="w-full lg:w-auto flex-shrink-0">
-            <form
-              onSubmit={(e) => e.preventDefault()}
-              className="flex flex-col sm:flex-row"
-            >
-              <input
-                type="email"
-                placeholder="Enter your email address"
-                className="bg-white rounded-btn sm:rounded-r-none py-3.5 px-5 text-heading placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent-gold w-full sm:w-72"
-              />
-              <button
-                type="submit"
-                className="bg-accent-gold text-heading font-semibold rounded-btn sm:rounded-l-none px-6 py-3.5 flex items-center justify-center gap-2 hover:brightness-110 transition-all mt-3 sm:mt-0"
-              >
-                Subscribe
-                <Send className="w-4 h-4" />
-              </button>
-            </form>
-            <p className="text-white/50 text-sm mt-3 text-center sm:text-left">
-              Join 10,000+ developers and creators
-            </p>
+            {submitted ? (
+              <div className="animate-fadeUp flex items-center gap-3 rounded-btn bg-white/10 px-5 py-4 text-white shadow-lg">
+                <CheckCircle className="w-6 h-6 text-white" />
+                <div>
+                  <p className="font-semibold">Thanks! You&apos;re on the list.</p>
+                  <p className="text-sm text-white/80">
+                    We&apos;ll send the latest updates your way.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <>
+                <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row">
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Enter your email address"
+                    className="bg-white rounded-btn sm:rounded-r-none py-3.5 px-5 text-heading placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent-gold w-full sm:w-72"
+                  />
+                  <button
+                    type="submit"
+                    className="bg-accent-gold text-heading font-semibold rounded-btn sm:rounded-l-none px-6 py-3.5 flex items-center justify-center gap-2 hover:brightness-110 transition-all mt-3 sm:mt-0"
+                  >
+                    Subscribe
+                    <Send className="w-4 h-4" />
+                  </button>
+                </form>
+                <p className="text-white/50 text-sm mt-3 text-center sm:text-left">
+                  Join 10,000+ developers and creators
+                </p>
+              </>
+            )}
           </div>
         </div>
       </div>
