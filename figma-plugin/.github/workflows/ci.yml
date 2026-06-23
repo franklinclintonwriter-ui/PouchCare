@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'figma-plugin/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'figma-plugin/**'
+
+defaults:
+  run:
+    working-directory: figma-plugin
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18, 20]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+          cache-dependency-path: figma-plugin/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript check
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Format check
+        run: npm run format:check
+
+      - name: Build
+        run: npm run build
+
+      - name: Validate manifest
+        run: node scripts/validate-manifest.js
+
+      - name: Check bundle size
+        run: |
+          SIZE=$(stat -c%s dist/main.js 2>/dev/null || stat -f%z dist/main.js)
+          echo "Bundle size: $((SIZE / 1024))KB"
+          if [ "$SIZE" -gt 512000 ]; then
+            echo "ERROR: Bundle exceeds 500KB limit"
+            exit 1
+          fi

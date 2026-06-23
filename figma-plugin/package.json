@@ -1,0 +1,26 @@
+{
+  "name": "ds-bootstrapper",
+  "version": "1.0.0",
+  "description": "Design System Bootstrapper — Figma plugin for PouchCare design system generation",
+  "license": "MIT",
+  "scripts": {
+    "dev": "node esbuild.config.js --watch",
+    "build": "node esbuild.config.js",
+    "lint": "eslint 'src/**/*.ts'",
+    "format": "prettier --write 'src/**/*.{ts,html}'",
+    "format:check": "prettier --check 'src/**/*.{ts,html}'",
+    "typecheck": "tsc --noEmit",
+    "validate": "node scripts/validate-manifest.js",
+    "prebuild": "npm run typecheck",
+    "test": "echo \"Tests not yet configured\" && exit 0"
+  },
+  "devDependencies": {
+    "@figma/plugin-typings": "1.96.0",
+    "@typescript-eslint/eslint-plugin": "7.18.0",
+    "@typescript-eslint/parser": "7.18.0",
+    "esbuild": "0.21.5",
+    "eslint": "8.57.1",
+    "prettier": "3.3.3",
+    "typescript": "5.5.4"
+  }
+}

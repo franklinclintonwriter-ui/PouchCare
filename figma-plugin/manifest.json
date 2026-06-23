@@ -1,0 +1,22 @@
+{
+  "name": "Design System Bootstrapper",
+  "id": "com.yourorg.ds-bootstrapper",
+  "api": "1.0.0",
+  "main": "dist/main.js",
+  "ui": "src/ui.html",
+  "editorType": ["figma", "figjam"],
+  "networkAccess": {
+    "allowedDomains": ["none"]
+  },
+  "permissions": ["currentuser"],
+  "menu": [
+    { "name": "Create Tokens", "command": "tokens" },
+    { "name": "Create Components", "command": "components" },
+    { "name": "Create Templates", "command": "templates" },
+    { "name": "Create Theme Previews", "command": "previews" },
+    { "name": "Export Library Snapshot", "command": "export" },
+    { "separator": true },
+    { "name": "Full Bootstrap (All)", "command": "bootstrap" },
+    { "name": "Reset All", "command": "reset" }
+  ]
+}

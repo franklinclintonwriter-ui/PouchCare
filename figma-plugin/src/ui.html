@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <style>
+    :root {
+      --bg: #0b0f14;
+      --bg-elevated: #111827;
+      --surface: #1e293b;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --accent: #22d3ee;
+      --accent2: #a78bfa;
+      --border: #1e293b;
+      --success: #34d399;
+      --danger: #ef4444;
+      --warn: #f59e0b;
+      --radius: 8px;
+      --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: var(--font);
+      font-size: 13px;
+      color: var(--text);
+      background: var(--bg);
+      padding: 16px;
+      min-height: 100vh;
+    }
+
+    h1 {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 4px;
+    }
+
+    .subtitle {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+
+    .section {
+      margin-bottom: 16px;
+    }
+
+    .section-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+    }
+
+    .btn-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .btn:hover:not(:disabled) {
+      border-color: var(--accent);
+      background: var(--bg-elevated);
+    }
+
+    .btn:active:not(:disabled) {
+      transform: scale(0.98);
+    }
+
+    .btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .btn--primary {
+      background: var(--accent);
+      color: var(--bg);
+      border-color: var(--accent);
+      grid-column: 1 / -1;
+      font-weight: 600;
+    }
+
+    .btn--primary:hover:not(:disabled) {
+      background: #06b6d4;
+      border-color: #06b6d4;
+    }
+
+    .btn--danger {
+      background: transparent;
+      color: var(--danger);
+      border-color: var(--danger);
+      grid-column: 1 / -1;
+    }
+
+    .btn--danger:hover:not(:disabled) {
+      background: rgba(239, 68, 68, 0.1);
+    }
+
+    .status-panel {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px;
+      min-height: 60px;
+    }
+
+    .status-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .status-message {
+      font-size: 12px;
+      color: var(--text);
+      word-break: break-word;
+    }
+
+    .status-message.error {
+      color: var(--danger);
+    }
+
+    .status-message.success {
+      color: var(--success);
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 4px;
+      background: var(--surface);
+      border-radius: 2px;
+      margin-top: 8px;
+      overflow: hidden;
+      display: none;
+    }
+
+    .progress-bar.active {
+      display: block;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 2px;
+      transition: width 0.3s ease;
+      width: 0%;
+    }
+
+    .manifest-panel {
+      display: none;
+      margin-top: 12px;
+    }
+
+    .manifest-panel.visible {
+      display: block;
+    }
+
+    .manifest-textarea {
+      width: 100%;
+      height: 120px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: var(--font-mono);
+      font-size: 10px;
+      padding: 8px;
+      resize: vertical;
+    }
+
+    .manifest-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .manifest-actions .btn {
+      flex: 1;
+      padding: 8px;
+      font-size: 11px;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 16px;
+      left: 16px;
+      right: 16px;
+      padding: 10px 16px;
+      border-radius: var(--radius);
+      font-size: 12px;
+      font-weight: 500;
+      transform: translateY(100px);
+      transition: transform 0.3s ease;
+      z-index: 100;
+    }
+
+    .toast.visible {
+      transform: translateY(0);
+    }
+
+    .toast.success {
+      background: var(--success);
+      color: var(--bg);
+    }
+
+    .toast.error {
+      background: var(--danger);
+      color: white;
+    }
+
+    .icon {
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Design System Bootstrapper</h1>
+  <p class="subtitle">PouchCare Design System v1.0.0</p>
+
+  <div class="section">
+    <div class="section-title">Quick Actions</div>
+    <div class="btn-grid">
+      <button class="btn" id="btn-tokens" data-command="tokens">
+        <span class="icon">&#x1F3A8;</span> Tokens
+      </button>
+      <button class="btn" id="btn-components" data-command="components">
+        <span class="icon">&#x1F9E9;</span> Components
+      </button>
+      <button class="btn" id="btn-templates" data-command="templates">
+        <span class="icon">&#x1F4C4;</span> Templates
+      </button>
+      <button class="btn" id="btn-previews" data-command="previews">
+        <span class="icon">&#x1F440;</span> Previews
+      </button>
+      <button class="btn" id="btn-export" data-command="export">
+        <span class="icon">&#x1F4E6;</span> Export
+      </button>
+      <button class="btn btn--primary" id="btn-bootstrap" data-command="bootstrap">
+        <span class="icon">&#x26A1;</span> Full Bootstrap
+      </button>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Status</div>
+    <div class="status-panel">
+      <div class="status-label">Last action</div>
+      <div class="status-message" id="status-message">Ready. Choose an action above.</div>
+      <div class="progress-bar" id="progress-bar">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="manifest-panel" id="manifest-panel">
+    <div class="section-title">Export Manifest</div>
+    <textarea class="manifest-textarea" id="manifest-textarea" readonly></textarea>
+    <div class="manifest-actions">
+      <button class="btn" id="btn-copy-manifest">Copy JSON</button>
+      <button class="btn" id="btn-copy-css">Copy CSS</button>
+      <button class="btn" id="btn-copy-tokens">Copy Tokens</button>
+    </div>
+  </div>
+
+  <div class="section" style="margin-top: 12px;">
+    <button class="btn btn--danger" id="btn-reset" data-command="reset">
+      Reset All
+    </button>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // State
+    let isProcessing = false;
+    let manifestData = null;
+
+    // Elements
+    const buttons = document.querySelectorAll('.btn[data-command]');
+    const statusMessage = document.getElementById('status-message');
+    const progressBar = document.getElementById('progress-bar');
+    const progressFill = document.getElementById('progress-fill');
+    const manifestPanel = document.getElementById('manifest-panel');
+    const manifestTextarea = document.getElementById('manifest-textarea');
+    const toast = document.getElementById('toast');
+
+    // Button click handlers
+    buttons.forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        if (isProcessing) return;
+        var command = btn.getAttribute('data-command');
+        setProcessing(true);
+        setStatus('Running: ' + command + '...', '');
+        showProgress(true);
+        parent.postMessage({ pluginMessage: { type: 'run-command', command: command } }, '*');
+      });
+    });
+
+    // Copy buttons
+    document.getElementById('btn-copy-manifest').addEventListener('click', function() {
+      if (manifestData) {
+        copyToClipboard(manifestData.manifest);
+        showToast('Manifest JSON copied!', 'success');
+      }
+    });
+
+    document.getElementById('btn-copy-css').addEventListener('click', function() {
+      if (manifestData) {
+        copyToClipboard(manifestData.css);
+        showToast('CSS variables copied!', 'success');
+      }
+    });
+
+    document.getElementById('btn-copy-tokens').addEventListener('click', function() {
+      if (manifestData) {
+        copyToClipboard(manifestData.tokens);
+        showToast('Tokens JSON copied!', 'success');
+      }
+    });
+
+    // Message handler from plugin
+    window.onmessage = function(event) {
+      var msg = event.data.pluginMessage;
+      if (!msg) return;
+
+      switch (msg.type) {
+        case 'progress':
+          if (msg.progress) {
+            var pct = (msg.progress.current / msg.progress.total) * 100;
+            progressFill.style.width = pct + '%';
+            setStatus(msg.progress.label, '');
+          }
+          break;
+
+        case 'complete':
+          setProcessing(false);
+          showProgress(false);
+          setStatus(msg.message || 'Done!', 'success');
+          showToast(msg.message || 'Complete!', 'success');
+          break;
+
+        case 'error':
+          setProcessing(false);
+          showProgress(false);
+          setStatus(msg.message || 'An error occurred.', 'error');
+          showToast(msg.message || 'Error!', 'error');
+          break;
+
+        case 'manifest-data':
+          if (msg.data) {
+            manifestData = JSON.parse(msg.data);
+            manifestTextarea.value = manifestData.manifest;
+            manifestPanel.classList.add('visible');
+          }
+          break;
+
+        case 'state-update':
+          break;
+      }
+    };
+
+    // Helpers
+    function setProcessing(processing) {
+      isProcessing = processing;
+      buttons.forEach(function(btn) {
+        btn.disabled = processing;
+      });
+    }
+
+    function setStatus(message, className) {
+      statusMessage.textContent = message;
+      statusMessage.className = 'status-message' + (className ? ' ' + className : '');
+    }
+
+    function showProgress(show) {
+      progressBar.classList.toggle('active', show);
+      if (!show) {
+        progressFill.style.width = '0%';
+      }
+    }
+
+    function showToast(message, type) {
+      toast.textContent = message;
+      toast.className = 'toast visible ' + type;
+      setTimeout(function() {
+        toast.classList.remove('visible');
+      }, 3000);
+    }
+
+    function copyToClipboard(text) {
+      var textarea = document.createElement('textarea');
+      textarea.value = text;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+    }
+  </script>
+</body>
+</html>
