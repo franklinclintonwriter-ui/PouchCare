@@ -2,10 +2,10 @@
 
 <!-- Any agent/session: READ THIS BLOCK FIRST to resume work. Keep it accurate in every PR. -->
 ## CURRENT STATE / RESUME HERE
-- **Integration branch:** `enterprise/main` (off `main` @ 953cd99) — now @ `dc56001` (**Phase 1 + Phase-2 #14/#15 merged**).
-- **Active branch:** none (between PRs). **Copilot** is building **PR-2.2** → **PR #17** (audit coverage, based on `enterprise/main`, in progress).
-- **Last merged enterprise PR:** Phase-2 **#14** (PR-2.1 audit reconcile) + **#15** (PR-2.3 Branch FK) flattened into `enterprise/main` @ `dc56001` (after Phase-1 #10–#13).
-- **Next action (AI):** **PR-2.4** — BRANCH_MANAGER scoping. *Not greenfield* — migrate existing **string-based** scoping to the new **`branchId`** FK in: (1) `apps/api/src/lib/teamBranchScope.ts` (`canManagerAccessStaffMember`, `branchManagerStaffRelationFilter`, `merge*WhereForManager` for attendance/leave/report/payroll — currently `me.branch===them.branch`); (2) `apps/api/src/routes/tasks/access.ts` (`canEditTaskAssignment` — `task.assignedBranch===me.branch`). **Transition note:** also set `branchId` on record creation in the create handlers (or keep a string fallback) so API-created rows are scoped, since `linkBranchFks()` only backfills the seed. Then **PR-2.5** (auth: session table/logout/password policy/2FA). Verify cross-branch isolation via `e2e/rbac.spec.ts` (PR-2.6 harness).
+- **Integration branch:** `enterprise/main` (off `main` @ 953cd99) — now @ `21188fa` (**Phase 1 + Phase-2 #14/#15 merged**).
+- **Active branch:** `ent/p2-branch-scope` (PR-2.4 #18, off `enterprise/main`). **Copilot** is building **PR-2.2** → **PR #17** (audit coverage) in parallel.
+- **Last merged enterprise PR:** Phase-2 **#14** (PR-2.1 audit reconcile) + **#15** (PR-2.3 Branch FK) flattened into `enterprise/main` @ `dc56001`; ledger-sync @ `21188fa` (after Phase-1 #10–#13).
+- **Next action (AI):** review/merge **#17** (Copilot PR-2.2) when ready + **#18** (PR-2.4). Then **PR-2.5** — auth hardening (session table + refresh-token revocation/logout, unified password policy, enforceable 2FA); additive schema → land before `0_init`. **PR-2.6** (vitest+Playwright incl. cross-branch rbac.spec for PR-2.4) is Copilot-delegable after 2.5.
 - **Owner steps (still pending — needs live MySQL):** generate `0_init` via `prisma migrate dev` + set `DATABASE_URL`(mysql)/R2 `S3_*` (see `apps/api/prisma/MIGRATION_NOTES.md` / `docs/DEPLOY-MYSQL.md`). Recommended AFTER Phase-2 schema PRs.
 - **Known-broken / notes:** `apps/api` + `apps/management` tsc 0; `prisma validate` ✓. **Follow-up:** Windows dev scripts (`scripts/*.ps1`) + `deploy/server-init.sh` still mention postgres — non-deploy-critical (DB runs in the `mysql` container). Bugbot flagged "legacy Supabase `storageKey` URLs break downloads" on #10 — **N/A for fresh-start** (greenfield DB, no legacy rows; new code only writes R2 object keys). PR #3 (service picker) merged to `main` separately.
 - **Protocol reminder:** every PR must (1) flip its line below, (2) update this block, (3) append to `ledger/PR-INDEX.md`. Enforced on merge requests by the `quality:ledger` CI job (`scripts/check-ledger.mjs`).
@@ -30,7 +30,7 @@ Status values: `TODO` · `WIP` · `IN_REVIEW` · `MERGED`. Each line carries its
 - [x] PR-2.1 `[CP]` Audit schema/contract align — branch:ent/p2-audit-schema — status:MERGED — pr:#14 — owner:ai — verify:prisma validate ✓; tsc both apps 0; no `as any`
 - [ ] PR-2.2 `[||]` Audit coverage ~100% — branch:(copilot) — status:WIP — pr:#17 — owner:copilot — verify:`npm run audit:coverage` ~100% (delegated to Copilot, base enterprise/main)
 - [x] PR-2.3 `[CP]` Branch FK isolation — branch:ent/p2-branch-fk — status:MERGED — pr:#15 — owner:ai — verify:prisma validate ✓; api tsc 0; seed backfills branchId (link via branch-staff)
-- [ ] PR-2.4 `[CP]` BRANCH_MANAGER query scope — branch:ent/p2-branch-scope — status:TODO — owner:ai — verify:migrate teamBranchScope.ts + tasks/access.ts string→branchId; rbac.spec blocks cross-branch
+- [ ] PR-2.4 `[CP]` BRANCH_MANAGER query scope — branch:ent/p2-branch-scope — status:IN_REVIEW — pr:#18 — owner:ai — verify:api tsc 0; scoping helpers on branchId (fail-closed); branchId set on staff/task writes
 - [ ] PR-2.5 `[CP]` Auth hardening — branch:ent/p2-auth — status:TODO — owner:ai — verify:logout invalidates refresh; revoked token → 401
 - [ ] PR-2.6 `[||]` Test harness + CI — branch:ent/p2-tests — status:TODO — owner:copilot — verify:`npm test` green; CI runs vitest+e2e
 

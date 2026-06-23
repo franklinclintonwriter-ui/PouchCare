@@ -21,12 +21,10 @@ export async function canManagerAccessStaffMember(
   if (managerRole !== 'BRANCH_MANAGER') return true
 
   const [me, them] = await Promise.all([
-    prisma.staffMember.findUnique({ where: { id: managerId }, select: { branch: true } }),
-    prisma.staffMember.findUnique({ where: { id: targetStaffId }, select: { branch: true } }),
+    prisma.staffMember.findUnique({ where: { id: managerId }, select: { branchId: true } }),
+    prisma.staffMember.findUnique({ where: { id: targetStaffId }, select: { branchId: true } }),
   ])
-  const mine = me?.branch?.trim()
-  const theirs = them?.branch?.trim()
-  return !!(mine && theirs && mine === theirs)
+  return !!(me?.branchId && them?.branchId && me.branchId === them.branchId)
 }
 
 async function branchManagerStaffRelationFilter(
@@ -34,11 +32,11 @@ async function branchManagerStaffRelationFilter(
 ): Promise<Prisma.StaffMemberWhereInput | 'empty'> {
   const me = await prisma.staffMember.findUnique({
     where: { id: managerId },
-    select: { branch: true },
+    select: { branchId: true },
   })
-  const b = me?.branch?.trim()
+  const b = me?.branchId
   if (!b) return 'empty'
-  return { branch: b }
+  return { branchId: b }
 }
 
 /** Merge manager list filters with branch scope (BM → same branch via `staffMember`). */

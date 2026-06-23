@@ -16,6 +16,8 @@ import { env } from '@/config/env'
 import { getEffectivePermissions } from '@/lib/managementPermissions'
 import { canAccessStaffProfileAdmin, canAssignSystemRole } from '@/lib/staffProfileAdmin'
 import { staffListWhereWithBranchScope } from '@/lib/staffDirectoryScope'
+import { canManagerAccessStaffMember } from '@/lib/teamBranchScope'
+import { resolveBranchId, isNonBranchLabel } from '@/lib/branchResolve'
 import { staffAdminUpdateSchema } from '@/routes/staff/staffAdminUpdateSchema'
 import documentsRouter from '@/routes/staff/documents'
 
@@ -274,19 +276,8 @@ router.get('/members/:id', requireStaff, async (req: AuthRequest, res) => {
     const isSelf = req.user!.id === req.params.id
 
     if (req.user!.role === 'BRANCH_MANAGER' && !admin && !isSelf) {
-      const [me, theirBranch] = await Promise.all([
-        prisma.staffMember.findUnique({
-          where: { id: req.user!.id },
-          select: { branch: true },
-        }),
-        prisma.staffMember.findUnique({
-          where: { id: req.params.id },
-          select: { branch: true },
-        }),
-      ])
-      const mine = me?.branch?.trim()
-      const theirs = theirBranch?.branch?.trim()
-      if (!mine || !theirs || mine !== theirs) return notFound(res)
+      const allowed = await canManagerAccessStaffMember(req.user!.id, req.user!.role, req.params.id)
+      if (!allowed) return notFound(res)
     }
 
     const select =
@@ -324,8 +315,9 @@ router.post('/members', requireRoles(...HR_ROLES as any), validate(createSchema)
     if (exists) return badRequest(res, 'Email already exists')
 
     const passwordHash = await bcrypt.hash(password, env.BCRYPT_ROUNDS)
+    const branchId = await resolveBranchId(data.branch)
     const member = await prisma.staffMember.create({
-      data: { ...data, email: data.email.toLowerCase(), passwordHash },
+      data: { ...data, email: data.email.toLowerCase(), passwordHash, ...(branchId ? { branchId } : {}) },
       select: { id: true, memberId: true, name: true, email: true, systemRole: true },
     })
     return created(res, member)
@@ -356,6 +348,16 @@ router.put('/members/:id', requireStaff, async (req, res, next) => {
 
     const prismaData: Record<string, unknown> = { ...data }
     if (data.email !== undefined) prismaData.email = data.email.toLowerCase()
+    // Keep the branchId FK in sync whenever the advisory branch string changes.
+    if (data.branch !== undefined) {
+      const trimmed = data.branch.trim()
+      const branchId = await resolveBranchId(data.branch)
+      // Reject a genuine typo, but allow the "Company — Global" sentinel / blanks
+      // (company-wide staff → branchId null, unscoped). branchId stays authoritative.
+      if (trimmed && !branchId && !isNonBranchLabel(trimmed)) return badRequest(res, 'Unknown branch')
+      prismaData.branchId = branchId
+      prismaData.branch = trimmed || null
+    }
 
     const member = await prisma.staffMember.update({
       where: { id: req.params.id },

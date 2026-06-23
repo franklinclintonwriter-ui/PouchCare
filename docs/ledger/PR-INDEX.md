@@ -207,3 +207,17 @@
 - **Verify (sandbox):** `prisma validate` → valid 🚀; `prisma generate` ✓ (8 relations); `apps/api` src tsc **0** (additive — no existing route broke); seed.ts type-clean for the changes (the 2 remaining seed tsc warnings at L256/257 are pre-existing CameraDevice status comparisons, unrelated).
 - **Migration:** additive on the not-yet-generated `0_init` → folds into the single owner-run migration. No standalone migration. (If the owner ever seeds before generating, `linkBranchFks()` doubles as the backfill.)
 - **Next:** PR-2.4 (BRANCH_MANAGER query scoping via a `branchScope(req)` Prisma-where helper over these `branchId` columns).
+
+---
+
+### PR-2.4 — BRANCH_MANAGER scoping migrated to the `branchId` FK
+- **Branch:** `ent/p2-branch-scope` → `enterprise/main`
+- **Not greenfield:** scoping already existed but compared advisory `branch` **strings**. Migrated it to the `branchId` FK (PR-2.3), **fail-closed** (a BM with no `branchId` matches nothing — never leaks cross-branch).
+- **Scope helpers migrated (string → `branchId`):**
+  - `lib/teamBranchScope.ts` — `canManagerAccessStaffMember` (compare `branchId`), `branchManagerStaffRelationFilter` (returns `{ branchId }`); the `merge*WhereForManager` wrappers (attendance/leave/dailyReport/payroll) are unchanged — they scope via `{ staffMember: { branchId } }`, so only **staff** need a reliable `branchId`.
+  - `lib/staffDirectoryScope.ts` — `staffListWhereWithBranchScope` filters `branchId`; the `branch` query param (a name) is resolved and rejected if it isn't the BM's branch; advisory `branch` filter dropped in favour of `branchId`.
+  - `routes/tasks/access.ts` — `canEditTaskAssignment` compares `task.branchId === me.branchId`.
+- **Writes now persist `branchId`** (new `lib/branchResolve.ts` → `resolveBranchId(name)`, memoises name→id): staff **create** + **update** (`routes/staff/index.ts`) and task **create** (`routes/tasks/index.ts`) resolve the branch name and set `branchId` alongside the kept advisory string. Staff create is the **only** `staffMember.create` site, so staff `branchId` is now fully covered; "Company — Global" staff resolve to no branch → `branchId` null (correctly unscoped).
+- **Verify (sandbox):** `apps/api` tsc **0**. (Behavioural cross-branch isolation to be covered by `e2e/rbac.spec.ts` under the PR-2.6 harness.)
+- **Deliberately out of scope:** task **list** branch-scoping did not exist before (tasks are org-visible) — not added here; flagged as a possible follow-up. No schema/migration changes (uses PR-2.3 columns).
+- **Bugbot review (converged with Cursor autofix `19b939e`→`93d2fe6`):** kept the autofix's good work — `members/:id` via the shared `canManagerAccessStaffMember` (branchId; was High), staff/task **update** re-resolve `branchId` on label change (was Medium), and reordered task-update so the unknown-branch check runs **before** `syncAssigneeTaskCount` (no stranded counter; was Medium). Added the **one** missing piece the autofix lacked: `isNonBranchLabel()` so the reject **allows the `"Company — Global"` sentinel** (company-wide CEO/MD/HR staff, not a `Branch` row) and blanks → `branchId` null (unscoped, fail-closed), while still rejecting genuine typos. This fixes the regression the strict reject would have caused (blocking edits to company-wide staff) without weakening validation.
