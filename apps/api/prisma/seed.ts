@@ -137,7 +137,7 @@ async function linkBranchFks() {
     prisma.payroll.updateMany({ where: { staffMemberId: { in: ids } }, data }),
     prisma.task.updateMany({ where: { assignedMemberId: { in: ids } }, data }),
     prisma.task.updateMany({ where: { assignedManagerId: { in: ids }, branchId: null }, data }),
-    prisma.project.updateMany({ where: { assignedBranch: BRANCH_NAME }, data }),
+    prisma.project.updateMany({ where: { assignedTo: { in: ids } }, data }),
   ]);
 
   const tasks = taskMember.count + taskManager.count;
