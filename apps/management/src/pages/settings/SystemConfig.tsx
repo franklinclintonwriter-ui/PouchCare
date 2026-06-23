@@ -380,11 +380,11 @@ function AuditLogTab() {
                   <p className="text-xs text-gray-500">{new Date(log.createdAt).toLocaleString()}</p>
                 </div>
                 <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">
-                  By: {log.actorName} ({log.actorRole}) | IP: {log.ipAddress}
+                  By: {String(log.metadata?.actorName ?? log.actorId ?? 'system')} ({log.actorRole ?? '—'}) | {log.resourceKind}:{log.resourceId} | IP: {log.ip ?? '—'}
                 </p>
-                {log.details && (
+                {log.metadata && (
                   <pre className="mt-2 overflow-x-auto rounded bg-gray-50 p-2 text-[10px] text-gray-800 dark:bg-gray-900 dark:text-gray-300">
-                    {JSON.stringify(JSON.parse(log.details), null, 2)}
+                    {JSON.stringify(log.metadata, null, 2)}
                   </pre>
                 )}
               </div>

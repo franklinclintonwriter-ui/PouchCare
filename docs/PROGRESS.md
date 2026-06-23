@@ -2,11 +2,12 @@
 
 <!-- Any agent/session: READ THIS BLOCK FIRST to resume work. Keep it accurate in every PR. -->
 ## CURRENT STATE / RESUME HERE
-- **Integration branch:** `enterprise/main` (off `main` @ 953cd99)
-- **Active branch:** `ent/p1-infra-mysql` (PR-1.6 #13, stacked on `ent/p1-seed-mysql` #12)
-- **Last merged enterprise PR:** #4–#9 in `enterprise/main` @ 27fe7d6. **Phase-1 cutover PRs #10, #11, #12, #13 in review.**
-- **Next action:** **Phase 1 is code-complete.** Owner: (1) generate `0_init` on a live MySQL + set `DATABASE_URL`(mysql)/R2 secrets (see `MIGRATION_NOTES.md` / `docs/DEPLOY-MYSQL.md`); (2) merge the Phase-1 stack #10→#11→#12→#13. Then **Phase 2 / PR-2.1** (SystemAuditLog schema/contract reconcile).
-- **Known-broken / notes:** `apps/api` + `apps/management` tsc 0; all 3 compose files parse as `mysql:8`; no postgres refs in compose/env. **Follow-up:** Windows dev scripts (`scripts/*.ps1`) + `deploy/server-init.sh` still mention postgres — non-deploy-critical (DB runs in the `mysql` container). PR #3 (service picker) is separate.
+- **Integration branch:** `enterprise/main` (off `main` @ 953cd99) — now @ `b5efdc3` (**Phase 1 fully merged**).
+- **Active branch:** `ent/p2-audit-schema` (PR-2.1 #14, off `enterprise/main`).
+- **Last merged enterprise PR:** Phase-1 stack **#10→#11→#12→#13** flattened into `enterprise/main` @ `b5efdc3` (after #4–#9). MySQL fresh-start + R2 + **zero Supabase** is now in the integration branch.
+- **Next action:** PR-2.1 (audit schema/contract reconcile) in review. Then **PR-2.3** (Branch FK) + **PR-2.5** (auth: session table) — both purely-additive schema; land them before the owner generates `0_init` so it's a single migration (seed-once-after-Phase-2). PR-2.2 (audit coverage) + PR-2.6 (tests) are Copilot-delegable in parallel.
+- **Owner steps (still pending — needs live MySQL):** generate `0_init` via `prisma migrate dev` + set `DATABASE_URL`(mysql)/R2 `S3_*` (see `apps/api/prisma/MIGRATION_NOTES.md` / `docs/DEPLOY-MYSQL.md`). Recommended AFTER Phase-2 schema PRs.
+- **Known-broken / notes:** `apps/api` + `apps/management` tsc 0; `prisma validate` ✓. **Follow-up:** Windows dev scripts (`scripts/*.ps1`) + `deploy/server-init.sh` still mention postgres — non-deploy-critical (DB runs in the `mysql` container). Bugbot flagged "legacy Supabase `storageKey` URLs break downloads" on #10 — **N/A for fresh-start** (greenfield DB, no legacy rows; new code only writes R2 object keys). PR #3 (service picker) merged to `main` separately.
 - **Protocol reminder:** every PR must (1) flip its line below, (2) update this block, (3) append to `ledger/PR-INDEX.md`. Enforced on merge requests by the `quality:ledger` CI job (`scripts/check-ledger.mjs`).
 
 Status values: `TODO` · `WIP` · `IN_REVIEW` · `MERGED`. Each line carries its roadmap effort tag — `[CP]` critical-path (AI) / `[||]` parallelizable (Copilot); dependencies live in `ROADMAP.md`.
@@ -20,13 +21,13 @@ Status values: `TODO` · `WIP` · `IN_REVIEW` · `MERGED`. Each line carries its
 - [x] PR-1.1 `[CP]` R2 sole storage — branch:ent/p1-storage-r2 — status:MERGED — pr:#7 — owner:ai
 - [x] PR-1.2 `[CP]` fileManager → R2 — branch:ent/p1-filemanager-r2 — status:MERGED — pr:#8 — owner:ai
 - [x] PR-1.3 `[CP]` Remove Supabase analytics mirrors + NL→SQL route — branch:ent/p1-drop-supabase — status:MERGED — pr:#9 — owner:ai
-- [ ] PR-1.3b `[CP]` Port workspace storage→R2; delete Supabase lib/deps/env + WorkspaceEditor UI — branch:ent/p1-drop-supabase-2 — status:IN_REVIEW — pr:#10 — owner:ai — verify:`grep -ri supabase apps/*/src` empty; tsc both apps
-- [ ] PR-1.4 `[CP]` Prisma → MySQL + 0_init — branch:ent/p1-mysql — status:IN_REVIEW — pr:#11 — owner:ai — verify:`prisma validate && generate` ✓; apps/api tsc 0; owner runs `migrate dev`
-- [ ] PR-1.5 `[CP]` Seed on MySQL + runbook — branch:ent/p1-seed-mysql — status:IN_REVIEW — pr:#12 — owner:ai — verify:seed audited MySQL-compatible; docs/DEPLOY-MYSQL.md added
-- [ ] PR-1.6 `[CP]` compose + env → MySQL — branch:ent/p1-infra-mysql — status:IN_REVIEW — pr:#13 — owner:ai — verify:all 3 `docker compose config` parse as mysql:8; no postgres refs
+- [x] PR-1.3b `[CP]` Port workspace storage→R2; delete Supabase lib/deps/env + WorkspaceEditor UI — branch:ent/p1-drop-supabase-2 — status:MERGED — pr:#10 — owner:ai — verify:`grep -ri supabase apps/*/src` empty; tsc both apps
+- [x] PR-1.4 `[CP]` Prisma → MySQL + 0_init — branch:ent/p1-mysql — status:MERGED — pr:#11 — owner:ai — verify:`prisma validate && generate` ✓; apps/api tsc 0; owner runs `migrate dev`
+- [x] PR-1.5 `[CP]` Seed on MySQL + runbook — branch:ent/p1-seed-mysql — status:MERGED — pr:#12 — owner:ai — verify:seed audited MySQL-compatible; docs/DEPLOY-MYSQL.md added
+- [x] PR-1.6 `[CP]` compose + env → MySQL — branch:ent/p1-infra-mysql — status:MERGED — pr:#13 — owner:ai — verify:all 3 `docker compose config` parse as mysql:8; no postgres refs
 
 ## Phase 2 — Enterprise foundations
-- [ ] PR-2.1 `[CP]` Audit schema/contract align — branch:ent/p2-audit-schema — status:TODO — owner:ai — verify:prisma validate; tsc no `as any`
+- [ ] PR-2.1 `[CP]` Audit schema/contract align — branch:ent/p2-audit-schema — status:IN_REVIEW — pr:#14 — owner:ai — verify:prisma validate ✓; tsc both apps 0; no `as any`
 - [ ] PR-2.2 `[||]` Audit coverage ~100% — branch:ent/p2-audit-coverage — status:TODO — owner:copilot — verify:`npm run audit:coverage` ~100%
 - [ ] PR-2.3 `[CP]` Branch FK isolation — branch:ent/p2-branch-fk — status:TODO — owner:ai — verify:prisma validate; 0 orphan rows
 - [ ] PR-2.4 `[CP]` BRANCH_MANAGER query scope — branch:ent/p2-branch-scope — status:TODO — owner:ai — verify:rbac.spec blocks cross-branch

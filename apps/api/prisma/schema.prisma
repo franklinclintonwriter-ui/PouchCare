@@ -1418,16 +1418,23 @@ model SystemSetting {
 }
 
 model SystemAuditLog {
-  id        String   @id @default(uuid())
-  action    String
-  module    String
-  actorId   String   @map("actor_id")
-  actorName String   @map("actor_name")
-  actorRole String   @map("actor_role")
-  ipAddress String?  @map("ip_address")
-  details   String?
-  createdAt DateTime @default(now()) @map("created_at")
+  id           String   @id @default(uuid())
+  actorId      String?  @map("actor_id")
+  actorRole    String?  @map("actor_role")
+  action       String
+  resourceKind String   @map("resource_kind")
+  resourceId   String   @map("resource_id")
+  clientId     String?  @map("client_id")
+  ip           String?
+  userAgent    String?  @map("user_agent")
+  metadata     Json?
+  createdAt    DateTime @default(now()) @map("created_at")
 
+  @@index([resourceKind, resourceId])
+  @@index([clientId])
+  @@index([actorId])
+  @@index([action])
+  @@index([createdAt])
   @@map("system_audit_logs")
 }
 

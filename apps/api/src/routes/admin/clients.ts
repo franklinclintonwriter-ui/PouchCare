@@ -443,13 +443,16 @@ router.post(
       const isSrcAccount = sourceId.startsWith('acct:')
       const isTgtAccount = targetId.startsWith('acct:')
 
-      // Idempotency: fingerprint by source+target in metadata
+      // Idempotency: a prior merge is uniquely identified by (action, source, target),
+      // all indexed columns now (resourceId=source, clientId=target). Fingerprint is
+      // also kept in metadata below for human-readable audit context.
       const fingerprint = `merge:${sourceId}->${targetId}`
       const dup = await prisma.systemAuditLog
         .findFirst({
           where: {
             action: 'client.merge',
-            details: { contains: fingerprint },
+            resourceId: sourceId,
+            clientId: targetId,
           },
         })
         .catch(() => null)
@@ -512,8 +515,10 @@ router.get(
     try {
       const id = req.params.id
       const { page, limit, skip } = getPaginationParams(req.query as any)
+      // Audit rows touching this client: either the client is the resource itself,
+      // or it's the linked client (clientId) of another resource's event. Both indexed.
       const where: any = {
-        OR: [{ details: { contains: id } }],
+        OR: [{ clientId: id }, { resourceId: id }],
       }
       const [items, total] = await Promise.all([
         prisma.systemAuditLog.findMany({
