@@ -145,3 +145,16 @@
 - **Owner (needs live MySQL):** `npx prisma migrate dev --name 0_init` to generate + commit the migration,
   then `migrate deploy` + seed. See MIGRATION_NOTES.md.
 - **Follow-ups:** PR-1.5 (seed audit + DEPLOY-MYSQL runbook); PR-1.6 (docker-compose + CI → MySQL).
+
+---
+
+### PR-1.5 — Seed MySQL-compat audit + deploy runbook
+- **Branch:** `ent/p1-seed-mysql` → `ent/p1-mysql` (stacked on #11)
+- **What:** Audited `apps/api/prisma/seed.ts` for MySQL compatibility — **no code change needed**:
+  no `$queryRaw`/`$executeRaw`, no Postgres functions/casts (the `::`/`now()` grep hits were JS
+  `Date.now()`), and seed never writes `ServicePlan.features` (so the `String[]`→`Json` change is moot).
+  Only portable Prisma `create()` calls + JS `Date`. Added `docs/DEPLOY-MYSQL.md` — full operator
+  runbook (MySQL 8 + R2 env, first-time `migrate dev --name 0_init`, `migrate deploy` + seed, local
+  Docker, verification, rollback).
+- **Verify:** audit documented; runbook added; no code touched (ledger-only + docs).
+- **Follow-ups:** PR-1.6 (docker-compose `postgres:16`→`mysql:8` + `.env.example` + CI).
