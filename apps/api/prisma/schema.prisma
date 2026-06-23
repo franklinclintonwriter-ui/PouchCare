@@ -1252,7 +1252,7 @@ model PluginVersion {
   pluginId       String   @map("plugin_id")
   version        String // semver e.g. "1.0.0"
   changelog      String?
-  phpFileContent String   @map("php_file_content") // full PHP source text
+  phpFileContent String   @map("php_file_content") @db.Text // full PHP source text
   isLatest       Boolean  @default(false) @map("is_latest")
   publishedAt    DateTime @default(now()) @map("published_at")
   publishedById  String   @map("published_by_id")
@@ -1410,7 +1410,7 @@ model AiMessage {
   conversationId String         @map("conversation_id")
   conversation   AiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   role           String
-  content        String
+  content        String         @db.Text
   tokensUsed     Int            @default(0) @map("tokens_used")
   createdAt      DateTime       @default(now()) @map("created_at")
 

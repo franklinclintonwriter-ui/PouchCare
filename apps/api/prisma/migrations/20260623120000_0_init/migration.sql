@@ -1057,7 +1057,7 @@ CREATE TABLE `plugin_versions` (
     `plugin_id` VARCHAR(191) NOT NULL,
     `version` VARCHAR(191) NOT NULL,
     `changelog` VARCHAR(191) NULL,
-    `php_file_content` VARCHAR(191) NOT NULL,
+    `php_file_content` TEXT NOT NULL,
     `is_latest` BOOLEAN NOT NULL DEFAULT false,
     `published_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `published_by_id` VARCHAR(191) NOT NULL,
@@ -1188,7 +1188,7 @@ CREATE TABLE `ai_messages` (
     `id` VARCHAR(191) NOT NULL,
     `conversation_id` VARCHAR(191) NOT NULL,
     `role` VARCHAR(191) NOT NULL,
-    `content` VARCHAR(191) NOT NULL,
+    `content` TEXT NOT NULL,
     `tokens_used` INTEGER NOT NULL DEFAULT 0,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
