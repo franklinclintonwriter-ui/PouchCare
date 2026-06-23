@@ -93,16 +93,16 @@ router.put(
                await tx.systemAuditLog.create({
                 data: {
                   action: 'UPDATE_SETTING',
-                  module: 'system_config',
                   actorId: user.id,
-                  actorName: actorName,
-                  actorRole: actorRole,
-                  ipAddress: req.ip || req.socket.remoteAddress,
-                  details: JSON.stringify({
-                    key: update.key,
+                  actorRole: String(actorRole),
+                  resourceKind: 'SystemSetting',
+                  resourceId: update.key,
+                  ip: req.ip || req.socket.remoteAddress || null,
+                  metadata: {
+                    actorName,
                     oldValue: parseSettingValue(existing.value, existing.type),
                     newValue: update.value,
-                  }),
+                  },
                 },
               });
             }
@@ -123,15 +123,15 @@ router.put(
             await tx.systemAuditLog.create({
               data: {
                 action: 'CREATE_SETTING',
-                module: 'system_config',
                 actorId: user.id,
-                actorName: actorName,
-                actorRole: actorRole,
-                ipAddress: req.ip || req.socket.remoteAddress,
-                details: JSON.stringify({
-                  key: update.key,
+                actorRole: String(actorRole),
+                resourceKind: 'SystemSetting',
+                resourceId: update.key,
+                ip: req.ip || req.socket.remoteAddress || null,
+                metadata: {
+                  actorName,
                   newValue: update.value,
-                }),
+                },
               },
             });
           }

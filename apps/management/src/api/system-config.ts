@@ -18,11 +18,13 @@ export interface SystemSetting {
 export interface SystemAuditLog {
   id: string;
   action: string;
-  module: string;
-  actorName: string;
-  actorRole: string;
-  ipAddress: string | null;
-  details: string | null;
+  actorId: string | null;
+  actorRole: string | null;
+  resourceKind: string;
+  resourceId: string;
+  ip: string | null;
+  userAgent: string | null;
+  metadata: Record<string, unknown> | null;
   createdAt: string;
 }
 

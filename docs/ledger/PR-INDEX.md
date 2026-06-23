@@ -172,3 +172,26 @@
 - **Verify:** `docker compose config` parses for all three (rendered `image: mysql:8`, `DATABASE_URL: mysql://…@mysql:3306`); no `postgres`/`5432` refs in compose/env. (hosting.yml needs the operator's gitignored `apps/api/.env` to fully render — pre-existing.)
 - **Follow-up:** Windows dev helpers (`scripts/*.ps1`) + `deploy/server-init.sh` still reference postgres — non-deploy-critical (DB is the `mysql` container); update in a later housekeeping PR.
 - **Phase 1 is now code-complete.** Remaining is the owner's live `migrate dev` (generate `0_init`) + secrets, then merge the Phase-1 stack.
+
+---
+
+### Phase 1 — MERGED into `enterprise/main`
+- The Phase-1 stack was flattened into `enterprise/main` in dependency order (merge commits, not squash, to preserve stacked-branch ancestry): **#10 → #11 → #12 → #13**. Integration branch is now @ `b5efdc3`.
+- `enterprise/main` now runs on **MySQL 8 (fresh start) + Cloudflare R2**, with **zero Supabase** code/deps/env.
+- **Bugbot triage (PR #10):** flagged "legacy Supabase `storageKey` URLs break downloads" (High). **Non-actionable / false positive for this scenario** — fresh-start MySQL means a greenfield DB with no legacy `WorkspaceFile` rows; the new code only ever writes R2 object keys to `storageKey` (the Supabase upload path that wrote HTTP URLs is deleted), so the download presign is correct for every row the new code creates. No legacy-URL fallback added (would be dead code). Recorded here for memory.
+- **PR #3** (admin "New Order" service picker) merged to `main` separately (not part of the enterprise stack).
+
+---
+
+### PR-2.1 — Align `SystemAuditLog` with the `audit()` contract
+- **Branch:** `ent/p2-audit-schema` → `enterprise/main` (first Phase-2 PR)
+- **Problem:** the model (`module/actorName/ipAddress/details`, required `actorId/actorRole`) had drifted from what the `audit()` helper writes (`resourceKind/resourceId/ip/userAgent/metadata`, nullable actor). The helper masked this with `as any`, so **every `audit()` call was throwing and being swallowed** — audit logging via the helper (clients/orders/services) plus the main audit page were effectively no-ops.
+- **Schema (`SystemAuditLog`):** reshaped to the modern contract — `actorId? / actorRole?` (nullable), `action`, `resourceKind`, `resourceId`, **`clientId?`** (promoted to a first-class column for client-scoped feeds), `ip?`, `userAgent?`, `metadata Json?`, `createdAt`. Added indexes: `[resourceKind, resourceId]`, `[clientId]`, `[actorId]`, `[action]`, `[createdAt]`. Dropped `module/actorName/details/ipAddress`.
+- **`lib/auditLog.ts`:** typed `prisma.systemAuditLog.create` (no `as any`); persists `clientId`; `metadata` built via a helper that returns `Prisma.DbNull` when there's nothing structured.
+- **`routes/admin/clients.ts`:** merge-idempotency now matches on indexed columns `(action='client.merge', resourceId=source, clientId=target)` instead of `details contains fingerprint`; client `/activity` feed filters `OR: [{clientId:id},{resourceId:id}]` instead of `details contains id`. No more JSON-substring scans.
+- **`routes/admin/system-config.ts`:** the only other direct writer — both `tx.systemAuditLog.create` calls rewritten to modern fields; `actorName` preserved inside `metadata`.
+- **`prisma/seed.ts`:** `seedSystemAuditLogs` fixtures rewritten to the modern shape (typed; `as any` dropped; `module`→`resourceKind`, added `resourceId`, `actorName`→`metadata`, `details` object→`metadata`).
+- **Frontend:** `api/system-config.ts` `SystemAuditLog` type → modern fields; `SystemConfig.tsx` audit tab renders `metadata.actorName / actorRole / resourceKind:resourceId / ip` and pretty-prints `metadata` (no more `JSON.parse(details)`). `admin/audit.ts` + `api/admin-audit.ts` already used the modern shape (no change).
+- **Verify (sandbox):** `prisma validate` → valid 🚀; `prisma generate` ✓; `apps/api` tsc **0**; `apps/management` tsc **0**; no `as any` on audit writes anywhere.
+- **Migration:** purely additive/replacement on a not-yet-generated `0_init` → folds into the single owner-run migration (seed-once-after-Phase-2). No standalone migration needed.
+- **Follow-ups:** PR-2.2 (instrument all internal write endpoints → ~100% audit coverage; Copilot); PR-2.3 (Branch FK) + PR-2.5 (auth/session table) before `0_init` generation.

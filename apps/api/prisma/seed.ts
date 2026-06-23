@@ -4183,150 +4183,155 @@ async function seedSystemAuditLogs(staffIds: Record<string, string>) {
   const opsId = staffIds["ops@pouchcare.com"];
   const hrId = staffIds["hr@pouchcare.com"];
 
-  const logs = [
+  const logs: Array<{
+    action: string;
+    resourceKind: string;
+    resourceId: string;
+    actorId: string;
+    actorName: string;
+    actorRole: string;
+    ip?: string;
+    details: Record<string, string | number | boolean>;
+    createdAt: Date;
+  }> = [
     {
       action: "SEED_DATABASE",
-      module: "system",
+      resourceKind: "System",
+      resourceId: "seed",
       actorId: ceoId || "system",
       actorName: "Abdullah Al Mamun",
       actorRole: "CEO",
-      details: JSON.stringify({ note: "Initial seed run" }),
+      details: { note: "Initial seed run" },
       createdAt: daysAgo(90),
     },
     {
       action: "UPDATE_SETTING",
-      module: "system_config",
+      resourceKind: "SystemSetting",
+      resourceId: "portal.commission_rate",
       actorId: ceoId || "system",
       actorName: "Abdullah Al Mamun",
       actorRole: "CEO",
-      details: JSON.stringify({
-        key: "portal.commission_rate",
-        oldValue: 0.15,
-        newValue: 0.2,
-      }),
+      details: { oldValue: 0.15, newValue: 0.2 },
       createdAt: daysAgo(60),
     },
     {
       action: "UPDATE_SETTING",
-      module: "system_config",
+      resourceKind: "SystemSetting",
+      resourceId: "security.max_login_attempts",
       actorId: ceoId || "system",
       actorName: "Abdullah Al Mamun",
       actorRole: "CEO",
-      details: JSON.stringify({
-        key: "security.max_login_attempts",
-        oldValue: 10,
-        newValue: 5,
-      }),
+      details: { oldValue: 10, newValue: 5 },
       createdAt: daysAgo(45),
     },
     {
       action: "CREATE_STAFF",
-      module: "staff",
+      resourceKind: "StaffMember",
+      resourceId: "dev1@pouchcare.com",
       actorId: hrId || opsId || "system",
       actorName: "Fatima Akter",
       actorRole: "HR_MANAGER",
-      details: JSON.stringify({ email: "dev1@pouchcare.com", role: "STAFF" }),
+      details: { email: "dev1@pouchcare.com", role: "STAFF" },
       createdAt: daysAgo(40),
     },
     {
       action: "CREATE_STAFF",
-      module: "staff",
+      resourceKind: "StaffMember",
+      resourceId: "seo1@pouchcare.com",
       actorId: hrId || opsId || "system",
       actorName: "Fatima Akter",
       actorRole: "HR_MANAGER",
-      details: JSON.stringify({ email: "seo1@pouchcare.com", role: "STAFF" }),
+      details: { email: "seo1@pouchcare.com", role: "STAFF" },
       createdAt: daysAgo(38),
     },
     {
       action: "APPROVE_LEAVE",
-      module: "leave",
+      resourceKind: "LeaveRequest",
+      resourceId: "Zihadduzzaman",
       actorId: opsId || "system",
       actorName: "Md. Habibullah",
       actorRole: "OP_MANAGER",
-      details: JSON.stringify({
-        staffName: "Zihadduzzaman",
-        leaveType: "Annual",
-        days: 5,
-      }),
+      details: { staffName: "Zihadduzzaman", leaveType: "Annual", days: 5 },
       createdAt: daysAgo(30),
     },
     {
       action: "PROCESS_PAYOUT",
-      module: "portal",
+      resourceKind: "PortalMember",
+      resourceId: "john@example.com",
       actorId: opsId || "system",
       actorName: "Md. Habibullah",
       actorRole: "OP_MANAGER",
-      details: JSON.stringify({
-        memberId: "john@example.com",
-        amountUsd: 85,
-        method: "USDT TRC20",
-      }),
+      details: { memberId: "john@example.com", amountUsd: 85, method: "USDT TRC20" },
       createdAt: daysAgo(15),
     },
     {
       action: "UPDATE_ROLE_PERMISSION",
-      module: "role_permissions",
+      resourceKind: "RolePermission",
+      resourceId: "BRANCH_MANAGER",
       actorId: ceoId || "system",
       actorName: "Abdullah Al Mamun",
       actorRole: "CEO",
-      details: JSON.stringify({
-        role: "BRANCH_MANAGER",
-        key: "finance.access",
-        allowed: true,
-      }),
+      details: { role: "BRANCH_MANAGER", key: "finance.access", allowed: true },
       createdAt: daysAgo(10),
     },
     {
       action: "PUBLISH_PLUGIN",
-      module: "plugins",
+      resourceKind: "Plugin",
+      resourceId: "pouchcare-seo-helper",
       actorId: opsId || "system",
       actorName: "Md. Habibullah",
       actorRole: "OP_MANAGER",
-      details: JSON.stringify({
-        slug: "pouchcare-seo-helper",
-        version: "1.1.0",
-      }),
+      details: { slug: "pouchcare-seo-helper", version: "1.1.0" },
       createdAt: daysAgo(7),
     },
     {
       action: "SUSPEND_MEMBER",
-      module: "portal",
+      resourceKind: "PortalMember",
+      resourceId: "flagged@example.com",
       actorId: ceoId || "system",
       actorName: "Abdullah Al Mamun",
       actorRole: "CEO",
-      details: JSON.stringify({
-        email: "flagged@example.com",
-        reason: "Fraud investigation",
-      }),
+      details: { email: "flagged@example.com", reason: "Fraud investigation" },
       createdAt: daysAgo(5),
     },
     {
       action: "UPDATE_SETTING",
-      module: "system_config",
+      resourceKind: "SystemSetting",
+      resourceId: "modules.tools_enabled",
       actorId: ceoId || "system",
       actorName: "Abdullah Al Mamun",
       actorRole: "CEO",
-      details: JSON.stringify({
-        key: "modules.tools_enabled",
-        oldValue: false,
-        newValue: true,
-      }),
+      details: { oldValue: false, newValue: true },
       createdAt: daysAgo(3),
     },
     {
       action: "CLEAR_CACHE",
-      module: "system",
+      resourceKind: "System",
+      resourceId: "cache",
       actorId: opsId || "system",
       actorName: "Md. Habibullah",
       actorRole: "OP_MANAGER",
-      ipAddress: "10.10.0.15",
-      details: JSON.stringify({ note: "Manual cache purge after deploy" }),
+      ip: "10.10.0.15",
+      details: { note: "Manual cache purge after deploy" },
       createdAt: daysAgo(1),
     },
   ];
 
-  for (const log of logs) {
-    await prisma.systemAuditLog.create({ data: log as any }).catch(() => null);
+  for (const l of logs) {
+    await prisma.systemAuditLog
+      .create({
+        data: {
+          action: l.action,
+          actorId: l.actorId,
+          actorRole: l.actorRole,
+          resourceKind: l.resourceKind,
+          resourceId: l.resourceId,
+          ip: l.ip ?? null,
+          metadata: { actorName: l.actorName, ...l.details },
+          createdAt: l.createdAt,
+        },
+      })
+      .catch(() => null);
   }
   console.log(`✅ System audit logs seeded (${logs.length} entries)`);
 }

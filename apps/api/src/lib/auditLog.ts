@@ -6,13 +6,14 @@
  *   await audit(req, { action: 'client.merge', resourceKind: 'PortalMember', resourceId: id, before, after, clientId: id })
  */
 import type { AuthRequest } from '@/middleware/auth'
+import { Prisma } from '@prisma/client'
 import prisma from '@/lib/prisma'
 
 export interface AuditPayload {
   action: string                      // e.g. 'client.merge', 'order.advance', 'order.refund'
   resourceKind: string                // e.g. 'PortalMember', 'PortalOrder', 'Service'
   resourceId: string
-  clientId?: string                   // populated when inferable for filtering
+  clientId?: string                   // persisted to an indexed column for client-scoped audit feeds
   before?: unknown
   after?: unknown
   metadata?: Record<string, unknown>  // optional structured extras
@@ -22,6 +23,15 @@ function pickIp(req: AuthRequest): string | undefined {
   const fwd = req.headers['x-forwarded-for']
   if (typeof fwd === 'string' && fwd) return fwd.split(',')[0]?.trim()
   return req.ip
+}
+
+/** Build the metadata JSON value, or DbNull when there's nothing structured to store. */
+function buildMetadata(payload: AuditPayload): Prisma.InputJsonValue | typeof Prisma.DbNull {
+  if (payload.metadata) return JSON.parse(JSON.stringify(payload.metadata))
+  if (payload.before !== undefined || payload.after !== undefined) {
+    return JSON.parse(JSON.stringify({ before: payload.before ?? null, after: payload.after ?? null }))
+  }
+  return Prisma.DbNull
 }
 
 /** Persist an audit entry. Errors are swallowed (logged) so a failed audit never breaks a real write. */
@@ -34,18 +44,11 @@ export async function audit(req: AuthRequest, payload: AuditPayload): Promise<vo
         action: payload.action,
         resourceKind: payload.resourceKind,
         resourceId: payload.resourceId,
+        clientId: payload.clientId ?? null,
         ip: pickIp(req) ?? null,
         userAgent: req.headers['user-agent']?.toString().slice(0, 512) ?? null,
-        metadata: payload.metadata
-          ? JSON.parse(JSON.stringify(payload.metadata))
-          : payload.before || payload.after
-            ? JSON.parse(JSON.stringify({
-                before: payload.before ?? null,
-                after: payload.after ?? null,
-                clientId: payload.clientId,
-              }))
-            : null,
-      } as any, // schema field names may differ; cast lets the helper survive minor schema drift
+        metadata: buildMetadata(payload),
+      },
     })
   } catch (err) {
     // Never let audit failures block the calling write.
