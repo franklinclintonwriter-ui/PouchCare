@@ -195,3 +195,15 @@
 - **Verify (sandbox):** `prisma validate` → valid 🚀; `prisma generate` ✓; `apps/api` tsc **0**; `apps/management` tsc **0**; no `as any` on audit writes anywhere.
 - **Migration:** purely additive/replacement on a not-yet-generated `0_init` → folds into the single owner-run migration (seed-once-after-Phase-2). No standalone migration needed.
 - **Follow-ups:** PR-2.2 (instrument all internal write endpoints → ~100% audit coverage; Copilot); PR-2.3 (Branch FK) + PR-2.5 (auth/session table) before `0_init` generation.
+
+---
+
+### PR-2.3 — Real Branch FK across internal models
+- **Branch:** `ent/p2-branch-fk` → `ent/p2-audit-schema` (stacked on #14)
+- **Problem:** branch was an advisory `String?` (`StaffMember.branch`, `Task/Project.assignedBranch`, `Attendance/LeaveRequest/DailyReport/PerformanceRating/Payroll.branch`) with no referential integrity and no way to scope queries by branch. A real `Branch` model already existed (cameras/NVR/exchange-rates FK to it).
+- **Scope:** added `branchId String? @map("branch_id")` + `branchRef Branch? @relation(fields:[branchId], references:[id])` + `@@index([branchId])` to **8 internal models**: StaffMember, Task, Project, Attendance, LeaveRequest, DailyReport, PerformanceRating, Payroll. (Plan listed 6; included Project + PerformanceRating since they carry the same advisory field and PR-2.4 scoping needs them.) Added 8 back-relation arrays to `Branch`.
+- **Design:** relation named **`branchRef`** (not `branch`) to avoid colliding with the kept advisory `branch`/`assignedBranch` scalars — those stay for back-compat (routes still read/write them); a later cleanup can drop them once all reads move to `branchId`. FK is **optional** → default `onDelete: SetNull` (a branch closure unassigns records rather than blocking/cascading), matching the existing optional `ExchangeRate.branch` pattern.
+- **Seed (`linkBranchFks()`):** backfills `branchId`. Staff link by advisory branch name = canonical `BRANCH_NAME` ("PouchCare - Digital Marketing"); per-staff records (attendance/leave/report/performance/payroll) + tasks link **through their branch-staff member** (authoritative — task fixtures' advisory strings like "Bangladesh HQ"/"Dhaka" are stale: those branches are explicitly deleted in `seedBranches`). Company-wide ("Company — Global") staff + records intentionally stay `branchId = null`.
+- **Verify (sandbox):** `prisma validate` → valid 🚀; `prisma generate` ✓ (8 relations); `apps/api` src tsc **0** (additive — no existing route broke); seed.ts type-clean for the changes (the 2 remaining seed tsc warnings at L256/257 are pre-existing CameraDevice status comparisons, unrelated).
+- **Migration:** additive on the not-yet-generated `0_init` → folds into the single owner-run migration. No standalone migration. (If the owner ever seeds before generating, `linkBranchFks()` doubles as the backfill.)
+- **Next:** PR-2.4 (BRANCH_MANAGER query scoping via a `branchScope(req)` Prisma-where helper over these `branchId` columns).
