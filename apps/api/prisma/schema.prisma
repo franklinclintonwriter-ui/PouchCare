@@ -7,7 +7,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
@@ -723,7 +723,7 @@ model ServicePlan {
   priceUsd     Float    @map("price_usd")
   priceBdt     Float?   @map("price_bdt")
   deliveryDays Int?     @map("delivery_days")
-  features     String[] @default([])
+  features     Json     @default("[]") // string[] stored as JSON (MySQL has no scalar list type)
   isPopular    Boolean  @default(false) @map("is_popular")
   displayOrder Int      @default(0) @map("display_order")
   createdAt    DateTime @default(now()) @map("created_at")

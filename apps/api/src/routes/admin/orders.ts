@@ -177,14 +177,14 @@ router.get('/', requirePermission('admin.orders.read'), async (req, res) => {
 
     const portalWhere: any = {}
     if (q) portalWhere.OR = [
-      { memberEmail: { contains: q, mode: 'insensitive' } },
-      { service: { contains: q, mode: 'insensitive' } },
+      { memberEmail: { contains: q } },
+      { service: { contains: q } },
     ]
 
     const salesWhere: any = {}
     if (q) salesWhere.OR = [
-      { clientName: { contains: q, mode: 'insensitive' } },
-      { serviceName: { contains: q, mode: 'insensitive' } },
+      { clientName: { contains: q } },
+      { serviceName: { contains: q } },
     ].filter(Boolean)
 
     const apkWhere: any = {}

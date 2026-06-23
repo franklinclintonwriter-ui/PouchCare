@@ -24,7 +24,7 @@ router.get('/', requirePermission('admin.audit.read'), async (req, res) => {
     const until = String(req.query.until ?? '').trim()
 
     const where: any = {}
-    if (action) where.action = { contains: action, mode: 'insensitive' }
+    if (action) where.action = { contains: action }
     if (resourceKind) where.resourceKind = resourceKind
     if (actorId) where.actorId = actorId
     if (since || until) {

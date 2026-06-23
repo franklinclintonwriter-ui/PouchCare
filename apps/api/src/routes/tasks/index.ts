@@ -91,7 +91,7 @@ router.get('/', async (req: AuthRequest, res) => {
     >
     const where: Record<string, unknown> = {}
 
-    if (q) where.title = { contains: q, mode: 'insensitive' }
+    if (q) where.title = { contains: q }
     if (status) where.status = status
     if (category) where.category = category
     if (approvalStatus) {

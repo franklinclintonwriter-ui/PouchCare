@@ -43,7 +43,7 @@ router.get('/', async (req: AuthRequest, res) => {
     }
 
     const filter: Prisma.ProjectWhereInput = {}
-    if (q) filter.name = { contains: q, mode: 'insensitive' }
+    if (q) filter.name = { contains: q }
     if (status) filter.status = status as ProjectStatus
     if (priority) filter.priority = priority as Priority
     if (branch) filter.assignedBranch = branch

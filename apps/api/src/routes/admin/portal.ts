@@ -109,9 +109,9 @@ router.get("/members", async (req, res) => {
     const where: any = {};
     if (q) {
       where.OR = [
-        { fullName: { contains: q, mode: "insensitive" } },
-        { email: { contains: q, mode: "insensitive" } },
-        { referralCode: { contains: q, mode: "insensitive" } },
+        { fullName: { contains: q } },
+        { email: { contains: q } },
+        { referralCode: { contains: q } },
       ];
     }
     if (status) where.status = status as any;
@@ -227,8 +227,8 @@ router.get("/orders", async (req, res) => {
     if (status) where.status = status as any;
     if (q) {
       where.OR = [
-        { service: { contains: q, mode: "insensitive" } },
-        { memberEmail: { contains: q, mode: "insensitive" } },
+        { service: { contains: q } },
+        { memberEmail: { contains: q } },
       ];
       if (!Number.isNaN(Number(q))) {
         where.OR.push({ orderId: Number(q) });

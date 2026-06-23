@@ -123,8 +123,8 @@ router.get(
       if (status) where.status = status;
       if (q)
         where.OR = [
-          { clientName: { contains: q, mode: "insensitive" } },
-          { invoiceNumber: { contains: q, mode: "insensitive" } },
+          { clientName: { contains: q } },
+          { invoiceNumber: { contains: q } },
         ];
       const [invoices, total] = await Promise.all([
         prisma.invoice.findMany({
@@ -255,10 +255,10 @@ router.get(
       if (category) where.category = category;
       if (q) {
         where.OR = [
-          { title: { contains: q, mode: "insensitive" } },
-          { notes: { contains: q, mode: "insensitive" } },
-          { paidBy: { contains: q, mode: "insensitive" } },
-          { branch: { contains: q, mode: "insensitive" } },
+          { title: { contains: q } },
+          { notes: { contains: q } },
+          { paidBy: { contains: q } },
+          { branch: { contains: q } },
         ];
       }
       const [expenses, total] = await Promise.all([

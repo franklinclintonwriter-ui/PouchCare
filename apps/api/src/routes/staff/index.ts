@@ -166,8 +166,8 @@ function buildStaffListWhere(query: Record<string, string>): Record<string, unkn
   const { q, status, role, branch } = query
   if (q) {
     where.OR = [
-      { name: { contains: q, mode: 'insensitive' } },
-      { email: { contains: q, mode: 'insensitive' } },
+      { name: { contains: q } },
+      { email: { contains: q } },
     ]
   }
   if (status) where.status = status
