@@ -104,6 +104,50 @@ async function seedBranches() {
   console.log("✅ Branches seeded");
 }
 
+/**
+ * PR-2.3 — backfill the real `branchId` FK on branch-scoped records.
+ * Staff are linked by their advisory branch name; everything else links via its
+ * branch-staff member (authoritative — the advisory `branch`/`assignedBranch`
+ * strings on tasks/reports are inconsistent demo data). Company-wide ("Company —
+ * Global") staff and their records intentionally stay `branchId = null`.
+ */
+async function linkBranchFks() {
+  const branch = await prisma.branch.findUnique({ where: { name: BRANCH_NAME } });
+  if (!branch) {
+    console.warn("⚠️  Canonical branch not found — skipping branchId backfill");
+    return;
+  }
+  const data = { branchId: branch.id };
+
+  // 1. Staff whose advisory branch is the canonical branch.
+  const staff = await prisma.staffMember.updateMany({ where: { branch: BRANCH_NAME }, data });
+
+  // 2. Everything else links through those staff members (more reliable than the strings).
+  const branchStaff = await prisma.staffMember.findMany({
+    where: { branchId: branch.id },
+    select: { id: true },
+  });
+  const ids = branchStaff.map((s) => s.id);
+
+  const [att, leave, reports, perf, pay, taskMember, taskManager, projects] = await Promise.all([
+    prisma.attendance.updateMany({ where: { staffMemberId: { in: ids } }, data }),
+    prisma.leaveRequest.updateMany({ where: { staffMemberId: { in: ids } }, data }),
+    prisma.dailyReport.updateMany({ where: { staffMemberId: { in: ids } }, data }),
+    prisma.performanceRating.updateMany({ where: { staffMemberId: { in: ids } }, data }),
+    prisma.payroll.updateMany({ where: { staffMemberId: { in: ids } }, data }),
+    prisma.task.updateMany({ where: { assignedMemberId: { in: ids } }, data }),
+    prisma.task.updateMany({ where: { assignedManagerId: { in: ids }, branchId: null }, data }),
+    prisma.project.updateMany({ where: { assignedTo: { in: ids } }, data }),
+  ]);
+
+  const tasks = taskMember.count + taskManager.count;
+  console.log(
+    `✅ Branch FK backfill → "${BRANCH_NAME}": staff ${staff.count}, attendance ${att.count}, ` +
+      `leave ${leave.count}, reports ${reports.count}, performance ${perf.count}, ` +
+      `payroll ${pay.count}, tasks ${tasks}, projects ${projects.count}`
+  );
+}
+
 async function seedCameras() {
   await prisma.vigiNvrIntegration.deleteMany({});
   await prisma.cameraDevice.deleteMany({});
@@ -4420,6 +4464,7 @@ async function main() {
   await seedSystemSettings();
   await seedSystemAuditLogs(staffIds);
   await seedClientSegments();
+  await linkBranchFks();
 
   console.log("\n🎉 Seed complete!\n");
   console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");

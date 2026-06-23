@@ -165,6 +165,7 @@ model StaffMember {
   systemRole           SystemRole @map("system_role")
   status               String     @default("Active")
   branch               String?
+  branchId             String?    @map("branch_id")
   jobRole              String?    @map("job_role")
   primarySkill         String?    @map("primary_skill")
   skillLevel           String?    @map("skill_level")
@@ -221,7 +222,9 @@ model StaffMember {
   emailAccounts      EmailAccount[]
   exchangeRatesCreated ExchangeRate[] @relation("ExchangeRateCreatedBy")
   exchangeRatesUpdated ExchangeRate[] @relation("ExchangeRateUpdatedBy")
+  branchRef            Branch?             @relation(fields: [branchId], references: [id])
 
+  @@index([branchId])
   @@map("staff_members")
 }
 
@@ -277,6 +280,7 @@ model Task {
   assignedMemberId    String?        @map("assigned_member_id")
   assignedManagerId   String?        @map("assigned_manager_id")
   assignedBranch      String?        @map("assigned_branch")
+  branchId            String?        @map("branch_id")
   assignedBy          String?        @map("assigned_by")
   multipleAssignees   String?        @map("multiple_assignees")
   relatedProject      String?        @map("related_project")
@@ -316,8 +320,10 @@ model Task {
   assignedManager   StaffMember?  @relation("AssignedManager", fields: [assignedManagerId], references: [id])
   relatedProjectRef Project?      @relation("TaskRelatedProject", fields: [relatedProjectId], references: [id])
   comments          TaskComment[]
+  branchRef         Branch?       @relation(fields: [branchId], references: [id])
 
   @@index([relatedProjectId])
+  @@index([branchId])
   @@map("tasks")
 }
 
@@ -350,6 +356,7 @@ model Project {
   assignedManager   String?        @map("assigned_manager")
   assignedTo        String?        @map("assigned_to")
   assignedBranch    String?        @map("assigned_branch")
+  branchId          String?        @map("branch_id")
   multipleAssignees String?        @map("multiple_assignees")
   startDate         DateTime?      @map("start_date")
   deadline          DateTime?
@@ -371,8 +378,10 @@ model Project {
   createdAt         DateTime       @default(now()) @map("created_at")
   updatedAt         DateTime       @updatedAt @map("updated_at")
 
-  tasks Task[] @relation("TaskRelatedProject")
+  tasks     Task[]  @relation("TaskRelatedProject")
+  branchRef Branch? @relation(fields: [branchId], references: [id])
 
+  @@index([branchId])
   @@map("projects")
 }
 
@@ -382,6 +391,7 @@ model Attendance {
   staffMemberId   String           @map("staff_member_id")
   name            String
   branch          String?
+  branchId        String?          @map("branch_id")
   date            DateTime         @db.Date
   status          AttendanceStatus
   workType        WorkType         @default(OFFICE) @map("work_type")
@@ -396,8 +406,10 @@ model Attendance {
   notes           String?
   createdAt       DateTime         @default(now()) @map("created_at")
   staffMember     StaffMember      @relation(fields: [staffMemberId], references: [id])
+  branchRef       Branch?          @relation(fields: [branchId], references: [id])
 
   @@unique([staffMemberId, date])
+  @@index([branchId])
   @@map("attendance")
 }
 
@@ -408,6 +420,7 @@ model LeaveRequest {
   staffName          String      @map("staff_name")
   staffSystemRole    String?     @map("staff_system_role")
   branch             String?
+  branchId           String?     @map("branch_id")
   leaveType          LeaveType   @map("leave_type")
   status             LeaveStatus @default(PENDING)
   startDate          DateTime    @map("start_date")
@@ -422,7 +435,9 @@ model LeaveRequest {
   createdAt          DateTime    @default(now()) @map("created_at")
   updatedAt          DateTime    @updatedAt @map("updated_at")
   staffMember        StaffMember @relation(fields: [staffMemberId], references: [id])
+  branchRef          Branch?     @relation(fields: [branchId], references: [id])
 
+  @@index([branchId])
   @@map("leave_requests")
 }
 
@@ -433,6 +448,7 @@ model DailyReport {
   submitterName     String      @map("submitter_name")
   submitterRole     String?     @map("submitter_role")
   branch            String?
+  branchId          String?     @map("branch_id")
   reportDate        DateTime    @map("report_date") @db.Date
   tasksCompleted    String      @map("tasks_completed")
   plannedTomorrow   String      @map("planned_tomorrow")
@@ -447,8 +463,10 @@ model DailyReport {
   notes             String?
   createdAt         DateTime    @default(now()) @map("created_at")
   staffMember       StaffMember @relation(fields: [staffMemberId], references: [id])
+  branchRef         Branch?     @relation(fields: [branchId], references: [id])
 
   @@unique([staffMemberId, reportDate])
+  @@index([branchId])
   @@map("daily_reports")
 }
 
@@ -458,6 +476,7 @@ model PerformanceRating {
   staffName     String      @map("staff_name")
   systemRole    String?     @map("system_role")
   branch        String?
+  branchId      String?     @map("branch_id")
   ratedBy       String      @map("rated_by")
   reviewPeriod  String?     @map("review_period")
   reviewQuarter String?     @map("review_quarter")
@@ -470,7 +489,9 @@ model PerformanceRating {
   notes         String?
   createdAt     DateTime    @default(now()) @map("created_at")
   staffMember   StaffMember @relation(fields: [staffMemberId], references: [id])
+  branchRef     Branch?     @relation(fields: [branchId], references: [id])
 
+  @@index([branchId])
   @@map("performance_ratings")
 }
 
@@ -480,6 +501,7 @@ model Payroll {
   staffName     String      @map("staff_name")
   systemRole    String?     @map("system_role")
   branch        String?
+  branchId      String?     @map("branch_id")
   month         String
   year          Int
   baseSalary    Float       @map("base_salary")
@@ -492,8 +514,10 @@ model Payroll {
   notes         String?
   createdAt     DateTime    @default(now()) @map("created_at")
   staffMember   StaffMember @relation(fields: [staffMemberId], references: [id])
+  branchRef     Branch?     @relation(fields: [branchId], references: [id])
 
   @@unique([staffMemberId, month, year])
+  @@index([branchId])
   @@map("payroll")
 }
 
@@ -515,6 +539,14 @@ model Branch {
   cameraDevices      CameraDevice[]
   vigiNvrIntegration VigiNvrIntegration?
   exchangeRates      ExchangeRate[]
+  staffMembers       StaffMember[]
+  tasks              Task[]
+  projects           Project[]
+  attendance         Attendance[]
+  leaveRequests      LeaveRequest[]
+  dailyReports       DailyReport[]
+  performanceRatings PerformanceRating[]
+  payroll            Payroll[]
 
   @@map("branches")
 }
