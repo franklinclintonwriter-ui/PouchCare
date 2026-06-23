@@ -158,3 +158,17 @@
   Docker, verification, rollback).
 - **Verify:** audit documented; runbook added; no code touched (ledger-only + docs).
 - **Follow-ups:** PR-1.6 (docker-compose `postgres:16`→`mysql:8` + `.env.example` + CI).
+
+---
+
+### PR-1.6 — docker-compose + env → MySQL
+- **Branch:** `ent/p1-infra-mysql` → `ent/p1-seed-mysql` (stacked on #12)
+- **What:** Swapped `postgres:16` → **`mysql:8`** in all three compose files (`docker-compose.yml`,
+  `docker-compose.hosting.yml`, `docker-compose.hosting.dev.yml`): MySQL env vars, port 3306,
+  `mysql_data` volume, `mysqladmin ping` healthcheck, `--collation-server=utf8mb4_unicode_ci`
+  (case-insensitive, needed since `mode:'insensitive'` was removed), `DATABASE_URL: mysql://…@mysql:3306`,
+  `depends_on: mysql`. Updated `DATABASE_URL` in `.env.example` (root) + `apps/api/.env.example` to `mysql://…:3306`.
+- **CI:** `.gitlab-ci.yml` has no DB service (verify=typecheck, deploy runs provider-agnostic `prisma migrate deploy`) — no change needed.
+- **Verify:** `docker compose config` parses for all three (rendered `image: mysql:8`, `DATABASE_URL: mysql://…@mysql:3306`); no `postgres`/`5432` refs in compose/env. (hosting.yml needs the operator's gitignored `apps/api/.env` to fully render — pre-existing.)
+- **Follow-up:** Windows dev helpers (`scripts/*.ps1`) + `deploy/server-init.sh` still reference postgres — non-deploy-critical (DB is the `mysql` container); update in a later housekeeping PR.
+- **Phase 1 is now code-complete.** Remaining is the owner's live `migrate dev` (generate `0_init`) + secrets, then merge the Phase-1 stack.
