@@ -176,7 +176,7 @@ router.post("/refresh", validate(refreshSchema), async (req, res) => {
 router.post("/logout", authenticate, async (req: AuthRequest, res) => {
   try {
     const token = (req.body?.refresh_token as string | undefined)?.trim();
-    if (token) await revokeSessionByToken(token);
+    if (token && req.user) await revokeSessionByToken(token, req.user.id);
     else if (req.user) await revokeAllSessions(req.user.id);
   } catch {
     /* best-effort: always report success so the client clears its state */
@@ -213,11 +213,16 @@ router.post("/reset-password", validate(resetSchema), async (req, res) => {
     if (!staff) return notFound(res, "User");
 
     const passwordHash = await hashPassword(password);
-    await prisma.staffMember.update({
-      where: { id: staffId },
-      data: { passwordHash },
+    await prisma.$transaction(async (tx) => {
+      await tx.staffMember.update({
+        where: { id: staffId },
+        data: { passwordHash },
+      });
+      await tx.staffSession.updateMany({
+        where: { staffMemberId: staffId, revokedAt: null },
+        data: { revokedAt: new Date() },
+      });
     });
-    await revokeAllSessions(staffId); // force re-login everywhere after a reset
     await redis.del(`reset:staff:${token}`);
     return ok(res, { message: "Password reset successfully" });
   } catch {
@@ -295,11 +300,16 @@ router.post(
         return badRequest(res, "New password must be different");
 
       const passwordHash = await hashPassword(req.body.new_password);
-      await prisma.staffMember.update({
-        where: { id: staff.id },
-        data: { passwordHash },
+      await prisma.$transaction(async (tx) => {
+        await tx.staffMember.update({
+          where: { id: staff.id },
+          data: { passwordHash },
+        });
+        await tx.staffSession.updateMany({
+          where: { staffMemberId: staff.id, revokedAt: null },
+          data: { revokedAt: new Date() },
+        });
       });
-      await revokeAllSessions(staff.id); // invalidate existing sessions after a password change
 
       return ok(res, { message: "Password changed successfully" });
     } catch {

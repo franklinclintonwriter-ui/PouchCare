@@ -39,9 +39,16 @@ export async function activeSessionForToken(refreshToken: string) {
 }
 
 /** Revoke the session for a specific refresh token (idempotent). Returns rows affected. */
-export async function revokeSessionByToken(refreshToken: string): Promise<number> {
+export async function revokeSessionByToken(
+  refreshToken: string,
+  staffMemberId?: string,
+): Promise<number> {
   const { count } = await prisma.staffSession.updateMany({
-    where: { refreshTokenHash: hashRefreshToken(refreshToken), revokedAt: null },
+    where: {
+      refreshTokenHash: hashRefreshToken(refreshToken),
+      revokedAt: null,
+      ...(staffMemberId ? { staffMemberId } : {}),
+    },
     data: { revokedAt: new Date() },
   })
   return count
