@@ -23,3 +23,17 @@ export async function resolveBranchId(name?: string | null): Promise<string | nu
   }
   return null
 }
+
+/**
+ * Advisory branch labels that intentionally do NOT map to a real `Branch` row —
+ * notably the "Company — Global" sentinel used for company-wide staff (CEO/MD/HR).
+ * Such labels are allowed on writes (→ `branchId` null, unscoped) and must never be
+ * rejected, otherwise editing company-wide staff/tasks would 400. Empty also counts.
+ */
+const NON_BRANCH_LABELS = new Set(['company — global', 'company - global', 'global', 'none', 'n/a'])
+
+export function isNonBranchLabel(name?: string | null): boolean {
+  const key = name?.trim().toLowerCase()
+  if (!key) return true
+  return NON_BRANCH_LABELS.has(key)
+}

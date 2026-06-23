@@ -17,7 +17,7 @@ import { getEffectivePermissions } from '@/lib/managementPermissions'
 import { canAccessStaffProfileAdmin, canAssignSystemRole } from '@/lib/staffProfileAdmin'
 import { staffListWhereWithBranchScope } from '@/lib/staffDirectoryScope'
 import { canManagerAccessStaffMember } from '@/lib/teamBranchScope'
-import { resolveBranchId } from '@/lib/branchResolve'
+import { resolveBranchId, isNonBranchLabel } from '@/lib/branchResolve'
 import { staffAdminUpdateSchema } from '@/routes/staff/staffAdminUpdateSchema'
 import documentsRouter from '@/routes/staff/documents'
 
@@ -352,7 +352,9 @@ router.put('/members/:id', requireStaff, async (req, res, next) => {
     if (data.branch !== undefined) {
       const trimmed = data.branch.trim()
       const branchId = await resolveBranchId(data.branch)
-      if (trimmed && !branchId) return badRequest(res, 'Unknown branch')
+      // Reject a genuine typo, but allow the "Company — Global" sentinel / blanks
+      // (company-wide staff → branchId null, unscoped). branchId stays authoritative.
+      if (trimmed && !branchId && !isNonBranchLabel(trimmed)) return badRequest(res, 'Unknown branch')
       prismaData.branchId = branchId
       prismaData.branch = trimmed || null
     }

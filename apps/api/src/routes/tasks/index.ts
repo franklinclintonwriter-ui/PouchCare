@@ -10,7 +10,7 @@ import { getPagination, buildMeta } from '@/lib/pagination'
 import { uploadFile } from '@/lib/storage'
 import { TASK_CATEGORIES, isValidTaskCategory } from './constants'
 import { canEditTaskAssignment } from './access'
-import { resolveBranchId } from '@/lib/branchResolve'
+import { resolveBranchId, isNonBranchLabel } from '@/lib/branchResolve'
 
 const router = Router()
 router.use(authenticate)
@@ -329,7 +329,8 @@ router.put('/:id', async (req: AuthRequest, res) => {
     if (body.assignedBranch !== undefined) {
       const trimmed = body.assignedBranch?.trim() ?? ''
       const branchId = await resolveBranchId(body.assignedBranch)
-      if (trimmed && !branchId) return badRequest(res, 'Unknown branch')
+      // Allow the "Company — Global" sentinel / blanks (→ branchId null); reject only real typos.
+      if (trimmed && !branchId && !isNonBranchLabel(trimmed)) return badRequest(res, 'Unknown branch')
       data.branchId = branchId
     }
 
