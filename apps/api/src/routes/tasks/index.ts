@@ -10,6 +10,7 @@ import { getPagination, buildMeta } from '@/lib/pagination'
 import { uploadFile } from '@/lib/storage'
 import { TASK_CATEGORIES, isValidTaskCategory } from './constants'
 import { canEditTaskAssignment } from './access'
+import { resolveBranchId } from '@/lib/branchResolve'
 
 const router = Router()
 router.use(authenticate)
@@ -195,6 +196,7 @@ router.post('/', isManager, validate(taskSchema), async (req: AuthRequest, res) 
       assignedMemberId: body.assignedMemberId || undefined,
       assignedManagerId: body.assignedManagerId || undefined,
       assignedBranch: body.assignedBranch || undefined,
+      branchId: (await resolveBranchId(body.assignedBranch)) || undefined,
       relatedProject,
       relatedProjectId: body.relatedProjectId || undefined,
       relatedClient: body.relatedClient || undefined,

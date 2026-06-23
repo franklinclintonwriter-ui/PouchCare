@@ -16,6 +16,7 @@ import { env } from '@/config/env'
 import { getEffectivePermissions } from '@/lib/managementPermissions'
 import { canAccessStaffProfileAdmin, canAssignSystemRole } from '@/lib/staffProfileAdmin'
 import { staffListWhereWithBranchScope } from '@/lib/staffDirectoryScope'
+import { resolveBranchId } from '@/lib/branchResolve'
 import { staffAdminUpdateSchema } from '@/routes/staff/staffAdminUpdateSchema'
 import documentsRouter from '@/routes/staff/documents'
 
@@ -324,8 +325,9 @@ router.post('/members', requireRoles(...HR_ROLES as any), validate(createSchema)
     if (exists) return badRequest(res, 'Email already exists')
 
     const passwordHash = await bcrypt.hash(password, env.BCRYPT_ROUNDS)
+    const branchId = await resolveBranchId(data.branch)
     const member = await prisma.staffMember.create({
-      data: { ...data, email: data.email.toLowerCase(), passwordHash },
+      data: { ...data, email: data.email.toLowerCase(), passwordHash, ...(branchId ? { branchId } : {}) },
       select: { id: true, memberId: true, name: true, email: true, systemRole: true },
     })
     return created(res, member)
@@ -356,6 +358,8 @@ router.put('/members/:id', requireStaff, async (req, res, next) => {
 
     const prismaData: Record<string, unknown> = { ...data }
     if (data.email !== undefined) prismaData.email = data.email.toLowerCase()
+    // Keep the branchId FK in sync whenever the advisory branch string changes.
+    if (data.branch !== undefined) prismaData.branchId = await resolveBranchId(data.branch)
 
     const member = await prisma.staffMember.update({
       where: { id: req.params.id },
