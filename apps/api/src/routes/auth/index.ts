@@ -20,6 +20,13 @@ import { sendPasswordResetEmail } from "@/lib/email";
 import { redis } from "@/lib/redis";
 import crypto from "crypto";
 import { getEffectivePermissions } from "@/lib/managementPermissions";
+import { strongPassword } from "@/lib/passwordPolicy";
+import {
+  createStaffSession,
+  activeSessionForToken,
+  revokeSessionByToken,
+  revokeAllSessions,
+} from "@/lib/staffSession";
 
 const router = Router();
 
@@ -31,12 +38,12 @@ const loginSchema = z.object({
 const forgotSchema = z.object({ email: z.string().email() });
 const resetSchema = z.object({
   token: z.string(),
-  password: z.string().min(8),
+  password: strongPassword,
 });
 const refreshSchema = z.object({ refresh_token: z.string() });
 const changePasswordSchema = z.object({
   current_password: z.string().min(1),
-  new_password: z.string().min(8),
+  new_password: strongPassword,
 });
 
 // POST /auth/login
@@ -55,8 +62,8 @@ router.post("/login", validate(loginSchema), async (req, res) => {
     if (statusNorm === "inactive" || statusNorm === "suspended")
       return unauthorized(res, "Account is inactive");
 
-    // 2FA for CEO/CO_MD
-    if (staff.twoFactorEnabled && ["CEO", "CO_MD"].includes(staff.systemRole)) {
+    // Enforce 2FA for any staff member who has enabled it (not just CEO/CO_MD).
+    if (staff.twoFactorEnabled) {
       if (!totpCode) return ok(res, { requireTotp: true });
       if (!staff.totpSecret)
         return badRequest(
@@ -78,6 +85,17 @@ router.post("/login", validate(loginSchema), async (req, res) => {
     const refresh_token = signRefresh(payload);
 
     const loginIp = typeof req.ip === "string" ? req.ip : undefined;
+    // Persist a revocable session keyed on the refresh token's hash + its expiry.
+    const refreshExp = verifyRefresh(refresh_token).exp;
+    await createStaffSession({
+      staffMemberId: staff.id,
+      refreshToken: refresh_token,
+      expiresAt: refreshExp
+        ? new Date(refreshExp * 1000)
+        : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      ip: loginIp ?? null,
+      userAgent: req.headers["user-agent"]?.toString(),
+    });
     await prisma.staffMember.update({
       where: { id: staff.id },
       data: {
@@ -123,10 +141,23 @@ router.post("/login", validate(loginSchema), async (req, res) => {
 router.post("/refresh", validate(refreshSchema), async (req, res) => {
   try {
     const payload = verifyRefresh(req.body.refresh_token);
+    // Reject tokens whose session was revoked (logout / password change) or expired.
+    const session = await activeSessionForToken(req.body.refresh_token);
+    if (!session || session.staffMemberId !== payload.sub) {
+      return unauthorized(res, "Session expired or revoked");
+    }
     const staff = await prisma.staffMember.findUnique({
       where: { id: payload.sub },
     });
     if (!staff) return unauthorized(res, "Invalid token");
+    const statusNorm = (staff.status ?? "").trim().toLowerCase();
+    if (statusNorm === "inactive" || statusNorm === "suspended") {
+      await revokeAllSessions(staff.id);
+      return unauthorized(res, "Account is inactive");
+    }
+    await prisma.staffSession
+      .update({ where: { id: session.id }, data: { lastUsedAt: new Date() } })
+      .catch(() => {});
     const access_token = await signAccess({
       sub: staff.id,
       role: staff.systemRole,
@@ -141,8 +172,15 @@ router.post("/refresh", validate(refreshSchema), async (req, res) => {
   }
 });
 
-// POST /auth/logout
+// POST /auth/logout — revokes the presented refresh-token session (or all of the user's).
 router.post("/logout", authenticate, async (req: AuthRequest, res) => {
+  try {
+    const token = (req.body?.refresh_token as string | undefined)?.trim();
+    if (token) await revokeSessionByToken(token);
+    else if (req.user) await revokeAllSessions(req.user.id);
+  } catch {
+    /* best-effort: always report success so the client clears its state */
+  }
   return ok(res, { message: "Logged out successfully" });
 });
 
@@ -179,6 +217,7 @@ router.post("/reset-password", validate(resetSchema), async (req, res) => {
       where: { id: staffId },
       data: { passwordHash },
     });
+    await revokeAllSessions(staffId); // force re-login everywhere after a reset
     await redis.del(`reset:staff:${token}`);
     return ok(res, { message: "Password reset successfully" });
   } catch {
@@ -260,6 +299,7 @@ router.post(
         where: { id: staff.id },
         data: { passwordHash },
       });
+      await revokeAllSessions(staff.id); // invalidate existing sessions after a password change
 
       return ok(res, { message: "Password changed successfully" });
     } catch {

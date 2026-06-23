@@ -207,3 +207,19 @@
 - **Verify (sandbox):** `prisma validate` → valid 🚀; `prisma generate` ✓ (8 relations); `apps/api` src tsc **0** (additive — no existing route broke); seed.ts type-clean for the changes (the 2 remaining seed tsc warnings at L256/257 are pre-existing CameraDevice status comparisons, unrelated).
 - **Migration:** additive on the not-yet-generated `0_init` → folds into the single owner-run migration. No standalone migration. (If the owner ever seeds before generating, `linkBranchFks()` doubles as the backfill.)
 - **Next:** PR-2.4 (BRANCH_MANAGER query scoping via a `branchScope(req)` Prisma-where helper over these `branchId` columns).
+
+---
+
+### PR-2.5 — Auth hardening: sessions + revocation, real logout, password policy, 2FA
+- **Branch:** `ent/p2-auth` → `enterprise/main` (independent of #18; depends on PR-2.1)
+- **Gaps closed:** refresh had **no revocation** (a stolen refresh JWT worked until expiry), logout was a **no-op**, the `StaffMember.refreshToken` column was **dead/unused**, password min was inconsistent (login 6 / reset 8 / change 8, no complexity), and 2FA was hard-gated to CEO/CO_MD.
+- **Schema:** new **`StaffSession`** model (`refreshTokenHash @unique`, `userAgent`, `ip`, `expiresAt`, `revokedAt`, `lastUsedAt`, `staffMember` FK `onDelete: Cascade`, indexes on `staffMemberId`/`expiresAt`); added `StaffMember.sessions` back-relation; **removed the dead `StaffMember.refreshToken`** column. Additive → folds into `0_init`.
+- **`lib/staffSession.ts`:** `hashRefreshToken` (SHA-256 — store only the hash), `createStaffSession`, `activeSessionForToken` (exists ∧ not revoked ∧ not expired), `revokeSessionByToken`, `revokeAllSessions`.
+- **`lib/passwordPolicy.ts`:** single source of truth — `passwordIssue()` (min 8 + upper/lower/digit) + a `strongPassword` zod field.
+- **`routes/auth/index.ts`:**
+  - **login** — creates a `StaffSession` (expiry from the refresh JWT's `exp`); 2FA now enforced for **any** staff with `twoFactorEnabled` (was CEO/CO_MD only).
+  - **refresh** — validates the token against an active session (revoked/expired → 401), re-checks the account isn't inactive/suspended (and revokes all sessions if so), bumps `lastUsedAt`.
+  - **logout** — now actually revokes: the presented `refresh_token`'s session, else all of the user's (best-effort).
+  - **reset-password / change-password** — use `strongPassword`, and **revoke all sessions** afterwards (force re-login everywhere).
+- **Scope guard:** staff-side only — portal/customer auth (`routes/portal/auth.ts`) untouched. Left `routes/staff/index.ts` create-password as-is to avoid overlapping #18 (noted follow-up: apply `strongPassword` there too).
+- **Verify (sandbox):** `prisma validate` ✓; `prisma generate` ✓; `apps/api` tsc **0**. Behavioural e2e (logout invalidates refresh; revoked token → 401) lands with the PR-2.6 harness.
