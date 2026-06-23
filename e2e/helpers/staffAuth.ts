@@ -8,6 +8,8 @@ export type StaffSession = {
   user: { id: string; email: string }
 }
 
+type QueryParams = Record<string, string | number | boolean>
+
 const HASH_COLLISION_MARKER = 'staff_sessions_refresh_token_hash_key'
 
 async function waitForRetryBoundary() {
@@ -49,7 +51,7 @@ export async function apiLogin(
 }
 
 export async function staffLogin(page: Page, email: string, password: string) {
-  for (let attempt = 0; attempt < 2; attempt += 1) {
+  for (let attemptIndex = 0; attemptIndex < 2; attemptIndex += 1) {
     await page.goto('/login')
     await page.getByPlaceholder('you@company.com').fill(email)
     await page.getByPlaceholder('Enter your password').fill(password)
@@ -57,11 +59,11 @@ export async function staffLogin(page: Page, email: string, password: string) {
 
     try {
       await page.waitForURL(/\/$|^\/(?!login)/, {
-        timeout: attempt === 0 ? 5_000 : 30_000,
+        timeout: attemptIndex === 0 ? 5_000 : 30_000,
       })
       return
     } catch (error) {
-      if (attempt === 0 && /\/login$/.test(page.url())) {
+      if (attemptIndex === 0 && /\/login$/.test(page.url())) {
         await waitForRetryBoundary()
         continue
       }
@@ -71,11 +73,16 @@ export async function staffLogin(page: Page, email: string, password: string) {
 }
 
 export function authed(request: APIRequestContext, token: string) {
+  const normalizeParams = (params?: QueryParams): Record<string, string> | undefined =>
+    params
+      ? Object.fromEntries(Object.entries(params).map(([key, value]) => [key, String(value)]))
+      : undefined
+
   return {
-    get: (path: string, params?: Record<string, string | number>) =>
+    get: (path: string, params?: QueryParams) =>
       request.get(`${API_BASE}${path}`, {
         headers: { Authorization: 'Bearer ' + token },
-        params: params as any,
+        params: normalizeParams(params),
       }),
     post: (path: string, body?: unknown) =>
       request.post(`${API_BASE}${path}`, {

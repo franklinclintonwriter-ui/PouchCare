@@ -2,6 +2,8 @@ import { describe, expect, test } from 'vitest'
 import { prismaMock } from '@/test/prismaMock'
 import { audit } from '@/lib/auditLog'
 
+const LONG_USER_AGENT = 'Browser '.repeat(100)
+
 describe('auditLog', () => {
   test('audit maps payload fields into systemAuditLog.create', async () => {
     prismaMock.systemAuditLog.create.mockResolvedValue({ id: 'audit-1' })
@@ -11,7 +13,7 @@ describe('auditLog', () => {
         user: { id: 'staff-1', role: 'CEO' },
         headers: {
           'x-forwarded-for': '203.0.113.10, 10.0.0.1',
-          'user-agent': 'Browser '.repeat(100),
+          'user-agent': LONG_USER_AGENT,
         },
         ip: '127.0.0.1',
       } as any,
@@ -33,7 +35,7 @@ describe('auditLog', () => {
         resourceId: 'client-1',
         clientId: 'client-1',
         ip: '203.0.113.10',
-        userAgent: ('Browser '.repeat(100)).slice(0, 512),
+        userAgent: LONG_USER_AGENT.slice(0, 512),
         metadata: { source: 'vitest', nested: { ok: true } },
       }),
     })

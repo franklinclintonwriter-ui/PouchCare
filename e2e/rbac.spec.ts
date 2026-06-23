@@ -7,6 +7,7 @@ test.describe('Management RBAC', () => {
     await staffLogin(page, 'ceo@pouchcare.com', 'Password123!');
     await page.goto('/settings/role-permissions');
     await expect(page.getByRole('heading', { name: /management role access/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /save changes/i })).toBeVisible();
   });
 
   test('Staff user sees access denied on payroll when not allowed', async ({ page }) => {
