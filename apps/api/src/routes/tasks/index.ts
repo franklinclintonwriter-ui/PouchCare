@@ -294,12 +294,6 @@ router.put('/:id', async (req: AuthRequest, res) => {
       }
     }
 
-    const nextMemberId =
-      body.assignedMemberId !== undefined ? body.assignedMemberId || null : undefined
-    if (nextMemberId !== undefined) {
-      await syncAssigneeTaskCount(task.assignedMemberId, nextMemberId)
-    }
-
     const cat =
       body.category !== undefined
         ? body.category && isValidTaskCategory(body.category)
@@ -337,6 +331,12 @@ router.put('/:id', async (req: AuthRequest, res) => {
       const branchId = await resolveBranchId(body.assignedBranch)
       if (trimmed && !branchId) return badRequest(res, 'Unknown branch')
       data.branchId = branchId
+    }
+
+    const nextMemberId =
+      body.assignedMemberId !== undefined ? body.assignedMemberId || null : undefined
+    if (nextMemberId !== undefined) {
+      await syncAssigneeTaskCount(task.assignedMemberId, nextMemberId)
     }
 
     const updated = await prisma.task.update({
