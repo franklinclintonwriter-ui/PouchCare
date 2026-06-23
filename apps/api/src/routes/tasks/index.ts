@@ -189,14 +189,40 @@ router.post('/', isManager, validate(taskSchema), async (req: AuthRequest, res) 
           ? 'Other'
           : undefined
 
+    let assignedBranch: string | undefined
+    let branchId: string | null = null
+    if (body.assignedBranch !== undefined) {
+      const trimmed = body.assignedBranch.trim()
+      branchId = await resolveBranchId(body.assignedBranch)
+      if (trimmed && !branchId && !isNonBranchLabel(trimmed)) return badRequest(res, 'Unknown branch')
+      assignedBranch = trimmed || undefined
+    } else {
+      if (body.assignedMemberId) {
+        const assignee = await prisma.staffMember.findUnique({
+          where: { id: body.assignedMemberId },
+          select: { branchId: true, branch: true },
+        })
+        branchId = assignee?.branchId ?? null
+        assignedBranch = assignee?.branch?.trim() || undefined
+      }
+      if (!branchId && body.assignedManagerId) {
+        const manager = await prisma.staffMember.findUnique({
+          where: { id: body.assignedManagerId },
+          select: { branchId: true, branch: true },
+        })
+        branchId = manager?.branchId ?? null
+        if (!assignedBranch) assignedBranch = manager?.branch?.trim() || undefined
+      }
+    }
+
     const data = {
       title: body.title,
       priority: body.priority,
       category: cat ?? undefined,
       assignedMemberId: body.assignedMemberId || undefined,
       assignedManagerId: body.assignedManagerId || undefined,
-      assignedBranch: body.assignedBranch || undefined,
-      branchId: (await resolveBranchId(body.assignedBranch)) || undefined,
+      assignedBranch,
+      branchId: branchId || undefined,
       relatedProject,
       relatedProjectId: body.relatedProjectId || undefined,
       relatedClient: body.relatedClient || undefined,
@@ -309,7 +335,6 @@ router.put('/:id', async (req: AuthRequest, res) => {
       'priority',
       'assignedMemberId',
       'assignedManagerId',
-      'assignedBranch',
       'relatedClient',
       'estimatedHours',
       'isRecurring',
@@ -332,6 +357,7 @@ router.put('/:id', async (req: AuthRequest, res) => {
       // Allow the "Company — Global" sentinel / blanks (→ branchId null); reject only real typos.
       if (trimmed && !branchId && !isNonBranchLabel(trimmed)) return badRequest(res, 'Unknown branch')
       data.branchId = branchId
+      data.assignedBranch = trimmed || null
     }
 
     const nextMemberId =

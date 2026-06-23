@@ -310,14 +310,22 @@ router.get('/members/:id', requireStaff, async (req: AuthRequest, res) => {
 // POST /v1/staff/members
 router.post('/members', requireRoles(...HR_ROLES as any), validate(createSchema), async (req, res) => {
   try {
-    const { password, ...data } = req.body
-    const exists = await prisma.staffMember.findUnique({ where: { email: data.email.toLowerCase() } })
+    const { password, branch, ...rest } = req.body
+    const exists = await prisma.staffMember.findUnique({ where: { email: rest.email.toLowerCase() } })
     if (exists) return badRequest(res, 'Email already exists')
 
     const passwordHash = await bcrypt.hash(password, env.BCRYPT_ROUNDS)
-    const branchId = await resolveBranchId(data.branch)
+    const trimmed = branch?.trim() ?? ''
+    const branchId = await resolveBranchId(branch)
+    if (trimmed && !branchId && !isNonBranchLabel(trimmed)) return badRequest(res, 'Unknown branch')
     const member = await prisma.staffMember.create({
-      data: { ...data, email: data.email.toLowerCase(), passwordHash, ...(branchId ? { branchId } : {}) },
+      data: {
+        ...rest,
+        email: rest.email.toLowerCase(),
+        passwordHash,
+        ...(trimmed ? { branch: trimmed } : {}),
+        ...(branchId ? { branchId } : {}),
+      },
       select: { id: true, memberId: true, name: true, email: true, systemRole: true },
     })
     return created(res, member)
