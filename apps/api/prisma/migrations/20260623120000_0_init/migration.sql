@@ -42,7 +42,6 @@ CREATE TABLE `staff_members` (
     `performance_score` DOUBLE NULL,
     `totp_secret` VARCHAR(191) NULL,
     `two_factor_enabled` BOOLEAN NOT NULL DEFAULT false,
-    `refresh_token` VARCHAR(191) NULL,
     `last_login_at` DATETIME(3) NULL,
     `last_login_ip` VARCHAR(191) NULL,
     `preferred_currency` VARCHAR(191) NOT NULL DEFAULT 'BDT',
@@ -80,6 +79,24 @@ CREATE TABLE `staff_documents` (
 
     INDEX `staff_documents_staff_member_id_idx`(`staff_member_id`),
     INDEX `staff_documents_category_idx`(`category`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `staff_sessions` (
+    `id` VARCHAR(191) NOT NULL,
+    `staff_member_id` VARCHAR(191) NOT NULL,
+    `refresh_token_hash` VARCHAR(191) NOT NULL,
+    `user_agent` VARCHAR(191) NULL,
+    `ip` VARCHAR(191) NULL,
+    `expires_at` DATETIME(3) NOT NULL,
+    `revoked_at` DATETIME(3) NULL,
+    `last_used_at` DATETIME(3) NULL,
+    `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    UNIQUE INDEX `staff_sessions_refresh_token_hash_key`(`refresh_token_hash`),
+    INDEX `staff_sessions_staff_member_id_idx`(`staff_member_id`),
+    INDEX `staff_sessions_expires_at_idx`(`expires_at`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -1418,6 +1435,9 @@ ALTER TABLE `staff_members` ADD CONSTRAINT `staff_members_branch_id_fkey` FOREIG
 
 -- AddForeignKey
 ALTER TABLE `staff_documents` ADD CONSTRAINT `staff_documents_staff_member_id_fkey` FOREIGN KEY (`staff_member_id`) REFERENCES `staff_members`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `staff_sessions` ADD CONSTRAINT `staff_sessions_staff_member_id_fkey` FOREIGN KEY (`staff_member_id`) REFERENCES `staff_members`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `tasks` ADD CONSTRAINT `tasks_assigned_member_id_fkey` FOREIGN KEY (`assigned_member_id`) REFERENCES `staff_members`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;

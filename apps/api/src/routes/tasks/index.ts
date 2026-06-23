@@ -67,6 +67,47 @@ function parseAttachments(raw: unknown): TaskAttachmentJson[] {
   )
 }
 
+async function branchFromAssignees(
+  assignedMemberId?: string | null,
+  assignedManagerId?: string | null,
+): Promise<{ branchId: string | null; assignedBranch: string | undefined }> {
+  let branchId: string | null = null
+  let assignedBranch: string | undefined
+  if (assignedMemberId) {
+    const assignee = await prisma.staffMember.findUnique({
+      where: { id: assignedMemberId },
+      select: { branchId: true, branch: true },
+    })
+    branchId = assignee?.branchId ?? null
+    assignedBranch = assignee?.branch?.trim() || undefined
+  }
+  if (!branchId && assignedManagerId) {
+    const manager = await prisma.staffMember.findUnique({
+      where: { id: assignedManagerId },
+      select: { branchId: true, branch: true },
+    })
+    branchId = manager?.branchId ?? null
+    if (!assignedBranch) assignedBranch = manager?.branch?.trim() || undefined
+  }
+  return { branchId, assignedBranch }
+}
+
+async function syncBranchOnAssigneeChange(
+  task: { assignedMemberId: string | null; assignedManagerId: string | null },
+  body: Partial<z.infer<typeof taskSchema>>,
+  data: Record<string, unknown>,
+) {
+  if (body.assignedBranch !== undefined) return
+  const memberChanged = body.assignedMemberId !== undefined
+  const managerChanged = body.assignedManagerId !== undefined
+  if (!memberChanged && !managerChanged) return
+  const nextMemberId = memberChanged ? body.assignedMemberId || null : task.assignedMemberId
+  const nextManagerId = managerChanged ? body.assignedManagerId || null : task.assignedManagerId
+  const { branchId, assignedBranch } = await branchFromAssignees(nextMemberId, nextManagerId)
+  data.branchId = branchId
+  data.assignedBranch = assignedBranch ?? null
+}
+
 // GET /tasks/meta — categories + branches (for create form)
 router.get('/meta', isManager, async (_req, res) => {
   try {
@@ -197,22 +238,9 @@ router.post('/', isManager, validate(taskSchema), async (req: AuthRequest, res) 
       if (trimmed && !branchId && !isNonBranchLabel(trimmed)) return badRequest(res, 'Unknown branch')
       assignedBranch = trimmed || undefined
     } else {
-      if (body.assignedMemberId) {
-        const assignee = await prisma.staffMember.findUnique({
-          where: { id: body.assignedMemberId },
-          select: { branchId: true, branch: true },
-        })
-        branchId = assignee?.branchId ?? null
-        assignedBranch = assignee?.branch?.trim() || undefined
-      }
-      if (!branchId && body.assignedManagerId) {
-        const manager = await prisma.staffMember.findUnique({
-          where: { id: body.assignedManagerId },
-          select: { branchId: true, branch: true },
-        })
-        branchId = manager?.branchId ?? null
-        if (!assignedBranch) assignedBranch = manager?.branch?.trim() || undefined
-      }
+      const derived = await branchFromAssignees(body.assignedMemberId, body.assignedManagerId)
+      branchId = derived.branchId
+      assignedBranch = derived.assignedBranch
     }
 
     const data = {
@@ -299,6 +327,7 @@ router.put('/:id', async (req: AuthRequest, res) => {
         data.assignedMemberId = body.assignedMemberId || null
       }
       if (body.assignedManagerId !== undefined) data.assignedManagerId = body.assignedManagerId || null
+      await syncBranchOnAssigneeChange(task, body, data)
       if (body.notes !== undefined) data.notes = body.notes
       if (body.deadline !== undefined) data.deadline = body.deadline ? new Date(body.deadline) : null
       if (body.priority !== undefined) data.priority = body.priority
@@ -359,6 +388,8 @@ router.put('/:id', async (req: AuthRequest, res) => {
       data.branchId = branchId
       data.assignedBranch = trimmed || null
     }
+
+    await syncBranchOnAssigneeChange(task, body, data)
 
     const nextMemberId =
       body.assignedMemberId !== undefined ? body.assignedMemberId || null : undefined
