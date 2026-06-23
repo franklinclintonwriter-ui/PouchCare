@@ -114,6 +114,8 @@ quality:e2e:
         fi
         echo "No checked-in Prisma migrations yet; using prisma db push for CI bootstrap"
       fi
+    # Temporary Phase-2 bootstrap: `0_init` is still settling, so reconcile the
+    # live schema before seeding even after migrate deploy succeeds.
     - npx prisma db push --skip-generate
     - npm run db:seed
     - cd ../..
