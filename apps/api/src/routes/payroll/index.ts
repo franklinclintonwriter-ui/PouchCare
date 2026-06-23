@@ -5,6 +5,7 @@ import { authenticate, isCEO, type AuthRequest } from '@/middleware/auth'
 import { requirePermission } from '@/middleware/rbac'
 import { validate } from '@/middleware/validate'
 import prisma from '@/lib/prisma'
+import { audit } from '@/lib/auditLog'
 import {
   canManagerAccessStaffMember,
   mergePayrollWhereForManager,
@@ -90,6 +91,12 @@ router.post('/', validate(schema), async (req: AuthRequest, res) => {
         branch: member.branch || '',
       },
     })
+    await audit(req, {
+      action: 'payroll.create',
+      resourceKind: 'Payroll',
+      resourceId: payroll.id,
+      after: payroll,
+    })
     return created(res, payroll)
   } catch (e) { console.error(e); return serverError(res) }
 })
@@ -131,6 +138,13 @@ router.put('/:id', requirePermission('payroll.access'), async (req: AuthRequest,
       where: { id: req.params.id },
       data:  { ...rest, baseSalary: base, bonus: b, deductions: d, netSalary },
     })
+    await audit(req, {
+      action: 'payroll.update',
+      resourceKind: 'Payroll',
+      resourceId: record.id,
+      before: existing,
+      after: record,
+    })
     return ok(res, record)
   } catch { return serverError(res) }
 })
@@ -139,6 +153,11 @@ router.put('/:id', requirePermission('payroll.access'), async (req: AuthRequest,
 router.delete('/:id', isCEO, async (req: AuthRequest, res) => {
   try {
     await prisma.payroll.delete({ where: { id: req.params.id } })
+    await audit(req, {
+      action: 'payroll.delete',
+      resourceKind: 'Payroll',
+      resourceId: req.params.id,
+    })
     return ok(res, { message: 'Payroll record deleted' })
   } catch { return serverError(res) }
 })
@@ -149,6 +168,12 @@ router.put('/:id/mark-paid', isCEO, async (req: AuthRequest, res) => {
     const record = await prisma.payroll.update({
       where: { id: req.params.id },
       data: { paymentStatus: 'Paid', paymentDate: new Date(), paymentMethod: req.body.paymentMethod },
+    })
+    await audit(req, {
+      action: 'payroll.markpaid',
+      resourceKind: 'Payroll',
+      resourceId: record.id,
+      after: record,
     })
     return ok(res, record)
   } catch { return serverError(res) }

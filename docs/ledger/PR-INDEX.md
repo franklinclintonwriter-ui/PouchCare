@@ -207,3 +207,25 @@
 - **Verify (sandbox):** `prisma validate` → valid 🚀; `prisma generate` ✓ (8 relations); `apps/api` src tsc **0** (additive — no existing route broke); seed.ts type-clean for the changes (the 2 remaining seed tsc warnings at L256/257 are pre-existing CameraDevice status comparisons, unrelated).
 - **Migration:** additive on the not-yet-generated `0_init` → folds into the single owner-run migration. No standalone migration. (If the owner ever seeds before generating, `linkBranchFks()` doubles as the backfill.)
 - **Next:** PR-2.4 (BRANCH_MANAGER query scoping via a `branchScope(req)` Prisma-where helper over these `branchId` columns).
+
+---
+
+### PR-2.2 — Instrument internal write endpoints with `audit()` + gate coverage
+- **Branch:** `ent/p2-audit-coverage` → `enterprise/main` (parallelizable; based on PR-2.1 audit contract)
+- **What:** Added a single `await audit(req, …)` call after successful writes across internal/company route groups and legacy admin backfill routes:
+  - `apps/api/src/routes/staff/index.ts`
+  - `apps/api/src/routes/staff/documents.ts`
+  - `apps/api/src/routes/attendance/index.ts`
+  - `apps/api/src/routes/leave/index.ts`
+  - `apps/api/src/routes/payroll/index.ts`
+  - `apps/api/src/routes/tasks/index.ts`
+  - `apps/api/src/routes/projects/index.ts`
+  - `apps/api/src/routes/performance/index.ts`
+  - `apps/api/src/routes/hr/index.ts`
+  - `apps/api/src/routes/admin/portal.ts`
+  - `apps/api/src/routes/admin/resources.ts`
+  - plus coverage gate expansion in `scripts/audit-coverage.mjs`.
+- **Coverage gate:** `scripts/audit-coverage.mjs` now scans all `apps/api/src/routes/**` files but gates only an explicit in-scope internal set (new admin panel routes + internal people-ops + legacy `admin/portal.ts` and `admin/resources.ts`).
+- **Coverage %:** in-scope coverage moved from **12/86 (~14%)** before instrumentation to **86/86 (100%)** after.
+- **Intentional skips:** `apps/api/src/routes/admin/role-permissions.ts` and `apps/api/src/routes/admin/system-config.ts` remain informational-only in the script (legacy carry-over, not part of this PR-2.2 backfill scope).
+- **Verify:** `npm run audit:coverage` ✓ (`86/86`); `cd apps/api && npx tsc --noEmit` ✓.

@@ -3,9 +3,9 @@
 <!-- Any agent/session: READ THIS BLOCK FIRST to resume work. Keep it accurate in every PR. -->
 ## CURRENT STATE / RESUME HERE
 - **Integration branch:** `enterprise/main` (off `main` @ 953cd99) — now @ `b5efdc3` (**Phase 1 fully merged**).
-- **Active branch:** `ent/p2-branch-fk` (PR-2.3 #15, stacked on `ent/p2-audit-schema` #14).
+- **Active branch:** `copilot/pr-22-instrument-audit-helpers` (PR-2.2, based on `enterprise/main` + PR-2.1 contract).
 - **Last merged enterprise PR:** Phase-1 stack **#10→#11→#12→#13** flattened into `enterprise/main` @ `b5efdc3` (after #4–#9). MySQL fresh-start + R2 + **zero Supabase** is now in the integration branch.
-- **Next action:** Phase-2 stack in review: **#14** (PR-2.1 audit reconcile) → **#15** (PR-2.3 Branch FK). Next AI PR: **PR-2.5** (auth: session table/logout/password policy) — additive schema; land before `0_init`. **PR-2.4** (BRANCH_MANAGER query scoping) depends on 2.3. Copilot-delegable in parallel once their deps merge: **PR-2.2** (audit coverage, base on 2.1) + **PR-2.6** (tests). All Phase-2 schema is additive → folds into the single owner-run `0_init`.
+- **Next action:** land **PR-2.2** (internal write-endpoint audit instrumentation + coverage gate expansion), then continue Phase-2 critical path: **PR-2.3** (Branch FK) → **PR-2.4** (BRANCH_MANAGER query scoping) and **PR-2.5** (auth/session hardening). All Phase-2 schema remains additive → folds into owner-run `0_init`.
 - **Owner steps (still pending — needs live MySQL):** generate `0_init` via `prisma migrate dev` + set `DATABASE_URL`(mysql)/R2 `S3_*` (see `apps/api/prisma/MIGRATION_NOTES.md` / `docs/DEPLOY-MYSQL.md`). Recommended AFTER Phase-2 schema PRs.
 - **Known-broken / notes:** `apps/api` + `apps/management` tsc 0; `prisma validate` ✓. **Follow-up:** Windows dev scripts (`scripts/*.ps1`) + `deploy/server-init.sh` still mention postgres — non-deploy-critical (DB runs in the `mysql` container). Bugbot flagged "legacy Supabase `storageKey` URLs break downloads" on #10 — **N/A for fresh-start** (greenfield DB, no legacy rows; new code only writes R2 object keys). PR #3 (service picker) merged to `main` separately.
 - **Protocol reminder:** every PR must (1) flip its line below, (2) update this block, (3) append to `ledger/PR-INDEX.md`. Enforced on merge requests by the `quality:ledger` CI job (`scripts/check-ledger.mjs`).
@@ -28,7 +28,7 @@ Status values: `TODO` · `WIP` · `IN_REVIEW` · `MERGED`. Each line carries its
 
 ## Phase 2 — Enterprise foundations
 - [ ] PR-2.1 `[CP]` Audit schema/contract align — branch:ent/p2-audit-schema — status:IN_REVIEW — pr:#14 — owner:ai — verify:prisma validate ✓; tsc both apps 0; no `as any`
-- [ ] PR-2.2 `[||]` Audit coverage ~100% — branch:ent/p2-audit-coverage — status:TODO — owner:copilot — verify:`npm run audit:coverage` ~100%
+- [ ] PR-2.2 `[||]` Audit coverage ~100% — branch:ent/p2-audit-coverage — status:IN_REVIEW — owner:copilot — verify:`npm run audit:coverage` ~100%
 - [ ] PR-2.3 `[CP]` Branch FK isolation — branch:ent/p2-branch-fk — status:IN_REVIEW — pr:#15 — owner:ai — verify:prisma validate ✓; api tsc 0; seed backfills branchId (link via branch-staff)
 - [ ] PR-2.4 `[CP]` BRANCH_MANAGER query scope — branch:ent/p2-branch-scope — status:TODO — owner:ai — verify:rbac.spec blocks cross-branch
 - [ ] PR-2.5 `[CP]` Auth hardening — branch:ent/p2-auth — status:TODO — owner:ai — verify:logout invalidates refresh; revoked token → 401

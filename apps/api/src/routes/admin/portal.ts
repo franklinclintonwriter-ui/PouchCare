@@ -4,6 +4,7 @@ import multer from "multer";
 const getSharp = async () => (await import("sharp")).default;
 import { Router } from "express";
 import prisma from "@/lib/prisma";
+import { audit } from "@/lib/auditLog";
 import { deleteFile, uploadFile } from "@/lib/storage";
 import { authenticate } from "@/middleware/auth";
 import { requirePermission } from "@/middleware/rbac";
@@ -174,6 +175,13 @@ router.put("/members/:id/status", async (req, res) => {
       where: { id: req.params.id },
       data: { status: req.body.status },
     });
+    await audit(req as any, {
+      action: "portal.member.status.update",
+      resourceKind: "PortalMember",
+      resourceId: m.id,
+      clientId: m.id,
+      after: m,
+    });
     return ok(res, m);
   } catch {
     return serverError(res);
@@ -194,6 +202,13 @@ router.post(
       });
       if (!member) return notFound(res);
       const updated = await replacePortalAvatar(req.params.id, file);
+      await audit(req as any, {
+        action: "portal.member.avatar.update",
+        resourceKind: "PortalMember",
+        resourceId: updated.id,
+        clientId: updated.id,
+        after: updated,
+      });
       return ok(res, updated);
     } catch (err) {
       if (err instanceof Error) return badRequest(res, err.message);
@@ -211,6 +226,13 @@ router.delete("/members/:id/avatar", async (req, res) => {
     });
     if (!member) return notFound(res);
     await clearPortalAvatar(req.params.id);
+    await audit(req as any, {
+      action: "portal.member.avatar.delete",
+      resourceKind: "PortalMember",
+      resourceId: req.params.id,
+      clientId: req.params.id,
+      after: { avatarUrl: null },
+    });
     return ok(res, { avatarUrl: null });
   } catch {
     return serverError(res);
@@ -273,6 +295,14 @@ router.put(
       const o = await prisma.portalOrder.update({
         where: { id: req.params.id },
         data: { status: status as any, ...(deliveryLink && { deliveryLink }) },
+      });
+      await audit(req as any, {
+        action: "portal.order.status.update",
+        resourceKind: "PortalOrder",
+        resourceId: o.id,
+        clientId: (order as any).memberId ?? undefined,
+        before: order,
+        after: o,
       });
       return ok(res, o);
     } catch {
@@ -354,6 +384,14 @@ router.put(
           ...(transactionId && { transactionId }),
         },
       });
+      await audit(req as any, {
+        action: "portal.payout.process",
+        resourceKind: "PayoutRequest",
+        resourceId: p.id,
+        clientId: payout.memberId ?? undefined,
+        before: payout,
+        after: p,
+      });
       return ok(res, p);
     } catch {
       return serverError(res);
@@ -417,6 +455,14 @@ router.put("/deposits/:id/approve", async (req: any, res) => {
         },
       }),
     ]);
+    await audit(req as any, {
+      action: "portal.deposit.approve",
+      resourceKind: "WalletTransaction",
+      resourceId: tx.id,
+      clientId: tx.memberId,
+      before: tx,
+      metadata: { newBalance },
+    });
     return ok(res, { message: "Deposit approved", newBalance });
   } catch {
     return serverError(res);
@@ -435,6 +481,14 @@ router.put("/deposits/:id/reject", async (req: any, res) => {
     await prisma.walletTransaction.update({
       where: { id: tx.id },
       data: { status: "Failed", approvedBy: req.user!.id },
+    });
+    await audit(req as any, {
+      action: "portal.deposit.reject",
+      resourceKind: "WalletTransaction",
+      resourceId: tx.id,
+      clientId: tx.memberId,
+      before: tx,
+      after: { status: "Failed", approvedBy: req.user!.id },
     });
     return ok(res, { message: "Deposit rejected" });
   } catch {

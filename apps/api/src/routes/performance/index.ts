@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { authenticate, isManager, isCEO, type AuthRequest } from '@/middleware/auth'
 import { validate } from '@/middleware/validate'
 import prisma from '@/lib/prisma'
+import { audit } from '@/lib/auditLog'
 import { ok, created, notFound, serverError, paginated } from '@/lib/response'
 import { getPagination, paginatedMeta, buildMeta} from '@/lib/pagination'
 import { SystemRole } from '@prisma/client'
@@ -52,6 +53,12 @@ router.get('/:id', async (req: AuthRequest, res) => {
 router.put('/:id', isManager, async (req: AuthRequest, res) => {
   try {
     const rating = await prisma.performanceRating.update({ where: { id: req.params.id }, data: req.body })
+    await audit(req, {
+      action: 'performance.update',
+      resourceKind: 'PerformanceRating',
+      resourceId: rating.id,
+      after: rating,
+    })
     return ok(res, rating)
   } catch { return serverError(res) }
 })
@@ -60,6 +67,11 @@ router.put('/:id', isManager, async (req: AuthRequest, res) => {
 router.delete('/:id', isCEO, async (req: AuthRequest, res) => {
   try {
     await prisma.performanceRating.delete({ where: { id: req.params.id } })
+    await audit(req, {
+      action: 'performance.delete',
+      resourceKind: 'PerformanceRating',
+      resourceId: req.params.id,
+    })
     return ok(res, { message: 'Rating deleted' })
   } catch { return serverError(res) }
 })
@@ -72,6 +84,12 @@ router.post('/', isManager, validate(rateSchema), async (req: AuthRequest, res) 
 
     const rating = await prisma.performanceRating.create({
       data: { staffMemberId: req.body.memberId, reviewPeriod: req.body.reviewPeriod, reviewQuarter: req.body.reviewQuarter, reviewYear: req.body.reviewYear, overallRating: req.body.overallRating, taskQuality: req.body.taskQuality, communication: req.body.communication, punctuality: req.body.punctuality, teamwork: req.body.teamwork, notes: req.body.notes, staffName: member.name, systemRole: member.systemRole, branch: member.branch || '', ratedBy: req.user!.role },
+    })
+    await audit(req, {
+      action: 'performance.create',
+      resourceKind: 'PerformanceRating',
+      resourceId: rating.id,
+      after: rating,
     })
 
     // Update member's average rating

@@ -4,6 +4,7 @@ import multer from 'multer'
 import { authenticate, requireStaff, requireRoles, type AuthRequest } from '@/middleware/auth'
 import { validate } from '@/middleware/validate'
 import prisma from '@/lib/prisma'
+import { audit } from '@/lib/auditLog'
 import { ok, created, notFound, badRequest, serverError } from '@/lib/response'
 import { getPagination, buildMeta } from '@/lib/pagination'
 import {
@@ -125,6 +126,12 @@ router.post(
           uploadedBy: req.user!.id,
         },
       })
+      await audit(req, {
+        action: 'staff.document.create',
+        resourceKind: 'StaffDocument',
+        resourceId: document.id,
+        after: document,
+      })
 
       return created(res, document)
     } catch (err) {
@@ -176,6 +183,13 @@ router.put('/:staffId/documents/:docId', async (req: AuthRequest, res) => {
         expiryDate: expiryDate ? new Date(expiryDate) : document.expiryDate,
       },
     })
+    await audit(req, {
+      action: 'staff.document.update',
+      resourceKind: 'StaffDocument',
+      resourceId: updated.id,
+      before: document,
+      after: updated,
+    })
 
     return ok(res, updated)
   } catch (err) {
@@ -199,6 +213,13 @@ router.put('/:staffId/documents/:docId/verify', requireRoles(...HR_ROLES), async
         verifiedBy: req.user!.id,
         verifiedAt: new Date(),
       },
+    })
+    await audit(req, {
+      action: 'staff.document.verify',
+      resourceKind: 'StaffDocument',
+      resourceId: updated.id,
+      before: document,
+      after: updated,
     })
 
     return ok(res, updated)
@@ -226,6 +247,12 @@ router.delete('/:staffId/documents/:docId', async (req: AuthRequest, res) => {
     }
 
     await prisma.staffDocument.delete({ where: { id: docId } })
+    await audit(req, {
+      action: 'staff.document.delete',
+      resourceKind: 'StaffDocument',
+      resourceId: document.id,
+      before: document,
+    })
 
     return ok(res, { message: 'Document deleted' })
   } catch (err) {

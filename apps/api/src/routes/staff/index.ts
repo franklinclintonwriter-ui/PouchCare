@@ -7,6 +7,7 @@ import { z } from 'zod'
 import bcrypt from 'bcryptjs'
 import { SystemRole } from '@prisma/client'
 import prisma from '@/lib/prisma'
+import { audit } from '@/lib/auditLog'
 import { uploadFile, deleteFile } from '@/lib/storage'
 import { authenticate, requireStaff, requireRoles, HR_ROLES, CEO_ROLES, type AuthRequest } from '@/middleware/auth'
 import { validate } from '@/middleware/validate'
@@ -328,6 +329,12 @@ router.post('/members', requireRoles(...HR_ROLES as any), validate(createSchema)
       data: { ...data, email: data.email.toLowerCase(), passwordHash },
       select: { id: true, memberId: true, name: true, email: true, systemRole: true },
     })
+    await audit(req as AuthRequest, {
+      action: 'staff.create',
+      resourceKind: 'StaffMember',
+      resourceId: member.id,
+      after: member,
+    })
     return created(res, member)
   } catch (err) { serverError(res, err) }
 })
@@ -376,6 +383,13 @@ router.put('/members/:id', requireStaff, async (req, res, next) => {
       },
     })
     const rolePermissions = await getEffectivePermissions(member.systemRole)
+    await audit(req, {
+      action: 'staff.update',
+      resourceKind: 'StaffMember',
+      resourceId: member.id,
+      before: target,
+      after: member,
+    })
 
     return ok(res, { ...member, rolePermissions, profileAdmin: true })
   } catch (err) { serverError(res, err) }
@@ -399,6 +413,12 @@ router.post('/members/:id/avatar', requireStaff, async (req, res, next) => {
     if (!target) return notFound(res)
 
     const updated = await replaceStaffAvatar(req.params.id, file)
+    await audit(req, {
+      action: 'staff.avatar.update',
+      resourceKind: 'StaffMember',
+      resourceId: updated.id,
+      after: updated,
+    })
     return ok(res, updated)
   } catch (err) {
     if (err instanceof Error) return badRequest(res, err.message)
@@ -417,6 +437,12 @@ router.delete('/members/:id/avatar', requireStaff, async (req, res) => {
     if (!target) return notFound(res)
 
     await clearStaffAvatar(req.params.id)
+    await audit(req as AuthRequest, {
+      action: 'staff.avatar.delete',
+      resourceKind: 'StaffMember',
+      resourceId: req.params.id,
+      after: { avatarUrl: null },
+    })
     return ok(res, { avatarUrl: null })
   } catch (err) {
     serverError(res, err)
@@ -426,9 +452,15 @@ router.delete('/members/:id/avatar', requireStaff, async (req, res) => {
 // DELETE /v1/staff/members/:id
 router.delete('/members/:id', requireRoles(...CEO_ROLES as any), async (req, res) => {
   try {
-    await prisma.staffMember.update({
+    const member = await prisma.staffMember.update({
       where: { id: req.params.id },
       data: { status: 'Inactive', terminationDate: new Date() },
+    })
+    await audit(req as AuthRequest, {
+      action: 'staff.deactivate',
+      resourceKind: 'StaffMember',
+      resourceId: member.id,
+      after: member,
     })
     return ok(res, { message: 'Staff member deactivated' })
   } catch (err) { serverError(res, err) }
@@ -484,6 +516,12 @@ router.put('/me', requireStaff, async (req, res) => {
       data: data as Record<string, unknown>,
       select: { id: true, name: true, phone: true, whatsapp: true, preferredCurrency: true, avatarUrl: true },
     })
+    await audit(req as AuthRequest, {
+      action: 'staff.profile.update',
+      resourceKind: 'StaffMember',
+      resourceId: member.id,
+      after: member,
+    })
     return ok(res, member)
   } catch (err) { serverError(res, err) }
 })
@@ -494,6 +532,12 @@ router.post('/me/avatar', requireStaff, avatarUpload.single('file'), async (req:
     const file = req.file
     if (!file) return badRequest(res, 'No file')
     const updated = await replaceStaffAvatar(req.user!.id, file)
+    await audit(req, {
+      action: 'staff.avatar.update',
+      resourceKind: 'StaffMember',
+      resourceId: updated.id,
+      after: updated,
+    })
     return ok(res, updated)
   } catch (err) {
     if (err instanceof Error) return badRequest(res, err.message)
@@ -505,6 +549,12 @@ router.post('/me/avatar', requireStaff, avatarUpload.single('file'), async (req:
 router.delete('/me/avatar', requireStaff, async (req: AuthRequest, res) => {
   try {
     await clearStaffAvatar(req.user!.id)
+    await audit(req, {
+      action: 'staff.avatar.delete',
+      resourceKind: 'StaffMember',
+      resourceId: req.user!.id,
+      after: { avatarUrl: null },
+    })
     return ok(res, { avatarUrl: null })
   } catch (err) {
     serverError(res, err)
@@ -537,6 +587,12 @@ router.post('/members/:id/rate', requireStaff, requireRoles(...CEO_ROLES as any)
         ceoLastRatedDate:     new Date(),
       },
       select: { id: true, name: true, ceoPerformanceRating: true },
+    })
+    await audit(req, {
+      action: 'staff.rate',
+      resourceKind: 'StaffMember',
+      resourceId: member.id,
+      after: member,
     })
     return ok(res, member)
   } catch (err) { return serverError(res, err) }

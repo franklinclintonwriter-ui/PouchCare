@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { SystemRole } from "@prisma/client";
 import prisma from "@/lib/prisma";
+import { audit } from "@/lib/auditLog";
 import {
   propagateBranchNameChange,
   countReferencesToBranchName,
@@ -246,6 +247,12 @@ router.post(
   async (req, res) => {
     try {
       const item = await prisma.branch.create({ data: req.body });
+      await audit(req as AuthRequest, {
+        action: "branch.create",
+        resourceKind: "Branch",
+        resourceId: item.id,
+        after: item,
+      });
       return created(res, item);
     } catch (err) {
       return serverError(res, err);
@@ -280,6 +287,13 @@ router.put(
       }
 
       const item = await prisma.branch.findUnique({ where: { id } });
+      await audit(req as AuthRequest, {
+        action: "branch.update",
+        resourceKind: "Branch",
+        resourceId: id,
+        before: existing,
+        after: item,
+      });
       return ok(res, item);
     } catch (err) {
       return serverError(res, err);
@@ -309,6 +323,12 @@ router.delete(
       }
 
       await prisma.branch.delete({ where: { id } });
+      await audit(req as AuthRequest, {
+        action: "branch.delete",
+        resourceKind: "Branch",
+        resourceId: id,
+        before: existing,
+      });
       return ok(res, { id });
     } catch (err) {
       return serverError(res, err);
@@ -451,6 +471,12 @@ router.post(
       });
       if (!staff) return notFound(res, "Staff member");
       const item = await prisma.device.create({ data: body });
+      await audit(req as AuthRequest, {
+        action: "device.create",
+        resourceKind: "Device",
+        resourceId: item.id,
+        after: item,
+      });
       return created(res, item);
     } catch (err) {
       return serverError(res, err);
@@ -480,6 +506,13 @@ router.put(
         where: { id: req.params.id },
         data: body,
       });
+      await audit(req as AuthRequest, {
+        action: "device.update",
+        resourceKind: "Device",
+        resourceId: item.id,
+        before: existing,
+        after: item,
+      });
       return ok(res, item);
     } catch (err) {
       return serverError(res, err);
@@ -493,6 +526,11 @@ router.delete(
   async (req, res) => {
     try {
       await prisma.device.delete({ where: { id: req.params.id } });
+      await audit(req as AuthRequest, {
+        action: "device.delete",
+        resourceKind: "Device",
+        resourceId: req.params.id,
+      });
       return ok(res, { message: "Device deleted" });
     } catch (err) {
       return serverError(res, err);
@@ -560,6 +598,12 @@ router.post(
         typeof clientAccountCreateSchema
       >;
       const item = await prisma.clientAccount.create({ data: body });
+      await audit(req as AuthRequest, {
+        action: "clientaccount.create",
+        resourceKind: "ClientAccount",
+        resourceId: item.id,
+        after: item,
+      });
       return created(res, item);
     } catch (err) {
       return serverError(res, err);
@@ -584,6 +628,13 @@ router.put(
         where: { id: req.params.id },
         data: body,
       });
+      await audit(req as AuthRequest, {
+        action: "clientaccount.update",
+        resourceKind: "ClientAccount",
+        resourceId: item.id,
+        before: existing,
+        after: item,
+      });
       return ok(res, item);
     } catch (err) {
       return serverError(res, err);
@@ -597,6 +648,11 @@ router.delete(
   async (req, res) => {
     try {
       await prisma.clientAccount.delete({ where: { id: req.params.id } });
+      await audit(req as AuthRequest, {
+        action: "clientaccount.delete",
+        resourceKind: "ClientAccount",
+        resourceId: req.params.id,
+      });
       return ok(res, { message: "Client account deleted" });
     } catch (err) {
       return serverError(res, err);
@@ -734,6 +790,12 @@ router.post(
         data: payload,
         include: exchangeRateInclude,
       });
+      await audit(req, {
+        action: "exchangerate.create",
+        resourceKind: "ExchangeRate",
+        resourceId: item.id,
+        after: item,
+      });
       return created(res, item);
     } catch (err) {
       return serverError(res, err);
@@ -777,6 +839,12 @@ router.put(
         data: data as any,
         include: exchangeRateInclude,
       });
+      await audit(req, {
+        action: "exchangerate.update",
+        resourceKind: "ExchangeRate",
+        resourceId: item.id,
+        after: item,
+      });
       return ok(res, item);
     } catch (err) {
       return serverError(res, err);
@@ -790,6 +858,11 @@ router.delete(
   async (req, res) => {
     try {
       await prisma.exchangeRate.delete({ where: { id: req.params.id } });
+      await audit(req as AuthRequest, {
+        action: "exchangerate.delete",
+        resourceKind: "ExchangeRate",
+        resourceId: req.params.id,
+      });
       return ok(res, { message: "Exchange rate deleted" });
     } catch (err) {
       return serverError(res, err);
