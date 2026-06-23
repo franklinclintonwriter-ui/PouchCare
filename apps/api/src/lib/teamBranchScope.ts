@@ -27,7 +27,7 @@ export async function canManagerAccessStaffMember(
   return !!(me?.branchId && them?.branchId && me.branchId === them.branchId)
 }
 
-async function branchManagerStaffRelationFilter(
+export async function branchManagerStaffRelationFilter(
   managerId: string,
 ): Promise<Prisma.StaffMemberWhereInput | 'empty'> {
   const me = await prisma.staffMember.findUnique({
