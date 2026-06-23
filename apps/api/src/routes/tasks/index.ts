@@ -333,7 +333,10 @@ router.put('/:id', async (req: AuthRequest, res) => {
     if (body.startDate !== undefined) data.startDate = body.startDate ? new Date(body.startDate) : null
     if (body.deadline !== undefined) data.deadline = body.deadline ? new Date(body.deadline) : null
     if (body.assignedBranch !== undefined) {
-      data.branchId = await resolveBranchId(body.assignedBranch)
+      const trimmed = body.assignedBranch?.trim() ?? ''
+      const branchId = await resolveBranchId(body.assignedBranch)
+      if (trimmed && !branchId) return badRequest(res, 'Unknown branch')
+      data.branchId = branchId
     }
 
     const updated = await prisma.task.update({
