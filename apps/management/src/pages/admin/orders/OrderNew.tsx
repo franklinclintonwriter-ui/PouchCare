@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { ArrowLeft, ArrowRight, Check } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Check, Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import { useHeaderConfig } from '@/hooks/useHeaderConfig'
 import { useAdminClients, type UnifiedClient } from '@/api/admin-clients'
+import { useAdminServices, type AdminServiceRow } from '@/api/admin-services'
 import { useCreateAdminOrder } from '@/api/admin-orders'
 import { PageTransition } from '@/components/ui/PageTransition'
 import { Button } from '@/components/ui/Button'
@@ -25,6 +26,8 @@ export default function OrderNew() {
   const [clientSearch, setClientSearch] = useState('')
   const [client, setClient] = useState<UnifiedClient | null>(null)
   const [serviceName, setServiceName] = useState('')
+  const [serviceSearch, setServiceSearch] = useState('')
+  const [selectedServiceId, setSelectedServiceId] = useState<string | null>(null)
   const [amountUsd, setAmountUsd] = useState('')
   const [quantity, setQuantity] = useState('1')
   const [requirements, setRequirements] = useState('')
@@ -35,6 +38,36 @@ export default function OrderNew() {
     q: clientSearch || undefined,
     limit: 8,
   })
+
+  const { data: services, isLoading: servicesLoading, isError: servicesError, isFetching: servicesFetching, refetch: refetchServices } = useAdminServices()
+
+  // Catalog filtered by the search box (name/category); featured + ordered first.
+  const filteredServices = useMemo(() => {
+    const all = services ?? []
+    const q = serviceSearch.trim().toLowerCase()
+    const matched = q
+      ? all.filter(
+          (s) =>
+            s.name.toLowerCase().includes(q) ||
+            (s.category ?? '').toLowerCase().includes(q),
+        )
+      : all
+    return [...matched].sort((a, b) => {
+      if (!!b.featured !== !!a.featured) return b.featured ? 1 : -1
+      const ao = a.displayOrder ?? 999
+      const bo = b.displayOrder ?? 999
+      if (ao !== bo) return ao - bo
+      return a.name.localeCompare(b.name)
+    })
+  }, [services, serviceSearch])
+
+  const hasExactMatch = useMemo(
+    () =>
+      (services ?? []).some(
+        (s) => s.name.toLowerCase() === serviceSearch.trim().toLowerCase(),
+      ),
+    [services, serviceSearch],
+  )
 
   useHeaderConfig(useMemo(() => ({
     title: 'New Order',
@@ -48,6 +81,29 @@ export default function OrderNew() {
     (step === 'Service' && serviceName.trim().length > 0) ||
     (step === 'Amount' && total > 0) ||
     step === 'Review'
+
+  const selectService = (s: AdminServiceRow) => {
+    setSelectedServiceId(s.id)
+    setServiceName(s.name)
+    // Prefill the unit price from the catalog if the admin hasn't entered one yet.
+    if (!amountUsd && typeof s.basePriceUsd === 'number' && s.basePriceUsd > 0) {
+      setAmountUsd(String(s.basePriceUsd))
+    }
+  }
+
+  const useCustomService = () => {
+    setSelectedServiceId(null)
+    setServiceName(serviceSearch.trim())
+  }
+
+  const onServiceSearchChange = (value: string) => {
+    setServiceSearch(value)
+    // If a custom name was confirmed, drop it once the search text diverges so a
+    // stale label can never be submitted — the admin must re-confirm the new text.
+    if (selectedServiceId === null && serviceName && serviceName !== value.trim()) {
+      setServiceName('')
+    }
+  }
 
   const submit = async () => {
     if (!client?.portalMemberId) {
@@ -104,7 +160,6 @@ export default function OrderNew() {
               <SearchInput
                 value={clientSearch}
                 onChange={setClientSearch}
-                onSearch={() => {/* react-query refetches via key */}}
                 placeholder="Search by name or email"
               />
               <div className="divide-y divide-gray-100 rounded-md border border-gray-200 dark:divide-gray-800 dark:border-gray-800">
@@ -147,15 +202,81 @@ export default function OrderNew() {
 
           {step === 'Service' && (
             <div className="space-y-3">
-              <Input
-                label="Service name"
-                value={serviceName}
-                onChange={(e) => setServiceName(e.target.value)}
-                placeholder="e.g. Backlinks 20DA / Hosting Starter / Web-to-APK"
+              <SearchInput
+                value={serviceSearch}
+                onChange={onServiceSearchChange}
+                placeholder="Search the service catalog by name or category"
               />
-              <p className="text-xs text-gray-500">
-                Phase 3 will add a picker over the Service catalog. Until then, type the service name.
-              </p>
+              <div className="max-h-72 divide-y divide-gray-100 overflow-y-auto rounded-md border border-gray-200 dark:divide-gray-800 dark:border-gray-800">
+                {servicesError ? (
+                  /* Hard error: show only the error + Retry — never stale rows or the custom
+                     escape hatch (useAdminServices keeps placeholderData across an error). */
+                  <div className="flex items-center justify-between gap-3 p-3 text-sm">
+                    <span className="text-red-600 dark:text-red-400">Couldn’t load the service catalog.</span>
+                    <button
+                      type="button"
+                      onClick={() => refetchServices()}
+                      disabled={servicesFetching}
+                      className="rounded-md border border-gray-200 px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+                    >
+                      {servicesFetching ? 'Retrying…' : 'Retry'}
+                    </button>
+                  </div>
+                ) : servicesLoading ? (
+                  <div className="p-3 text-sm text-gray-400">Loading catalog…</div>
+                ) : (
+                  <>
+                    {filteredServices.length === 0 && !serviceSearch.trim() && (
+                      <div className="p-3 text-sm text-gray-400">No services in the catalog yet.</div>
+                    )}
+                    {filteredServices.map((s) => {
+                      const isActive = (s.status ?? 'Active') === 'Active'
+                      return (
+                        <button
+                          key={s.id}
+                          onClick={() => selectService(s)}
+                          className={`flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-800 ${
+                            selectedServiceId === s.id ? 'bg-primary-50 dark:bg-primary-900/20' : ''
+                          }`}
+                        >
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="truncate font-medium">{s.name}</span>
+                              {s.featured && <Badge variant="success" size="sm">Featured</Badge>}
+                              {!isActive && s.status && <Badge variant="warning" size="sm">{s.status}</Badge>}
+                            </div>
+                            {s.category && <div className="truncate text-xs text-gray-500">{s.category}</div>}
+                          </div>
+                          {typeof s.basePriceUsd === 'number' && s.basePriceUsd > 0 && (
+                            <span className="shrink-0 font-mono text-xs text-gray-500">{formatCurrency(s.basePriceUsd)}</span>
+                          )}
+                        </button>
+                      )
+                    })}
+                    {/* Escape hatch: free-text fallback for one-off services not in the catalog. */}
+                    {serviceSearch.trim() && !hasExactMatch && (
+                      <button
+                        onClick={useCustomService}
+                        className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-800 ${
+                          selectedServiceId === null && serviceName === serviceSearch.trim()
+                            ? 'bg-primary-50 dark:bg-primary-900/20'
+                            : ''
+                        }`}
+                      >
+                        <Plus className="h-3.5 w-3.5 shrink-0 text-gray-400" />
+                        Use “{serviceSearch.trim()}” as a custom service
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
+              {serviceName && (
+                <p className="text-xs text-gray-500">
+                  Selected:{' '}
+                  <span className="font-medium text-gray-700 dark:text-gray-300">{serviceName}</span>
+                  {selectedServiceId === null && ' (custom)'}
+                </p>
+              )}
             </div>
           )}
 
