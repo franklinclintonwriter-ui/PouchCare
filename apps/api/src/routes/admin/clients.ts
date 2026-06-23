@@ -23,6 +23,7 @@ import {
 } from '@/lib/response'
 import { getPaginationParams, buildMeta } from '@/lib/pagination'
 import { audit } from '@/lib/auditLog'
+import { mapSignedAvatar } from '@/lib/storage'
 import { WalletTxType, PortalMemberStatus } from '@prisma/client'
 
 const router = Router()
@@ -193,7 +194,9 @@ router.get('/', requirePermission('admin.clients.read'), async (req, res) => {
 
     merged.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
     const total = merged.length
-    const items = merged.slice(skip, skip + limit)
+    const items = await Promise.all(
+      merged.slice(skip, skip + limit).map((c) => mapSignedAvatar(c)),
+    )
 
     return ok(res, items, buildMeta(total, page, limit))
   } catch (e) {
@@ -233,7 +236,7 @@ router.get('/:id', requirePermission('admin.clients.read'), async (req, res) => 
       })
     }
 
-    const unified = mergeUnified(pairedMember, pairedAccount)
+    const unified = await mapSignedAvatar(mergeUnified(pairedMember, pairedAccount))
 
     // Load related collections only for member-backed rows (FK constraints)
     const [orders, walletTx, tickets] = await Promise.all([
@@ -334,7 +337,7 @@ router.patch(
         before,
         after,
       })
-      return ok(res, after)
+      return ok(res, await mapSignedAvatar(after))
     } catch (e) {
       return serverError(res, e)
     }
@@ -469,6 +472,8 @@ router.post(
       const tgt = tgtMember ?? tgtAcct
       if (!src || !tgt) return notFound(res, 'Client (one side missing)')
 
+      const revertibleUntil = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+
       // CRM-only source merging into another record: mark Merged
       if (isSrcAccount && srcAcct) {
         await prisma.clientAccount.update({
@@ -483,7 +488,6 @@ router.post(
         // merge is complete. Audit captures the intent for later revert.
       }
 
-      const revertibleUntil = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
       await audit(req, {
         action: 'client.merge',
         resourceKind: isSrcAccount ? 'ClientAccount' : 'PortalMember',

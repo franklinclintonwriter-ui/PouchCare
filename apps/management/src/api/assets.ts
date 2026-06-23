@@ -55,7 +55,9 @@ function normalizeDomainStatus(value?: string | null): Domain['status'] {
   const s = (value ?? '').toLowerCase();
   if (s === 'expired') return 'expired';
   if (s === 'transferred') return 'transferred';
-  return 'active';
+  if (s === 'active' || s === 'live') return 'active';
+  if (!s) return 'active';
+  return s;
 }
 
 function mapDomain(raw: RawDomain): Domain {

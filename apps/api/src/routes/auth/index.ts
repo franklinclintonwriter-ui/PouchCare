@@ -27,6 +27,7 @@ import {
   revokeSessionByToken,
   revokeAllSessions,
 } from "@/lib/staffSession";
+import { getSignedDownloadUrl } from "@/lib/storage";
 
 const router = Router();
 
@@ -116,7 +117,9 @@ router.post("/login", validate(loginSchema), async (req, res) => {
         systemRole: staff.systemRole,
         branch: staff.branch,
         memberId: staff.memberId,
-        avatarUrl: staff.avatarUrl ?? undefined,
+        avatarUrl: staff.avatarUrl
+          ? await getSignedDownloadUrl(staff.avatarUrl)
+          : undefined,
         permissions,
       },
     });

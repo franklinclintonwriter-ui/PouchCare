@@ -13,9 +13,9 @@ export async function canEditTaskAssignment(userId: string, role: SystemRole, ta
     if (task.assignedManagerId === userId) return true
     const me = await prisma.staffMember.findUnique({
       where: { id: userId },
-      select: { branch: true },
+      select: { branchId: true },
     })
-    if (task.assignedBranch && me?.branch && task.assignedBranch === me.branch) return true
+    if (task.branchId && me?.branchId && task.branchId === me.branchId) return true
     return false
   }
 

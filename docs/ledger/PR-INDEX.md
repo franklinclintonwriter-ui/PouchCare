@@ -210,16 +210,31 @@
 
 ---
 
+### PR-2.4 — BRANCH_MANAGER scoping migrated to the `branchId` FK
+- **Branch:** `ent/p2-branch-scope` → `enterprise/main`
+- **Not greenfield:** scoping already existed but compared advisory `branch` **strings**. Migrated it to the `branchId` FK (PR-2.3), **fail-closed** (a BM with no `branchId` matches nothing — never leaks cross-branch).
+- **Scope helpers migrated (string → `branchId`):**
+  - `lib/teamBranchScope.ts` — `canManagerAccessStaffMember` (compare `branchId`), `branchManagerStaffRelationFilter` (returns `{ branchId }`); the `merge*WhereForManager` wrappers (attendance/leave/dailyReport/payroll) are unchanged — they scope via `{ staffMember: { branchId } }`, so only **staff** need a reliable `branchId`.
+  - `lib/staffDirectoryScope.ts` — `staffListWhereWithBranchScope` filters `branchId`; the `branch` query param (a name) is resolved and rejected if it isn't the BM's branch; advisory `branch` filter dropped in favour of `branchId`.
+  - `routes/tasks/access.ts` — `canEditTaskAssignment` compares `task.branchId === me.branchId`.
+- **Writes now persist `branchId`** (new `lib/branchResolve.ts` → `resolveBranchId(name)`, memoises name→id): staff **create** + **update** (`routes/staff/index.ts`) and task **create** (`routes/tasks/index.ts`) resolve the branch name and set `branchId` alongside the kept advisory string. Staff create is the **only** `staffMember.create` site, so staff `branchId` is now fully covered; "Company — Global" staff resolve to no branch → `branchId` null (correctly unscoped).
+- **Verify (sandbox):** `apps/api` tsc **0**. (Behavioural cross-branch isolation to be covered by `e2e/rbac.spec.ts` under the PR-2.6 harness.)
+- **Deliberately out of scope:** task **list** branch-scoping did not exist before (tasks are org-visible) — not added here; flagged as a possible follow-up. No schema/migration changes (uses PR-2.3 columns).
+- **Bugbot review (converged with Cursor autofix `19b939e`→`93d2fe6`):** kept the autofix's good work — `members/:id` via the shared `canManagerAccessStaffMember` (branchId; was High), staff/task **update** re-resolve `branchId` on label change (was Medium), and reordered task-update so the unknown-branch check runs **before** `syncAssigneeTaskCount` (no stranded counter; was Medium). Added the **one** missing piece the autofix lacked: `isNonBranchLabel()` so the reject **allows the `"Company — Global"` sentinel** (company-wide CEO/MD/HR staff, not a `Branch` row) and blanks → `branchId` null (unscoped, fail-closed), while still rejecting genuine typos. This fixes the regression the strict reject would have caused (blocking edits to company-wide staff) without weakening validation.
+
+---
+
 ### PR-2.5 — Auth hardening: sessions + revocation, real logout, password policy, 2FA
 - **Branch:** `ent/p2-auth` → `enterprise/main` (independent of #18; depends on PR-2.1)
 - **Gaps closed:** refresh had **no revocation** (a stolen refresh JWT worked until expiry), logout was a **no-op**, the `StaffMember.refreshToken` column was **dead/unused**, password min was inconsistent (login 6 / reset 8 / change 8, no complexity), and 2FA was hard-gated to CEO/CO_MD.
 - **Schema:** new **`StaffSession`** model (`refreshTokenHash @unique`, `userAgent`, `ip`, `expiresAt`, `revokedAt`, `lastUsedAt`, `staffMember` FK `onDelete: Cascade`, indexes on `staffMemberId`/`expiresAt`); added `StaffMember.sessions` back-relation; **removed the dead `StaffMember.refreshToken`** column. Additive → folds into `0_init`.
-- **`lib/staffSession.ts`:** `hashRefreshToken` (SHA-256 — store only the hash), `createStaffSession`, `activeSessionForToken` (exists ∧ not revoked ∧ not expired), `revokeSessionByToken`, `revokeAllSessions`.
+- **`lib/staffSession.ts`:** `hashRefreshToken` (SHA-256 — store only the hash), `createStaffSession`, `activeSessionForToken` (exists ∧ not revoked ∧ not expired), `revokeSessionByToken` (now scoped by `staffMemberId`), `revokeAllSessions`.
 - **`lib/passwordPolicy.ts`:** single source of truth — `passwordIssue()` (min 8 + upper/lower/digit) + a `strongPassword` zod field.
 - **`routes/auth/index.ts`:**
   - **login** — creates a `StaffSession` (expiry from the refresh JWT's `exp`); 2FA now enforced for **any** staff with `twoFactorEnabled` (was CEO/CO_MD only).
   - **refresh** — validates the token against an active session (revoked/expired → 401), re-checks the account isn't inactive/suspended (and revokes all sessions if so), bumps `lastUsedAt`.
-  - **logout** — now actually revokes: the presented `refresh_token`'s session, else all of the user's (best-effort).
-  - **reset-password / change-password** — use `strongPassword`, and **revoke all sessions** afterwards (force re-login everywhere).
-- **Scope guard:** staff-side only — portal/customer auth (`routes/portal/auth.ts`) untouched. Left `routes/staff/index.ts` create-password as-is to avoid overlapping #18 (noted follow-up: apply `strongPassword` there too).
+  - **logout** — now actually revokes: the presented `refresh_token`'s session (**only if it belongs to the caller**), else all of the user's (best-effort).
+  - **reset-password / change-password** — use `strongPassword`, and update the hash + revoke all sessions **atomically in one `$transaction`** (force re-login everywhere; no window where the password changed but sessions survived).
+- **Scope guard:** staff-side only — portal/customer auth (`routes/portal/auth.ts`) untouched. Left `routes/staff/index.ts` create-password as-is (noted follow-up: apply `strongPassword` there too).
+- **Bugbot review (Cursor autofix `722e3ea`, adopted as-is — correct):** scoped `revokeSessionByToken` to the caller's `staffMemberId` (logout can't kill another user's session; was Medium); wrapped password-hash + session-revoke in a transaction (was Medium).
 - **Verify (sandbox):** `prisma validate` ✓; `prisma generate` ✓; `apps/api` tsc **0**. Behavioural e2e (logout invalidates refresh; revoked token → 401) lands with the PR-2.6 harness.
