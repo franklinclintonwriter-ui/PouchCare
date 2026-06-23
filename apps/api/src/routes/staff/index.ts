@@ -7,7 +7,7 @@ import { z } from 'zod'
 import bcrypt from 'bcryptjs'
 import { SystemRole } from '@prisma/client'
 import prisma from '@/lib/prisma'
-import { uploadFile, deleteFile } from '@/lib/storage'
+import { uploadFile, deleteFile, mapSignedAvatar } from '@/lib/storage'
 import { authenticate, requireStaff, requireRoles, HR_ROLES, CEO_ROLES, type AuthRequest } from '@/middleware/auth'
 import { validate } from '@/middleware/validate'
 import { getPagination, buildMeta } from '@/utils/pagination'
@@ -81,7 +81,7 @@ async function replaceStaffAvatar(staffId: string, file: Express.Multer.File) {
     await deleteFile(prev.avatarUrl).catch(() => {})
   }
 
-  return updated
+  return mapSignedAvatar(updated)
 }
 
 async function clearStaffAvatar(staffId: string) {
@@ -259,7 +259,7 @@ router.get('/members', requireStaff, async (req: AuthRequest, res) => {
       }),
       prisma.staffMember.count({ where }),
     ])
-    return ok(res, members, buildMeta(total, page, limit))
+    return ok(res, await Promise.all(members.map((m) => mapSignedAvatar(m))), buildMeta(total, page, limit))
   } catch (err) {
     serverError(res, err)
   }
@@ -301,16 +301,16 @@ router.get('/members/:id', requireStaff, async (req: AuthRequest, res) => {
     if (admin) {
       const rolePermissions = await getEffectivePermissions(member.systemRole)
       return ok(res, {
-        ...member,
+        ...(await mapSignedAvatar(member)),
         rolePermissions,
         profileAdmin: true,
         profileScope: 'full' as const,
       })
     }
     if (isSelf) {
-      return ok(res, { ...member, profileAdmin: false, profileScope: 'full' as const })
+      return ok(res, { ...(await mapSignedAvatar(member)), profileAdmin: false, profileScope: 'full' as const })
     }
-    return ok(res, { ...member, profileAdmin: false, profileScope: 'limited' as const })
+    return ok(res, { ...(await mapSignedAvatar(member)), profileAdmin: false, profileScope: 'limited' as const })
   } catch (err) {
     serverError(res, err)
   }
@@ -377,7 +377,7 @@ router.put('/members/:id', requireStaff, async (req, res, next) => {
     })
     const rolePermissions = await getEffectivePermissions(member.systemRole)
 
-    return ok(res, { ...member, rolePermissions, profileAdmin: true })
+    return ok(res, { ...(await mapSignedAvatar(member)), rolePermissions, profileAdmin: true })
   } catch (err) { serverError(res, err) }
 })
 
@@ -455,7 +455,7 @@ router.get('/me', requireStaff, async (req, res) => {
     const { totpSecret, ...member } = row
     const permissions = await getEffectivePermissions(member.systemRole)
     const twoFactorPending = Boolean(totpSecret) && !member.twoFactorEnabled
-    return ok(res, { ...member, twoFactorPending, permissions })
+    return ok(res, { ...(await mapSignedAvatar(member)), twoFactorPending, permissions })
   } catch (err) { serverError(res, err) }
 })
 
@@ -484,7 +484,7 @@ router.put('/me', requireStaff, async (req, res) => {
       data: data as Record<string, unknown>,
       select: { id: true, name: true, phone: true, whatsapp: true, preferredCurrency: true, avatarUrl: true },
     })
-    return ok(res, member)
+    return ok(res, await mapSignedAvatar(member))
   } catch (err) { serverError(res, err) }
 })
 

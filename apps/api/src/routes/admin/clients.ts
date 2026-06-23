@@ -469,6 +469,8 @@ router.post(
       const tgt = tgtMember ?? tgtAcct
       if (!src || !tgt) return notFound(res, 'Client (one side missing)')
 
+      const revertibleUntil = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+
       // CRM-only source merging into another record: mark Merged
       if (isSrcAccount && srcAcct) {
         await prisma.clientAccount.update({
@@ -483,7 +485,6 @@ router.post(
         // merge is complete. Audit captures the intent for later revert.
       }
 
-      const revertibleUntil = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
       await audit(req, {
         action: 'client.merge',
         resourceKind: isSrcAccount ? 'ClientAccount' : 'PortalMember',

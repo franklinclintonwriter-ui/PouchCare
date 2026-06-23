@@ -311,6 +311,11 @@ router.get('/:id/files/:fileId/download', async (req: AuthRequest, res) => {
     const file = await prisma.workspaceFile.findFirst({ where: { id: req.params.fileId, workspaceId: wsId } })
     if (!file || file.isDirectory) return notFound(res, 'File')
 
+    // Legacy Supabase uploads stored a public HTTP URL in storageKey.
+    if (file.storageKey?.startsWith('http')) {
+      return res.redirect(file.storageKey)
+    }
+
     // Binary/large files live in R2 (storageKey = object key) — redirect to a short-lived presigned URL.
     if (file.storageKey && isCloudflareR2Configured && s3Client) {
       const url = await getSignedUrl(

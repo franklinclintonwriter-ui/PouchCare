@@ -4,7 +4,7 @@ import multer from "multer";
 const getSharp = async () => (await import("sharp")).default;
 import { Router } from "express";
 import prisma from "@/lib/prisma";
-import { deleteFile, uploadFile } from "@/lib/storage";
+import { deleteFile, uploadFile, mapSignedAvatar } from "@/lib/storage";
 import { authenticate } from "@/middleware/auth";
 import { requirePermission } from "@/middleware/rbac";
 import { ok, serverError, notFound, badRequest } from "@/lib/response";
@@ -85,7 +85,7 @@ async function replacePortalAvatar(
     await deleteFile(prev.avatarUrl).catch(() => {});
   }
 
-  return updated;
+  return mapSignedAvatar(updated);
 }
 
 async function clearPortalAvatar(memberId: string) {
@@ -126,14 +126,16 @@ router.get("/members", async (req, res) => {
     ]);
     return ok(
       res,
-      items.map(
-        ({
-          passwordHash: _,
-          emailVerifyToken: __,
-          resetPasswordToken: ___,
-          refreshToken: ____,
-          ...m
-        }) => m,
+      await Promise.all(
+        items.map(
+          async ({
+            passwordHash: _,
+            emailVerifyToken: __,
+            resetPasswordToken: ___,
+            refreshToken: ____,
+            ...m
+          }) => mapSignedAvatar(m),
+        ),
       ),
       buildMeta(total, page, limit),
     );
@@ -161,7 +163,7 @@ router.get("/members/:id", async (req, res) => {
       refreshToken,
       ...safe
     } = m;
-    return ok(res, safe);
+    return ok(res, await mapSignedAvatar(safe));
   } catch {
     return serverError(res);
   }

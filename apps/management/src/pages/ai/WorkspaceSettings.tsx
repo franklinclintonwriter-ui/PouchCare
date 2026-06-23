@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useHeaderConfig } from '@/hooks/useHeaderConfig'
 import { PageTransition } from '@/components/ui/PageTransition'
@@ -96,11 +96,17 @@ export default function WorkspaceSettings() {
   const [skillContent, setSkillContent] = useState('')
   const [skillCategory, setSkillCategory] = useState('custom')
 
-  // Settings state
-  const [aiModel] = useState((settings as any)?.aiModel ?? '')
-  const [autoSave, setAutoSave] = useState((settings as any)?.autoSave ?? true)
-  const [tabSize, setTabSize] = useState(String((settings as any)?.tabSize ?? 2))
-  const [fontSize, setFontSize] = useState(String((settings as any)?.fontSize ?? 13))
+  // Settings state — sync from server when settings load (query is async on first render).
+  const [autoSave, setAutoSave] = useState(true)
+  const [tabSize, setTabSize] = useState('2')
+  const [fontSize, setFontSize] = useState('13')
+
+  useEffect(() => {
+    if (!settings) return
+    setAutoSave((settings as any).autoSave ?? true)
+    setTabSize(String((settings as any).tabSize ?? 2))
+    setFontSize(String((settings as any).fontSize ?? 13))
+  }, [settings])
 
   const handleCreateSkill = useCallback(async () => {
     if (!skillName.trim() || !skillContent.trim()) return toast.error('Name and content required')
@@ -120,10 +126,15 @@ export default function WorkspaceSettings() {
 
   const handleSaveSettings = useCallback(async () => {
     try {
-      await saveSettings.mutateAsync({ aiModel, autoSave, tabSize: Number(tabSize), fontSize: Number(fontSize) })
+      await saveSettings.mutateAsync({
+        ...(settings ?? {}),
+        autoSave,
+        tabSize: Number(tabSize),
+        fontSize: Number(fontSize),
+      })
       toast.success('Settings saved')
     } catch { toast.error('Failed') }
-  }, [aiModel, autoSave, tabSize, fontSize, saveSettings])
+  }, [settings, autoSave, tabSize, fontSize, saveSettings])
 
   const activeCount = skills?.filter((s) => s.enabled).length ?? 0
 
