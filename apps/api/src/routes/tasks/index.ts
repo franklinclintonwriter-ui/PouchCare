@@ -332,6 +332,9 @@ router.put('/:id', async (req: AuthRequest, res) => {
     }
     if (body.startDate !== undefined) data.startDate = body.startDate ? new Date(body.startDate) : null
     if (body.deadline !== undefined) data.deadline = body.deadline ? new Date(body.deadline) : null
+    if (body.assignedBranch !== undefined) {
+      data.branchId = await resolveBranchId(body.assignedBranch)
+    }
 
     const updated = await prisma.task.update({
       where: { id: req.params.id },

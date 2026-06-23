@@ -16,6 +16,7 @@ import { env } from '@/config/env'
 import { getEffectivePermissions } from '@/lib/managementPermissions'
 import { canAccessStaffProfileAdmin, canAssignSystemRole } from '@/lib/staffProfileAdmin'
 import { staffListWhereWithBranchScope } from '@/lib/staffDirectoryScope'
+import { canManagerAccessStaffMember } from '@/lib/teamBranchScope'
 import { resolveBranchId } from '@/lib/branchResolve'
 import { staffAdminUpdateSchema } from '@/routes/staff/staffAdminUpdateSchema'
 import documentsRouter from '@/routes/staff/documents'
@@ -275,19 +276,8 @@ router.get('/members/:id', requireStaff, async (req: AuthRequest, res) => {
     const isSelf = req.user!.id === req.params.id
 
     if (req.user!.role === 'BRANCH_MANAGER' && !admin && !isSelf) {
-      const [me, theirBranch] = await Promise.all([
-        prisma.staffMember.findUnique({
-          where: { id: req.user!.id },
-          select: { branch: true },
-        }),
-        prisma.staffMember.findUnique({
-          where: { id: req.params.id },
-          select: { branch: true },
-        }),
-      ])
-      const mine = me?.branch?.trim()
-      const theirs = theirBranch?.branch?.trim()
-      if (!mine || !theirs || mine !== theirs) return notFound(res)
+      const allowed = await canManagerAccessStaffMember(req.user!.id, req.user!.role, req.params.id)
+      if (!allowed) return notFound(res)
     }
 
     const select =
@@ -359,7 +349,13 @@ router.put('/members/:id', requireStaff, async (req, res, next) => {
     const prismaData: Record<string, unknown> = { ...data }
     if (data.email !== undefined) prismaData.email = data.email.toLowerCase()
     // Keep the branchId FK in sync whenever the advisory branch string changes.
-    if (data.branch !== undefined) prismaData.branchId = await resolveBranchId(data.branch)
+    if (data.branch !== undefined) {
+      const trimmed = data.branch.trim()
+      const branchId = await resolveBranchId(data.branch)
+      if (trimmed && !branchId) return badRequest(res, 'Unknown branch')
+      prismaData.branchId = branchId
+      prismaData.branch = trimmed || null
+    }
 
     const member = await prisma.staffMember.update({
       where: { id: req.params.id },
