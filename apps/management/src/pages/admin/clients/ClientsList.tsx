@@ -240,7 +240,7 @@ export default function ClientsList() {
           />
           <Select
             value={status}
-            onChange={(v) => setParam('status', v || undefined)}
+            onChange={(e) => setParam('status', e.target.value || undefined)}
             options={STATUS_OPTIONS}
             placeholder="Status"
             className="w-[160px]"

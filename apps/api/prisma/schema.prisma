@@ -7,7 +7,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
@@ -165,6 +165,7 @@ model StaffMember {
   systemRole           SystemRole @map("system_role")
   status               String     @default("Active")
   branch               String?
+  branchId             String?    @map("branch_id")
   jobRole              String?    @map("job_role")
   primarySkill         String?    @map("primary_skill")
   skillLevel           String?    @map("skill_level")
@@ -198,7 +199,6 @@ model StaffMember {
   performanceScore     Float?     @map("performance_score")
   totpSecret           String?    @map("totp_secret")
   twoFactorEnabled     Boolean    @default(false) @map("two_factor_enabled")
-  refreshToken         String?    @map("refresh_token")
   lastLoginAt          DateTime?  @map("last_login_at")
   lastLoginIp          String?    @map("last_login_ip")
   preferredCurrency    String     @default("BDT") @map("preferred_currency") // USD | BDT
@@ -221,8 +221,30 @@ model StaffMember {
   emailAccounts      EmailAccount[]
   exchangeRatesCreated ExchangeRate[] @relation("ExchangeRateCreatedBy")
   exchangeRatesUpdated ExchangeRate[] @relation("ExchangeRateUpdatedBy")
+  branchRef            Branch?             @relation(fields: [branchId], references: [id])
+  sessions             StaffSession[]
 
+  @@index([branchId])
   @@map("staff_members")
+}
+
+/// Refresh-token sessions for staff — enables revocation (logout, admin kill).
+/// Replaces the old single `StaffMember.refreshToken` column.
+model StaffSession {
+  id               String      @id @default(uuid())
+  staffMemberId    String      @map("staff_member_id")
+  refreshTokenHash String      @unique @map("refresh_token_hash")
+  userAgent        String?     @map("user_agent")
+  ip               String?
+  expiresAt        DateTime    @map("expires_at")
+  revokedAt        DateTime?   @map("revoked_at")
+  lastUsedAt       DateTime?   @map("last_used_at")
+  createdAt        DateTime    @default(now()) @map("created_at")
+  staffMember      StaffMember @relation(fields: [staffMemberId], references: [id], onDelete: Cascade)
+
+  @@index([staffMemberId])
+  @@index([expiresAt])
+  @@map("staff_sessions")
 }
 
 model StaffDocument {
@@ -277,6 +299,7 @@ model Task {
   assignedMemberId    String?        @map("assigned_member_id")
   assignedManagerId   String?        @map("assigned_manager_id")
   assignedBranch      String?        @map("assigned_branch")
+  branchId            String?        @map("branch_id")
   assignedBy          String?        @map("assigned_by")
   multipleAssignees   String?        @map("multiple_assignees")
   relatedProject      String?        @map("related_project")
@@ -316,8 +339,10 @@ model Task {
   assignedManager   StaffMember?  @relation("AssignedManager", fields: [assignedManagerId], references: [id])
   relatedProjectRef Project?      @relation("TaskRelatedProject", fields: [relatedProjectId], references: [id])
   comments          TaskComment[]
+  branchRef         Branch?       @relation(fields: [branchId], references: [id])
 
   @@index([relatedProjectId])
+  @@index([branchId])
   @@map("tasks")
 }
 
@@ -350,6 +375,7 @@ model Project {
   assignedManager   String?        @map("assigned_manager")
   assignedTo        String?        @map("assigned_to")
   assignedBranch    String?        @map("assigned_branch")
+  branchId          String?        @map("branch_id")
   multipleAssignees String?        @map("multiple_assignees")
   startDate         DateTime?      @map("start_date")
   deadline          DateTime?
@@ -371,8 +397,10 @@ model Project {
   createdAt         DateTime       @default(now()) @map("created_at")
   updatedAt         DateTime       @updatedAt @map("updated_at")
 
-  tasks Task[] @relation("TaskRelatedProject")
+  tasks     Task[]  @relation("TaskRelatedProject")
+  branchRef Branch? @relation(fields: [branchId], references: [id])
 
+  @@index([branchId])
   @@map("projects")
 }
 
@@ -382,6 +410,7 @@ model Attendance {
   staffMemberId   String           @map("staff_member_id")
   name            String
   branch          String?
+  branchId        String?          @map("branch_id")
   date            DateTime         @db.Date
   status          AttendanceStatus
   workType        WorkType         @default(OFFICE) @map("work_type")
@@ -396,8 +425,10 @@ model Attendance {
   notes           String?
   createdAt       DateTime         @default(now()) @map("created_at")
   staffMember     StaffMember      @relation(fields: [staffMemberId], references: [id])
+  branchRef       Branch?          @relation(fields: [branchId], references: [id])
 
   @@unique([staffMemberId, date])
+  @@index([branchId])
   @@map("attendance")
 }
 
@@ -408,6 +439,7 @@ model LeaveRequest {
   staffName          String      @map("staff_name")
   staffSystemRole    String?     @map("staff_system_role")
   branch             String?
+  branchId           String?     @map("branch_id")
   leaveType          LeaveType   @map("leave_type")
   status             LeaveStatus @default(PENDING)
   startDate          DateTime    @map("start_date")
@@ -422,7 +454,9 @@ model LeaveRequest {
   createdAt          DateTime    @default(now()) @map("created_at")
   updatedAt          DateTime    @updatedAt @map("updated_at")
   staffMember        StaffMember @relation(fields: [staffMemberId], references: [id])
+  branchRef          Branch?     @relation(fields: [branchId], references: [id])
 
+  @@index([branchId])
   @@map("leave_requests")
 }
 
@@ -433,6 +467,7 @@ model DailyReport {
   submitterName     String      @map("submitter_name")
   submitterRole     String?     @map("submitter_role")
   branch            String?
+  branchId          String?     @map("branch_id")
   reportDate        DateTime    @map("report_date") @db.Date
   tasksCompleted    String      @map("tasks_completed")
   plannedTomorrow   String      @map("planned_tomorrow")
@@ -447,8 +482,10 @@ model DailyReport {
   notes             String?
   createdAt         DateTime    @default(now()) @map("created_at")
   staffMember       StaffMember @relation(fields: [staffMemberId], references: [id])
+  branchRef         Branch?     @relation(fields: [branchId], references: [id])
 
   @@unique([staffMemberId, reportDate])
+  @@index([branchId])
   @@map("daily_reports")
 }
 
@@ -458,6 +495,7 @@ model PerformanceRating {
   staffName     String      @map("staff_name")
   systemRole    String?     @map("system_role")
   branch        String?
+  branchId      String?     @map("branch_id")
   ratedBy       String      @map("rated_by")
   reviewPeriod  String?     @map("review_period")
   reviewQuarter String?     @map("review_quarter")
@@ -470,7 +508,9 @@ model PerformanceRating {
   notes         String?
   createdAt     DateTime    @default(now()) @map("created_at")
   staffMember   StaffMember @relation(fields: [staffMemberId], references: [id])
+  branchRef     Branch?     @relation(fields: [branchId], references: [id])
 
+  @@index([branchId])
   @@map("performance_ratings")
 }
 
@@ -480,6 +520,7 @@ model Payroll {
   staffName     String      @map("staff_name")
   systemRole    String?     @map("system_role")
   branch        String?
+  branchId      String?     @map("branch_id")
   month         String
   year          Int
   baseSalary    Float       @map("base_salary")
@@ -492,8 +533,10 @@ model Payroll {
   notes         String?
   createdAt     DateTime    @default(now()) @map("created_at")
   staffMember   StaffMember @relation(fields: [staffMemberId], references: [id])
+  branchRef     Branch?     @relation(fields: [branchId], references: [id])
 
   @@unique([staffMemberId, month, year])
+  @@index([branchId])
   @@map("payroll")
 }
 
@@ -515,6 +558,14 @@ model Branch {
   cameraDevices      CameraDevice[]
   vigiNvrIntegration VigiNvrIntegration?
   exchangeRates      ExchangeRate[]
+  staffMembers       StaffMember[]
+  tasks              Task[]
+  projects           Project[]
+  attendance         Attendance[]
+  leaveRequests      LeaveRequest[]
+  dailyReports       DailyReport[]
+  performanceRatings PerformanceRating[]
+  payroll            Payroll[]
 
   @@map("branches")
 }
@@ -723,7 +774,7 @@ model ServicePlan {
   priceUsd     Float    @map("price_usd")
   priceBdt     Float?   @map("price_bdt")
   deliveryDays Int?     @map("delivery_days")
-  features     String[] @default([])
+  features     Json     @default("[]") // string[] stored as JSON (MySQL has no scalar list type)
   isPopular    Boolean  @default(false) @map("is_popular")
   displayOrder Int      @default(0) @map("display_order")
   createdAt    DateTime @default(now()) @map("created_at")
@@ -1220,7 +1271,7 @@ model PluginVersion {
   pluginId       String   @map("plugin_id")
   version        String // semver e.g. "1.0.0"
   changelog      String?
-  phpFileContent String   @map("php_file_content") // full PHP source text
+  phpFileContent String   @map("php_file_content") @db.Text // full PHP source text
   isLatest       Boolean  @default(false) @map("is_latest")
   publishedAt    DateTime @default(now()) @map("published_at")
   publishedById  String   @map("published_by_id")
@@ -1378,7 +1429,7 @@ model AiMessage {
   conversationId String         @map("conversation_id")
   conversation   AiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   role           String
-  content        String
+  content        String         @db.Text
   tokensUsed     Int            @default(0) @map("tokens_used")
   createdAt      DateTime       @default(now()) @map("created_at")
 
@@ -1418,16 +1469,23 @@ model SystemSetting {
 }
 
 model SystemAuditLog {
-  id        String   @id @default(uuid())
-  action    String
-  module    String
-  actorId   String   @map("actor_id")
-  actorName String   @map("actor_name")
-  actorRole String   @map("actor_role")
-  ipAddress String?  @map("ip_address")
-  details   String?
-  createdAt DateTime @default(now()) @map("created_at")
+  id           String   @id @default(uuid())
+  actorId      String?  @map("actor_id")
+  actorRole    String?  @map("actor_role")
+  action       String
+  resourceKind String   @map("resource_kind")
+  resourceId   String   @map("resource_id")
+  clientId     String?  @map("client_id")
+  ip           String?
+  userAgent    String?  @map("user_agent")
+  metadata     Json?
+  createdAt    DateTime @default(now()) @map("created_at")
 
+  @@index([resourceKind, resourceId])
+  @@index([clientId])
+  @@index([actorId])
+  @@index([action])
+  @@index([createdAt])
   @@map("system_audit_logs")
 }
 

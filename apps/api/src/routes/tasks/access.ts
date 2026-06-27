@@ -1,6 +1,7 @@
 import type { SystemRole } from '@prisma/client'
 import type { Task } from '@prisma/client'
 import prisma from '@/lib/prisma'
+import { branchesMatch } from '@/lib/branchResolve'
 
 const SENIOR: SystemRole[] = ['CEO', 'CO_MD', 'OP_MANAGER']
 
@@ -13,10 +14,13 @@ export async function canEditTaskAssignment(userId: string, role: SystemRole, ta
     if (task.assignedManagerId === userId) return true
     const me = await prisma.staffMember.findUnique({
       where: { id: userId },
-      select: { branch: true },
+      select: { branchId: true, branch: true },
     })
-    if (task.assignedBranch && me?.branch && task.assignedBranch === me.branch) return true
-    return false
+    if (!me) return false
+    return branchesMatch(
+      { branchId: task.branchId, branch: task.assignedBranch },
+      { branchId: me.branchId, branch: me.branch },
+    )
   }
 
   return false

@@ -14,6 +14,7 @@ export const mockDomains: Domain[] = domainNames.map((d) => ({
   expiryDate: Math.random() > 0.2 ? fakeDateFuture(365) : fakeDateFuture(25),
   autoRenew: Math.random() > 0.3,
   status: randomFrom(['active', 'active', 'active', 'expired'] as const),
+  lifecycleStatus: randomFrom(['COMPLETED', 'COMPLETED', 'IN_PROGRESS', 'INCOMPLETE'] as const),
   dnsProvider: randomFrom(dnsProviders), annualCost: randomInt(8, 45),
 }));
 

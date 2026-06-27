@@ -47,9 +47,9 @@ router.get(
       const where: any = {};
       if (q) {
         where.OR = [
-          { name: { contains: q, mode: "insensitive" } },
-          { city: { contains: q, mode: "insensitive" } },
-          { country: { contains: q, mode: "insensitive" } },
+          { name: { contains: q } },
+          { city: { contains: q } },
+          { country: { contains: q } },
         ];
       }
       if (status) where.status = status;
@@ -82,9 +82,9 @@ router.get(
       const where: Record<string, unknown> = { branch: branch.name };
       if (q) {
         where.OR = [
-          { name: { contains: q, mode: "insensitive" } },
-          { email: { contains: q, mode: "insensitive" } },
-          { jobRole: { contains: q, mode: "insensitive" } },
+          { name: { contains: q } },
+          { email: { contains: q } },
+          { jobRole: { contains: q } },
         ];
       }
       const [items, total] = await Promise.all([
@@ -189,7 +189,7 @@ router.get("/branches/:id", async (req: AuthRequest, res) => {
       const byName = await prisma.staffMember.findFirst({
         where: {
           branch: branchName,
-          name: { equals: branch.branchManager.trim(), mode: "insensitive" },
+          name: { equals: branch.branchManager.trim() },
         },
         select: {
           id: true,
@@ -400,9 +400,9 @@ router.get(
       const where: any = {};
       if (q) {
         where.OR = [
-          { deviceName: { contains: q, mode: "insensitive" } },
-          { deviceType: { contains: q, mode: "insensitive" } },
-          { ipAddress: { contains: q, mode: "insensitive" } },
+          { deviceName: { contains: q } },
+          { deviceType: { contains: q } },
+          { ipAddress: { contains: q } },
         ];
       }
       if (status) where.status = status;
@@ -512,9 +512,9 @@ router.get(
       const where: any = {};
       if (q) {
         where.OR = [
-          { clientName: { contains: q, mode: "insensitive" } },
-          { email: { contains: q, mode: "insensitive" } },
-          { country: { contains: q, mode: "insensitive" } },
+          { clientName: { contains: q } },
+          { email: { contains: q } },
+          { country: { contains: q } },
         ];
       }
       if (status) where.status = status;

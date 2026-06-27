@@ -201,8 +201,8 @@ router.get("/messages", async (req: AuthRequest, res) => {
       if (folder === "drafts") where.isDraft = true;
       if (search) {
         where.OR = [
-          { subject: { contains: search, mode: "insensitive" } },
-          { bodyText: { contains: search, mode: "insensitive" } },
+          { subject: { contains: search } },
+          { bodyText: { contains: search } },
         ];
       }
 
@@ -234,8 +234,8 @@ router.get("/messages", async (req: AuthRequest, res) => {
     if (search) {
       recipientWhere.message = {
         OR: [
-          { subject: { contains: search, mode: "insensitive" } },
-          { bodyText: { contains: search, mode: "insensitive" } },
+          { subject: { contains: search } },
+          { bodyText: { contains: search } },
         ],
       };
     }

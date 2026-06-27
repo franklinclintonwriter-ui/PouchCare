@@ -4,27 +4,29 @@
 # The prod Caddy container reverse-proxies api-dev.pouchcare.com → host:7001 (see deploy/Caddyfile).
 #
 # 1. Copy apps/api/.env.dev.example → apps/api/.env.dev (JWT_* must differ from production).
-# 2. Optional: set POSTGRES_PASSWORD_DEV in root .env (default: pouchcare_dev).
+# 2. Optional: set MYSQL_PASSWORD_DEV in root .env (default: pouchcare_dev).
 # 3. From repo root: npm run docker:hosting:dev  (Compose project name: pouchcare-dev — isolated from production)
 #
 # Health: http://localhost:7001/health  |  Public: https://api-dev.pouchcare.com/health
 # (Requires prod stack Caddy running on the same host, or use tunnel only to host.docker.internal:7001.)
 
 services:
-  postgres_dev:
-    image: postgres:16-alpine
-    container_name: pouchcare-dev-postgres
+  mysql_dev:
+    image: mysql:8
+    container_name: pouchcare-dev-mysql
     restart: unless-stopped
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
     environment:
-      POSTGRES_USER: pouchcare
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD_DEV:-pouchcare_dev}
-      POSTGRES_DB: pouchcare_dev
+      MYSQL_DATABASE: pouchcare_dev
+      MYSQL_USER: pouchcare
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD_DEV:-pouchcare_dev}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD_DEV:-pouchcare_dev}
     ports:
-      - "${POSTGRES_DEV_PORT:-5433}:5432"
+      - "${MYSQL_DEV_PORT:-3307}:3306"
     volumes:
-      - pouchcare_dev_pg_data:/var/lib/postgresql/data
+      - pouchcare_dev_mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U pouchcare -d pouchcare_dev"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -51,7 +53,7 @@ services:
     container_name: pouchcare-dev-api
     restart: unless-stopped
     depends_on:
-      postgres_dev:
+      mysql_dev:
         condition: service_healthy
       redis_dev:
         condition: service_healthy
@@ -62,7 +64,7 @@ services:
       NODE_ENV: development
       PORT: "7000"
       STORAGE_LOCAL_FALLBACK: "true"
-      DATABASE_URL: postgresql://pouchcare:${POSTGRES_PASSWORD_DEV:-pouchcare_dev}@postgres_dev:5432/pouchcare_dev
+      DATABASE_URL: mysql://pouchcare:${MYSQL_PASSWORD_DEV:-pouchcare_dev}@mysql_dev:3306/pouchcare_dev
       REDIS_URL: redis://redis_dev:6379
       API_URL: ${API_URL_DEV:-https://api-dev.pouchcare.com}
     # Copy apps/api/.env.dev.example → apps/api/.env.dev before first `up` (JWT_*, CORS, etc.).
@@ -79,6 +81,6 @@ services:
       start_period: 90s
 
 volumes:
-  pouchcare_dev_pg_data:
+  pouchcare_dev_mysql_data:
   pouchcare_dev_redis_data:
   pouchcare_dev_api_uploads:

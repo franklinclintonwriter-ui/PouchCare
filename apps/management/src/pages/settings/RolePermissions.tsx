@@ -6,27 +6,10 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Toggle } from '@/components/ui/Toggle';
 import { useRolePermissionsMatrix, useUpdateRolePermissions } from '@/api/role-permissions';
-import { PERMISSION_KEYS, type PermissionKey } from '@/constants/permissionKeys';
+import { PERMISSION_KEYS, PERMISSION_LABELS, type PermissionKey } from '@/constants/permissionKeys';
 import { ROLE_LABELS } from '@/utils/permissions';
 import type { SystemRole } from '@/types/enums';
 import { toast } from 'sonner';
-
-const KEY_LABELS: Record<PermissionKey, string> = {
-  'staff.branches': 'Branches',
-  'staff.manage_profiles': 'Staff profiles (view/edit other users)',
-  'payroll.access': 'Payroll',
-  'finance.access': 'Finance (invoices, expenses, revenue, forecast)',
-  'finance.exchange_rates': 'Exchange rates',
-  'crm.client_accounts': 'CRM client accounts',
-  'hr.recruitment': 'HR (positions & applications)',
-  'hr.performance': 'Performance reviews',
-  'assets.devices': 'Device inventory',
-  'monitor.view': 'CCTV / Monitor',
-  'broadcast.access': 'Broadcasts',
-  'analytics.access': 'Analytics',
-  'admin_portal.access': 'Member portal admin',
-  'settings.role_permissions': 'Edit role permissions (this screen)',
-};
 
 const ROLE_ORDER: SystemRole[] = [
   'CEO',
@@ -127,7 +110,7 @@ export default function RolePermissions() {
                 className="rounded-xl border border-gray-200/80 bg-white p-3 dark:border-gray-700/60 dark:bg-gray-800/80"
               >
                 <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                  {KEY_LABELS[key]}
+                  {PERMISSION_LABELS[key]}
                 </p>
                 <div className="mt-3 grid grid-cols-1 gap-2">
                   {ROLE_ORDER.map((role) => (
@@ -170,7 +153,7 @@ export default function RolePermissions() {
               <tbody>
                 {PERMISSION_KEYS.map((key) => (
                   <tr key={key} className="border-b border-gray-100 dark:border-gray-800">
-                    <td className="py-2 pr-4 text-gray-800 dark:text-gray-200">{KEY_LABELS[key]}</td>
+                    <td className="py-2 pr-4 text-gray-800 dark:text-gray-200">{PERMISSION_LABELS[key]}</td>
                     {ROLE_ORDER.map((role) => (
                       <td key={`${role}-${key}`} className="px-1 py-1 text-center">
                         <div className="flex justify-center">

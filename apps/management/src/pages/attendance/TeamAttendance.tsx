@@ -98,8 +98,6 @@ export default function TeamAttendance() {
     [selectedDate],
   );
 
-  const goToToday = useCallback(() => setSelectedDate(today), [today]);
-
   const totalForDay = teamPages?.pages[0]?.meta.total ?? records.length;
 
   const stats = useMemo(() => {

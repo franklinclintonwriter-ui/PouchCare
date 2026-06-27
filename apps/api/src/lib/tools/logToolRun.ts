@@ -1,6 +1,5 @@
 import prisma from '@/lib/prisma'
 import type { ToolRunType } from '@prisma/client'
-import { mirrorToSupabase } from '@/lib/supabase'
 
 export async function logToolRun(
   staffId: string,
@@ -17,7 +16,6 @@ export async function logToolRun(
         meta: meta ? (meta as object) : undefined,
       },
     })
-    mirrorToSupabase('tool_analytics', { staff_id: staffId, tool_type: toolType, query_label: queryLabel.slice(0, 2000) })
   } catch (e) {
     console.warn('[tools] logToolRun failed', e)
   }

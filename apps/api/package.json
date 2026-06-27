@@ -32,7 +32,6 @@
     "@google/generative-ai": "^0.24.1",
     "@octokit/rest": "^22.0.1",
     "@prisma/client": "^5.10.0",
-    "@supabase/supabase-js": "^2.103.3",
     "@types/speakeasy": "^2.0.10",
     "archiver": "^7.0.1",
     "bcryptjs": "^2.4.3",

@@ -22,6 +22,7 @@ import {
 } from '@/lib/response'
 import { getPaginationParams, buildMeta } from '@/lib/pagination'
 import { audit } from '@/lib/auditLog'
+import { mapSignedAvatar } from '@/lib/storage'
 import { OrderStatus, WalletTxType } from '@prisma/client'
 
 type Kind = 'portal' | 'sales' | 'apk'
@@ -94,6 +95,11 @@ function fromPortalOrder(o: any): any {
     orderedAt: o.orderDate?.toISOString?.() ?? new Date().toISOString(),
     deliveredAt: o.deliveryDate?.toISOString?.() ?? undefined,
   }
+}
+
+async function signPortalOrder(order: ReturnType<typeof fromPortalOrder>) {
+  if (!order.client?.avatarUrl) return order
+  return { ...order, client: await mapSignedAvatar(order.client) }
 }
 
 function fromSalesOrder(o: any): any {
@@ -177,14 +183,14 @@ router.get('/', requirePermission('admin.orders.read'), async (req, res) => {
 
     const portalWhere: any = {}
     if (q) portalWhere.OR = [
-      { memberEmail: { contains: q, mode: 'insensitive' } },
-      { service: { contains: q, mode: 'insensitive' } },
+      { memberEmail: { contains: q } },
+      { service: { contains: q } },
     ]
 
     const salesWhere: any = {}
     if (q) salesWhere.OR = [
-      { clientName: { contains: q, mode: 'insensitive' } },
-      { serviceName: { contains: q, mode: 'insensitive' } },
+      { clientName: { contains: q } },
+      { serviceName: { contains: q } },
     ].filter(Boolean)
 
     const apkWhere: any = {}
@@ -216,7 +222,7 @@ router.get('/', requirePermission('admin.orders.read'), async (req, res) => {
     ])
 
     let merged: any[] = [
-      ...portal.map(fromPortalOrder),
+      ...(await Promise.all(portal.map((o) => signPortalOrder(fromPortalOrder(o))))),
       ...sales.map(fromSalesOrder),
       ...apk.map(fromApkJob),
     ]
@@ -243,7 +249,7 @@ router.get('/:kind/:id', requirePermission('admin.orders.read'), async (req, res
         include: { member: { select: { fullName: true, avatarUrl: true } } } as any,
       })
       if (!o) return notFound(res, 'Order')
-      return ok(res, fromPortalOrder(o))
+      return ok(res, await signPortalOrder(fromPortalOrder(o)))
     }
     if (kind === 'sales') {
       const o = await prisma.salesOrder.findUnique({ where: { id } })

@@ -144,14 +144,14 @@ export default function OrdersList() {
           />
           <Select
             value={status}
-            onChange={(v) => setParam('status', v || undefined)}
+            onChange={(e) => setParam('status', e.target.value || undefined)}
             options={STATUS_OPTIONS}
             placeholder="Status"
             className="w-[160px]"
           />
           <Select
             value={kind}
-            onChange={(v) => setParam('kind', v || undefined)}
+            onChange={(e) => setParam('kind', e.target.value || undefined)}
             options={KIND_OPTIONS}
             placeholder="Kind"
             className="w-[140px]"

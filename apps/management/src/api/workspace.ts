@@ -225,49 +225,6 @@ export function useDisconnectIntegration() {
   })
 }
 
-// Supabase
-export function useSupabaseStatus() {
-  return useQuery<{ configured: boolean; url: string | null; hasStorage: boolean; hasRealtime: boolean }>({
-    queryKey: ['supabase-status'],
-    queryFn: async () => { const { data } = await api.get('/ai/supabase/status'); return data as any },
-    staleTime: 60_000,
-  })
-}
-
-export function useSupabasePresence(wsId: string) {
-  return useMutation({
-    mutationFn: async () => {
-      const { data } = await api.post(`/ai/supabase/presence/${wsId}`)
-      return data as { supabaseUrl: string; supabaseAnonKey: string; channel: string; user: { id: string; name: string; avatarUrl: string | null } }
-    },
-  })
-}
-
-export function useSupabaseDbQuery() {
-  return useMutation({
-    mutationFn: async (body: { query: string; autoExecute?: boolean }) => {
-      const { data } = await api.post('/ai/supabase/db-query', body)
-      return data as { sql: string | null; explanation: string; executed: boolean; rows?: unknown[]; error?: string }
-    },
-  })
-}
-
-export function useSupabaseAiAnalytics() {
-  return useQuery<{ source: string; data: { provider: string; model: string; useCase: string; inputTokens: number; outputTokens: number; count: number }[] }>({
-    queryKey: ['supabase-ai-analytics'],
-    queryFn: async () => { const { data } = await api.get('/ai/supabase/analytics/ai-usage'); return data as any },
-    staleTime: 30_000,
-  })
-}
-
-export function useSupabaseToolAnalytics() {
-  return useQuery<{ source: string; data: { toolType: string; count: number }[] }>({
-    queryKey: ['supabase-tool-analytics'],
-    queryFn: async () => { const { data } = await api.get('/ai/supabase/analytics/tool-usage'); return data as any },
-    staleTime: 30_000,
-  })
-}
-
 // SEO Research
 export function useWorkspaceResearch(wsId: string) {
   return useMutation({

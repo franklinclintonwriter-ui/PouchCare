@@ -4,7 +4,7 @@ import multer from "multer";
 const getSharp = async () => (await import("sharp")).default;
 import { Router } from "express";
 import prisma from "@/lib/prisma";
-import { deleteFile, uploadFile } from "@/lib/storage";
+import { deleteFile, uploadFile, mapSignedAvatar } from "@/lib/storage";
 import { authenticate } from "@/middleware/auth";
 import { requirePermission } from "@/middleware/rbac";
 import { ok, serverError, notFound, badRequest } from "@/lib/response";
@@ -85,7 +85,7 @@ async function replacePortalAvatar(
     await deleteFile(prev.avatarUrl).catch(() => {});
   }
 
-  return updated;
+  return mapSignedAvatar(updated);
 }
 
 async function clearPortalAvatar(memberId: string) {
@@ -109,9 +109,9 @@ router.get("/members", async (req, res) => {
     const where: any = {};
     if (q) {
       where.OR = [
-        { fullName: { contains: q, mode: "insensitive" } },
-        { email: { contains: q, mode: "insensitive" } },
-        { referralCode: { contains: q, mode: "insensitive" } },
+        { fullName: { contains: q } },
+        { email: { contains: q } },
+        { referralCode: { contains: q } },
       ];
     }
     if (status) where.status = status as any;
@@ -126,14 +126,16 @@ router.get("/members", async (req, res) => {
     ]);
     return ok(
       res,
-      items.map(
-        ({
-          passwordHash: _,
-          emailVerifyToken: __,
-          resetPasswordToken: ___,
-          refreshToken: ____,
-          ...m
-        }) => m,
+      await Promise.all(
+        items.map(
+          async ({
+            passwordHash: _,
+            emailVerifyToken: __,
+            resetPasswordToken: ___,
+            refreshToken: ____,
+            ...m
+          }) => mapSignedAvatar(m),
+        ),
       ),
       buildMeta(total, page, limit),
     );
@@ -161,7 +163,7 @@ router.get("/members/:id", async (req, res) => {
       refreshToken,
       ...safe
     } = m;
-    return ok(res, safe);
+    return ok(res, await mapSignedAvatar(safe));
   } catch {
     return serverError(res);
   }
@@ -227,8 +229,8 @@ router.get("/orders", async (req, res) => {
     if (status) where.status = status as any;
     if (q) {
       where.OR = [
-        { service: { contains: q, mode: "insensitive" } },
-        { memberEmail: { contains: q, mode: "insensitive" } },
+        { service: { contains: q } },
+        { memberEmail: { contains: q } },
       ];
       if (!Number.isNaN(Number(q))) {
         where.OR.push({ orderId: Number(q) });

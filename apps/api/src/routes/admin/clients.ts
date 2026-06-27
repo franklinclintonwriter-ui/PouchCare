@@ -23,6 +23,7 @@ import {
 } from '@/lib/response'
 import { getPaginationParams, buildMeta } from '@/lib/pagination'
 import { audit } from '@/lib/auditLog'
+import { mapSignedAvatar } from '@/lib/storage'
 import { WalletTxType, PortalMemberStatus } from '@prisma/client'
 
 const router = Router()
@@ -130,9 +131,9 @@ router.get('/', requirePermission('admin.clients.read'), async (req, res) => {
     // Member-side where
     const memberWhere: any = {}
     if (q) memberWhere.OR = [
-      { fullName: { contains: q, mode: 'insensitive' } },
-      { email: { contains: q, mode: 'insensitive' } },
-      { referralCode: { contains: q, mode: 'insensitive' } },
+      { fullName: { contains: q } },
+      { email: { contains: q } },
+      { referralCode: { contains: q } },
     ]
     if (country) memberWhere.country = country
     if (status) {
@@ -148,8 +149,8 @@ router.get('/', requirePermission('admin.clients.read'), async (req, res) => {
     // Account-side where
     const accountWhere: any = {}
     if (q) accountWhere.OR = [
-      { clientName: { contains: q, mode: 'insensitive' } },
-      { email: { contains: q, mode: 'insensitive' } },
+      { clientName: { contains: q } },
+      { email: { contains: q } },
     ]
     if (country) accountWhere.country = country
     if (manager) accountWhere.assignedManager = manager
@@ -193,7 +194,9 @@ router.get('/', requirePermission('admin.clients.read'), async (req, res) => {
 
     merged.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
     const total = merged.length
-    const items = merged.slice(skip, skip + limit)
+    const items = await Promise.all(
+      merged.slice(skip, skip + limit).map((c) => mapSignedAvatar(c)),
+    )
 
     return ok(res, items, buildMeta(total, page, limit))
   } catch (e) {
@@ -224,16 +227,16 @@ router.get('/:id', requirePermission('admin.clients.read'), async (req, res) => 
     const email = (member?.email ?? account?.email ?? '').toLowerCase()
     if (email && !pairedMember) {
       pairedMember = await prisma.portalMember.findFirst({
-        where: { email: { equals: email, mode: 'insensitive' } },
+        where: { email: { equals: email } },
       })
     }
     if (email && !pairedAccount) {
       pairedAccount = await prisma.clientAccount.findFirst({
-        where: { email: { equals: email, mode: 'insensitive' } },
+        where: { email: { equals: email } },
       })
     }
 
-    const unified = mergeUnified(pairedMember, pairedAccount)
+    const unified = await mapSignedAvatar(mergeUnified(pairedMember, pairedAccount))
 
     // Load related collections only for member-backed rows (FK constraints)
     const [orders, walletTx, tickets] = await Promise.all([
@@ -334,7 +337,7 @@ router.patch(
         before,
         after,
       })
-      return ok(res, after)
+      return ok(res, await mapSignedAvatar(after))
     } catch (e) {
       return serverError(res, e)
     }
@@ -443,13 +446,16 @@ router.post(
       const isSrcAccount = sourceId.startsWith('acct:')
       const isTgtAccount = targetId.startsWith('acct:')
 
-      // Idempotency: fingerprint by source+target in metadata
+      // Idempotency: a prior merge is uniquely identified by (action, source, target),
+      // all indexed columns now (resourceId=source, clientId=target). Fingerprint is
+      // also kept in metadata below for human-readable audit context.
       const fingerprint = `merge:${sourceId}->${targetId}`
       const dup = await prisma.systemAuditLog
         .findFirst({
           where: {
             action: 'client.merge',
-            details: { contains: fingerprint },
+            resourceId: sourceId,
+            clientId: targetId,
           },
         })
         .catch(() => null)
@@ -466,6 +472,8 @@ router.post(
       const tgt = tgtMember ?? tgtAcct
       if (!src || !tgt) return notFound(res, 'Client (one side missing)')
 
+      const revertibleUntil = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+
       // CRM-only source merging into another record: mark Merged
       if (isSrcAccount && srcAcct) {
         await prisma.clientAccount.update({
@@ -480,7 +488,6 @@ router.post(
         // merge is complete. Audit captures the intent for later revert.
       }
 
-      const revertibleUntil = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
       await audit(req, {
         action: 'client.merge',
         resourceKind: isSrcAccount ? 'ClientAccount' : 'PortalMember',
@@ -512,8 +519,10 @@ router.get(
     try {
       const id = req.params.id
       const { page, limit, skip } = getPaginationParams(req.query as any)
+      // Audit rows touching this client: either the client is the resource itself,
+      // or it's the linked client (clientId) of another resource's event. Both indexed.
       const where: any = {
-        OR: [{ details: { contains: id } }],
+        OR: [{ clientId: id }, { resourceId: id }],
       }
       const [items, total] = await Promise.all([
         prisma.systemAuditLog.findMany({

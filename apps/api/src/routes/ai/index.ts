@@ -11,7 +11,6 @@ import { aiStatus, resolveProvider, resolveModel } from '@/lib/ai/config'
 import { getProvider, type AiMessage as ProviderMsg } from '@/lib/ai/providers'
 import { AiUseCase } from '@prisma/client'
 import * as prompts from '@/lib/ai/prompts'
-import { mirrorToSupabase } from '@/lib/supabase'
 
 const router = Router()
 router.use(authenticate, requireStaff)
@@ -64,7 +63,6 @@ async function logUsage(
   useCase: AiUseCase,
 ) {
   await prisma.aiUsage.create({ data: { staffId, provider, model, inputTk, outputTk, useCase } })
-  mirrorToSupabase('ai_analytics', { staff_id: staffId, provider, model, input_tokens: inputTk, output_tokens: outputTk, use_case: useCase })
 }
 
 function sseHeaders(res: import('express').Response) {

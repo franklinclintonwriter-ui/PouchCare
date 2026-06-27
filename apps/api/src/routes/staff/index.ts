@@ -7,7 +7,7 @@ import { z } from 'zod'
 import bcrypt from 'bcryptjs'
 import { SystemRole } from '@prisma/client'
 import prisma from '@/lib/prisma'
-import { uploadFile, deleteFile } from '@/lib/storage'
+import { uploadFile, deleteFile, mapSignedAvatar } from '@/lib/storage'
 import { authenticate, requireStaff, requireRoles, HR_ROLES, CEO_ROLES, type AuthRequest } from '@/middleware/auth'
 import { validate } from '@/middleware/validate'
 import { getPagination, buildMeta } from '@/utils/pagination'
@@ -16,6 +16,8 @@ import { env } from '@/config/env'
 import { getEffectivePermissions } from '@/lib/managementPermissions'
 import { canAccessStaffProfileAdmin, canAssignSystemRole } from '@/lib/staffProfileAdmin'
 import { staffListWhereWithBranchScope } from '@/lib/staffDirectoryScope'
+import { canManagerAccessStaffMember } from '@/lib/teamBranchScope'
+import { resolveBranchId, isNonBranchLabel } from '@/lib/branchResolve'
 import { staffAdminUpdateSchema } from '@/routes/staff/staffAdminUpdateSchema'
 import documentsRouter from '@/routes/staff/documents'
 
@@ -81,7 +83,7 @@ async function replaceStaffAvatar(staffId: string, file: Express.Multer.File) {
     await deleteFile(prev.avatarUrl).catch(() => {})
   }
 
-  return updated
+  return mapSignedAvatar(updated)
 }
 
 async function clearStaffAvatar(staffId: string) {
@@ -166,8 +168,8 @@ function buildStaffListWhere(query: Record<string, string>): Record<string, unkn
   const { q, status, role, branch } = query
   if (q) {
     where.OR = [
-      { name: { contains: q, mode: 'insensitive' } },
-      { email: { contains: q, mode: 'insensitive' } },
+      { name: { contains: q } },
+      { email: { contains: q } },
     ]
   }
   if (status) where.status = status
@@ -259,7 +261,7 @@ router.get('/members', requireStaff, async (req: AuthRequest, res) => {
       }),
       prisma.staffMember.count({ where }),
     ])
-    return ok(res, members, buildMeta(total, page, limit))
+    return ok(res, await Promise.all(members.map((m) => mapSignedAvatar(m))), buildMeta(total, page, limit))
   } catch (err) {
     serverError(res, err)
   }
@@ -274,19 +276,8 @@ router.get('/members/:id', requireStaff, async (req: AuthRequest, res) => {
     const isSelf = req.user!.id === req.params.id
 
     if (req.user!.role === 'BRANCH_MANAGER' && !admin && !isSelf) {
-      const [me, theirBranch] = await Promise.all([
-        prisma.staffMember.findUnique({
-          where: { id: req.user!.id },
-          select: { branch: true },
-        }),
-        prisma.staffMember.findUnique({
-          where: { id: req.params.id },
-          select: { branch: true },
-        }),
-      ])
-      const mine = me?.branch?.trim()
-      const theirs = theirBranch?.branch?.trim()
-      if (!mine || !theirs || mine !== theirs) return notFound(res)
+      const allowed = await canManagerAccessStaffMember(req.user!.id, req.user!.role, req.params.id)
+      if (!allowed) return notFound(res)
     }
 
     const select =
@@ -301,16 +292,16 @@ router.get('/members/:id', requireStaff, async (req: AuthRequest, res) => {
     if (admin) {
       const rolePermissions = await getEffectivePermissions(member.systemRole)
       return ok(res, {
-        ...member,
+        ...(await mapSignedAvatar(member)),
         rolePermissions,
         profileAdmin: true,
         profileScope: 'full' as const,
       })
     }
     if (isSelf) {
-      return ok(res, { ...member, profileAdmin: false, profileScope: 'full' as const })
+      return ok(res, { ...(await mapSignedAvatar(member)), profileAdmin: false, profileScope: 'full' as const })
     }
-    return ok(res, { ...member, profileAdmin: false, profileScope: 'limited' as const })
+    return ok(res, { ...(await mapSignedAvatar(member)), profileAdmin: false, profileScope: 'limited' as const })
   } catch (err) {
     serverError(res, err)
   }
@@ -319,13 +310,22 @@ router.get('/members/:id', requireStaff, async (req: AuthRequest, res) => {
 // POST /v1/staff/members
 router.post('/members', requireRoles(...HR_ROLES as any), validate(createSchema), async (req, res) => {
   try {
-    const { password, ...data } = req.body
-    const exists = await prisma.staffMember.findUnique({ where: { email: data.email.toLowerCase() } })
+    const { password, branch, ...rest } = req.body
+    const exists = await prisma.staffMember.findUnique({ where: { email: rest.email.toLowerCase() } })
     if (exists) return badRequest(res, 'Email already exists')
 
     const passwordHash = await bcrypt.hash(password, env.BCRYPT_ROUNDS)
+    const trimmed = branch?.trim() ?? ''
+    const branchId = await resolveBranchId(branch)
+    if (trimmed && !branchId && !isNonBranchLabel(trimmed)) return badRequest(res, 'Unknown branch')
     const member = await prisma.staffMember.create({
-      data: { ...data, email: data.email.toLowerCase(), passwordHash },
+      data: {
+        ...rest,
+        email: rest.email.toLowerCase(),
+        passwordHash,
+        ...(trimmed ? { branch: trimmed } : {}),
+        ...(branchId ? { branchId } : {}),
+      },
       select: { id: true, memberId: true, name: true, email: true, systemRole: true },
     })
     return created(res, member)
@@ -356,6 +356,16 @@ router.put('/members/:id', requireStaff, async (req, res, next) => {
 
     const prismaData: Record<string, unknown> = { ...data }
     if (data.email !== undefined) prismaData.email = data.email.toLowerCase()
+    // Keep the branchId FK in sync whenever the advisory branch string changes.
+    if (data.branch !== undefined) {
+      const trimmed = data.branch.trim()
+      const branchId = await resolveBranchId(data.branch)
+      // Reject a genuine typo, but allow the "Company — Global" sentinel / blanks
+      // (company-wide staff → branchId null, unscoped). branchId stays authoritative.
+      if (trimmed && !branchId && !isNonBranchLabel(trimmed)) return badRequest(res, 'Unknown branch')
+      prismaData.branchId = branchId
+      prismaData.branch = trimmed || null
+    }
 
     const member = await prisma.staffMember.update({
       where: { id: req.params.id },
@@ -377,31 +387,7 @@ router.put('/members/:id', requireStaff, async (req, res, next) => {
     })
     const rolePermissions = await getEffectivePermissions(member.systemRole)
 
-    // Mirror to Supabase
-    try {
-      const { mirrorToSupabase } = require('@/lib/supabase')
-      mirrorToSupabase('staff_profiles', {
-        staff_id: member.id,
-        member_id: member.memberId,
-        name: member.name,
-        email: member.email,
-        system_role: member.systemRole,
-        branch: member.branch,
-        phone: member.phone,
-        department: member.jobRole,
-        status: member.status,
-        avatar_url: member.avatarUrl,
-        join_date: member.joinDate,
-        primary_skill: member.primarySkill,
-        certifications: member.certifications,
-        performance_score: member.performanceScore,
-        tasks_assigned: member.tasksAssigned,
-        tasks_completed: member.tasksCompleted,
-        synced_at: new Date().toISOString(),
-      })
-    } catch {}
-
-    return ok(res, { ...member, rolePermissions, profileAdmin: true })
+    return ok(res, { ...(await mapSignedAvatar(member)), rolePermissions, profileAdmin: true })
   } catch (err) { serverError(res, err) }
 })
 
@@ -479,7 +465,7 @@ router.get('/me', requireStaff, async (req, res) => {
     const { totpSecret, ...member } = row
     const permissions = await getEffectivePermissions(member.systemRole)
     const twoFactorPending = Boolean(totpSecret) && !member.twoFactorEnabled
-    return ok(res, { ...member, twoFactorPending, permissions })
+    return ok(res, { ...(await mapSignedAvatar(member)), twoFactorPending, permissions })
   } catch (err) { serverError(res, err) }
 })
 
@@ -508,7 +494,7 @@ router.put('/me', requireStaff, async (req, res) => {
       data: data as Record<string, unknown>,
       select: { id: true, name: true, phone: true, whatsapp: true, preferredCurrency: true, avatarUrl: true },
     })
-    return ok(res, member)
+    return ok(res, await mapSignedAvatar(member))
   } catch (err) { serverError(res, err) }
 })
 

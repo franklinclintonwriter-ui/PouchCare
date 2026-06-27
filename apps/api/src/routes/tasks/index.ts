@@ -10,6 +10,7 @@ import { getPagination, buildMeta } from '@/lib/pagination'
 import { uploadFile } from '@/lib/storage'
 import { TASK_CATEGORIES, isValidTaskCategory } from './constants'
 import { canEditTaskAssignment } from './access'
+import { resolveBranchId, isNonBranchLabel } from '@/lib/branchResolve'
 
 const router = Router()
 router.use(authenticate)
@@ -66,6 +67,47 @@ function parseAttachments(raw: unknown): TaskAttachmentJson[] {
   )
 }
 
+async function branchFromAssignees(
+  assignedMemberId?: string | null,
+  assignedManagerId?: string | null,
+): Promise<{ branchId: string | null; assignedBranch: string | undefined }> {
+  let branchId: string | null = null
+  let assignedBranch: string | undefined
+  if (assignedMemberId) {
+    const assignee = await prisma.staffMember.findUnique({
+      where: { id: assignedMemberId },
+      select: { branchId: true, branch: true },
+    })
+    branchId = assignee?.branchId ?? null
+    assignedBranch = assignee?.branch?.trim() || undefined
+  }
+  if (!branchId && assignedManagerId) {
+    const manager = await prisma.staffMember.findUnique({
+      where: { id: assignedManagerId },
+      select: { branchId: true, branch: true },
+    })
+    branchId = manager?.branchId ?? null
+    if (!assignedBranch) assignedBranch = manager?.branch?.trim() || undefined
+  }
+  return { branchId, assignedBranch }
+}
+
+async function syncBranchOnAssigneeChange(
+  task: { assignedMemberId: string | null; assignedManagerId: string | null },
+  body: Partial<z.infer<typeof taskSchema>>,
+  data: Record<string, unknown>,
+) {
+  if (body.assignedBranch !== undefined) return
+  const memberChanged = body.assignedMemberId !== undefined
+  const managerChanged = body.assignedManagerId !== undefined
+  if (!memberChanged && !managerChanged) return
+  const nextMemberId = memberChanged ? body.assignedMemberId || null : task.assignedMemberId
+  const nextManagerId = managerChanged ? body.assignedManagerId || null : task.assignedManagerId
+  const { branchId, assignedBranch } = await branchFromAssignees(nextMemberId, nextManagerId)
+  data.branchId = branchId
+  data.assignedBranch = assignedBranch ?? null
+}
+
 // GET /tasks/meta — categories + branches (for create form)
 router.get('/meta', isManager, async (_req, res) => {
   try {
@@ -91,7 +133,7 @@ router.get('/', async (req: AuthRequest, res) => {
     >
     const where: Record<string, unknown> = {}
 
-    if (q) where.title = { contains: q, mode: 'insensitive' }
+    if (q) where.title = { contains: q }
     if (status) where.status = status
     if (category) where.category = category
     if (approvalStatus) {
@@ -188,13 +230,27 @@ router.post('/', isManager, validate(taskSchema), async (req: AuthRequest, res) 
           ? 'Other'
           : undefined
 
+    let assignedBranch: string | undefined
+    let branchId: string | null = null
+    if (body.assignedBranch !== undefined) {
+      const trimmed = body.assignedBranch.trim()
+      branchId = await resolveBranchId(body.assignedBranch)
+      if (trimmed && !branchId && !isNonBranchLabel(trimmed)) return badRequest(res, 'Unknown branch')
+      assignedBranch = trimmed || undefined
+    } else {
+      const derived = await branchFromAssignees(body.assignedMemberId, body.assignedManagerId)
+      branchId = derived.branchId
+      assignedBranch = derived.assignedBranch
+    }
+
     const data = {
       title: body.title,
       priority: body.priority,
       category: cat ?? undefined,
       assignedMemberId: body.assignedMemberId || undefined,
       assignedManagerId: body.assignedManagerId || undefined,
-      assignedBranch: body.assignedBranch || undefined,
+      assignedBranch,
+      branchId: branchId || undefined,
       relatedProject,
       relatedProjectId: body.relatedProjectId || undefined,
       relatedClient: body.relatedClient || undefined,
@@ -271,6 +327,7 @@ router.put('/:id', async (req: AuthRequest, res) => {
         data.assignedMemberId = body.assignedMemberId || null
       }
       if (body.assignedManagerId !== undefined) data.assignedManagerId = body.assignedManagerId || null
+      await syncBranchOnAssigneeChange(task, body, data)
       if (body.notes !== undefined) data.notes = body.notes
       if (body.deadline !== undefined) data.deadline = body.deadline ? new Date(body.deadline) : null
       if (body.priority !== undefined) data.priority = body.priority
@@ -292,12 +349,6 @@ router.put('/:id', async (req: AuthRequest, res) => {
       }
     }
 
-    const nextMemberId =
-      body.assignedMemberId !== undefined ? body.assignedMemberId || null : undefined
-    if (nextMemberId !== undefined) {
-      await syncAssigneeTaskCount(task.assignedMemberId, nextMemberId)
-    }
-
     const cat =
       body.category !== undefined
         ? body.category && isValidTaskCategory(body.category)
@@ -313,7 +364,6 @@ router.put('/:id', async (req: AuthRequest, res) => {
       'priority',
       'assignedMemberId',
       'assignedManagerId',
-      'assignedBranch',
       'relatedClient',
       'estimatedHours',
       'isRecurring',
@@ -330,6 +380,22 @@ router.put('/:id', async (req: AuthRequest, res) => {
     }
     if (body.startDate !== undefined) data.startDate = body.startDate ? new Date(body.startDate) : null
     if (body.deadline !== undefined) data.deadline = body.deadline ? new Date(body.deadline) : null
+    if (body.assignedBranch !== undefined) {
+      const trimmed = body.assignedBranch?.trim() ?? ''
+      const branchId = await resolveBranchId(body.assignedBranch)
+      // Allow the "Company — Global" sentinel / blanks (→ branchId null); reject only real typos.
+      if (trimmed && !branchId && !isNonBranchLabel(trimmed)) return badRequest(res, 'Unknown branch')
+      data.branchId = branchId
+      data.assignedBranch = trimmed || null
+    }
+
+    await syncBranchOnAssigneeChange(task, body, data)
+
+    const nextMemberId =
+      body.assignedMemberId !== undefined ? body.assignedMemberId || null : undefined
+    if (nextMemberId !== undefined) {
+      await syncAssigneeTaskCount(task.assignedMemberId, nextMemberId)
+    }
 
     const updated = await prisma.task.update({
       where: { id: req.params.id },

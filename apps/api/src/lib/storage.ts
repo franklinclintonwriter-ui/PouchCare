@@ -7,7 +7,7 @@ import fs from 'fs/promises'
 
 const s3AccessKey = env.S3_ACCESS_KEY || env.S3_ACCESS_KEY_ID
 const s3SecretKey = env.S3_SECRET_KEY || env.S3_SECRET_ACCESS_KEY
-const s3Bucket = env.S3_BUCKET
+export const s3Bucket = env.S3_BUCKET
 const s3Region = env.S3_REGION
 const s3Endpoint = env.S3_ENDPOINT.trim()
 
@@ -27,7 +27,7 @@ export const isLocalUploadFallbackEnabled = allowLocalDisk
 
 const LOCAL_UPLOADS_DIR = path.join(process.cwd(), 'uploads')
 
-const s3Client = isCloudflareR2Configured
+export const s3Client = isCloudflareR2Configured
   ? new S3Client({
       region: s3Region,
       endpoint: s3Endpoint,
@@ -82,22 +82,7 @@ export async function uploadFile(
   const fileName = `${randomUUID()}${ext}`
   const key = `${folder}/${fileName}`
 
-  // Supabase Storage (preferred when configured)
-  try {
-    const { getSupabase, isSupabaseConfigured } = require('@/lib/supabase')
-    if (isSupabaseConfigured()) {
-      const supabase = getSupabase()
-      if (supabase) {
-        const bucket = 'staff-files'
-        const { error } = await supabase.storage.from(bucket).upload(key, buffer, { contentType: mimeType, upsert: true })
-        if (!error) {
-          const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(key)
-          return { fileUrl: urlData.publicUrl, fileName, fileSize: buffer.length, mimeType }
-        }
-      }
-    }
-  } catch { /* fall through to R2 or local */ }
-
+  // Cloudflare R2 (sole object-storage backend; see assertProductionStorageOrExit).
   if (isCloudflareR2Configured && s3Client) {
     await s3Client.send(
       new PutObjectCommand({
@@ -108,7 +93,8 @@ export async function uploadFile(
       })
     )
 
-    const fileUrl = `${s3Endpoint.replace(/\/$/, '')}/${s3Bucket}/${key}`
+    // Private bucket — persist the object key; serve via getSignedDownloadUrl.
+    const fileUrl = key
 
     return {
       fileUrl,
@@ -141,21 +127,19 @@ export async function uploadFile(
 }
 
 export async function deleteFile(fileUrl: string): Promise<void> {
-  if (fileUrl.includes('supabase.co')) {
-    try {
-      const { getSupabase } = require('@/lib/supabase')
-      const supabase = getSupabase()
-      if (supabase) {
-        const match = fileUrl.match(/\/storage\/v1\/object\/public\/([^/]+)\/(.+)/)
-        if (match) {
-          await supabase.storage.from(match[1]).remove([match[2]])
-        }
-      }
-    } catch {}
+  if (fileUrl.includes('/uploads/')) {
+    const relativePath = fileUrl.split('/uploads/')[1]
+    if (relativePath) {
+      const localPath = path.join(LOCAL_UPLOADS_DIR, relativePath)
+      try {
+        await fs.unlink(localPath)
+      } catch {}
+    }
     return
   }
-  if (isCloudflareR2Configured && s3Client && fileUrl.includes(s3Bucket)) {
-    const key = extractS3Key(fileUrl)
+
+  if (isCloudflareR2Configured && s3Client) {
+    const key = resolveR2ObjectKey(fileUrl)
     if (key) {
       await s3Client.send(
         new DeleteObjectCommand({
@@ -164,23 +148,15 @@ export async function deleteFile(fileUrl: string): Promise<void> {
         })
       )
     }
-  } else if (fileUrl.includes('/uploads/')) {
-    const relativePath = fileUrl.split('/uploads/')[1]
-    if (relativePath) {
-      const localPath = path.join(LOCAL_UPLOADS_DIR, relativePath)
-      try {
-        await fs.unlink(localPath)
-      } catch {}
-    }
   }
 }
 
 export async function getSignedDownloadUrl(fileUrl: string, expiresIn = 3600): Promise<string> {
-  if (!isCloudflareR2Configured || !s3Client || !fileUrl.includes(s3Bucket)) {
+  if (!isCloudflareR2Configured || !s3Client) {
     return fileUrl
   }
 
-  const key = extractS3Key(fileUrl)
+  const key = resolveR2ObjectKey(fileUrl)
   if (!key) return fileUrl
 
   return getSignedUrl(
@@ -193,11 +169,39 @@ export async function getSignedDownloadUrl(fileUrl: string, expiresIn = 3600): P
   )
 }
 
+/** Resolve a stored file reference (object key or legacy R2 URL) to an R2 object key. */
+function resolveR2ObjectKey(fileUrl: string): string | null {
+  if (!fileUrl) return null
+  if (fileUrl.includes('/uploads/')) return null
+  if (fileUrl.startsWith('http://') || fileUrl.startsWith('https://')) {
+    if (!isR2FileUrl(fileUrl)) return null
+    return extractS3Key(fileUrl)
+  }
+  return fileUrl
+}
+
+function isR2FileUrl(fileUrl: string): boolean {
+  if (!fileUrl.startsWith('http://') && !fileUrl.startsWith('https://')) return true
+  if (fileUrl.includes('/uploads/')) return false
+  if (s3Bucket && fileUrl.includes(s3Bucket)) return true
+  const endpoint = s3Endpoint.replace(/\/$/, '')
+  return !!endpoint && fileUrl.startsWith(endpoint)
+}
+
+/** Sign a stored avatar reference for client-facing responses. */
+export async function mapSignedAvatar<T extends { avatarUrl?: string | null }>(row: T): Promise<T> {
+  if (!row.avatarUrl) return row
+  return { ...row, avatarUrl: await getSignedDownloadUrl(row.avatarUrl) }
+}
+
 function extractS3Key(fileUrl: string): string | null {
   try {
     const url = new URL(fileUrl)
     const pathParts = url.pathname.split('/').filter(Boolean)
-    return pathParts.slice(1).join('/')
+    if (pathParts[0] === s3Bucket) {
+      return pathParts.slice(1).join('/')
+    }
+    return pathParts.join('/')
   } catch {
     return null
   }

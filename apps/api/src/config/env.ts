@@ -61,15 +61,6 @@ const schema = z.object({
   AI_DEFAULT_MODEL: z.string().default("gpt-4o"),
   AI_MONTHLY_TOKEN_LIMIT: z.coerce.number().default(5_000_000),
 
-  /** Supabase (satellite services: storage, realtime, analytics, DB agent) */
-  SUPABASE_URL: z.string().default(""),
-  SUPABASE_SERVICE_KEY: z.string().default(""),
-  SUPABASE_ANON_KEY: z.string().default(""),
-  SUPABASE_S3_ENDPOINT: z.string().default(""),
-  SUPABASE_S3_REGION: z.string().default("ap-northeast-2"),
-  SUPABASE_S3_ACCESS_KEY: z.string().default(""),
-  SUPABASE_S3_SECRET_KEY: z.string().default(""),
-
   /** SSH Server (workspace remote IDE) */
   SSH_HOST: z.string().default(""),
   SSH_PORT: z.coerce.number().default(22),

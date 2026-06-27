@@ -22,7 +22,7 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 import { Dropdown, type DropdownItem } from "@/components/ui/Dropdown";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
+import { Card, CardContent } from "@/components/ui/Card";
 import { useCurrency } from "@/hooks/useCurrency";
 import {
   Wallet,
@@ -212,12 +212,6 @@ export default function PayrollList() {
     setFilterBranch(v);
     setPage(1);
   }, []);
-  const onThisMonth = useCallback(() => {
-    setFilterMonth(now.getMonth() + 1);
-    setFilterYear(now.getFullYear());
-    setPage(1);
-  }, [now]);
-
   const handleExportCsv = useCallback(() => {
     if (filteredEntries.length === 0) {
       toast.error("No payroll data to export");

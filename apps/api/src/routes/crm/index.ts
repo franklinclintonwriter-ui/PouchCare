@@ -125,9 +125,9 @@ router.get(
       if (source) filter.source = source;
       if (q) {
         filter.OR = [
-          { company: { contains: q, mode: "insensitive" } },
-          { contactName: { contains: q, mode: "insensitive" } },
-          { email: { contains: q, mode: "insensitive" } },
+          { company: { contains: q } },
+          { contactName: { contains: q } },
+          { email: { contains: q } },
         ];
       }
       const where = mergeLeadWhere(filter, scope);
@@ -338,9 +338,9 @@ router.get(
           status as Prisma.EnumPaymentStatusFilter["equals"];
       if (q) {
         filter.OR = [
-          { clientName: { contains: q, mode: "insensitive" } },
-          { service: { contains: q, mode: "insensitive" } },
-          { invoiceReference: { contains: q, mode: "insensitive" } },
+          { clientName: { contains: q } },
+          { service: { contains: q } },
+          { invoiceReference: { contains: q } },
         ];
       }
       const where = mergeSalesOrderWhere(filter, scope);

@@ -5,7 +5,7 @@ import { useIsMobile } from '@/hooks/useMediaQuery'
 import { useWorkspaceSessionStore } from '@/store/workspaceSessionStore'
 import { PageTransition } from '@/components/ui/PageTransition'
 import { useQuery } from '@tanstack/react-query'
-import { useWorkspace, useCreateFile, useUpdateFile, useDeleteFile, useWorkspaceCli, useUpdateWorkspaceContext, useLinkConversation, useGitHubStatus, useGitHubPush, useGitHubPull, useCopilotSuggest, useCopilotAction, useSshStatus, useSshToggle, useWorkspaceSkills, useWorkspaceResearch, useSupabaseDbQuery, type WsFile } from '@/api/workspace'
+import { useWorkspace, useCreateFile, useUpdateFile, useDeleteFile, useWorkspaceCli, useUpdateWorkspaceContext, useLinkConversation, useGitHubStatus, useGitHubPush, useGitHubPull, useCopilotSuggest, useCopilotAction, useSshStatus, useSshToggle, useWorkspaceSkills, useWorkspaceResearch, type WsFile } from '@/api/workspace'
 import { useAiStatus } from '@/api/ai'
 import { useAiChat } from '@/features/ai/hooks/useAiChat'
 import { AiChatPanel } from '@/features/ai/components/AiChatPanel'
@@ -20,7 +20,7 @@ import {
   CornerDownLeft, Loader2, Zap, Maximize2, Minimize2,
   Fullscreen, Shrink, FileCode, ArrowLeft, MessageSquare,
   StickyNote, ListTodo, Brain, Globe, GitBranch,
-  ArrowUpFromLine, ArrowDownToLine, FileSearch, Bug, BookOpen, Shuffle, Server, Settings2, Search, Database,
+  ArrowUpFromLine, ArrowDownToLine, FileSearch, Bug, BookOpen, Shuffle, Server, Settings2, Search,
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -190,10 +190,6 @@ export default function WorkspaceEditor() {
   const isMobile = useIsMobile()
   const { data: wsSkills } = useWorkspaceSkills(id)
   const researchMut = useWorkspaceResearch(id!)
-  const dbQueryMut = useSupabaseDbQuery()
-  const [dbOpen, setDbOpen] = useState(false)
-  const [dbQuery, setDbQuery] = useState('')
-  const [dbResult, setDbResult] = useState<{ sql: string | null; explanation: string; rows?: unknown[]; error?: string } | null>(null)
   const [researchOpen, setResearchOpen] = useState(false)
   const [researchQuery, setResearchQuery] = useState('')
   const [researchResult, setResearchResult] = useState<{ summary: string; analysis: string; steps: { tool: string; reason: string; success: boolean }[] } | null>(null)
@@ -575,7 +571,6 @@ export default function WorkspaceEditor() {
           {ghStatus?.connected && <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-emerald-400" />}
         </button>
         <button onClick={() => setResearchOpen((v) => !v)} className={cn('rounded-lg p-2 transition', researchOpen ? 'border-l-2 border-l-white bg-[#37373d] text-white' : 'text-gray-500 hover:text-gray-300')} title="SEO Research"><Search className="h-5 w-5" /></button>
-        <button onClick={() => setDbOpen((v) => !v)} className={cn('rounded-lg p-2 transition', dbOpen ? 'border-l-2 border-l-white bg-[#37373d] text-white' : 'text-gray-500 hover:text-gray-300')} title="Database"><Database className="h-5 w-5" /></button>
         <button onClick={() => setContextPanelOpen((v) => !v)} className={cn('rounded-lg p-2 transition', contextPanelOpen ? 'border-l-2 border-l-white bg-[#37373d] text-white' : 'text-gray-500 hover:text-gray-300')} title="Context & Todos"><Brain className="h-5 w-5" /></button>
         <button
           onClick={async () => { try { const r = await sshToggle.mutateAsync(); toast.success(r.sshEnabled ? 'SSH enabled' : 'SSH disabled') } catch (e) { toast.error(e instanceof Error ? e.message : 'SSH toggle failed') } }}
@@ -1015,101 +1010,6 @@ export default function WorkspaceEditor() {
         </div>
       )}
 
-      {/* Database panel */}
-      {dbOpen && !chatOpen && !previewOpen && !githubPanelOpen && !researchOpen && (
-        <div className="flex w-80 shrink-0 flex-col border-l border-[#333] bg-[#252526] lg:w-96">
-          <div className="flex items-center justify-between border-b border-[#333] px-3 py-2">
-            <span className="flex items-center gap-1.5 text-[11px] font-semibold text-gray-300"><Database className="h-3.5 w-3.5 text-emerald-400" /> Database Agent</span>
-            <button onClick={() => setDbOpen(false)} className="rounded p-1 text-gray-500 hover:text-gray-300"><X className="h-3.5 w-3.5" /></button>
-          </div>
-
-          <div className="min-h-0 flex-1 overflow-y-auto">
-            <div className="border-b border-[#333] p-3">
-              <textarea
-                value={dbQuery}
-                onChange={(e) => setDbQuery(e.target.value)}
-                placeholder="Ask in natural language: 'Show all orders from this month' or 'Count users by role'..."
-                rows={3}
-                className="w-full rounded-lg border border-[#444] bg-[#1e1e1e] p-2 text-[12px] text-[#cccccc] outline-none placeholder:text-gray-600 focus:border-emerald-500/50"
-              />
-              <div className="mt-2 flex gap-2">
-                <button
-                  onClick={async () => {
-                    if (!dbQuery.trim()) return
-                    try { const r = await dbQueryMut.mutateAsync({ query: dbQuery.trim(), autoExecute: false }); setDbResult(r) } catch (e) { toast.error(e instanceof Error ? e.message : 'Query failed') }
-                  }}
-                  disabled={dbQueryMut.isPending || !dbQuery.trim()}
-                  className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-emerald-600 px-3 py-2 text-[11px] font-medium text-emerald-400 transition hover:bg-emerald-600/10 disabled:opacity-50"
-                >
-                  Preview SQL
-                </button>
-                <button
-                  onClick={async () => {
-                    if (!dbQuery.trim()) return
-                    try { const r = await dbQueryMut.mutateAsync({ query: dbQuery.trim(), autoExecute: true }); setDbResult(r) } catch (e) { toast.error(e instanceof Error ? e.message : 'Query failed') }
-                  }}
-                  disabled={dbQueryMut.isPending || !dbQuery.trim()}
-                  className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-[11px] font-medium text-white transition hover:bg-emerald-700 disabled:opacity-50"
-                >
-                  {dbQueryMut.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Database className="h-3 w-3" />}
-                  Run query
-                </button>
-              </div>
-              <p className="mt-2 text-[9px] text-gray-600">Connects to Supabase PostgreSQL. Only SELECT queries allowed.</p>
-            </div>
-
-            {dbResult && (
-              <div className="space-y-3 p-3">
-                {dbResult.sql && (
-                  <div>
-                    <p className="text-[9px] font-semibold uppercase tracking-wider text-gray-500">Generated SQL</p>
-                    <pre className="mt-1 overflow-auto rounded-lg bg-[#0d1117] p-2 font-mono text-[11px] text-emerald-300">{dbResult.sql}</pre>
-                  </div>
-                )}
-                {dbResult.explanation && (
-                  <p className="text-[11px] text-gray-400">{dbResult.explanation}</p>
-                )}
-                {dbResult.error && (
-                  <p className="rounded-lg bg-red-950/30 p-2 text-[11px] text-red-400">{dbResult.error}</p>
-                )}
-                {dbResult.rows && dbResult.rows.length > 0 && (
-                  <div>
-                    <p className="text-[9px] font-semibold uppercase tracking-wider text-gray-500">Results ({dbResult.rows.length} rows)</p>
-                    <div className="mt-1 max-h-64 overflow-auto rounded-lg border border-[#333]">
-                      <table className="w-full text-[10px]">
-                        <thead>
-                          <tr className="border-b border-[#333] bg-[#1e1e1e]">
-                            {Object.keys(dbResult.rows[0] as Record<string, unknown>).map((col) => (
-                              <th key={col} className="px-2 py-1 text-left font-semibold text-gray-400">{col}</th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {dbResult.rows.slice(0, 50).map((row, i) => (
-                            <tr key={i} className="border-b border-[#333]/50 hover:bg-[#2a2d2e]">
-                              {Object.values(row as Record<string, unknown>).map((val, j) => (
-                                <td key={j} className="px-2 py-1 text-gray-300">{String(val ?? '')}</td>
-                              ))}
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {!dbResult && !dbQueryMut.isPending && (
-              <div className="flex flex-col items-center py-10 text-center">
-                <Database className="h-8 w-8 text-[#333]" />
-                <p className="mt-3 text-[12px] text-gray-400">Database Agent</p>
-                <p className="mt-1 max-w-[200px] text-[10px] text-gray-600">Ask questions in natural language. AI converts to SQL and runs on Supabase.</p>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   )
 

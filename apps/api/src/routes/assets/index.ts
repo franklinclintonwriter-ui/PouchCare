@@ -79,7 +79,7 @@ router.get('/domains/stats', requireStaff, async (req: AuthRequest, res) => {
       prisma.domain.count({ where: { ...where, expiryDate: { lte: in90, gt: now } } }),
       prisma.domain.count({ where: { ...where, expiryDate: { lte: now } } }),
       prisma.website.count({}),
-      prisma.website.count({ where: { status: { contains: 'Live', mode: 'insensitive' } } }),
+      prisma.website.count({ where: { status: { contains: 'Live' } } }),
     ])
     return ok(res, { total, completed, inProgress, incomplete, expiringSoon, expiringIn90, expired, totalWebsites, liveWebsites })
   } catch (err) { return serverError(res, err) }
@@ -90,24 +90,24 @@ router.get('/domains', requireStaff, async (req: AuthRequest, res) => {
     const { page, limit, skip } = getPagination(req)
     const { status, lifecycleStatus, niche, q, tag, sortBy, sortDir } = req.query as Record<string, string>
     const extra: any = {}
-    if (status && status !== 'all') extra.status = { contains: status, mode: 'insensitive' }
+    if (status && status !== 'all') extra.status = { contains: status }
     if (lifecycleStatus) extra.lifecycleStatus = lifecycleStatus
-    if (niche && niche !== 'all') extra.niche = { contains: niche, mode: 'insensitive' }
+    if (niche && niche !== 'all') extra.niche = { contains: niche }
     // Tag search: check niche OR notes for the tag keyword
     if (tag) {
       extra.OR = [
-        { niche:  { contains: tag, mode: 'insensitive' } },
-        { notes:  { contains: tag, mode: 'insensitive' } },
-        { domainName: { contains: tag, mode: 'insensitive' } },
+        { niche:  { contains: tag } },
+        { notes:  { contains: tag } },
+        { domainName: { contains: tag } },
       ]
     }
     // Full-text search by domain name, registrar, niche, notes
     if (q) {
       const searchOr = [
-        { domainName: { contains: q, mode: 'insensitive' } },
-        { registrar:  { contains: q, mode: 'insensitive' } },
-        { niche:      { contains: q, mode: 'insensitive' } },
-        { notes:      { contains: q, mode: 'insensitive' } },
+        { domainName: { contains: q } },
+        { registrar:  { contains: q } },
+        { niche:      { contains: q } },
+        { notes:      { contains: q } },
       ]
       extra.AND = extra.AND ? [...extra.AND, { OR: searchOr }] : [{ OR: searchOr }]
     }
@@ -385,9 +385,9 @@ function buildCameraListWhereAndOrder(query: Record<string, string | undefined>)
   const qTrim = q?.trim()
   if (qTrim) {
     where.OR = [
-      { label: { contains: qTrim, mode: 'insensitive' } },
-      { location: { contains: qTrim, mode: 'insensitive' } },
-      { notes: { contains: qTrim, mode: 'insensitive' } },
+      { label: { contains: qTrim } },
+      { location: { contains: qTrim } },
+      { notes: { contains: qTrim } },
     ]
   }
   const orderBy = cameraListOrderBy(sort)

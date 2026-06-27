@@ -1,6 +1,7 @@
 import type { Prisma, SystemRole } from '@prisma/client'
 import prisma from '@/lib/prisma'
 import type { AuthRequest } from '@/middleware/auth'
+import { branchesMatch } from '@/lib/branchResolve'
 
 /** Full org visibility for attendance / leave / daily reports lists. */
 export const GLOBAL_TEAM_ROLES: SystemRole[] = ['CEO', 'CO_MD', 'OP_MANAGER', 'HR_MANAGER']
@@ -21,12 +22,11 @@ export async function canManagerAccessStaffMember(
   if (managerRole !== 'BRANCH_MANAGER') return true
 
   const [me, them] = await Promise.all([
-    prisma.staffMember.findUnique({ where: { id: managerId }, select: { branch: true } }),
-    prisma.staffMember.findUnique({ where: { id: targetStaffId }, select: { branch: true } }),
+    prisma.staffMember.findUnique({ where: { id: managerId }, select: { branchId: true, branch: true } }),
+    prisma.staffMember.findUnique({ where: { id: targetStaffId }, select: { branchId: true, branch: true } }),
   ])
-  const mine = me?.branch?.trim()
-  const theirs = them?.branch?.trim()
-  return !!(mine && theirs && mine === theirs)
+  if (!me || !them) return false
+  return branchesMatch(me, them)
 }
 
 async function branchManagerStaffRelationFilter(
@@ -34,11 +34,11 @@ async function branchManagerStaffRelationFilter(
 ): Promise<Prisma.StaffMemberWhereInput | 'empty'> {
   const me = await prisma.staffMember.findUnique({
     where: { id: managerId },
-    select: { branch: true },
+    select: { branchId: true },
   })
-  const b = me?.branch?.trim()
+  const b = me?.branchId
   if (!b) return 'empty'
-  return { branch: b }
+  return { branchId: b }
 }
 
 /** Merge manager list filters with branch scope (BM → same branch via `staffMember`). */
