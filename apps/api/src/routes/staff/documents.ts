@@ -10,6 +10,7 @@ import { getPagination, buildMeta } from '@/lib/pagination'
 import {
   uploadFile,
   deleteFile,
+  getSignedDownloadUrl,
   ALLOWED_DOCUMENT_TYPES,
   DOCUMENT_CATEGORIES,
   DOCUMENT_TYPES,
@@ -41,6 +42,14 @@ function canManageDocuments(req: AuthRequest, staffId: string): boolean {
   return req.user.id === staffId
 }
 
+async function withSignedDocumentUrls<T extends { fileUrl: string; thumbnailUrl?: string | null }>(doc: T) {
+  return {
+    ...doc,
+    fileUrl: await getSignedDownloadUrl(doc.fileUrl),
+    thumbnailUrl: doc.thumbnailUrl ? await getSignedDownloadUrl(doc.thumbnailUrl) : doc.thumbnailUrl,
+  }
+}
+
 router.get('/:staffId/documents', async (req: AuthRequest, res) => {
   try {
     const { staffId } = req.params
@@ -66,7 +75,9 @@ router.get('/:staffId/documents', async (req: AuthRequest, res) => {
       prisma.staffDocument.count({ where }),
     ])
 
-    return ok(res, documents, buildMeta(total, page, limit))
+    const signedDocuments = await Promise.all(documents.map(withSignedDocumentUrls))
+
+    return ok(res, signedDocuments, buildMeta(total, page, limit))
   } catch (err) {
     return serverError(res, err)
   }
@@ -133,7 +144,7 @@ router.post(
         after: document,
       })
 
-      return created(res, document)
+      return created(res, await withSignedDocumentUrls(document))
     } catch (err) {
       console.error('Document upload error:', err)
       return serverError(res, err)
@@ -153,7 +164,7 @@ router.get('/:staffId/documents/:docId', async (req: AuthRequest, res) => {
     })
 
     if (!document) return notFound(res, 'Document')
-    return ok(res, document)
+    return ok(res, await withSignedDocumentUrls(document))
   } catch (err) {
     return serverError(res, err)
   }

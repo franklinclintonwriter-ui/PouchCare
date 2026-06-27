@@ -5,7 +5,7 @@ const getSharp = async () => (await import("sharp")).default;
 import { Router } from "express";
 import prisma from "@/lib/prisma";
 import { authenticate, requirePortal } from "@/middleware/auth";
-import { deleteFile, uploadFile } from "@/lib/storage";
+import { deleteFile, uploadFile, mapSignedAvatar } from "@/lib/storage";
 import { badRequest, ok, notFound, serverError } from "@/lib/response";
 import { z } from "zod";
 import { validate } from "@/middleware/validate";
@@ -79,7 +79,7 @@ async function replacePortalAvatar(
     await deleteFile(prev.avatarUrl).catch(() => {});
   }
 
-  return updated;
+  return mapSignedAvatar(updated);
 }
 
 async function clearPortalAvatar(memberId: string) {
@@ -108,7 +108,7 @@ router.get("/", async (req, res) => {
       refreshToken,
       ...safe
     } = m;
-    return ok(res, safe);
+    return ok(res, await mapSignedAvatar(safe));
   } catch {
     return serverError(res);
   }

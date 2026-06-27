@@ -23,6 +23,7 @@ import {
 } from "@/lib/response";
 import { isDbConnectionError, DB_UNAVAILABLE_MESSAGE } from "@/lib/dbErrors";
 import { sendVerificationEmail, sendPasswordResetEmail } from "@/lib/email";
+import { getSignedDownloadUrl } from "@/lib/storage";
 import { env } from "@/config/env";
 import crypto from "crypto";
 import { nanoid } from "nanoid";
@@ -226,7 +227,9 @@ router.post("/login", authLimiter, validate(loginSchema), async (req, res) => {
         email: member.email,
         referralCode: member.referralCode,
         walletBalance: member.walletBalance,
-        avatarUrl: member.avatarUrl ?? undefined,
+        avatarUrl: member.avatarUrl
+          ? await getSignedDownloadUrl(member.avatarUrl)
+          : undefined,
       },
     });
   } catch (e) {

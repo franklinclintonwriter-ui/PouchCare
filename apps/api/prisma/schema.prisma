@@ -199,7 +199,6 @@ model StaffMember {
   performanceScore     Float?     @map("performance_score")
   totpSecret           String?    @map("totp_secret")
   twoFactorEnabled     Boolean    @default(false) @map("two_factor_enabled")
-  refreshToken         String?    @map("refresh_token")
   lastLoginAt          DateTime?  @map("last_login_at")
   lastLoginIp          String?    @map("last_login_ip")
   preferredCurrency    String     @default("BDT") @map("preferred_currency") // USD | BDT
@@ -223,9 +222,29 @@ model StaffMember {
   exchangeRatesCreated ExchangeRate[] @relation("ExchangeRateCreatedBy")
   exchangeRatesUpdated ExchangeRate[] @relation("ExchangeRateUpdatedBy")
   branchRef            Branch?             @relation(fields: [branchId], references: [id])
+  sessions             StaffSession[]
 
   @@index([branchId])
   @@map("staff_members")
+}
+
+/// Refresh-token sessions for staff — enables revocation (logout, admin kill).
+/// Replaces the old single `StaffMember.refreshToken` column.
+model StaffSession {
+  id               String      @id @default(uuid())
+  staffMemberId    String      @map("staff_member_id")
+  refreshTokenHash String      @unique @map("refresh_token_hash")
+  userAgent        String?     @map("user_agent")
+  ip               String?
+  expiresAt        DateTime    @map("expires_at")
+  revokedAt        DateTime?   @map("revoked_at")
+  lastUsedAt       DateTime?   @map("last_used_at")
+  createdAt        DateTime    @default(now()) @map("created_at")
+  staffMember      StaffMember @relation(fields: [staffMemberId], references: [id], onDelete: Cascade)
+
+  @@index([staffMemberId])
+  @@index([expiresAt])
+  @@map("staff_sessions")
 }
 
 model StaffDocument {
@@ -1252,7 +1271,7 @@ model PluginVersion {
   pluginId       String   @map("plugin_id")
   version        String // semver e.g. "1.0.0"
   changelog      String?
-  phpFileContent String   @map("php_file_content") // full PHP source text
+  phpFileContent String   @map("php_file_content") @db.Text // full PHP source text
   isLatest       Boolean  @default(false) @map("is_latest")
   publishedAt    DateTime @default(now()) @map("published_at")
   publishedById  String   @map("published_by_id")
@@ -1410,7 +1429,7 @@ model AiMessage {
   conversationId String         @map("conversation_id")
   conversation   AiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   role           String
-  content        String
+  content        String         @db.Text
   tokensUsed     Int            @default(0) @map("tokens_used")
   createdAt      DateTime       @default(now()) @map("created_at")
 
