@@ -43,10 +43,20 @@ export async function apiLogin(
   expect(res.ok()).toBe(true)
   const body = await res.json()
   const data = body.data ?? body
+  if (data?.requireTotp) {
+    throw new Error(`apiLogin cannot use TOTP-enabled account: ${email}`)
+  }
+  const accessToken = data?.access_token
+  const refreshToken = data?.refresh_token
+  const userId = data?.user?.id
+  const userEmail = data?.user?.email
+  if (!accessToken || !refreshToken || !userId || !userEmail) {
+    throw new Error(`apiLogin returned incomplete auth payload for account: ${email}`)
+  }
   return {
-    accessToken: data.access_token,
-    refreshToken: data.refresh_token,
-    user: data.user,
+    accessToken,
+    refreshToken,
+    user: { id: userId, email: userEmail },
   }
 }
 

@@ -1,11 +1,42 @@
 import { defineConfig, devices } from '@playwright/test';
+import fs from 'node:fs';
+import path from 'node:path';
+
+function apiDevOrigin(): string {
+  const explicit = process.env.POUCHCARE_API_DEV_ORIGIN?.trim();
+  if (explicit) return explicit.replace(/\/$/, '');
+
+  const envPath = path.resolve(__dirname, 'apps/api/.env');
+  let port = 7000;
+  try {
+    if (fs.existsSync(envPath)) {
+      const raw = fs.readFileSync(envPath, 'utf8');
+      for (const line of raw.split(/\r?\n/)) {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed.startsWith('#')) continue;
+        const m = trimmed.match(/^PORT\s*=\s*(\d+)/);
+        if (!m) continue;
+        const parsed = Number.parseInt(m[1], 10);
+        if (!Number.isNaN(parsed) && parsed > 0) {
+          port = parsed;
+        }
+        break;
+      }
+    }
+  } catch {
+    // keep default
+  }
+  return `http://127.0.0.1:${port}`;
+}
+
+const apiOrigin = apiDevOrigin();
 
 const e2eWebServers = process.env.E2E_NO_SERVER
   ? undefined
   : [
       {
         command: 'npm run dev --workspace=api',
-        url: 'http://127.0.0.1:7000/v1/health',
+        url: `${apiOrigin}/health/ready`,
         reuseExistingServer: true,
         timeout: 120_000,
       },
