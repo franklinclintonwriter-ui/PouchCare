@@ -51,7 +51,7 @@ router.get('/', async (req: AuthRequest, res) => {
         where: scoped,
         skip,
         take: limit,
-        orderBy: [{ year: 'desc' }, { month: 'asc' }],
+        orderBy: [{ year: 'desc' }, { createdAt: 'desc' }],
       }),
       prisma.payroll.count({ where: scoped }),
     ])

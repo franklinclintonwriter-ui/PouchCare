@@ -4,6 +4,7 @@ import prisma from '@/lib/prisma'
 import { authenticate, requireStaff, requireRoles, MANAGER_ROLES, type AuthRequest } from '@/middleware/auth'
 import type { Prisma, SystemRole } from '@prisma/client'
 import { canManagerAccessStaffMember, mergeDailyReportWhereForManager } from '@/lib/teamBranchScope'
+import { computeDailyReportStats } from '@/lib/managementStats'
 import { validate } from '@/middleware/validate'
 import { getPagination, paginatedMeta, buildMeta} from '@/utils/pagination'
 import { ok, created, badRequest, notFound, serverError, forbidden } from '@/utils/response'
@@ -37,6 +38,28 @@ router.get('/daily', requireStaff, async (req: AuthRequest, res) => {
     ])
     return ok(res, reports, buildMeta(total, page, limit))
   } catch (err) { return serverError(res, err) }
+})
+
+// GET /v1/reports/daily/stats
+router.get('/daily/stats', requireStaff, async (req: AuthRequest, res) => {
+  try {
+    const role = req.user!.role as SystemRole
+    let where: Prisma.DailyReportWhereInput = {}
+    if (!MANAGER_ROLES.includes(role)) {
+      where.staffMemberId = req.user!.id
+    } else {
+      where = await mergeDailyReportWhereForManager(req, {})
+    }
+
+    const rows = await prisma.dailyReport.findMany({
+      where,
+      select: { status: true, hoursWorked: true, tasksCompleted: true },
+    })
+
+    return ok(res, computeDailyReportStats(rows))
+  } catch (err) {
+    return serverError(res, err)
+  }
 })
 
 // POST /v1/reports/daily

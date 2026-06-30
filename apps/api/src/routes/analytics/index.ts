@@ -2,6 +2,7 @@ import { Router } from "express";
 import { authenticate } from "@/middleware/auth";
 import { requirePermission } from "@/middleware/rbac";
 import prisma from "@/lib/prisma";
+import { monthToNumber } from "@/lib/months";
 import { ok, serverError } from "@/lib/response";
 
 const router = Router();
@@ -336,7 +337,7 @@ router.get("/summary", async (_, res) => {
       },
       revenue: {
         data: revenueData.map((r) => {
-          const monthNum = parseInt(r.month, 10) || 1;
+          const monthNum = monthToNumber(r.month);
           return {
             month: MONTH_NAMES[monthNum - 1] || r.month,
             monthNum,
