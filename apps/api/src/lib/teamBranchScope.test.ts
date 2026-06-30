@@ -3,6 +3,10 @@ import { prismaMock } from '@/test/prismaMock'
 import {
   branchManagerStaffRelationFilter,
   canManagerAccessStaffMember,
+  mergeAttendanceWhereForManager,
+  mergeDailyReportWhereForManager,
+  mergeLeaveWhereForManager,
+  mergePayrollWhereForManager,
 } from '@/lib/teamBranchScope'
 
 describe('teamBranchScope', () => {
@@ -35,5 +39,19 @@ describe('teamBranchScope', () => {
 
     prismaMock.staffMember.findUnique.mockResolvedValueOnce({ branchId: 'branch-9' })
     await expect(branchManagerStaffRelationFilter('manager-3')).resolves.toEqual({ branchId: 'branch-9' })
+  })
+
+  test('merge helpers return base filter unchanged when req.user is missing', async () => {
+    const attendanceBase = { status: 'PRESENT' as const }
+    const leaveBase = { status: 'PENDING' as const }
+    const reportBase = { status: 'Submitted' }
+    const payrollBase = { paymentStatus: 'Pending' }
+    const req = {} as any
+
+    await expect(mergeAttendanceWhereForManager(req, attendanceBase)).resolves.toEqual(attendanceBase)
+    await expect(mergeLeaveWhereForManager(req, leaveBase)).resolves.toEqual(leaveBase)
+    await expect(mergeDailyReportWhereForManager(req, reportBase)).resolves.toEqual(reportBase)
+    await expect(mergePayrollWhereForManager(req, payrollBase)).resolves.toEqual(payrollBase)
+    expect(prismaMock.staffMember.findUnique).not.toHaveBeenCalled()
   })
 })

@@ -44,8 +44,9 @@ export async function mergeAttendanceWhereForManager(
   req: AuthRequest,
   base: Prisma.AttendanceWhereInput,
 ): Promise<Prisma.AttendanceWhereInput> {
-  const role = req.user!.role as SystemRole
-  if (!req.user || req.user.type !== 'staff' || isGlobalTeamRole(role)) return base
+  if (!req.user || req.user.type !== 'staff') return base
+  const role = req.user.role as SystemRole
+  if (isGlobalTeamRole(role)) return base
   if (role !== 'BRANCH_MANAGER') return base
   const rel = await branchManagerStaffRelationFilter(req.user.id)
   if (rel === 'empty') return { id: { in: [] } }
@@ -56,8 +57,9 @@ export async function mergeLeaveWhereForManager(
   req: AuthRequest,
   base: Prisma.LeaveRequestWhereInput,
 ): Promise<Prisma.LeaveRequestWhereInput> {
-  const role = req.user!.role as SystemRole
-  if (!req.user || req.user.type !== 'staff' || isGlobalTeamRole(role)) return base
+  if (!req.user || req.user.type !== 'staff') return base
+  const role = req.user.role as SystemRole
+  if (isGlobalTeamRole(role)) return base
   if (role !== 'BRANCH_MANAGER') return base
   const rel = await branchManagerStaffRelationFilter(req.user.id)
   if (rel === 'empty') return { id: { in: [] } }
@@ -68,8 +70,9 @@ export async function mergeDailyReportWhereForManager(
   req: AuthRequest,
   base: Prisma.DailyReportWhereInput,
 ): Promise<Prisma.DailyReportWhereInput> {
-  const role = req.user!.role as SystemRole
-  if (!req.user || req.user.type !== 'staff' || isGlobalTeamRole(role)) return base
+  if (!req.user || req.user.type !== 'staff') return base
+  const role = req.user.role as SystemRole
+  if (isGlobalTeamRole(role)) return base
   if (role !== 'BRANCH_MANAGER') return base
   const rel = await branchManagerStaffRelationFilter(req.user.id)
   if (rel === 'empty') return { id: { in: [] } }
@@ -80,8 +83,9 @@ export async function mergePayrollWhereForManager(
   req: AuthRequest,
   base: Prisma.PayrollWhereInput,
 ): Promise<Prisma.PayrollWhereInput> {
-  const role = req.user!.role as SystemRole
-  if (!req.user || req.user.type !== 'staff' || isGlobalTeamRole(role)) return base
+  if (!req.user || req.user.type !== 'staff') return base
+  const role = req.user.role as SystemRole
+  if (isGlobalTeamRole(role)) return base
   if (role !== 'BRANCH_MANAGER') return base
   const rel = await branchManagerStaffRelationFilter(req.user.id)
   if (rel === 'empty') return { id: { in: [] } }
