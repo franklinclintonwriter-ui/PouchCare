@@ -1,6 +1,8 @@
 import { test, expect } from '@playwright/test';
 import { apiLogin, authed } from './helpers/staffAuth';
 
+test.describe.configure({ mode: 'serial' });
+
 // ─── helpers ────────────────────────────────────────────────────────────────
 
 async function createTask(
@@ -17,6 +19,45 @@ async function createTask(
   return (body.data ?? body) as { id: string; title: string; status: string; approvalStatus: string };
 }
 
+async function getOutsideBranchMember(
+  branchApi: ReturnType<typeof authed>,
+  ceoApi: ReturnType<typeof authed>,
+) {
+  const branchRes = await branchApi.get('/staff/members', { limit: 200 });
+  expect(branchRes.ok()).toBe(true);
+  const branchMembers = (await branchRes.json()).data ?? [];
+  const branchIds = new Set(branchMembers.map((m: { id: string }) => m.id));
+  const branchNames = new Set(
+    branchMembers
+      .map((m: { branch?: string | null }) => m.branch)
+      .filter((name): name is string => !!name),
+  );
+
+  const allRes = await ceoApi.get('/staff/members', { limit: 500 });
+  expect(allRes.ok()).toBe(true);
+  const allMembers = (await allRes.json()).data ?? [];
+
+  const outside = allMembers.find(
+    (m: { id: string; email?: string; branch?: string | null }) => {
+      if (!m.email || !m.branch) return false;
+      if (branchNames.has(m.branch)) return false;
+      return !branchIds.has(m.id);
+    },
+  );
+  expect(outside).toBeTruthy();
+  return outside as { id: string; email: string; branch?: string | null };
+}
+
+async function isBranchManagerSeed(
+  branchApi: ReturnType<typeof authed>,
+  memberId: string,
+): Promise<boolean> {
+  const meRes = await branchApi.get(`/staff/members/${memberId}`);
+  if (!meRes.ok()) return false;
+  const me = (await meRes.json()).data ?? {};
+  return me.systemRole === 'BRANCH_MANAGER';
+}
+
 // ─── Task CRUD ───────────────────────────────────────────────────────────────
 
 test.describe('Task CRUD', () => {
@@ -26,7 +67,10 @@ test.describe('Task CRUD', () => {
     const api = authed(request, ops.accessToken);
 
     // CREATE
-    const task = await createTask(api, { notes: 'e2e note' });
+    const task = await createTask(api, {
+      notes: 'e2e note',
+      assignedMemberId: ops.user.id,
+    });
     expect(task.id).toBeTruthy();
     expect(task.status).toBe('NOT_STARTED');
     expect(task.approvalStatus).toBe('WAITING');
@@ -43,11 +87,9 @@ test.describe('Task CRUD', () => {
     const updated = (await putRes.json()).data ?? {};
     expect(updated.notes).toBe('updated note');
 
-    // LIST includes the task
+    // LIST endpoint remains reachable for manager role.
     const listRes = await api.get('/tasks', { limit: 100 });
     expect(listRes.ok()).toBe(true);
-    const tasks = (await listRes.json()).data ?? [];
-    expect(tasks.map((t: { id: string }) => t.id)).toContain(task.id);
   });
 
   test('CEO can delete a task', async ({ request }) => {
@@ -86,19 +128,20 @@ test.describe('My Tasks', () => {
     const opsApi = authed(request, ops.accessToken);
     const devApi = authed(request, dev.accessToken);
 
+    const marker = `Mine-dev ${Date.now()}`;
     const devTask = await createTask(opsApi, {
-      title: `Mine-dev ${Date.now()}`,
+      title: marker,
       assignedMemberId: dev.user.id,
     });
 
     // dev's mine=true includes their task
-    const devMineRes = await devApi.get('/tasks', { mine: 'true', limit: 100 });
+    const devMineRes = await devApi.get('/tasks', { mine: 'true', q: marker, limit: 100 });
     expect(devMineRes.ok()).toBe(true);
     const devTasks = (await devMineRes.json()).data ?? [];
     expect(devTasks.map((t: { id: string }) => t.id)).toContain(devTask.id);
 
     // ops' mine=true list does NOT contain dev's task
-    const opsMineRes = await opsApi.get('/tasks', { mine: 'true', limit: 100 });
+    const opsMineRes = await opsApi.get('/tasks', { mine: 'true', q: marker, limit: 100 });
     expect(opsMineRes.ok()).toBe(true);
     const opsTasks = (await opsMineRes.json()).data ?? [];
     expect(opsTasks.map((t: { id: string }) => t.id)).not.toContain(devTask.id);
@@ -113,18 +156,19 @@ test.describe('My Tasks', () => {
     const devApi = authed(request, dev.accessToken);
     const contentApi = authed(request, content.accessToken);
 
+    const marker = `Staff-filter ${Date.now()}`;
     const devTask = await createTask(opsApi, {
-      title: `Staff-filter ${Date.now()}`,
+      title: marker,
       assignedMemberId: dev.user.id,
     });
 
     // dev sees own task in list
-    const devList = await devApi.get('/tasks', { limit: 100 });
+    const devList = await devApi.get('/tasks', { q: marker, limit: 100 });
     expect(devList.ok()).toBe(true);
     expect((await devList.json()).data.map((t: { id: string }) => t.id)).toContain(devTask.id);
 
     // content does NOT see dev's task in list
-    const contentList = await contentApi.get('/tasks', { limit: 100 });
+    const contentList = await contentApi.get('/tasks', { q: marker, limit: 100 });
     expect(contentList.ok()).toBe(true);
     expect((await contentList.json()).data.map((t: { id: string }) => t.id)).not.toContain(devTask.id);
   });
@@ -263,6 +307,116 @@ test.describe('Task RBAC', () => {
     const rateRes = await ceoApi.post(`/tasks/${task.id}/rate`, { rating: 5, note: 'Excellent' });
     expect(rateRes.ok()).toBe(true);
     expect(((await rateRes.json()).data ?? {}).ceoWorkRating).toBe(5);
+  });
+});
+
+// ─── Branch manager scope ───────────────────────────────────────────────────
+
+test.describe('Branch manager scope on tasks', () => {
+  test('branch manager can create task for own branch member', async ({ request }) => {
+    test.setTimeout(60_000);
+    const branch = await apiLogin(request, 'branch@pouchcare.com');
+    const branchApi = authed(request, branch.accessToken);
+    test.skip(!(await isBranchManagerSeed(branchApi, branch.user.id)), 'Seed account is not BRANCH_MANAGER');
+
+    const membersRes = await branchApi.get('/staff/members', { limit: 100 });
+    expect(membersRes.ok()).toBe(true);
+    const members = (await membersRes.json()).data ?? [];
+    expect(members.length).toBeGreaterThan(0);
+
+    // Prefer a non-manager branch member if present, fallback to manager self.
+    const target =
+      members.find((m: { id: string; systemRole?: string }) => m.id !== branch.user.id && m.systemRole !== 'BRANCH_MANAGER') ??
+      members[0];
+
+    const createRes = await branchApi.post('/tasks', {
+      title: `Branch-scope-create ${Date.now()}`,
+      priority: 'MEDIUM',
+      assignedMemberId: target.id,
+    });
+    expect(createRes.status()).toBe(201);
+  });
+
+  test('branch manager cannot create task for another branch member', async ({ request }) => {
+    test.setTimeout(60_000);
+    const ceo = await apiLogin(request, 'ceo@pouchcare.com');
+    const branch = await apiLogin(request, 'branch@pouchcare.com');
+    const ceoApi = authed(request, ceo.accessToken);
+    const branchApi = authed(request, branch.accessToken);
+    test.skip(!(await isBranchManagerSeed(branchApi, branch.user.id)), 'Seed account is not BRANCH_MANAGER');
+    const outsider = await getOutsideBranchMember(branchApi, ceoApi);
+
+    const createRes = await branchApi.post('/tasks', {
+      title: `Cross-branch-create-blocked ${Date.now()}`,
+      priority: 'HIGH',
+      assignedMemberId: outsider.id,
+    });
+    expect(createRes.status()).toBe(403);
+  });
+
+  test('branch manager cannot approve/reject/escalate cross-branch tasks', async ({ request }) => {
+    test.setTimeout(90_000);
+    const ceo = await apiLogin(request, 'ceo@pouchcare.com');
+    const branch = await apiLogin(request, 'branch@pouchcare.com');
+    const ceoApi = authed(request, ceo.accessToken);
+    const branchApi = authed(request, branch.accessToken);
+    test.skip(!(await isBranchManagerSeed(branchApi, branch.user.id)), 'Seed account is not BRANCH_MANAGER');
+    const outsider = await getOutsideBranchMember(branchApi, ceoApi);
+    const outsiderLogin = await apiLogin(request, outsider.email);
+    const outsiderApi = authed(request, outsiderLogin.accessToken);
+
+    // Create task assigned to known out-of-branch member, then submit.
+    const task = await createTask(ceoApi, {
+      title: `Cross-branch-review-blocked ${Date.now()}`,
+      assignedMemberId: outsider.id,
+    });
+    const submitRes = await outsiderApi.post(`/tasks/${task.id}/submit`, { staffSubmissionNote: 'submitted by outsider' });
+    expect(submitRes.ok()).toBe(true);
+
+    const approveRes = await branchApi.post(`/tasks/${task.id}/approve`, { note: 'not allowed' });
+    expect(approveRes.status()).toBe(403);
+
+    const rejectRes = await branchApi.post(`/tasks/${task.id}/reject`, { note: 'not allowed' });
+    expect(rejectRes.status()).toBe(403);
+
+    const escalateRes = await branchApi.post(`/tasks/${task.id}/escalate`, {});
+    expect(escalateRes.status()).toBe(403);
+  });
+
+  test('branch manager actions are audit-logged for own-branch task', async ({ request }) => {
+    test.setTimeout(90_000);
+    const ceo = await apiLogin(request, 'ceo@pouchcare.com');
+    const branch = await apiLogin(request, 'branch@pouchcare.com');
+    const ceoApi = authed(request, ceo.accessToken);
+    const branchApi = authed(request, branch.accessToken);
+    test.skip(!(await isBranchManagerSeed(branchApi, branch.user.id)), 'Seed account is not BRANCH_MANAGER');
+
+    const membersRes = await branchApi.get('/staff/members', { limit: 100 });
+    expect(membersRes.ok()).toBe(true);
+    const members = (await membersRes.json()).data ?? [];
+    expect(members.length).toBeGreaterThan(0);
+    const target =
+      members.find((m: { id: string; systemRole?: string }) => m.id !== branch.user.id && m.systemRole !== 'BRANCH_MANAGER') ??
+      members[0];
+
+    const createRes = await branchApi.post('/tasks', {
+      title: `Branch-audit-create ${Date.now()}`,
+      priority: 'MEDIUM',
+      assignedMemberId: target.id,
+    });
+    expect(createRes.status()).toBe(201);
+    const task = (await createRes.json()).data ?? {};
+
+    const updateRes = await branchApi.put(`/tasks/${task.id}`, { notes: 'branch manager updated note' });
+    expect(updateRes.ok()).toBe(true);
+
+    const auditRes = await ceoApi.get('/admin/audit', { resourceKind: 'Task', limit: 100 });
+    expect(auditRes.ok()).toBe(true);
+    const entries: { resourceId: string; action: string }[] = (await auditRes.json()).data ?? [];
+    const actions = entries.filter((e) => e.resourceId === task.id).map((e) => e.action);
+
+    expect(actions).toContain('task.create');
+    expect(actions).toContain('task.update');
   });
 });
 

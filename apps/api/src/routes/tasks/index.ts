@@ -11,7 +11,7 @@ import { getPagination, buildMeta } from '@/lib/pagination'
 import { uploadFile } from '@/lib/storage'
 import { TASK_CATEGORIES, isValidTaskCategory } from './constants'
 import { canEditTaskAssignment } from './access'
-import { resolveBranchId, isNonBranchLabel } from '@/lib/branchResolve'
+import { resolveBranchId, isNonBranchLabel, branchesMatch } from '@/lib/branchResolve'
 
 const router = Router()
 router.use(authenticate)
@@ -107,6 +107,35 @@ async function syncBranchOnAssigneeChange(
   const { branchId, assignedBranch } = await branchFromAssignees(nextMemberId, nextManagerId)
   data.branchId = branchId
   data.assignedBranch = assignedBranch ?? null
+}
+
+async function canBranchManagerTouchBranch(
+  managerId: string,
+  target: { branchId?: string | null; branch?: string | null },
+): Promise<boolean> {
+  const me = await prisma.staffMember.findUnique({
+    where: { id: managerId },
+    select: { branchId: true, branch: true },
+  })
+  if (!me) return false
+  return branchesMatch(target, { branchId: me.branchId, branch: me.branch })
+}
+
+async function canBranchManagerAssignMember(managerId: string, memberId: string): Promise<boolean> {
+  const [manager, assignee] = await Promise.all([
+    prisma.staffMember.findUnique({
+      where: { id: managerId },
+      select: { branchId: true },
+    }),
+    prisma.staffMember.findUnique({
+      where: { id: memberId },
+      select: { branchId: true },
+    }),
+  ])
+
+  // Fail closed: branch managers can only assign members from the same real branch FK.
+  if (!manager?.branchId || !assignee?.branchId) return false
+  return manager.branchId === assignee.branchId
 }
 
 // GET /tasks/meta — categories + branches (for create form)
@@ -242,6 +271,19 @@ router.post('/', isManager, validate(taskSchema), async (req: AuthRequest, res) 
       const derived = await branchFromAssignees(body.assignedMemberId, body.assignedManagerId)
       branchId = derived.branchId
       assignedBranch = derived.assignedBranch
+    }
+
+    const isBranchManager = req.user!.role === 'BRANCH_MANAGER'
+    if (isBranchManager) {
+      if (body.assignedMemberId) {
+        const canAssignMember = await canBranchManagerAssignMember(req.user!.id, body.assignedMemberId)
+        if (!canAssignMember) return forbidden(res, 'Not allowed to create task outside your branch')
+      }
+      const scoped = await canBranchManagerTouchBranch(req.user!.id, {
+        branchId,
+        branch: assignedBranch,
+      })
+      if (!scoped) return forbidden(res, 'Not allowed to create task outside your branch')
     }
 
     const data = {
@@ -544,6 +586,10 @@ router.post('/:id/approve', isManager, async (req: AuthRequest, res) => {
   try {
     const task = await prisma.task.findUnique({ where: { id: req.params.id } })
     if (!task) return notFound(res, 'Task')
+    if (req.user!.role === 'BRANCH_MANAGER') {
+      const ok = await canEditTaskAssignment(req.user!.id, req.user!.role as SystemRole, task)
+      if (!ok) return forbidden(res)
+    }
     if (!([ApprovalStatus.SUBMITTED, ApprovalStatus.ESCALATED] as ApprovalStatus[]).includes(task.approvalStatus))
       return badRequest(res, 'Task not in a reviewable state')
 
@@ -573,6 +619,10 @@ router.post('/:id/reject', isManager, async (req: AuthRequest, res) => {
   try {
     const task = await prisma.task.findUnique({ where: { id: req.params.id } })
     if (!task) return notFound(res, 'Task')
+    if (req.user!.role === 'BRANCH_MANAGER') {
+      const ok = await canEditTaskAssignment(req.user!.id, req.user!.role as SystemRole, task)
+      if (!ok) return forbidden(res)
+    }
 
     const updated = await prisma.task.update({
       where: { id: req.params.id },
@@ -601,6 +651,10 @@ router.post('/:id/escalate', isManager, async (req, res) => {
   try {
     const task = await prisma.task.findUnique({ where: { id: req.params.id } })
     if (!task) return notFound(res, 'Task')
+    if (req.user!.role === 'BRANCH_MANAGER') {
+      const ok = await canEditTaskAssignment(req.user!.id, req.user!.role as SystemRole, task)
+      if (!ok) return forbidden(res)
+    }
     const updated = await prisma.task.update({
       where: { id: req.params.id },
       data: { approvalStatus: ApprovalStatus.ESCALATED },
