@@ -71,7 +71,7 @@ const summary = []
 
 for (const file of walk(routesDir)) {
   const src = readFileSync(file, 'utf8')
-  const rel = relative(repoRoot, file)
+  const rel = relative(repoRoot, file).replace(/\\/g, '/')
   const base = rel.split(/[\\/]/).pop() ?? ''
   const inScope = IN_SCOPE.has(rel)
   let matchCount = 0
