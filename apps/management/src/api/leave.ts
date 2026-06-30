@@ -17,6 +17,14 @@ type RawLeave = {
   createdAt: string;
 };
 
+export type LeaveStats = {
+  total: number;
+  pending: number;
+  approved: number;
+  rejected: number;
+  cancelled: number;
+};
+
 function mapLeave(raw: RawLeave): LeaveRequest {
   return {
     id: raw.id,
@@ -44,6 +52,16 @@ export function useLeaveRequests(params?: QueryParams) {
   });
 }
 
+export function useLeaveStats() {
+  return useQuery<LeaveStats>({
+    queryKey: ["leave-stats"],
+    queryFn: async () => {
+      const { data } = await api.get("/leave/stats");
+      return data as LeaveStats;
+    },
+  });
+}
+
 export function useApplyLeave() {
   const qc = useQueryClient();
   return useMutation({
@@ -53,7 +71,10 @@ export function useApplyLeave() {
       endDate: string;
       reason?: string;
     }) => api.post("/leave/apply", body),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["leave"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["leave"] });
+      qc.invalidateQueries({ queryKey: ["leave-stats"] });
+    },
   });
 }
 
@@ -67,7 +88,10 @@ export function useCreateLeaveForStaff() {
       endDate: string;
       reason?: string;
     }) => api.post("/leave", body),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["leave"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["leave"] });
+      qc.invalidateQueries({ queryKey: ["leave-stats"] });
+    },
   });
 }
 
@@ -75,7 +99,10 @@ export function useApproveLeave() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => api.put(`/leave/${id}/approve`),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["leave"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["leave"] });
+      qc.invalidateQueries({ queryKey: ["leave-stats"] });
+    },
   });
 }
 
@@ -84,7 +111,10 @@ export function useRejectLeave() {
   return useMutation({
     mutationFn: ({ id, reason }: { id: string; reason?: string }) =>
       api.put(`/leave/${id}/reject`, { reason }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["leave"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["leave"] });
+      qc.invalidateQueries({ queryKey: ["leave-stats"] });
+    },
   });
 }
 
@@ -92,7 +122,10 @@ export function useCancelLeave() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => api.put(`/leave/${id}/cancel`),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["leave"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["leave"] });
+      qc.invalidateQueries({ queryKey: ["leave-stats"] });
+    },
   });
 }
 

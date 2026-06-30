@@ -10,6 +10,7 @@ import {
   Users,
 } from "lucide-react";
 import { useHeaderConfig } from "@/hooks/useHeaderConfig";
+import { usePermission } from "@/hooks/usePermission";
 import { useDebounce } from "@/hooks/useDebounce";
 import {
   useBranches,
@@ -38,6 +39,8 @@ type BranchViewMode = "table" | "cards";
 
 export default function BranchManagement() {
   const navigate = useNavigate();
+  const { hasRole } = usePermission();
+  const canCreateBranch = hasRole(["CEO", "CO_MD", "OP_MANAGER", "HR_MANAGER"]);
   const [viewMode, setViewMode] = useState<BranchViewMode>("table");
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
@@ -109,16 +112,20 @@ export default function BranchManagement() {
             value: search,
             onChange: onSearchChange,
           },
-          {
-            type: "button" as const,
-            label: "New Branch",
-            icon: Plus,
-            onClick: () => setOpen(true),
-          },
+          ...(canCreateBranch
+            ? [
+                {
+                  type: "button" as const,
+                  label: "New Branch",
+                  icon: Plus,
+                  onClick: () => setOpen(true),
+                },
+              ]
+            : []),
         ],
         // eslint-disable-next-line react-hooks/exhaustive-deps
       }),
-      [search, viewMode, onViewChange, onSearchChange],
+      [search, viewMode, onViewChange, onSearchChange, canCreateBranch],
     ),
   );
 
@@ -126,6 +133,10 @@ export default function BranchManagement() {
   const meta = data?.meta;
 
   const onCreate = async () => {
+    if (!canCreateBranch) {
+      toast.error("Only global admins can create branches");
+      return;
+    }
     if (!name.trim()) return toast.error("Branch name is required");
     try {
       await createBranch.mutateAsync({

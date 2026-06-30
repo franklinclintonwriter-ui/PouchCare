@@ -11,6 +11,7 @@ import {
 import { useHeaderConfig } from "@/hooks/useHeaderConfig";
 import {
   useLeaveRequests,
+  useLeaveStats,
   useApproveLeave,
   useRejectLeave,
   useCancelLeave,
@@ -71,9 +72,8 @@ export default function LeaveList() {
     limit: 20,
   });
 
-  const allData = useLeaveRequests({});
+  const { data: leaveStats } = useLeaveStats();
   const { data: staffRows } = useStaffList({ limit: 300 });
-  const allLeaves = allData.data?.data ?? [];
 
   const leaves = data?.data ?? [];
   const meta = data?.meta;
@@ -86,10 +86,10 @@ export default function LeaveList() {
   const [cancelTarget, setCancelTarget] = useState<LeaveRequest | null>(null);
 
   const stats = useMemo(() => {
-    const total = allData.data?.meta?.total ?? 0;
-    const pending = allLeaves.filter((l) => l.status === "PENDING").length;
-    const approved = allLeaves.filter((l) => l.status === "APPROVED").length;
-    const rejected = allLeaves.filter((l) => l.status === "REJECTED").length;
+    const total = leaveStats?.total ?? 0;
+    const pending = leaveStats?.pending ?? 0;
+    const approved = leaveStats?.approved ?? 0;
+    const rejected = leaveStats?.rejected ?? 0;
     return [
       {
         title: "Total Requests",
@@ -119,33 +119,33 @@ export default function LeaveList() {
         iconBg: "bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400",
       },
     ];
-  }, [allLeaves, allData.data?.meta]);
+  }, [leaveStats]);
 
   const tabItems = useMemo(
     () => [
-      { label: "All", value: "all", count: allData.data?.meta?.total },
+      { label: "All", value: "all", count: leaveStats?.total },
       {
         label: "Pending",
         value: "pending",
-        count: allLeaves.filter((l) => l.status === "PENDING").length,
+        count: leaveStats?.pending ?? 0,
       },
       {
         label: "Approved",
         value: "approved",
-        count: allLeaves.filter((l) => l.status === "APPROVED").length,
+        count: leaveStats?.approved ?? 0,
       },
       {
         label: "Rejected",
         value: "rejected",
-        count: allLeaves.filter((l) => l.status === "REJECTED").length,
+        count: leaveStats?.rejected ?? 0,
       },
       {
         label: "Cancelled",
         value: "cancelled",
-        count: allLeaves.filter((l) => l.status === "CANCELLED").length,
+        count: leaveStats?.cancelled ?? 0,
       },
     ],
-    [allLeaves, allData.data?.meta],
+    [leaveStats],
   );
 
   const headerConfig = useMemo(
