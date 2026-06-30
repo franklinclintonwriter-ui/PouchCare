@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/Button';
 const loginSchema = z.object({
   email: z.string().email('Enter a valid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
+  remember: z.boolean().default(true),
 });
 
 const totpSchema = z.object({
@@ -30,7 +31,7 @@ export default function StaffLogin() {
 
   const loginForm = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: '', password: '' },
+    defaultValues: { email: '', password: '', remember: true },
   });
 
   const totpForm = useForm<TotpForm>({
@@ -167,6 +168,7 @@ export default function StaffLogin() {
                     <label className="flex items-center gap-2">
                       <input
                         type="checkbox"
+                        {...loginForm.register('remember')}
                         className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700"
                       />
                       <span className="text-sm text-gray-600 dark:text-gray-400">Remember me</span>

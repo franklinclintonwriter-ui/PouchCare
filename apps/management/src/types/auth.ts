@@ -38,6 +38,7 @@ export interface LoginRequest {
   email: string;
   password: string;
   totp?: string;
+  remember?: boolean;
 }
 
 export interface LoginResponse {

@@ -30,10 +30,11 @@ export function useStaffLogin() {
 
   return useMutation({
     mutationFn: async (data: LoginRequest) => {
-      const res = await api.post<LoginResponse>("/auth/login", data);
+      const { remember: _remember, ...payload } = data;
+      const res = await api.post<LoginResponse>("/auth/login", payload);
       return res.data;
     },
-    onSuccess: (data) => {
+    onSuccess: (data, vars) => {
       if (data.access_token && data.user) {
         setAuth(
           normalizeStaffUser(
@@ -42,6 +43,7 @@ export function useStaffLogin() {
           data.access_token,
           data.refresh_token,
           "staff",
+          vars.remember ?? true,
         );
       }
     },
