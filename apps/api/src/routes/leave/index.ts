@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import prisma from "@/lib/prisma";
+import { audit } from "@/lib/auditLog";
 import {
   authenticate,
   requireStaff,
@@ -108,6 +109,12 @@ router.delete(
       );
       if (!okScope) return forbidden(res, "Cannot delete this leave request");
       await prisma.leaveRequest.delete({ where: { id: req.params.id } });
+      await audit(req, {
+        action: "leave.delete",
+        resourceKind: "LeaveRequest",
+        resourceId: row.id,
+        before: row,
+      });
       return ok(res, { message: "Leave request deleted" });
     } catch (err) {
       return serverError(res, err);
@@ -141,6 +148,12 @@ router.post("/apply", requireStaff, validate(applySchema), async (req, res) => {
         totalDays,
         reason,
       },
+    });
+    await audit(req as AuthRequest, {
+      action: "leave.create",
+      resourceKind: "LeaveRequest",
+      resourceId: request.id,
+      after: request,
     });
     return created(res, request);
   } catch (err) {
@@ -187,6 +200,12 @@ router.post(
           reason,
         },
       });
+      await audit(req, {
+        action: "leave.create",
+        resourceKind: "LeaveRequest",
+        resourceId: request.id,
+        after: request,
+      });
       return created(res, request);
     } catch (err) {
       return serverError(res, err);
@@ -215,6 +234,13 @@ router.put(
       const updated = await prisma.leaveRequest.update({
         where: { id: req.params.id },
         data: { status: "APPROVED", approvedBy: req.user!.id },
+      });
+      await audit(req, {
+        action: "leave.approve",
+        resourceKind: "LeaveRequest",
+        resourceId: row.id,
+        before: row,
+        after: updated,
       });
       return ok(res, updated);
     } catch (err) {
@@ -245,6 +271,13 @@ router.put(
         where: { id: req.params.id },
         data: { status: "REJECTED", notes: req.body.note ?? req.body.reason },
       });
+      await audit(req, {
+        action: "leave.reject",
+        resourceKind: "LeaveRequest",
+        resourceId: row.id,
+        before: row,
+        after: updated,
+      });
       return ok(res, updated);
     } catch (err) {
       return serverError(res, err);
@@ -266,6 +299,13 @@ router.put("/:id/cancel", requireStaff, async (req, res) => {
     const updated = await prisma.leaveRequest.update({
       where: { id: req.params.id },
       data: { status: "CANCELLED" },
+    });
+    await audit(req as AuthRequest, {
+      action: "leave.cancel",
+      resourceKind: "LeaveRequest",
+      resourceId: request.id,
+      before: request,
+      after: updated,
     });
     return ok(res, updated);
   } catch (err) {

@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import prisma from "@/lib/prisma";
+import { audit } from "@/lib/auditLog";
 import {
   authenticate,
   requireStaff,
@@ -198,6 +199,13 @@ router.post(
       const record = existing
         ? await prisma.attendance.update({ where: { id: existing.id }, data })
         : await prisma.attendance.create({ data });
+      await audit(req, {
+        action: existing ? "attendance.update" : "attendance.create",
+        resourceKind: "Attendance",
+        resourceId: record.id,
+        before: existing ?? undefined,
+        after: record,
+      });
       broadcastAttendanceUpdate({
         staffMemberId: payload.staffMemberId,
         date: payload.date,
@@ -251,6 +259,13 @@ router.post("/checkin", requireStaff, async (req, res) => {
             loginIp: req.ip,
           },
         });
+    await audit(req as AuthRequest, {
+      action: existing ? "attendance.update" : "attendance.create",
+      resourceKind: "Attendance",
+      resourceId: record.id,
+      before: existing ?? undefined,
+      after: record,
+    });
     broadcastAttendanceUpdate({ staffMemberId: record.staffMemberId });
     return ok(res, record);
   } catch (err) {
@@ -285,6 +300,13 @@ router.post("/checkout", requireStaff, async (req, res) => {
         overtimeHours: parseFloat(overtime.toFixed(2)),
       },
     });
+    await audit(req as AuthRequest, {
+      action: "attendance.checkout",
+      resourceKind: "Attendance",
+      resourceId: record.id,
+      before: record,
+      after: updated,
+    });
     broadcastAttendanceUpdate({ staffMemberId: updated.staffMemberId });
     return ok(res, updated);
   } catch (err) {
@@ -314,6 +336,13 @@ router.put(
         where: { id: req.params.id },
         data: { ...req.body, approvedBy: req.user!.id },
       });
+      await audit(req, {
+        action: "attendance.update",
+        resourceKind: "Attendance",
+        resourceId: record.id,
+        before: existing,
+        after: record,
+      });
       broadcastAttendanceUpdate({ staffMemberId: record.staffMemberId });
       return ok(res, record);
     } catch (err) {
@@ -342,6 +371,12 @@ router.delete(
       if (!staffOk) return forbidden(res, "Cannot delete this attendance record");
 
       await prisma.attendance.delete({ where: { id: req.params.id } });
+      await audit(req, {
+        action: "attendance.delete",
+        resourceKind: "Attendance",
+        resourceId: record.id,
+        before: record,
+      });
       broadcastAttendanceUpdate({ staffMemberId: record.staffMemberId });
       return ok(res, { message: "Attendance record deleted successfully" });
     } catch (err) {
@@ -448,6 +483,16 @@ router.post(
       if (results.created > 0 || results.updated > 0) {
         broadcastAttendanceUpdate({ bulk: true });
       }
+      await audit(req, {
+        action: "attendance.bulk.upsert",
+        resourceKind: "Attendance",
+        resourceId: "bulk",
+        metadata: {
+          created: results.created,
+          updated: results.updated,
+          errors: results.errors.length,
+        },
+      });
       return ok(res, results);
     } catch (err) {
       return serverError(res, err);
