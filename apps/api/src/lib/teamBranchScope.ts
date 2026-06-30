@@ -1,6 +1,7 @@
 import type { Prisma, SystemRole } from '@prisma/client'
 import prisma from '@/lib/prisma'
 import type { AuthRequest } from '@/middleware/auth'
+import { branchesMatch } from '@/lib/branchResolve'
 
 /** Full org visibility for attendance / leave / daily reports lists. */
 export const GLOBAL_TEAM_ROLES: SystemRole[] = ['CEO', 'CO_MD', 'OP_MANAGER', 'HR_MANAGER']
@@ -21,10 +22,11 @@ export async function canManagerAccessStaffMember(
   if (managerRole !== 'BRANCH_MANAGER') return true
 
   const [me, them] = await Promise.all([
-    prisma.staffMember.findUnique({ where: { id: managerId }, select: { branchId: true } }),
-    prisma.staffMember.findUnique({ where: { id: targetStaffId }, select: { branchId: true } }),
+    prisma.staffMember.findUnique({ where: { id: managerId }, select: { branchId: true, branch: true } }),
+    prisma.staffMember.findUnique({ where: { id: targetStaffId }, select: { branchId: true, branch: true } }),
   ])
-  return !!(me?.branchId && them?.branchId && me.branchId === them.branchId)
+  if (!me || !them) return false
+  return branchesMatch(me, them)
 }
 
 export async function branchManagerStaffRelationFilter(

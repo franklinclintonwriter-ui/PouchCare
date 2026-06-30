@@ -37,3 +37,14 @@ export function isNonBranchLabel(name?: string | null): boolean {
   if (!key) return true
   return NON_BRANCH_LABELS.has(key)
 }
+
+/** Match by `branchId` when both sides have one; otherwise fall back to legacy branch labels. */
+export function branchesMatch(
+  a: { branchId?: string | null; branch?: string | null },
+  b: { branchId?: string | null; branch?: string | null },
+): boolean {
+  if (a.branchId && b.branchId) return a.branchId === b.branchId
+  const aName = a.branch?.trim()
+  const bName = b.branch?.trim()
+  return !!(aName && bName && aName === bName)
+}

@@ -1,7 +1,8 @@
 import { Router } from "express";
 import { z } from "zod";
 import prisma from "@/lib/prisma";
-import { authenticate } from "@/middleware/auth";
+import { audit } from "@/lib/auditLog";
+import { authenticate, type AuthRequest } from "@/middleware/auth";
 import { requirePermission } from "@/middleware/rbac";
 import { validate } from "@/middleware/validate";
 import { getPagination, buildMeta } from "@/utils/pagination";
@@ -57,6 +58,12 @@ router.post(
   async (req, res) => {
     try {
       const pos = await prisma.jobPosition.create({ data: req.body });
+      await audit(req as AuthRequest, {
+        action: "hr.position.create",
+        resourceKind: "JobPosition",
+        resourceId: pos.id,
+        after: pos,
+      });
       return created(res, pos);
     } catch (err) {
       return serverError(res, err);
@@ -87,6 +94,12 @@ router.put(
         where: { id: req.params.id },
         data: req.body,
       });
+      await audit(req as AuthRequest, {
+        action: "hr.position.update",
+        resourceKind: "JobPosition",
+        resourceId: pos.id,
+        after: pos,
+      });
       return ok(res, pos);
     } catch (err) {
       return serverError(res, err);
@@ -106,6 +119,11 @@ router.delete("/positions/:id", hr, async (req, res) => {
       );
     }
     await prisma.jobPosition.delete({ where: { id: req.params.id } });
+    await audit(req as AuthRequest, {
+      action: "hr.position.delete",
+      resourceKind: "JobPosition",
+      resourceId: req.params.id,
+    });
     return ok(res, { message: "Position deleted" });
   } catch (err) {
     return serverError(res, err);
@@ -213,6 +231,12 @@ router.post(
         });
         return newApp;
       });
+      await audit(req as AuthRequest, {
+        action: "hr.application.create",
+        resourceKind: "JobApplication",
+        resourceId: app.id,
+        after: app,
+      });
 
       return created(res, app);
     } catch (err) {
@@ -266,6 +290,13 @@ router.put(
         where: { id: req.params.id },
         data: updateData,
       });
+      await audit(req as AuthRequest, {
+        action: "hr.application.update",
+        resourceKind: "JobApplication",
+        resourceId: app.id,
+        before: current,
+        after: app,
+      });
       return ok(res, app);
     } catch (err) {
       return serverError(res, err);
@@ -286,6 +317,12 @@ router.delete("/applications/:id", hr, async (req, res) => {
         where: { id: app.positionId },
         data: { applications: { decrement: 1 } },
       });
+    });
+    await audit(req as AuthRequest, {
+      action: "hr.application.delete",
+      resourceKind: "JobApplication",
+      resourceId: app.id,
+      before: app,
     });
 
     return ok(res, { message: "Application deleted" });
@@ -363,6 +400,12 @@ router.post(
           ratedBy: req.user!.id,
         },
       });
+      await audit(req as AuthRequest, {
+        action: "hr.performance.create",
+        resourceKind: "PerformanceRating",
+        resourceId: rating.id,
+        after: rating,
+      });
       return created(res, rating);
     } catch (err) {
       return serverError(res, err);
@@ -392,6 +435,12 @@ router.put(
         where: { id: req.params.id },
         data: req.body,
       });
+      await audit(req as AuthRequest, {
+        action: "hr.performance.update",
+        resourceKind: "PerformanceRating",
+        resourceId: rating.id,
+        after: rating,
+      });
       return ok(res, rating);
     } catch (err) {
       return serverError(res, err);
@@ -402,6 +451,11 @@ router.put(
 router.delete("/performance/:id", hr, async (req, res) => {
   try {
     await prisma.performanceRating.delete({ where: { id: req.params.id } });
+    await audit(req as AuthRequest, {
+      action: "hr.performance.delete",
+      resourceKind: "PerformanceRating",
+      resourceId: req.params.id,
+    });
     return ok(res, { message: "Rating deleted" });
   } catch (err) {
     return serverError(res, err);
