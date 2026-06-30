@@ -90,6 +90,8 @@ export function authed(request: APIRequestContext, token: string) {
       ? Object.fromEntries(Object.entries(params).map(([key, value]) => [key, String(value)]))
       : undefined
 
+  const headers = { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' }
+
   return {
     get: (path: string, params?: QueryParams) =>
       request.get(`${API_BASE}${path}`, {
@@ -97,9 +99,12 @@ export function authed(request: APIRequestContext, token: string) {
         params: normalizeParams(params),
       }),
     post: (path: string, body?: unknown) =>
-      request.post(`${API_BASE}${path}`, {
-        headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
-        data: body,
-      }),
+      request.post(`${API_BASE}${path}`, { headers, data: body }),
+    put: (path: string, body?: unknown) =>
+      request.put(`${API_BASE}${path}`, { headers, data: body }),
+    patch: (path: string, body?: unknown) =>
+      request.patch(`${API_BASE}${path}`, { headers, data: body }),
+    delete: (path: string) =>
+      request.delete(`${API_BASE}${path}`, { headers }),
   }
 }
