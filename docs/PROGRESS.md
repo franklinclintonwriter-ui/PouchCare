@@ -3,9 +3,9 @@
 <!-- Any agent/session: READ THIS BLOCK FIRST to resume work. Keep it accurate in every PR. -->
 ## CURRENT STATE / RESUME HERE
 - **Integration branch:** `enterprise/main` (off `main` @ 953cd99) — Phase 1 + Phase-2 **#14/#15/#18/#19** merged.
-- **Active branch:** none. **Copilot PRs open off `enterprise/main`:** **#17** (PR-2.2 audit coverage) + **#20** (PR-2.6 vitest/Playwright + CI). Both to review/merge when ready.
+- **Active branch:** `copilot/pr-22-instrument-audit-helpers` (PR-2.2, based on `enterprise/main`).
 - **Last merged enterprise PR:** **#18** (PR-2.4 BRANCH_MANAGER scoping → branchId) + **#19** (PR-2.5 auth hardening: sessions/revocation/logout/password policy/2FA), flattened into `enterprise/main` (after #14/#15). **Phase-2 critical path (AI) is complete.**
-- **Next action (AI):** review/merge Copilot **#17** + **#20** when ready (resolve the shared-ledger conflict at each flatten, as with #18/#19). Then **Phase 3** feature waves — start with **PR-3.1** (Leave quotas/balances/accrual — model is AI/critical-path) and **PR-3.2** (multi-stage approval engine, AI). Once all Phase-2 schema is merged, **owner generates the single `0_init`** + sets `DATABASE_URL`(mysql)/R2 secrets. **Note:** Cursor Bugbot Autofix being disabled by owner — Bugbot reviews stay, AI owns fixes.
+- **Next action (AI):** merge Copilot **#17** (PR-2.2) and continue **#20** (PR-2.6 vitest/Playwright + CI), then move into **Phase 3** feature waves starting with **PR-3.1** and **PR-3.2**. Once all Phase-2 schema is merged, **owner generates the single `0_init`** + sets `DATABASE_URL`(mysql)/R2 secrets.
 - **Owner steps (still pending — needs live MySQL):** generate `0_init` via `prisma migrate dev` + set `DATABASE_URL`(mysql)/R2 `S3_*` (see `apps/api/prisma/MIGRATION_NOTES.md` / `docs/DEPLOY-MYSQL.md`). Recommended AFTER Phase-2 schema PRs.
 - **Known-broken / notes:** `apps/api` + `apps/management` tsc 0; `prisma validate` ✓. **Follow-up:** Windows dev scripts (`scripts/*.ps1`) + `deploy/server-init.sh` still mention postgres — non-deploy-critical (DB runs in the `mysql` container). Bugbot flagged "legacy Supabase `storageKey` URLs break downloads" on #10 — **N/A for fresh-start** (greenfield DB, no legacy rows; new code only writes R2 object keys). PR #3 (service picker) merged to `main` separately.
 - **Protocol reminder:** every PR must (1) flip its line below, (2) update this block, (3) append to `ledger/PR-INDEX.md`. Enforced on merge requests by the `quality:ledger` CI job (`scripts/check-ledger.mjs`).
@@ -28,7 +28,7 @@ Status values: `TODO` · `WIP` · `IN_REVIEW` · `MERGED`. Each line carries its
 
 ## Phase 2 — Enterprise foundations
 - [x] PR-2.1 `[CP]` Audit schema/contract align — branch:ent/p2-audit-schema — status:MERGED — pr:#14 — owner:ai — verify:prisma validate ✓; tsc both apps 0; no `as any`
-- [ ] PR-2.2 `[||]` Audit coverage ~100% — branch:(copilot) — status:WIP — pr:#17 — owner:copilot — verify:`npm run audit:coverage` ~100% (delegated to Copilot, base enterprise/main)
+- [ ] PR-2.2 `[||]` Audit coverage ~100% — branch:(copilot) — status:IN_REVIEW — pr:#17 — owner:copilot — verify:`npm run audit:coverage` ~100% (delegated to Copilot, base enterprise/main)
 - [x] PR-2.3 `[CP]` Branch FK isolation — branch:ent/p2-branch-fk — status:MERGED — pr:#15 — owner:ai — verify:prisma validate ✓; api tsc 0; seed backfills branchId (link via branch-staff)
 - [x] PR-2.4 `[CP]` BRANCH_MANAGER query scope — branch:ent/p2-branch-scope — status:MERGED — pr:#18 — owner:ai — verify:api tsc 0; scoping on branchId (fail-closed, sentinel-aware); branchId set on staff/task writes
 - [x] PR-2.5 `[CP]` Auth hardening — branch:ent/p2-auth — status:MERGED — pr:#19 — owner:ai — verify:api tsc 0; StaffSession revocation; logout/refresh validate own session; atomic password+revoke; 2FA any-role

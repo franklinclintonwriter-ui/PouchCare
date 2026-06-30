@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { authenticate, isManager, isCEO, type AuthRequest } from '@/middleware/auth'
 import { validate } from '@/middleware/validate'
 import prisma from '@/lib/prisma'
+import { audit } from '@/lib/auditLog'
 import { ok, created, badRequest, notFound, forbidden, serverError, paginated } from '@/lib/response'
 import { getPagination, buildMeta } from '@/lib/pagination'
 import { uploadFile } from '@/lib/storage'
@@ -270,6 +271,12 @@ router.post('/', isManager, validate(taskSchema), async (req: AuthRequest, res) 
         data: { tasksAssigned: { increment: 1 } },
       })
     }
+    await audit(req, {
+      action: 'task.create',
+      resourceKind: 'Task',
+      resourceId: task.id,
+      after: task,
+    })
     return created(res, task)
   } catch (e) {
     console.error(e)
@@ -306,6 +313,13 @@ router.put('/:id', async (req: AuthRequest, res) => {
         data.status = 'IN_PROGRESS'
       }
       const updated = await prisma.task.update({ where: { id: req.params.id }, data })
+      await audit(req, {
+        action: 'task.update',
+        resourceKind: 'Task',
+        resourceId: updated.id,
+        before: task,
+        after: updated,
+      })
       return ok(res, updated)
     }
 
@@ -332,6 +346,13 @@ router.put('/:id', async (req: AuthRequest, res) => {
       if (body.deadline !== undefined) data.deadline = body.deadline ? new Date(body.deadline) : null
       if (body.priority !== undefined) data.priority = body.priority
       const updated = await prisma.task.update({ where: { id: req.params.id }, data })
+      await audit(req, {
+        action: 'task.update',
+        resourceKind: 'Task',
+        resourceId: updated.id,
+        before: task,
+        after: updated,
+      })
       return ok(res, updated)
     }
 
@@ -401,6 +422,13 @@ router.put('/:id', async (req: AuthRequest, res) => {
       where: { id: req.params.id },
       data: data as any,
     })
+    await audit(req, {
+      action: 'task.update',
+      resourceKind: 'Task',
+      resourceId: updated.id,
+      before: task,
+      after: updated,
+    })
     return ok(res, updated)
   } catch (e) {
     console.error(e)
@@ -448,6 +476,13 @@ router.post(
         where: { id: req.params.id },
         data: { taskAttachments: capped as unknown as object },
       })
+      await audit(req, {
+        action: 'task.attachment.update',
+        resourceKind: 'Task',
+        resourceId: updated.id,
+        before: task,
+        after: updated,
+      })
       return ok(res, updated)
     } catch (e) {
       console.error(e)
@@ -459,7 +494,13 @@ router.post(
 // DELETE /tasks/:id — CEO only
 router.delete('/:id', isCEO, async (req, res) => {
   try {
-    await prisma.task.delete({ where: { id: req.params.id } })
+    const task = await prisma.task.delete({ where: { id: req.params.id } })
+    await audit(req as AuthRequest, {
+      action: 'task.delete',
+      resourceKind: 'Task',
+      resourceId: task.id,
+      before: task,
+    })
     return ok(res, { message: 'Task deleted' })
   } catch {
     return serverError(res)
@@ -486,6 +527,13 @@ router.post('/:id/submit', async (req: AuthRequest, res) => {
         progressUpdatedAt: new Date(),
       },
     })
+    await audit(req, {
+      action: 'task.submit',
+      resourceKind: 'Task',
+      resourceId: updated.id,
+      before: task,
+      after: updated,
+    })
     return ok(res, updated)
   } catch {
     return serverError(res)
@@ -508,6 +556,13 @@ router.post('/:id/approve', isManager, async (req: AuthRequest, res) => {
         managerApprovalNote: req.body.note,
       },
     })
+    await audit(req, {
+      action: 'task.approve',
+      resourceKind: 'Task',
+      resourceId: updated.id,
+      before: task,
+      after: updated,
+    })
     return ok(res, updated)
   } catch {
     return serverError(res)
@@ -529,6 +584,13 @@ router.post('/:id/reject', isManager, async (req: AuthRequest, res) => {
         managerApprovalNote: req.body.note,
       },
     })
+    await audit(req, {
+      action: 'task.reject',
+      resourceKind: 'Task',
+      resourceId: updated.id,
+      before: task,
+      after: updated,
+    })
     return ok(res, updated)
   } catch {
     return serverError(res)
@@ -537,9 +599,18 @@ router.post('/:id/reject', isManager, async (req: AuthRequest, res) => {
 
 router.post('/:id/escalate', isManager, async (req, res) => {
   try {
+    const task = await prisma.task.findUnique({ where: { id: req.params.id } })
+    if (!task) return notFound(res, 'Task')
     const updated = await prisma.task.update({
       where: { id: req.params.id },
       data: { approvalStatus: ApprovalStatus.ESCALATED },
+    })
+    await audit(req as AuthRequest, {
+      action: 'task.escalate',
+      resourceKind: 'Task',
+      resourceId: updated.id,
+      before: task,
+      after: updated,
     })
     return ok(res, updated)
   } catch {
@@ -561,6 +632,13 @@ router.post('/:id/verify', isCEO, async (req: AuthRequest, res) => {
         ceoVerifiedDate: new Date(),
         completedDate: new Date(),
       },
+    })
+    await audit(req, {
+      action: 'task.verify',
+      resourceKind: 'Task',
+      resourceId: updated.id,
+      before: task,
+      after: updated,
     })
 
     if (task.assignedMemberId) {
@@ -587,6 +665,13 @@ router.post(
       const updated = await prisma.task.update({
         where: { id: req.params.id },
         data: { ceoWorkRating: req.body.rating, ceoRatingNote: req.body.note, ceoRatedDate: new Date() },
+      })
+      await audit(req, {
+        action: 'task.rate',
+        resourceKind: 'Task',
+        resourceId: updated.id,
+        before: task,
+        after: updated,
       })
 
       if (task.assignedMemberId) {
@@ -629,6 +714,13 @@ router.post('/:id/comments', validate(z.object({ content: z.string().min(1) })),
         authorName: author?.name || 'Unknown',
         content: req.body.content,
       },
+    })
+    await audit(req, {
+      action: 'task.comment.create',
+      resourceKind: 'TaskComment',
+      resourceId: comment.id,
+      metadata: { taskId: req.params.id },
+      after: comment,
     })
     return created(res, comment)
   } catch {

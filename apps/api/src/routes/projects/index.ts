@@ -4,6 +4,7 @@ import type { Prisma } from '@prisma/client'
 import { authenticate, isManager, isCEO, type AuthRequest } from '@/middleware/auth'
 import { validate } from '@/middleware/validate'
 import prisma from '@/lib/prisma'
+import { audit } from '@/lib/auditLog'
 import { canAccessProject, isGlobalProjectRole, projectWhereForRequest } from '@/lib/projectScope'
 import { ok, created, notFound, serverError, paginated, forbidden } from '@/lib/response'
 import { getPagination, paginatedMeta, buildMeta} from '@/lib/pagination'
@@ -110,6 +111,12 @@ router.post('/', isManager, validate(schema), async (req: AuthRequest, res) => {
     const project = await prisma.project.create({
       data: { ...req.body, createdByRole: req.user!.role, startDate: req.body.startDate ? new Date(req.body.startDate) : undefined, deadline: req.body.deadline ? new Date(req.body.deadline) : undefined },
     })
+    await audit(req, {
+      action: 'project.create',
+      resourceKind: 'Project',
+      resourceId: project.id,
+      after: project,
+    })
     return created(res, project)
   } catch { return serverError(res) }
 })
@@ -119,13 +126,25 @@ router.put('/:id', isManager, validate(schema.partial()), async (req: AuthReques
     const allowed = await canAccessProject(req, req.params.id)
     if (!allowed) return notFound(res, 'Project')
     const project = await prisma.project.update({ where: { id: req.params.id }, data: req.body })
+    await audit(req, {
+      action: 'project.update',
+      resourceKind: 'Project',
+      resourceId: project.id,
+      after: project,
+    })
     return ok(res, project)
   } catch { return serverError(res) }
 })
 
 router.delete('/:id', isCEO, async (req, res) => {
   try {
-    await prisma.project.update({ where: { id: req.params.id }, data: { status: 'CANCELLED' } })
+    const project = await prisma.project.update({ where: { id: req.params.id }, data: { status: 'CANCELLED' } })
+    await audit(req as AuthRequest, {
+      action: 'project.cancel',
+      resourceKind: 'Project',
+      resourceId: project.id,
+      after: project,
+    })
     return ok(res, { message: 'Project cancelled' })
   } catch { return serverError(res) }
 })
