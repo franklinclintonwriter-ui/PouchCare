@@ -44,7 +44,9 @@ export async function apiLogin(
   const body = await res.json()
   const data = body.data ?? body
   if (data?.requireTotp) {
-    throw new Error(`apiLogin cannot use TOTP-enabled account: ${email}`)
+    throw new Error(
+      `apiLogin cannot use TOTP-enabled accounts; use a non-TOTP seed account or UI-based auth flow: ${email}`,
+    )
   }
   const accessToken = data?.access_token
   const refreshToken = data?.refresh_token
