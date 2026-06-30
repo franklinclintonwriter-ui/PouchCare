@@ -133,6 +133,12 @@ quality:e2e:rbac-tasks:
   script:
     - npm run test:e2e -- e2e/rbac.spec.ts e2e/tasks.spec.ts
 
+quality:e2e:admin-security:
+  extends: .quality:e2e-base
+  needs: ["quality:e2e:rbac-tasks"]
+  script:
+    - npm run test:e2e -- e2e/admin-api.spec.ts e2e/admin-rbac.spec.ts
+
 # Enterprise ledger guard — a code MR must also update docs/PROGRESS.md
 quality:ledger:
   stage: verify
