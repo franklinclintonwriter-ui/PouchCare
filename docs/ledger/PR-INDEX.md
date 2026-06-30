@@ -267,4 +267,9 @@
 - **CI:** Added GitLab `quality:test` (root `npm test`) and `quality:e2e` (MySQL 8 + Redis 7 services, Prisma bootstrap, seed, targeted Playwright run). `quality:e2e` runs `prisma migrate deploy`, then `prisma db push --skip-generate` to reconcile the still-in-flight `0_init` migration state before seeding.
 - **Bug surfaced while wiring tests:** the existing Playwright config pointed at port **3001** even though the management Vite dev server runs on **3000**, and `e2e/rbac.spec.ts` referenced an unseeded `staff1@pouchcare.com` login. Both were test-fixture/bootstrap issues fixed as part of getting the new harness runnable.
 - **Unfixed app bug surfaced by repeated reruns:** staff login can hit `staff_sessions_refresh_token_hash_key` on rapid same-account re-logins (refresh-token hash collision across same-second retries). The test helpers now retry across a one-second boundary so the harness stays stable, but the auth/session logic itself is intentionally untouched in this PR.
-- **Verify:** `npm test`; `cd apps/api && npx tsc --noEmit`; CI config defines `quality:test` + `quality:e2e`.
+- **Follow-up landed in this PR branch:** hardened login/session behavior and its test coverage after the initial harness landed:
+  - Added staff login limiter on `/v1/auth/login`, portal refresh-token tracking + revocation on logout/password change, fixed portal/staff post-refresh redirect, and wired management "Remember me" to session-vs-local storage semantics.
+  - Expanded `e2e/auth.spec.ts` with **portal** session revocation tests (`/portal/logout`, `/portal/change-password` invalidate old refresh tokens).
+  - CI e2e is now split into explicit ordered gates for clearer failures and stronger protection: `quality:e2e:auth` -> `quality:e2e:rbac-tasks` -> `quality:e2e:admin-security`.
+  - Updated admin security specs to read the current access-token storage key (`pouchcare_access_token`) with fallback to legacy key.
+- **Verify:** `npm test`; `cd apps/api && npx tsc --noEmit`; `E2E_NO_SERVER=1 npm run test:e2e -- e2e/auth.spec.ts` ✓; CI config defines split e2e gates (`auth`, `rbac+tasks`, `admin-security`).
