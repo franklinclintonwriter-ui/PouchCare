@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FileText, Clock, CheckCircle2, TrendingUp, Smile, Meh, Frown, Heart, Send, type LucideIcon } from 'lucide-react';
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
-import { useDailyReports, useReviewReport } from '@/api/reports';
+import { useDailyReports, useDailyReportStats, useReviewReport } from '@/api/reports';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { DataTable, type Column } from '@/components/ui/DataTable';
 import { StatusBadge } from '@/components/ui/StatusBadge';
@@ -32,6 +32,7 @@ export default function DailyReports() {
   const [reviewNote, setReviewNote] = useState('');
 
   const { data, isLoading } = useDailyReports({ page, limit: 20 });
+  const { data: reportStats } = useDailyReportStats();
   const reviewReport = useReviewReport();
 
   const canReview = perm.can('hr.performance') || perm.isManager;
@@ -51,26 +52,18 @@ export default function DailyReports() {
   const reports = data?.data ?? [];
   const meta = data?.meta;
 
-  // Fetch all reports for accurate stats (not just the paginated page)
-  const { data: allData } = useDailyReports({});
-  const allReports = allData?.data ?? [];
-
   const stats = useMemo(() => {
-    const total = meta?.total ?? 0;
-    const avgHours = allReports.length > 0
-      ? (allReports.reduce((s, r) => s + r.hoursWorked, 0) / allReports.length).toFixed(1)
-      : '0';
-    const avgTasks = allReports.length > 0
-      ? (allReports.reduce((s, r) => s + r.tasksCompleted, 0) / allReports.length).toFixed(1)
-      : '0';
-    const approved = allReports.filter(r => r.status === 'APPROVED_MGR' || r.status === 'VERIFIED').length;
+    const total = reportStats?.total ?? meta?.total ?? 0;
+    const avgHours = (reportStats?.avgHours ?? 0).toFixed(1);
+    const avgTasks = (reportStats?.avgTasks ?? 0).toFixed(1);
+    const approved = reportStats?.approved ?? 0;
     return [
       { title: 'Total Reports', value: total, icon: <FileText />, iconBg: 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' },
       { title: 'Avg Hours', value: avgHours, icon: <Clock />, iconBg: 'bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400' },
       { title: 'Avg Tasks/Day', value: avgTasks, icon: <TrendingUp />, iconBg: 'bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400' },
       { title: 'Approved', value: approved, icon: <CheckCircle2 />, iconBg: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400' },
     ];
-  }, [allReports, meta]);
+  }, [reportStats, meta]);
 
   const headerConfig = useMemo(() => ({
     title: 'Daily Reports',

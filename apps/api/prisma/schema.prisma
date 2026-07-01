@@ -207,24 +207,27 @@ model StaffMember {
   updatedAt            DateTime   @updatedAt @map("updated_at")
 
   // Relations
-  tasks              Task[]              @relation("AssignedMember")
-  managedTasks       Task[]              @relation("AssignedManager")
-  attendance         Attendance[]
-  leaveRequests      LeaveRequest[]
-  dailyReports       DailyReport[]
-  payroll            Payroll[]
-  performanceRatings PerformanceRating[]
-  devices            Device[]
-  toolRuns           ToolRun[]
-  documents          StaffDocument[]
-  aiConversations    AiConversation[]
-  emailAccounts      EmailAccount[]
-  exchangeRatesCreated ExchangeRate[] @relation("ExchangeRateCreatedBy")
-  exchangeRatesUpdated ExchangeRate[] @relation("ExchangeRateUpdatedBy")
+  tasks                Task[]              @relation("AssignedMember")
+  managedTasks         Task[]              @relation("AssignedManager")
+  attendance           Attendance[]
+  leaveRequests        LeaveRequest[]
+  dailyReports         DailyReport[]
+  payroll              Payroll[]
+  performanceRatings   PerformanceRating[]
+  devices              Device[]
+  toolRuns             ToolRun[]
+  documents            StaffDocument[]
+  aiConversations      AiConversation[]
+  emailAccounts        EmailAccount[]
+  exchangeRatesCreated ExchangeRate[]      @relation("ExchangeRateCreatedBy")
+  exchangeRatesUpdated ExchangeRate[]      @relation("ExchangeRateUpdatedBy")
   branchRef            Branch?             @relation(fields: [branchId], references: [id])
   sessions             StaffSession[]
 
   @@index([branchId])
+  @@index([status, createdAt])
+  @@index([branchId, status])
+  @@index([systemRole, status])
   @@map("staff_members")
 }
 
@@ -343,6 +346,9 @@ model Task {
 
   @@index([relatedProjectId])
   @@index([branchId])
+  @@index([assignedMemberId, priority, deadline])
+  @@index([status, priority, deadline])
+  @@index([approvalStatus, updatedAt])
   @@map("tasks")
 }
 
@@ -429,6 +435,8 @@ model Attendance {
 
   @@unique([staffMemberId, date])
   @@index([branchId])
+  @@index([branchId, date])
+  @@index([status, date])
   @@map("attendance")
 }
 
@@ -457,6 +465,8 @@ model LeaveRequest {
   branchRef          Branch?     @relation(fields: [branchId], references: [id])
 
   @@index([branchId])
+  @@index([staffMemberId, createdAt])
+  @@index([status, createdAt])
   @@map("leave_requests")
 }
 
@@ -486,6 +496,8 @@ model DailyReport {
 
   @@unique([staffMemberId, reportDate])
   @@index([branchId])
+  @@index([branchId, reportDate])
+  @@index([status, reportDate])
   @@map("daily_reports")
 }
 
@@ -537,6 +549,8 @@ model Payroll {
 
   @@unique([staffMemberId, month, year])
   @@index([branchId])
+  @@index([year, month])
+  @@index([branchId, year, month])
   @@map("payroll")
 }
 
@@ -696,6 +710,8 @@ model CrmLead {
   createdAt         DateTime  @default(now()) @map("created_at")
   updatedAt         DateTime  @updatedAt @map("updated_at")
 
+  @@index([stage])
+  @@index([updatedAt])
   @@map("crm_leads")
 }
 
@@ -718,6 +734,8 @@ model SalesOrder {
   notes            String?
   createdAt        DateTime      @default(now()) @map("created_at")
 
+  @@index([createdAt])
+  @@index([status, createdAt])
   @@map("sales_orders")
 }
 
@@ -821,37 +839,37 @@ model BacklinkPackage {
 /// Domain name inventory. Rows may be (a) PouchCare internal ops (staff `/assets/domains`) and/or
 /// (b) customer-owned (`portalMemberId` set) for portal `/portal/hosting/domains`. Same table, different routes/UX.
 model Domain {
-  id                     String        @id @default(uuid())
-  domainId               Int           @unique @default(autoincrement()) @map("domain_id")
-  domainName             String        @unique @map("domain_name")
-  status                 String        @default("Active")
-  lifecycleStatus        String        @default("INCOMPLETE") @map("lifecycle_status")
-  registrar              String?
-  assignedTo             String?       @map("assigned_to")
-  assignedStaffId        String?       @map("assigned_staff_id")
-  expiryDate             DateTime?     @map("expiry_date")
-  registrationDate       DateTime?     @map("registration_date")
-  annualRenewalCost      Float?        @map("annual_renewal_cost")
-  domainAgeYears         Float?        @map("domain_age_years")
-  daScore                Int?          @map("da_score")
-  drScore                Int?          @map("dr_score")
-  backlinksCount         Int?          @map("backlinks_count")
-  indexedPages           Int?          @map("indexed_pages")
-  monthlyTraffic         Int?          @map("monthly_traffic")
-  niche                  String?
-  hostingServer          String?       @map("hosting_server")
-  sslStatus              String?       @map("ssl_status")
-  nameservers            String?
-  dnsRecords             String?       @map("dns_records")
-  whoisPrivacy           Boolean       @default(false) @map("whois_privacy")
-  adsenseConnected       Boolean       @default(false) @map("adsense_connected")
-  adsensePublisherId     String?       @map("adsense_publisher_id")
-  analyticsId            String?       @map("analytics_id")
-  searchConsoleVerified  Boolean       @default(false) @map("search_console_verified")
-  notes                  String?
-  portalMemberId         String?       @map("portal_member_id")
-  portalMember           PortalMember? @relation(fields: [portalMemberId], references: [id])
-  createdAt              DateTime      @default(now()) @map("created_at")
+  id                    String        @id @default(uuid())
+  domainId              Int           @unique @default(autoincrement()) @map("domain_id")
+  domainName            String        @unique @map("domain_name")
+  status                String        @default("Active")
+  lifecycleStatus       String        @default("INCOMPLETE") @map("lifecycle_status")
+  registrar             String?
+  assignedTo            String?       @map("assigned_to")
+  assignedStaffId       String?       @map("assigned_staff_id")
+  expiryDate            DateTime?     @map("expiry_date")
+  registrationDate      DateTime?     @map("registration_date")
+  annualRenewalCost     Float?        @map("annual_renewal_cost")
+  domainAgeYears        Float?        @map("domain_age_years")
+  daScore               Int?          @map("da_score")
+  drScore               Int?          @map("dr_score")
+  backlinksCount        Int?          @map("backlinks_count")
+  indexedPages          Int?          @map("indexed_pages")
+  monthlyTraffic        Int?          @map("monthly_traffic")
+  niche                 String?
+  hostingServer         String?       @map("hosting_server")
+  sslStatus             String?       @map("ssl_status")
+  nameservers           String?
+  dnsRecords            String?       @map("dns_records")
+  whoisPrivacy          Boolean       @default(false) @map("whois_privacy")
+  adsenseConnected      Boolean       @default(false) @map("adsense_connected")
+  adsensePublisherId    String?       @map("adsense_publisher_id")
+  analyticsId           String?       @map("analytics_id")
+  searchConsoleVerified Boolean       @default(false) @map("search_console_verified")
+  notes                 String?
+  portalMemberId        String?       @map("portal_member_id")
+  portalMember          PortalMember? @relation(fields: [portalMemberId], references: [id])
+  createdAt             DateTime      @default(now()) @map("created_at")
 
   @@map("domains")
 }
@@ -879,35 +897,35 @@ model Server {
 /// Website records. Staff use `/assets/websites` (internal inventory); portal members use
 /// `/portal/websites` (scoped by `portalMemberId`). Do not confuse the two products.
 model Website {
-  id              String        @id @default(uuid())
-  name            String        @unique
-  url             String?
-  type            String?
-  status          String        @default("Live")
-  platform        String?
-  cms             String?
-  programmingLang String?       @map("programming_lang")
-  framework       String?
-  hostedOn        String?       @map("hosted_on")
-  domainLinked    String?       @map("domain_linked")
-  domainId        String?       @map("domain_id")
-  serverId        String?       @map("server_id")
-  assignedManager String?       @map("assigned_manager")
-  assignedStaffId String?       @map("assigned_staff_id")
-  monthlyTraffic  Int?          @map("monthly_traffic")
-  daScore         Int?          @map("da_score")
-  sslStatus       String?       @map("ssl_status")
-  adsenseConnected Boolean      @default(false) @map("adsense_connected")
-  adsenseEarnings Float?        @map("adsense_earnings")
-  analyticsId     String?       @map("analytics_id")
-  uptimePercent   Float?        @map("uptime_percent")
-  avgLoadTime     Float?        @map("avg_load_time")
-  lastUpdated     DateTime?     @map("last_updated")
-  renewalDate     DateTime?     @map("renewal_date")
-  notes           String?
-  portalMemberId  String?       @map("portal_member_id")
-  portalMember    PortalMember? @relation(fields: [portalMemberId], references: [id])
-  createdAt       DateTime      @default(now()) @map("created_at")
+  id               String        @id @default(uuid())
+  name             String        @unique
+  url              String?
+  type             String?
+  status           String        @default("Live")
+  platform         String?
+  cms              String?
+  programmingLang  String?       @map("programming_lang")
+  framework        String?
+  hostedOn         String?       @map("hosted_on")
+  domainLinked     String?       @map("domain_linked")
+  domainId         String?       @map("domain_id")
+  serverId         String?       @map("server_id")
+  assignedManager  String?       @map("assigned_manager")
+  assignedStaffId  String?       @map("assigned_staff_id")
+  monthlyTraffic   Int?          @map("monthly_traffic")
+  daScore          Int?          @map("da_score")
+  sslStatus        String?       @map("ssl_status")
+  adsenseConnected Boolean       @default(false) @map("adsense_connected")
+  adsenseEarnings  Float?        @map("adsense_earnings")
+  analyticsId      String?       @map("analytics_id")
+  uptimePercent    Float?        @map("uptime_percent")
+  avgLoadTime      Float?        @map("avg_load_time")
+  lastUpdated      DateTime?     @map("last_updated")
+  renewalDate      DateTime?     @map("renewal_date")
+  notes            String?
+  portalMemberId   String?       @map("portal_member_id")
+  portalMember     PortalMember? @relation(fields: [portalMemberId], references: [id])
+  createdAt        DateTime      @default(now()) @map("created_at")
 
   @@map("websites")
 }
@@ -1018,6 +1036,9 @@ model PortalMember {
   domains           Domain[]
   websites          Website[]
 
+  @@index([status])
+  @@index([createdAt])
+  @@index([registrationDate])
   @@map("portal_members")
 }
 
@@ -1046,6 +1067,9 @@ model PortalOrder {
   member        PortalMember @relation(fields: [memberId], references: [id])
   commissions   Commission[]
 
+  @@index([status])
+  @@index([orderDate])
+  @@index([memberId, orderDate])
   @@map("portal_orders")
 }
 
@@ -1212,6 +1236,7 @@ model SupportTicket {
   updatedAt    DateTime      @updatedAt @map("updated_at")
   replies      TicketReply[]
 
+  @@index([status, updatedAt])
   @@map("support_tickets")
 }
 

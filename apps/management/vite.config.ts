@@ -16,6 +16,8 @@ export default defineConfig({
     allowedHosts: [
       "localhost",
       "dev-m.pouchcare.com",
+      "m.pouchcare.com.bd",
+      "m.pouchcare.com",
     ],
     proxy: {
       "/v1": {

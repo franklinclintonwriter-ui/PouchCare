@@ -3,6 +3,7 @@ import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { validate } from "@/middleware/validate";
 import { authenticate, type AuthRequest } from "@/middleware/auth";
+import { authLimiter } from "@/middleware/rateLimit";
 import prisma from "@/lib/prisma";
 import { hashPassword, comparePassword } from "@/lib/hash";
 import { signAccess, signRefresh, verifyRefresh } from "@/lib/jwt";
@@ -48,7 +49,7 @@ const changePasswordSchema = z.object({
 });
 
 // POST /auth/login
-router.post("/login", validate(loginSchema), async (req, res) => {
+router.post("/login", authLimiter, validate(loginSchema), async (req, res) => {
   try {
     const { email, password, totp } = req.body;
     const emailNorm = email.trim().toLowerCase();

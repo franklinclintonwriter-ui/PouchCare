@@ -112,7 +112,9 @@ async function seedBranches() {
  * Global") staff and their records intentionally stay `branchId = null`.
  */
 async function linkBranchFks() {
-  const branch = await prisma.branch.findUnique({ where: { name: BRANCH_NAME } });
+  const branch = await prisma.branch.findUnique({
+    where: { name: BRANCH_NAME },
+  });
   if (!branch) {
     console.warn("⚠️  Canonical branch not found — skipping branchId backfill");
     return;
@@ -120,7 +122,10 @@ async function linkBranchFks() {
   const data = { branchId: branch.id };
 
   // 1. Staff whose advisory branch is the canonical branch.
-  const staff = await prisma.staffMember.updateMany({ where: { branch: BRANCH_NAME }, data });
+  const staff = await prisma.staffMember.updateMany({
+    where: { branch: BRANCH_NAME },
+    data,
+  });
 
   // 2. Everything else links through those staff members (more reliable than the strings).
   const branchStaff = await prisma.staffMember.findMany({
@@ -129,22 +134,44 @@ async function linkBranchFks() {
   });
   const ids = branchStaff.map((s) => s.id);
 
-  const [att, leave, reports, perf, pay, taskMember, taskManager, projects] = await Promise.all([
-    prisma.attendance.updateMany({ where: { staffMemberId: { in: ids } }, data }),
-    prisma.leaveRequest.updateMany({ where: { staffMemberId: { in: ids } }, data }),
-    prisma.dailyReport.updateMany({ where: { staffMemberId: { in: ids } }, data }),
-    prisma.performanceRating.updateMany({ where: { staffMemberId: { in: ids } }, data }),
-    prisma.payroll.updateMany({ where: { staffMemberId: { in: ids } }, data }),
-    prisma.task.updateMany({ where: { assignedMemberId: { in: ids } }, data }),
-    prisma.task.updateMany({ where: { assignedManagerId: { in: ids }, branchId: null }, data }),
-    prisma.project.updateMany({ where: { assignedTo: { in: ids } }, data }),
-  ]);
+  const [att, leave, reports, perf, pay, taskMember, taskManager, projects] =
+    await Promise.all([
+      prisma.attendance.updateMany({
+        where: { staffMemberId: { in: ids } },
+        data,
+      }),
+      prisma.leaveRequest.updateMany({
+        where: { staffMemberId: { in: ids } },
+        data,
+      }),
+      prisma.dailyReport.updateMany({
+        where: { staffMemberId: { in: ids } },
+        data,
+      }),
+      prisma.performanceRating.updateMany({
+        where: { staffMemberId: { in: ids } },
+        data,
+      }),
+      prisma.payroll.updateMany({
+        where: { staffMemberId: { in: ids } },
+        data,
+      }),
+      prisma.task.updateMany({
+        where: { assignedMemberId: { in: ids } },
+        data,
+      }),
+      prisma.task.updateMany({
+        where: { assignedManagerId: { in: ids }, branchId: null },
+        data,
+      }),
+      prisma.project.updateMany({ where: { assignedTo: { in: ids } }, data }),
+    ]);
 
   const tasks = taskMember.count + taskManager.count;
   console.log(
     `✅ Branch FK backfill → "${BRANCH_NAME}": staff ${staff.count}, attendance ${att.count}, ` +
       `leave ${leave.count}, reports ${reports.count}, performance ${perf.count}, ` +
-      `payroll ${pay.count}, tasks ${tasks}, projects ${projects.count}`
+      `payroll ${pay.count}, tasks ${tasks}, projects ${projects.count}`,
   );
 }
 
@@ -267,7 +294,7 @@ async function seedCameras() {
 
 async function seedStaff() {
   // ── Higher-role staff (company-wide, not tied to one branch) ──────────────
-  // Abdullah Al Mamun = CEO | Oliullah Mithu = Co-MD | Habib Sourov = Op Manager
+  // Abdullah Al Mamun = CEO | Oliullah Mithu = Co-MD
   const members = [
     {
       email: "ceo@pouchcare.com",
@@ -292,18 +319,6 @@ async function seedStaff() {
       exp: 10,
       salary: null,
       join: new Date("2016-01-01"),
-    },
-    {
-      email: "ops@pouchcare.com",
-      name: "Habib Sourov",
-      role: SystemRole.OP_MANAGER,
-      branch: "Company — Global",
-      jobRole: "Operations Manager",
-      skill: "Operations & Delivery",
-      level: "Expert",
-      exp: 6,
-      salary: 2500,
-      join: new Date("2019-03-01"),
     },
     // ── Phulpur Mymensingh branch — under Branch Manager Zihadujjaman ────────
     {
@@ -4305,7 +4320,11 @@ async function seedSystemAuditLogs(staffIds: Record<string, string>) {
       actorId: opsId || "system",
       actorName: "Md. Habibullah",
       actorRole: "OP_MANAGER",
-      details: { memberId: "john@example.com", amountUsd: 85, method: "USDT TRC20" },
+      details: {
+        memberId: "john@example.com",
+        amountUsd: 85,
+        method: "USDT TRC20",
+      },
       createdAt: daysAgo(15),
     },
     {
@@ -4483,11 +4502,19 @@ async function main() {
   console.log("  Designer:        design1@pouchcare.com (Ayesha Siddika)");
   console.log("  Intern:          intern1@pouchcare.com (Mehedi Hasan)");
   console.log("");
-  console.log("  Client portal (/my-accounts/login) — password Password123! unless noted:");
-  console.log("    john@example.com | alice@example.com | michael@example.com | omar@example.com");
+  console.log(
+    "  Client portal (/my-accounts/login) — password Password123! unless noted:",
+  );
+  console.log(
+    "    john@example.com | alice@example.com | michael@example.com | omar@example.com",
+  );
   console.log("    referred.demo@pouchcare.com");
-  console.log("    sofia@example.com (seeded unverified — login blocked until email verified)");
-  console.log(`  Client portal (full demo):  ${TEST_PORTAL_EMAIL}  /  Test@123`);
+  console.log(
+    "    sofia@example.com (seeded unverified — login blocked until email verified)",
+  );
+  console.log(
+    `  Client portal (full demo):  ${TEST_PORTAL_EMAIL}  /  Test@123`,
+  );
   console.log("  See: prisma/portal-client-logins.txt");
   console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 }

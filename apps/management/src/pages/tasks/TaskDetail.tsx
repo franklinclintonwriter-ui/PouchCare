@@ -26,6 +26,7 @@ import {
 import { useHeaderConfig } from "@/hooks/useHeaderConfig";
 import {
   useAddTaskComment,
+  useEscalateTask,
   useTask,
   useUpdateTask,
   useSubmitTask,
@@ -72,12 +73,16 @@ export default function TaskDetail() {
   const navigate = useNavigate();
   const { data: task, isLoading } = useTask(id!);
   const perm = usePermission();
-  const isManager = perm.isCEO || perm.isOps || perm.isManager;
+  const canManageTask = perm.can("task.assign");
+  const canApproveTask = perm.can("task.approve");
+  const canVerifyTask = perm.can("task.verify");
+  const canDeleteTask = perm.can("task.delete");
   const updateTask = useUpdateTask();
   const addComment = useAddTaskComment();
   const submitTask = useSubmitTask();
   const approveTask = useApproveTask();
   const rejectTask = useRejectTask();
+  const escalateTask = useEscalateTask();
   const verifyTask = useVerifyTask();
   const rateTask = useRateTask();
   const deleteTask = useDeleteTask();
@@ -86,7 +91,7 @@ export default function TaskDetail() {
   const staffId = authUser && "id" in authUser ? authUser.id : "";
   const { data: staffPage } = useStaffList(
     { limit: 400 },
-    { enabled: isManager },
+    { enabled: canManageTask },
   );
   const [assignSpecialistId, setAssignSpecialistId] = useState("");
   const [progressInput, setProgressInput] = useState(0);
@@ -95,7 +100,7 @@ export default function TaskDetail() {
   const [comment, setComment] = useState("");
   const [actionNote, setActionNote] = useState("");
   const [actionType, setActionType] = useState<
-    "submit" | "approve" | "reject" | null
+    "submit" | "approve" | "reject" | "escalate" | null
   >(null);
   const [rateOpen, setRateOpen] = useState(false);
   const [rating, setRating] = useState(3);
@@ -174,13 +179,19 @@ export default function TaskDetail() {
           note: actionNote || undefined,
         });
         toast.success("Task rejected");
+      } else if (actionType === "escalate") {
+        await escalateTask.mutateAsync({
+          id: taskId,
+          note: actionNote || undefined,
+        });
+        toast.success("Task escalated for executive review");
       }
       setActionType(null);
       setActionNote("");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Action failed");
     }
-  }, [actionType, taskId, actionNote, submitTask, approveTask, rejectTask]);
+  }, [actionType, taskId, actionNote, submitTask, approveTask, rejectTask, escalateTask]);
 
   const handleVerify = useCallback(async () => {
     try {
@@ -277,7 +288,7 @@ export default function TaskDetail() {
         onClick: handlePrint,
       },
     ];
-    if (isManager) {
+    if (canManageTask) {
       acts.push({
         type: "button" as const,
         label: "Edit",
@@ -295,7 +306,7 @@ export default function TaskDetail() {
         onClick: () => setActionType("submit"),
       });
     }
-    if (isManager && task.approvalStatus === "SUBMITTED") {
+    if (canApproveTask && task.approvalStatus === "SUBMITTED") {
       acts.push({
         type: "button" as const,
         label: "Approve",
@@ -310,8 +321,15 @@ export default function TaskDetail() {
         variant: "danger" as const,
         onClick: () => setActionType("reject"),
       });
+      acts.push({
+        type: "button" as const,
+        label: "Escalate",
+        icon: AlertTriangle,
+        variant: "outline" as const,
+        onClick: () => setActionType("escalate"),
+      });
     }
-    if (perm.isCEO && task.approvalStatus === "APPROVED_MGR") {
+    if (canVerifyTask && task.approvalStatus === "APPROVED_MGR") {
       acts.push({
         type: "button" as const,
         label: "Verify",
@@ -319,7 +337,7 @@ export default function TaskDetail() {
         onClick: () => setVerifyConfirm(true),
       });
     }
-    if (perm.isCEO && task.approvalStatus === "VERIFIED") {
+    if (canVerifyTask && task.approvalStatus === "VERIFIED") {
       acts.push({
         type: "button" as const,
         label: "Rate",
@@ -329,7 +347,7 @@ export default function TaskDetail() {
       });
     }
     return acts;
-  }, [task, isManager, perm.isCEO, openEdit, handleExportPdf, handlePrint, aiLoading, handleAiInsights]);
+  }, [task, canManageTask, canApproveTask, canVerifyTask, openEdit, handleExportPdf, handlePrint, aiLoading, handleAiInsights]);
 
   useHeaderConfig(
     useMemo(
@@ -500,7 +518,7 @@ export default function TaskDetail() {
             </div>
           </div>
 
-          {(isAssignee || isManager) && (
+          {(isAssignee || canManageTask) && (
             <div className="mt-6 rounded-xl border border-gray-100 bg-gray-50/80 p-4 dark:border-gray-700/60 dark:bg-gray-900/30">
               <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
                 <TrendingUp className="h-4 w-4" />
@@ -563,7 +581,7 @@ export default function TaskDetail() {
           )}
         </Card>
 
-        {(isManager || isAssignee) && (
+        {(canManageTask || isAssignee) && (
           <Card>
             <CardContent className="mt-0">
               <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
@@ -623,7 +641,7 @@ export default function TaskDetail() {
           </Card>
         )}
 
-        {isManager && (
+        {canManageTask && (
           <Card className="no-print">
             <CardContent className="mt-0 space-y-3">
               <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
@@ -883,7 +901,7 @@ export default function TaskDetail() {
         <TaskSignatureBlock task={task} />
 
         {/* Delete (managers): same vertical rhythm as cards above — must stay inside space-y-6 */}
-        {perm.isCEO && task && (
+        {canDeleteTask && task && (
           <div
             className="no-print rounded-xl border border-red-200/90 bg-red-50/50 p-4 dark:border-red-900/50 dark:bg-red-950/25"
             role="region"
@@ -975,14 +993,18 @@ export default function TaskDetail() {
             ? "Submit Task"
             : actionType === "approve"
               ? "Approve Task"
-              : "Reject Task"
+              : actionType === "escalate"
+                ? "Escalate Task"
+                : "Reject Task"
         }
         description={
           actionType === "submit"
             ? "Submit this task for review."
             : actionType === "approve"
               ? "Approve this completed task."
-              : "Reject and return this task for rework."
+              : actionType === "escalate"
+                ? "Escalate this task for executive review."
+                : "Reject and return this task for rework."
         }
         footer={
           <>
@@ -1000,7 +1022,8 @@ export default function TaskDetail() {
               isLoading={
                 submitTask.isPending ||
                 approveTask.isPending ||
-                rejectTask.isPending
+                rejectTask.isPending ||
+                escalateTask.isPending
               }
               onClick={handleAction}
             >
@@ -1008,13 +1031,23 @@ export default function TaskDetail() {
                 ? "Submit"
                 : actionType === "approve"
                   ? "Approve"
-                  : "Reject"}
+                  : actionType === "escalate"
+                    ? "Escalate"
+                    : "Reject"}
             </Button>
           </>
         }
       >
         <Textarea
-          label="Note (optional)"
+          label={
+            actionType === "submit"
+              ? "Note for manager review"
+              : actionType === "approve"
+                ? "Approval note"
+                : actionType === "escalate"
+                  ? "Escalation reason"
+                  : "Rejection feedback"
+          }
           placeholder="Add a note..."
           rows={3}
           value={actionNote}

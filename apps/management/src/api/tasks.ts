@@ -126,11 +126,11 @@ export function useTaskMeta(options?: { enabled?: boolean }) {
   });
 }
 
-export function useMyTasks() {
+export function useMyTasks(params?: QueryParams) {
   return useQuery<Task[]>({
-    queryKey: taskKeys.my,
+    queryKey: [...taskKeys.my, params],
     queryFn: async () => {
-      const { data } = await api.get('/tasks', { params: { mine: true, limit: 100 } });
+      const { data } = await api.get('/tasks/mine', { params: { limit: 100, ...params } });
       const rows = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
       return rows.map((item: RawTask) => mapTask(item));
     },
@@ -155,6 +155,18 @@ export type UpdateTaskInput = { id: string } & Partial<
   }
 >;
 
+export type BulkAssignTasksInput = {
+  ids: string[];
+  assignedMemberId?: string | null;
+  assignedManagerId?: string | null;
+};
+
+export type BulkAssignTasksResult = {
+  okCount: number;
+  total: number;
+  results: Array<{ id: string; ok: boolean; error?: string }>;
+};
+
 export function useCreateTask() {
   const qc = useQueryClient();
   return useMutation({
@@ -177,6 +189,20 @@ export function useUpdateTask() {
       qc.invalidateQueries({ queryKey: taskKeys.root });
       qc.invalidateQueries({ queryKey: taskKeys.my });
       qc.invalidateQueries({ queryKey: taskKeys.detail(v.id) });
+    },
+  });
+}
+
+export function useBulkAssignTasks() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: BulkAssignTasksInput) => {
+      const res = await api.post('/tasks/bulk/assign', input);
+      return res.data as BulkAssignTasksResult;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: taskKeys.root });
+      qc.invalidateQueries({ queryKey: taskKeys.my });
     },
   });
 }
@@ -237,6 +263,18 @@ export function useRejectTask() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, note }: { id: string; note?: string }) => api.post(`/tasks/${id}/reject`, { note }),
+    onSuccess: (_, v) => {
+      qc.invalidateQueries({ queryKey: taskKeys.root });
+      qc.invalidateQueries({ queryKey: taskKeys.my });
+      qc.invalidateQueries({ queryKey: taskKeys.detail(v.id) });
+    },
+  });
+}
+
+export function useEscalateTask() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, note }: { id: string; note?: string }) => api.post(`/tasks/${id}/escalate`, { note }),
     onSuccess: (_, v) => {
       qc.invalidateQueries({ queryKey: taskKeys.root });
       qc.invalidateQueries({ queryKey: taskKeys.my });

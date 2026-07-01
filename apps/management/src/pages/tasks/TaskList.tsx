@@ -1,9 +1,9 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ListTodo, AlertTriangle, CheckCircle2, Loader2, CircleDot, Flag, Plus, Paperclip, LayoutGrid, Table2, Bot, Sparkles, Target, Zap, X } from 'lucide-react';
+import { ListTodo, AlertTriangle, CheckCircle2, Loader2, CircleDot, Flag, Plus, Paperclip, LayoutGrid, Table2, Bot, Sparkles, Target, Zap, X, UserCheck } from 'lucide-react';
 import { useHeaderConfig } from '@/hooks/useHeaderConfig';
 import { usePermission } from '@/hooks/usePermission';
-import { useCreateTask, useTasks, useTaskMeta, useUploadTaskAttachments } from '@/api/tasks';
+import { useBulkAssignTasks, useCreateTask, useTasks, useTaskMeta, useUploadTaskAttachments } from '@/api/tasks';
 import { useStaffList } from '@/api/staff';
 import { PageTransition } from '@/components/ui/PageTransition';
 import { DataTable, type Column } from '@/components/ui/DataTable';
@@ -28,14 +28,21 @@ type ViewMode = 'table' | 'cards';
 export default function TaskList() {
   const navigate = useNavigate();
   const perm = usePermission();
-  const canCreate = perm.isManager;
+  const canCreate = perm.can('task.create');
+  const canAssign = perm.can('task.assign');
   const [viewMode, setViewMode] = useState<ViewMode>('table');
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const [priority, setPriority] = useState('');
+  const [approvalStatus, setApprovalStatus] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [branchFilter, setBranchFilter] = useState('');
   const [page, setPage] = useState(1);
   const [sortField, setSortField] = useState('');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkAssignedManagerId, setBulkAssignedManagerId] = useState('');
+  const [bulkAssignedMemberId, setBulkAssignedMemberId] = useState('');
   const [openCreate, setOpenCreate] = useState(false);
   const [aiPlan, setAiPlan] = useState<Record<string, string | string[] | null> | null>(null);
   const [aiPlanLoading, setAiPlanLoading] = useState(false);
@@ -49,9 +56,10 @@ export default function TaskList() {
   const [assignedMemberId, setAssignedMemberId] = useState('');
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const createTask = useCreateTask();
+  const bulkAssignTasks = useBulkAssignTasks();
   const uploadAttachments = useUploadTaskAttachments();
 
-  const { data: taskMeta } = useTaskMeta({ enabled: openCreate && canCreate });
+  const { data: taskMeta } = useTaskMeta();
   const { data: staffRows } = useStaffList(
     { limit: 400 },
     { enabled: openCreate && canCreate },
@@ -77,6 +85,16 @@ export default function TaskList() {
     });
   }, [staffRows?.data, selectedBranchName]);
 
+  const managerOptions = useMemo(
+    () => branchManagers.map((manager) => ({ value: manager.id, label: manager.name })),
+    [branchManagers],
+  );
+
+  const specialistOptions = useMemo(
+    () => specialists.map((member) => ({ value: member.id, label: member.name })),
+    [specialists],
+  );
+
   const resetCreateForm = useCallback(() => {
     setTitle('');
     setTaskPriority('MEDIUM');
@@ -89,10 +107,19 @@ export default function TaskList() {
     setPendingFiles([]);
   }, []);
 
+  const resetBulkAssign = useCallback(() => {
+    setBulkAssignedManagerId('');
+    setBulkAssignedMemberId('');
+    setSelectedIds(new Set());
+  }, []);
+
   const { data, isLoading } = useTasks({
     q: search || undefined,
     status: status || undefined,
     priority: priority || undefined,
+    approvalStatus: approvalStatus || undefined,
+    category: categoryFilter || undefined,
+    branch: branchFilter || undefined,
     page,
     limit: 20,
     sortBy: sortField || undefined,
@@ -101,6 +128,30 @@ export default function TaskList() {
 
   const tasks = data?.data ?? [];
   const meta = data?.meta;
+
+  const runBulkAssign = useCallback(async () => {
+    if (selectedIds.size === 0) return;
+    if (!bulkAssignedManagerId && !bulkAssignedMemberId) {
+      toast.error('Select a manager or assignee first');
+      return;
+    }
+    try {
+      const result = await bulkAssignTasks.mutateAsync({
+        ids: Array.from(selectedIds),
+        assignedManagerId: bulkAssignedManagerId || undefined,
+        assignedMemberId: bulkAssignedMemberId || undefined,
+      });
+      const failed = result.total - result.okCount;
+      if (failed === 0) {
+        toast.success(`${result.okCount} task(s) reassigned`);
+      } else {
+        toast.warning(`${result.okCount} reassigned, ${failed} skipped`);
+      }
+      resetBulkAssign();
+    } catch (error: any) {
+      toast.error(error?.response?.data?.error ?? 'Bulk assignment failed');
+    }
+  }, [bulkAssignTasks, bulkAssignedManagerId, bulkAssignedMemberId, resetBulkAssign, selectedIds]);
 
   const handleAiPlan = useCallback(async () => {
     if (aiPlanLoading) return;
@@ -187,7 +238,7 @@ export default function TaskList() {
         onChange: setPriority,
       },
     ],
-  }), [search, status, priority, canCreate, viewMode, aiPlanLoading, handleAiPlan]);
+  }), [search, status, priority, approvalStatus, categoryFilter, branchFilter, canCreate, viewMode, aiPlanLoading, handleAiPlan]);
 
   useHeaderConfig(headerConfig);
 
@@ -327,11 +378,91 @@ export default function TaskList() {
           </div>
         )}
 
+        {canAssign && selectedIds.size > 0 && (
+          <div className="flex flex-wrap items-end gap-3 rounded-2xl border border-primary-200/80 bg-primary-50/80 p-4 dark:border-primary-900/40 dark:bg-primary-950/20">
+            <div className="min-w-[140px] text-sm font-medium text-primary-700 dark:text-primary-300">
+              {selectedIds.size} selected
+            </div>
+            <div className="min-w-[220px] flex-1">
+              <Select
+                value={bulkAssignedManagerId}
+                onChange={(e) => setBulkAssignedManagerId(e.target.value)}
+                options={managerOptions}
+                placeholder="Assign manager"
+              />
+            </div>
+            <div className="min-w-[220px] flex-1">
+              <Select
+                value={bulkAssignedMemberId}
+                onChange={(e) => setBulkAssignedMemberId(e.target.value)}
+                options={specialistOptions}
+                placeholder="Assign staff"
+              />
+            </div>
+            <Button
+              size="sm"
+              onClick={runBulkAssign}
+              disabled={bulkAssignTasks.isPending || (!bulkAssignedManagerId && !bulkAssignedMemberId)}
+            >
+              <UserCheck className="mr-1.5 h-4 w-4" /> Apply assignment
+            </Button>
+            <Button size="sm" variant="ghost" onClick={resetBulkAssign}>
+              <X className="mr-1.5 h-4 w-4" /> Clear
+            </Button>
+          </div>
+        )}
+
+        <div className="grid gap-3 rounded-2xl border border-gray-200/80 bg-white p-4 shadow-soft dark:border-gray-700/60 dark:bg-gray-800/80 md:grid-cols-2 xl:grid-cols-4">
+          <Select
+            value={approvalStatus}
+            onChange={(e) => setApprovalStatus(e.target.value)}
+            options={[
+              { value: 'WAITING', label: 'Waiting for submission' },
+              { value: 'SUBMITTED', label: 'Submitted by staff' },
+              { value: 'APPROVED_MGR', label: 'Approved by manager' },
+              { value: 'REJECTED_MGR', label: 'Rejected by manager' },
+              { value: 'ESCALATED', label: 'Escalated to CEO' },
+              { value: 'VERIFIED', label: 'Completed and verified' },
+            ]}
+            placeholder="Approval status"
+          />
+          <Select
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+            options={(taskMeta?.categories ?? []).map((value) => ({ value, label: value }))}
+            placeholder="Category"
+          />
+          <Select
+            value={branchFilter}
+            onChange={(e) => setBranchFilter(e.target.value)}
+            options={(taskMeta?.branches ?? []).map((branch) => ({ value: branch.name, label: branch.name }))}
+            placeholder="Branch"
+          />
+          <Button
+            variant="outline"
+            onClick={() => {
+              setApprovalStatus('');
+              setCategoryFilter('');
+              setBranchFilter('');
+              setStatus('');
+              setPriority('');
+              setSearch('');
+              setPage(1);
+            }}
+          >
+            Reset filters
+          </Button>
+        </div>
+
         {viewMode === 'table' ? (
           <DataTable
             columns={columns}
             data={tasks}
             isLoading={isLoading}
+            selectable={canAssign}
+            selectedIds={selectedIds}
+            onSelectionChange={setSelectedIds}
+            getRowId={(row) => row.id}
             onRowClick={(row) => navigate(`/tasks/${row.id}`)}
             sortField={sortField}
             sortDirection={sortDir}

@@ -1,0 +1,6 @@
+# Local override: run as development so local file uploads work without Cloudflare R2.
+# Remove this file and configure R2 keys when you have them (see .env S3_* vars).
+services:
+  api:
+    environment:
+      NODE_ENV: development

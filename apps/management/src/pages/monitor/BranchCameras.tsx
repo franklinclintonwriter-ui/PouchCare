@@ -705,8 +705,9 @@ export default function BranchCameras() {
   const { branchId } = useParams<{ branchId: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { hasRole } = usePermission();
+  const { hasRole, can } = usePermission();
   const canVigiManage = hasRole(["CEO", "CO_MD", "OP_MANAGER"]);
+  const canReadBranchAdmin = can("staff.branches");
 
   const [search, setSearch] = useState("");
   const deferredSearch = useDeferredValue(search);
@@ -734,8 +735,10 @@ export default function BranchCameras() {
   const {
     data: branchPayload,
     isLoading: branchLoading,
+    isError: branchError,
+    error: branchErr,
     refetch: refetchBranch,
-  } = useBranchDetail(branchId);
+  } = useBranchDetail(canReadBranchAdmin ? branchId : undefined);
 
   const {
     data: cameraPage,
@@ -944,6 +947,28 @@ export default function BranchCameras() {
           <Button
             className="mt-2"
             variant="ghost"
+            onClick={() => navigate("/monitor")}
+          >
+            Back to Monitor
+          </Button>
+        </div>
+      </PageTransition>
+    );
+  }
+
+  if (branchError && cameras.length === 0) {
+    return (
+      <PageTransition>
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <Cctv className="mb-3 h-10 w-10 text-gray-400" />
+          <p className="text-sm text-red-600 dark:text-red-400">
+            {branchErr instanceof Error
+              ? branchErr.message
+              : "Branch not found or you do not have access."}
+          </p>
+          <Button
+            className="mt-4"
+            variant="outline"
             onClick={() => navigate("/monitor")}
           >
             Back to Monitor

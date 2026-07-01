@@ -163,7 +163,9 @@ test.describe('Admin Panel RBAC matrix — server enforcement', () => {
         await staffLogin(page, role)
         // Extract the access token the SPA stored, then hit the endpoint
         // directly so we validate the server gate, not the guard.
-        const token = await page.evaluate(() => localStorage.getItem('pc_access_token'))
+        const token = await page.evaluate(
+          () => localStorage.getItem('pouchcare_access_token') ?? localStorage.getItem('pc_access_token'),
+        )
         if (!token) test.skip(true, 'Could not locate access token in storage')
         const res = await request.fetch(ep.path, {
           method: ep.method,

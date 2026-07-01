@@ -17,6 +17,8 @@ export default defineConfig({
       "localhost",
       "dev-pouchcare.com",
       "dev.pouchcare.com",
+      "pouchcare.com.bd",
+      "www.pouchcare.com.bd",
     ],
     proxy: {
       '/v1': {

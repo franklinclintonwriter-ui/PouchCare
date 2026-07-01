@@ -28,6 +28,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { useHeaderConfig } from "@/hooks/useHeaderConfig";
+import { usePermission } from "@/hooks/usePermission";
 import { useDebounce } from "@/hooks/useDebounce";
 import {
   useBranchDetail,
@@ -84,6 +85,8 @@ function formatDateLabel(iso?: string | null) {
 export default function BranchDetail() {
   const { branchId } = useParams<{ branchId: string }>();
   const navigate = useNavigate();
+  const { hasRole } = usePermission();
+  const canManageBranch = hasRole(["CEO", "CO_MD", "OP_MANAGER", "HR_MANAGER"]);
   const [page, setPage] = useState(1);
   const [memberSearch, setMemberSearch] = useState("");
   const debouncedMemberQ = useDebounce(memberSearch, 350);
@@ -103,7 +106,7 @@ export default function BranchDetail() {
     establishedDate: "",
   });
 
-  const { data, isLoading, isError } = useBranchDetail(branchId);
+  const { data, isLoading, isError, error } = useBranchDetail(branchId);
   const { data: membersPage, isLoading: membersLoading } = useBranchMembers(
     branchId,
     {
@@ -189,28 +192,44 @@ export default function BranchDetail() {
             variant: "outline" as const,
             onClick: () => navigate(`/monitor/${branchId}`),
           },
-          {
-            type: "button" as const,
-            label: "Edit",
-            icon: Pencil,
-            variant: "outline" as const,
-            onClick: openEdit,
-          },
-          {
-            type: "button" as const,
-            label: "Delete",
-            icon: Trash2,
-            variant: "danger" as const,
-            disabled: !branchId || !refs || refs.total > 0,
-            onClick: () => setConfirmDelete(true),
-          },
+          ...(canManageBranch
+            ? [
+                {
+                  type: "button" as const,
+                  label: "Edit",
+                  icon: Pencil,
+                  variant: "outline" as const,
+                  onClick: openEdit,
+                },
+                {
+                  type: "button" as const,
+                  label: "Delete",
+                  icon: Trash2,
+                  variant: "danger" as const,
+                  disabled: !branchId || !refs || refs.total > 0,
+                  onClick: () => setConfirmDelete(true),
+                },
+              ]
+            : []),
         ],
       }),
-      [branch, branchId, memberSearch, onMemberSearchChange, openEdit, refs],
+      [
+        branch,
+        branchId,
+        memberSearch,
+        onMemberSearchChange,
+        openEdit,
+        refs,
+        canManageBranch,
+      ],
     ),
   );
 
   const onSaveEdit = async () => {
+    if (!canManageBranch) {
+      toast.error("You do not have permission to edit branches");
+      return;
+    }
     if (!branchId || !form.name.trim()) {
       toast.error("Branch name is required");
       return;
@@ -239,6 +258,10 @@ export default function BranchDetail() {
 
   const onSetManagerFromMember = useCallback(
     async (member: BranchMemberRow) => {
+      if (!canManageBranch) {
+        toast.error("You do not have permission to change branch manager");
+        return;
+      }
       if (!branchId) return;
       try {
         await updateBranch.mutateAsync({
@@ -250,7 +273,7 @@ export default function BranchDetail() {
         toast.error(err instanceof Error ? err.message : "Update failed");
       }
     },
-    [branchId, updateBranch],
+    [branchId, updateBranch, canManageBranch],
   );
 
   const memberRows = membersPage?.data ?? [];
@@ -338,7 +361,8 @@ export default function BranchDetail() {
         key: "actions",
         label: "",
         align: "right",
-        render: (r) => (
+        render: (r) =>
+          canManageBranch ? (
           <Button
             variant="ghost"
             size="sm"
@@ -350,10 +374,10 @@ export default function BranchDetail() {
           >
             Set as manager
           </Button>
-        ),
+          ) : null,
       },
     ],
-    [onSetManagerFromMember],
+    [onSetManagerFromMember, canManageBranch],
   );
 
   if (isLoading) {
@@ -387,13 +411,15 @@ export default function BranchDetail() {
   }
 
   if (isError || !branch || !stats || !refs) {
+    const errMsg =
+      error instanceof Error ? error.message : "Branch not found or you don't have access.";
     return (
       <PageTransition>
         <Card className="mx-auto max-w-lg">
           <CardContent className="py-12 text-center">
             <Building2 className="mx-auto mb-3 h-10 w-10 text-gray-300 dark:text-gray-600" />
             <p className="text-gray-600 dark:text-gray-400">
-              Branch not found or you don&apos;t have access.
+              {errMsg}
             </p>
             <Button
               variant="outline"
@@ -512,33 +538,35 @@ export default function BranchDetail() {
           </div>
         </Card>
 
-        <ConfirmDialog
-          isOpen={confirmDelete}
-          onClose={() => setConfirmDelete(false)}
-          title="Delete Branch"
-          message={
-            refs && refs.total > 0
-              ? "This branch has linked data and cannot be deleted. Move or remove linked items first."
-              : "This will permanently delete the branch. This action cannot be undone."
-          }
-          confirmLabel="Delete"
-          variant="danger"
-          isLoading={deleteBranch.isPending}
-          onConfirm={async () => {
-            if (!branchId) return;
-            try {
-              await deleteBranch.mutateAsync(branchId);
-              toast.success("Branch deleted");
-              navigate("/staff/branches");
-            } catch (err) {
-              toast.error(
-                err instanceof Error ? err.message : "Failed to delete branch",
-              );
-            } finally {
-              setConfirmDelete(false);
+        {canManageBranch ? (
+          <ConfirmDialog
+            isOpen={confirmDelete}
+            onClose={() => setConfirmDelete(false)}
+            title="Delete Branch"
+            message={
+              refs && refs.total > 0
+                ? "This branch has linked data and cannot be deleted. Move or remove linked items first."
+                : "This will permanently delete the branch. This action cannot be undone."
             }
-          }}
-        />
+            confirmLabel="Delete"
+            variant="danger"
+            isLoading={deleteBranch.isPending}
+            onConfirm={async () => {
+              if (!branchId) return;
+              try {
+                await deleteBranch.mutateAsync(branchId);
+                toast.success("Branch deleted");
+                navigate("/staff/branches");
+              } catch (err) {
+                toast.error(
+                  err instanceof Error ? err.message : "Failed to delete branch",
+                );
+              } finally {
+                setConfirmDelete(false);
+              }
+            }}
+          />
+        ) : null}
 
         <div className={cn("grid gap-6", refs.total > 0 && "lg:grid-cols-3")}>
           {/* Contact & profile */}
@@ -683,7 +711,7 @@ export default function BranchDetail() {
         </section>
 
         <Modal
-          isOpen={editOpen}
+          isOpen={editOpen && canManageBranch}
           onClose={() => setEditOpen(false)}
           title="Edit branch"
           footer={

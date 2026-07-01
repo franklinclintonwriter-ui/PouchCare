@@ -16,7 +16,9 @@ async function staffLoginAndGetToken(page: Page, email = 'ceo@pouchcare.com', pa
   await page.getByPlaceholder('Enter your password').fill(password)
   await page.getByRole('button', { name: /sign in/i }).click()
   await page.waitForURL(/\/$|^\/(?!login)/, { timeout: 30_000 })
-  const token = await page.evaluate(() => localStorage.getItem('pc_access_token'))
+  const token = await page.evaluate(
+    () => localStorage.getItem('pouchcare_access_token') ?? localStorage.getItem('pc_access_token'),
+  )
   if (!token) throw new Error('Could not locate access token after login')
   return token
 }

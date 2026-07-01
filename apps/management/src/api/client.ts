@@ -108,8 +108,9 @@ api.interceptors.response.use(
       } catch (refreshError) {
         processQueue(refreshError, null);
         clearAuth();
+        const currentType = useAuthStore.getState().userType;
         useAuthStore.getState().logout();
-        window.location.href = "/login";
+        window.location.href = currentType === "portal" ? "/portal/login" : "/login";
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;

@@ -66,6 +66,31 @@ router.get("/", requireStaff, async (req: AuthRequest, res) => {
   }
 });
 
+// GET /v1/leave/stats
+router.get("/stats", requireStaff, async (req: AuthRequest, res) => {
+  try {
+    const role = req.user!.role as SystemRole;
+    let where: Prisma.LeaveRequestWhereInput = {};
+    if (!MANAGER_ROLES.includes(role)) {
+      where.staffMemberId = req.user!.id;
+    } else {
+      where = await mergeLeaveWhereForManager(req, {});
+    }
+
+    const [total, pending, approved, rejected, cancelled] = await Promise.all([
+      prisma.leaveRequest.count({ where }),
+      prisma.leaveRequest.count({ where: { ...where, status: "PENDING" } }),
+      prisma.leaveRequest.count({ where: { ...where, status: "APPROVED" } }),
+      prisma.leaveRequest.count({ where: { ...where, status: "REJECTED" } }),
+      prisma.leaveRequest.count({ where: { ...where, status: "CANCELLED" } }),
+    ]);
+
+    return ok(res, { total, pending, approved, rejected, cancelled });
+  } catch (err) {
+    return serverError(res, err);
+  }
+});
+
 // GET /v1/leave/:id
 router.get("/:id", requireStaff, async (req: AuthRequest, res) => {
   try {

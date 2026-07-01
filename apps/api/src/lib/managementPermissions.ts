@@ -5,6 +5,11 @@ import prisma from '@/lib/prisma'
 export const PERMISSION_KEYS = [
   'staff.branches',
   'staff.manage_profiles',
+  'task.create',
+  'task.assign',
+  'task.approve',
+  'task.verify',
+  'task.delete',
   'payroll.access',
   'finance.access',
   'finance.exchange_rates',
@@ -54,6 +59,14 @@ function defaultForRole(role: SystemRole, key: string): boolean {
   const manager = ['CEO', 'CO_MD', 'OP_MANAGER', 'BRANCH_MANAGER', 'HR_MANAGER'].includes(role)
 
   switch (key) {
+    case 'task.create':
+    case 'task.assign':
+      return manager
+    case 'task.approve':
+      return manager
+    case 'task.verify':
+    case 'task.delete':
+      return ceoCoMd
     case 'staff.branches':
     case 'payroll.access':
     case 'finance.access':

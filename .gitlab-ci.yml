@@ -59,6 +59,86 @@ quality:typecheck:
   rules:
     - if: $CI_COMMIT_BRANCH
 
+quality:test:
+  stage: verify
+  needs: ["quality:typecheck"]
+  script:
+    - node --version && npm --version
+    - npm ci --cache .npm --prefer-offline --legacy-peer-deps
+    - npm test
+  rules:
+    - if: $CI_COMMIT_BRANCH
+
+.quality:e2e-base:
+  stage: verify
+  needs: ["quality:typecheck", "quality:test"]
+  services:
+    - name: mysql:8
+      alias: mysql
+      variables:
+        MYSQL_DATABASE: pouchcare
+        MYSQL_ROOT_PASSWORD: root
+    - name: redis:7
+      alias: redis
+  variables:
+    JWT_SECRET: ci-jwt-secret-at-least-32-characters-long
+    JWT_REFRESH_SECRET: ci-refresh-secret-at-least-32-characters
+    MYSQL_DATABASE: pouchcare
+    MYSQL_ROOT_PASSWORD: root
+    NODE_ENV: development
+    PORT: "7000"
+    REDIS_URL: redis://redis:6379
+    STORAGE_LOCAL_FALLBACK: "true"
+    E2E_BASE_URL: http://127.0.0.1:3000
+  before_script:
+    - node --version && npm --version
+    - npm ci --cache .npm --prefer-offline --legacy-peer-deps
+    - npx playwright install --with-deps chromium
+    - export DB_PROTO=mysql DB_USER=root DB_HOST=mysql
+    - export DATABASE_URL="${DB_PROTO}://${DB_USER}:${MYSQL_ROOT_PASSWORD}@${DB_HOST}:3306/${MYSQL_DATABASE}"
+    - cd apps/api
+    - |
+      ready=0
+      for i in 1 2 3 4 5 6 7 8 9 10; do
+        if npx prisma migrate deploy; then
+          ready=1
+          break
+        fi
+        echo "Waiting for MySQL (${i}/10)..."
+        sleep 3
+      done
+      if [ "$ready" -ne 1 ]; then
+        if [ -d prisma/migrations ]; then
+          echo "prisma migrate deploy failed"
+          exit 1
+        fi
+        echo "No checked-in Prisma migrations yet; using prisma db push for CI bootstrap"
+      fi
+    # Temporary Phase-2 bootstrap: `0_init` is still settling, so reconcile the
+    # live schema before seeding even after migrate deploy succeeds.
+    - npx prisma db push --skip-generate
+    - npm run db:seed
+    - cd ../..
+  rules:
+    - if: $CI_COMMIT_BRANCH
+
+quality:e2e:auth:
+  extends: .quality:e2e-base
+  script:
+    - npm run test:e2e -- e2e/auth.spec.ts
+
+quality:e2e:rbac-tasks:
+  extends: .quality:e2e-base
+  needs: ["quality:e2e:auth"]
+  script:
+    - npm run test:e2e -- e2e/rbac.spec.ts e2e/tasks.spec.ts
+
+quality:e2e:admin-security:
+  extends: .quality:e2e-base
+  needs: ["quality:e2e:rbac-tasks"]
+  script:
+    - npm run test:e2e -- e2e/admin-api.spec.ts e2e/admin-rbac.spec.ts
+
 # Enterprise ledger guard — a code MR must also update docs/PROGRESS.md
 quality:ledger:
   stage: verify

@@ -257,3 +257,19 @@
 - **Scope guard:** staff-side only — portal/customer auth (`routes/portal/auth.ts`) untouched. Left `routes/staff/index.ts` create-password as-is (noted follow-up: apply `strongPassword` there too).
 - **Bugbot review (Cursor autofix `722e3ea`, adopted as-is — correct):** scoped `revokeSessionByToken` to the caller's `staffMemberId` (logout can't kill another user's session; was Medium); wrapped password-hash + session-revoke in a transaction (was Medium).
 - **Verify (sandbox):** `prisma validate` ✓; `prisma generate` ✓; `apps/api` tsc **0**. Behavioural e2e (logout invalidates refresh; revoked token → 401) lands with the PR-2.6 harness.
+
+---
+
+### PR-2.6 — Vitest harness + Playwright Phase-2 coverage
+- **Branch:** `copilot/pr-26-add-test-harness-ci` → `enterprise/main`
+- **What:** Added a minimal **Vitest** harness in `apps/api` (`vitest.config.ts`, `vitest.setup.ts`, workspace `test` script) and covered the Phase-2 foundation libs with focused unit tests: `passwordPolicy`, `branchResolve`, `staffSession`, `teamBranchScope`, `auditLog`, and `managementPermissions`. Prisma-touching units mock `@/lib/prisma`, so the tests stay pure and DB-free.
+- **E2E:** Extended `e2e/rbac.spec.ts` with a direct-API branch-manager isolation regression (staff list/detail + attendance/leave/payroll cross-branch reads stay hidden/denied) and added `e2e/auth.spec.ts` for PR-2.5 session revocation (`POST /auth/logout` and password change both make the old refresh token return 401).
+- **CI:** Added GitLab `quality:test` (root `npm test`) and `quality:e2e` (MySQL 8 + Redis 7 services, Prisma bootstrap, seed, targeted Playwright run). `quality:e2e` runs `prisma migrate deploy`, then `prisma db push --skip-generate` to reconcile the still-in-flight `0_init` migration state before seeding.
+- **Bug surfaced while wiring tests:** the existing Playwright config pointed at port **3001** even though the management Vite dev server runs on **3000**, and `e2e/rbac.spec.ts` referenced an unseeded `staff1@pouchcare.com` login. Both were test-fixture/bootstrap issues fixed as part of getting the new harness runnable.
+- **Unfixed app bug surfaced by repeated reruns:** staff login can hit `staff_sessions_refresh_token_hash_key` on rapid same-account re-logins (refresh-token hash collision across same-second retries). The test helpers now retry across a one-second boundary so the harness stays stable, but the auth/session logic itself is intentionally untouched in this PR.
+- **Follow-up landed in this PR branch:** hardened login/session behavior and its test coverage after the initial harness landed:
+  - Added staff login limiter on `/v1/auth/login`, portal refresh-token tracking + revocation on logout/password change, fixed portal/staff post-refresh redirect, and wired management "Remember me" to session-vs-local storage semantics.
+  - Expanded `e2e/auth.spec.ts` with **portal** session revocation tests (`/portal/logout`, `/portal/change-password` invalidate old refresh tokens).
+  - CI e2e is now split into explicit ordered gates for clearer failures and stronger protection: `quality:e2e:auth` -> `quality:e2e:rbac-tasks` -> `quality:e2e:admin-security`.
+  - Updated admin security specs to read the current access-token storage key (`pouchcare_access_token`) with fallback to legacy key.
+- **Verify:** `npm test`; `cd apps/api && npx tsc --noEmit`; `E2E_NO_SERVER=1 npm run test:e2e -- e2e/auth.spec.ts` ✓; CI config defines split e2e gates (`auth`, `rbac+tasks`, `admin-security`).

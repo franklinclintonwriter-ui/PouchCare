@@ -1,17 +1,34 @@
-import { ApprovalStatus, Priority, type SystemRole } from '@prisma/client'
+import { ApprovalStatus, Priority, type Prisma, type SystemRole } from '@prisma/client'
 import { Router } from 'express'
 import multer from 'multer'
 import { z } from 'zod'
 import { authenticate, isManager, isCEO, type AuthRequest } from '@/middleware/auth'
+import { requirePermission } from '@/middleware/rbac'
 import { validate } from '@/middleware/validate'
 import prisma from '@/lib/prisma'
 import { audit } from '@/lib/auditLog'
 import { ok, created, badRequest, notFound, forbidden, serverError, paginated } from '@/lib/response'
 import { getPagination, buildMeta } from '@/lib/pagination'
 import { uploadFile } from '@/lib/storage'
+import {
+  canApproveTask,
+  canEscalateTask,
+  canRateTask,
+  canRejectTask,
+  canSubmitTask,
+  canVerifyTask,
+  TASK_WORKFLOW_TRANSITIONS,
+} from '@/lib/taskStateMachine'
 import { TASK_CATEGORIES, isValidTaskCategory } from './constants'
-import { canEditTaskAssignment } from './access'
-import { resolveBranchId, isNonBranchLabel } from '@/lib/branchResolve'
+import {
+  branchFromAssignees,
+  canBranchManagerAssignMember,
+  canBranchManagerTouchBranch,
+  canEditTaskAssignment,
+  canReadTask,
+  mergeTaskWhereForUser,
+} from './access'
+import { resolveBranchId, isNonBranchLabel, branchesMatch } from '@/lib/branchResolve'
 
 const router = Router()
 router.use(authenticate)
@@ -68,31 +85,6 @@ function parseAttachments(raw: unknown): TaskAttachmentJson[] {
   )
 }
 
-async function branchFromAssignees(
-  assignedMemberId?: string | null,
-  assignedManagerId?: string | null,
-): Promise<{ branchId: string | null; assignedBranch: string | undefined }> {
-  let branchId: string | null = null
-  let assignedBranch: string | undefined
-  if (assignedMemberId) {
-    const assignee = await prisma.staffMember.findUnique({
-      where: { id: assignedMemberId },
-      select: { branchId: true, branch: true },
-    })
-    branchId = assignee?.branchId ?? null
-    assignedBranch = assignee?.branch?.trim() || undefined
-  }
-  if (!branchId && assignedManagerId) {
-    const manager = await prisma.staffMember.findUnique({
-      where: { id: assignedManagerId },
-      select: { branchId: true, branch: true },
-    })
-    branchId = manager?.branchId ?? null
-    if (!assignedBranch) assignedBranch = manager?.branch?.trim() || undefined
-  }
-  return { branchId, assignedBranch }
-}
-
 async function syncBranchOnAssigneeChange(
   task: { assignedMemberId: string | null; assignedManagerId: string | null },
   body: Partial<z.infer<typeof taskSchema>>,
@@ -107,6 +99,38 @@ async function syncBranchOnAssigneeChange(
   const { branchId, assignedBranch } = await branchFromAssignees(nextMemberId, nextManagerId)
   data.branchId = branchId
   data.assignedBranch = assignedBranch ?? null
+}
+
+function buildTaskListWhere(
+  query: Record<string, string>,
+): Prisma.TaskWhereInput {
+  const { q, status, approvalStatus, priority, branch, assignedTo, projectId, category } = query
+  const where: Prisma.TaskWhereInput = {}
+
+  if (q) where.title = { contains: q }
+  if (status) where.status = status as any
+  if (category) where.category = category
+  if (approvalStatus) {
+    const statusMap: Record<string, string> = {
+      'Waiting for Submission': 'WAITING',
+      'Submitted by Staff': 'SUBMITTED',
+      'Approved by Manager': 'APPROVED_MGR',
+      'Rejected by Manager': 'REJECTED_MGR',
+      'Escalated to CEO': 'ESCALATED',
+      'Completed & Verified': 'VERIFIED',
+    }
+    where.approvalStatus = (statusMap[approvalStatus] || approvalStatus) as any
+  }
+  if (priority) where.priority = priority as any
+  if (branch) where.assignedBranch = branch
+  if (assignedTo) where.assignedMemberId = assignedTo
+
+  if (projectId) {
+    const projectScope: Prisma.TaskWhereInput = { relatedProjectId: projectId }
+    return Object.keys(where).length === 0 ? projectScope : { AND: [where, projectScope] }
+  }
+
+  return where
 }
 
 // GET /tasks/meta — categories + branches (for create form)
@@ -128,47 +152,9 @@ router.get('/meta', isManager, async (_req, res) => {
 router.get('/', async (req: AuthRequest, res) => {
   try {
     const { page, limit, skip } = getPagination(req)
-    const { q, status, approvalStatus, priority, branch, assignedTo, projectId, category, mine } = req.query as Record<
-      string,
-      string
-    >
-    const where: Record<string, unknown> = {}
-
-    if (q) where.title = { contains: q }
-    if (status) where.status = status
-    if (category) where.category = category
-    if (approvalStatus) {
-      const statusMap: Record<string, string> = {
-        'Waiting for Submission': 'WAITING',
-        'Submitted by Staff': 'SUBMITTED',
-        'Approved by Manager': 'APPROVED_MGR',
-        'Rejected by Manager': 'REJECTED_MGR',
-        'Escalated to CEO': 'ESCALATED',
-        'Completed & Verified': 'VERIFIED',
-      }
-      where.approvalStatus = statusMap[approvalStatus] || approvalStatus
-    }
-    if (priority) where.priority = priority
-    if (branch) where.assignedBranch = branch
-
-    if (['STAFF', 'INTERN'].includes(req.user!.role)) {
-      where.assignedMemberId = req.user!.id
-    } else if (mine === 'true' || mine === '1') {
-      where.assignedMemberId = req.user!.id
-    } else if (assignedTo) {
-      where.assignedMemberId = assignedTo
-    }
-
-    if (projectId) {
-      const projectScope = { relatedProjectId: projectId }
-      const existing = { ...where }
-      if (Object.keys(existing).length === 0) {
-        Object.assign(where, projectScope)
-      } else {
-        Object.keys(where).forEach((k) => delete where[k])
-        where.AND = [existing, projectScope]
-      }
-    }
+    const query = req.query as Record<string, string>
+    const mine = query.mine === 'true' || query.mine === '1'
+    const where = await mergeTaskWhereForUser(req, buildTaskListWhere(query), { mine })
 
     const [data, total] = await Promise.all([
       prisma.task.findMany({
@@ -190,6 +176,34 @@ router.get('/', async (req: AuthRequest, res) => {
   }
 })
 
+// GET /tasks/mine
+router.get('/mine', async (req: AuthRequest, res) => {
+  try {
+    const { page, limit, skip } = getPagination(req)
+    const query = req.query as Record<string, string>
+    const where = await mergeTaskWhereForUser(req, buildTaskListWhere(query), { mine: true })
+
+    const [data, total] = await Promise.all([
+      prisma.task.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: [{ priority: 'asc' }, { deadline: 'asc' }],
+        include: {
+          assignedMember: { select: { id: true, name: true } },
+          assignedManager: { select: { id: true, name: true } },
+        },
+      }),
+      prisma.task.count({ where }),
+    ])
+
+    return paginated(res, data, buildMeta(total, page, limit))
+  } catch (e) {
+    console.error(e)
+    return serverError(res)
+  }
+})
+
 // GET /tasks/:id
 router.get('/:id', async (req: AuthRequest, res) => {
   try {
@@ -202,8 +216,8 @@ router.get('/:id', async (req: AuthRequest, res) => {
       },
     })
     if (!task) return notFound(res, 'Task')
-    if (['STAFF', 'INTERN'].includes(req.user!.role) && task.assignedMemberId !== req.user!.id)
-      return notFound(res, 'Task')
+    const readable = await canReadTask(req, task)
+    if (!readable) return notFound(res, 'Task')
     return ok(res, task)
   } catch {
     return serverError(res)
@@ -211,7 +225,7 @@ router.get('/:id', async (req: AuthRequest, res) => {
 })
 
 // POST /tasks — CEO/Manager creates
-router.post('/', isManager, validate(taskSchema), async (req: AuthRequest, res) => {
+router.post('/', requirePermission('task.create'), validate(taskSchema), async (req: AuthRequest, res) => {
   try {
     const body = req.body as z.infer<typeof taskSchema> & { relatedProjectId?: string }
     let relatedProject: string | undefined
@@ -242,6 +256,19 @@ router.post('/', isManager, validate(taskSchema), async (req: AuthRequest, res) 
       const derived = await branchFromAssignees(body.assignedMemberId, body.assignedManagerId)
       branchId = derived.branchId
       assignedBranch = derived.assignedBranch
+    }
+
+    const isBranchManager = req.user!.role === 'BRANCH_MANAGER'
+    if (isBranchManager) {
+      if (body.assignedMemberId) {
+        const canAssignMember = await canBranchManagerAssignMember(req.user!.id, body.assignedMemberId)
+        if (!canAssignMember) return forbidden(res, 'Not allowed to create task outside your branch')
+      }
+      const scoped = await canBranchManagerTouchBranch(req.user!.id, {
+        branchId,
+        branch: assignedBranch,
+      })
+      if (!scoped) return forbidden(res, 'Not allowed to create task outside your branch')
     }
 
     const data = {
@@ -289,6 +316,89 @@ const staffUpdateSchema = z.object({
   notes: z.string().optional(),
   actualHours: z.number().optional(),
   status: z.enum(['NOT_STARTED', 'IN_PROGRESS']).optional(),
+})
+
+const bulkAssignSchema = z.object({
+  ids: z.array(z.string().min(1)).min(1).max(200),
+  assignedMemberId: z.union([z.string().min(1), z.null()]).optional(),
+  assignedManagerId: z.union([z.string().min(1), z.null()]).optional(),
+}).refine(
+  (value) => value.assignedMemberId !== undefined || value.assignedManagerId !== undefined,
+  { message: 'At least one assignment field is required' },
+)
+
+// POST /tasks/bulk/assign — batch assign/reassign tasks
+router.post('/bulk/assign', requirePermission('task.assign'), validate(bulkAssignSchema), async (req: AuthRequest, res) => {
+  try {
+    const body = req.body as z.infer<typeof bulkAssignSchema>
+    const results: Array<{ id: string; ok: boolean; error?: string }> = []
+
+    for (const id of body.ids) {
+      try {
+        const task = await prisma.task.findUnique({ where: { id } })
+        if (!task) {
+          results.push({ id, ok: false, error: 'not_found' })
+          continue
+        }
+
+        if (req.user!.role === 'BRANCH_MANAGER') {
+          const editable = await canEditTaskAssignment(req.user!.id, req.user!.role as SystemRole, task)
+          if (!editable) {
+            results.push({ id, ok: false, error: 'forbidden' })
+            continue
+          }
+        }
+
+        const nextMemberId = body.assignedMemberId !== undefined ? body.assignedMemberId || null : task.assignedMemberId
+        const nextManagerId = body.assignedManagerId !== undefined ? body.assignedManagerId || null : task.assignedManagerId
+
+        if (req.user!.role === 'BRANCH_MANAGER' && nextMemberId) {
+          const canAssignMember = await canBranchManagerAssignMember(req.user!.id, nextMemberId)
+          if (!canAssignMember) {
+            results.push({ id, ok: false, error: 'member_outside_branch' })
+            continue
+          }
+        }
+
+        const targetBranch = await branchFromAssignees(nextMemberId, nextManagerId)
+        if (req.user!.role === 'BRANCH_MANAGER') {
+          const scoped = await canBranchManagerTouchBranch(req.user!.id, {
+            branchId: targetBranch.branchId,
+            branch: targetBranch.assignedBranch,
+          })
+          if (!scoped) {
+            results.push({ id, ok: false, error: 'target_outside_branch' })
+            continue
+          }
+        }
+
+        const data: Record<string, unknown> = {}
+        if (body.assignedMemberId !== undefined) data.assignedMemberId = nextMemberId
+        if (body.assignedManagerId !== undefined) data.assignedManagerId = nextManagerId
+        data.branchId = targetBranch.branchId
+        data.assignedBranch = targetBranch.assignedBranch ?? null
+
+        await syncAssigneeTaskCount(task.assignedMemberId, nextMemberId)
+        const updated = await prisma.task.update({ where: { id }, data: data as any })
+        await audit(req, {
+          action: 'task.bulk.assign',
+          resourceKind: 'Task',
+          resourceId: updated.id,
+          before: task,
+          after: updated,
+        })
+        results.push({ id, ok: true })
+      } catch (error: any) {
+        results.push({ id, ok: false, error: error?.message ?? 'unknown' })
+      }
+    }
+
+    const okCount = results.filter((result) => result.ok).length
+    return ok(res, { okCount, total: results.length, results })
+  } catch (e) {
+    console.error(e)
+    return serverError(res)
+  }
 })
 
 // PUT /tasks/:id
@@ -492,7 +602,7 @@ router.post(
 )
 
 // DELETE /tasks/:id — CEO only
-router.delete('/:id', isCEO, async (req, res) => {
+router.delete('/:id', requirePermission('task.delete'), async (req, res) => {
   try {
     const task = await prisma.task.delete({ where: { id: req.params.id } })
     await audit(req as AuthRequest, {
@@ -514,13 +624,13 @@ router.post('/:id/submit', async (req: AuthRequest, res) => {
     const task = await prisma.task.findUnique({ where: { id: req.params.id } })
     if (!task) return notFound(res, 'Task')
     if (task.assignedMemberId !== req.user!.id) return forbidden(res)
-    if (task.approvalStatus !== ApprovalStatus.WAITING) return badRequest(res, 'Task already submitted')
+    const state = canSubmitTask(task)
+    if (!state.ok) return badRequest(res, state.error)
 
     const updated = await prisma.task.update({
       where: { id: req.params.id },
       data: {
-        approvalStatus: ApprovalStatus.SUBMITTED,
-        status: 'REVIEW',
+        ...TASK_WORKFLOW_TRANSITIONS.submit,
         staffSubmissionNote: req.body.note,
         actualHours: req.body.actualHours,
         progress: req.body.progress ?? 100,
@@ -540,17 +650,21 @@ router.post('/:id/submit', async (req: AuthRequest, res) => {
   }
 })
 
-router.post('/:id/approve', isManager, async (req: AuthRequest, res) => {
+router.post('/:id/approve', requirePermission('task.approve'), async (req: AuthRequest, res) => {
   try {
     const task = await prisma.task.findUnique({ where: { id: req.params.id } })
     if (!task) return notFound(res, 'Task')
-    if (!([ApprovalStatus.SUBMITTED, ApprovalStatus.ESCALATED] as ApprovalStatus[]).includes(task.approvalStatus))
-      return badRequest(res, 'Task not in a reviewable state')
+    if (req.user!.role === 'BRANCH_MANAGER') {
+      const ok = await canEditTaskAssignment(req.user!.id, req.user!.role as SystemRole, task)
+      if (!ok) return forbidden(res)
+    }
+    const state = canApproveTask(task)
+    if (!state.ok) return badRequest(res, state.error)
 
     const updated = await prisma.task.update({
       where: { id: req.params.id },
       data: {
-        approvalStatus: ApprovalStatus.APPROVED_MGR,
+        ...TASK_WORKFLOW_TRANSITIONS.approve,
         managerApprovedBy: req.user!.id,
         managerApprovedDate: new Date(),
         managerApprovalNote: req.body.note,
@@ -569,16 +683,22 @@ router.post('/:id/approve', isManager, async (req: AuthRequest, res) => {
   }
 })
 
-router.post('/:id/reject', isManager, async (req: AuthRequest, res) => {
+router.post('/:id/reject', requirePermission('task.approve'), async (req: AuthRequest, res) => {
   try {
     const task = await prisma.task.findUnique({ where: { id: req.params.id } })
     if (!task) return notFound(res, 'Task')
+    if (req.user!.role === 'BRANCH_MANAGER') {
+      const ok = await canEditTaskAssignment(req.user!.id, req.user!.role as SystemRole, task)
+      if (!ok) return forbidden(res)
+    }
+
+    const state = canRejectTask(task)
+    if (!state.ok) return badRequest(res, state.error)
 
     const updated = await prisma.task.update({
       where: { id: req.params.id },
       data: {
-        approvalStatus: ApprovalStatus.REJECTED_MGR,
-        status: 'IN_PROGRESS',
+        ...TASK_WORKFLOW_TRANSITIONS.reject,
         managerApprovedBy: req.user!.id,
         managerApprovedDate: new Date(),
         managerApprovalNote: req.body.note,
@@ -597,13 +717,20 @@ router.post('/:id/reject', isManager, async (req: AuthRequest, res) => {
   }
 })
 
-router.post('/:id/escalate', isManager, async (req, res) => {
+router.post('/:id/escalate', requirePermission('task.approve'), async (req, res) => {
   try {
     const task = await prisma.task.findUnique({ where: { id: req.params.id } })
     if (!task) return notFound(res, 'Task')
+    if (req.user!.role === 'BRANCH_MANAGER') {
+      const ok = await canEditTaskAssignment(req.user!.id, req.user!.role as SystemRole, task)
+      if (!ok) return forbidden(res)
+    }
+    const state = canEscalateTask(task)
+    if (!state.ok) return badRequest(res, state.error)
+
     const updated = await prisma.task.update({
       where: { id: req.params.id },
-      data: { approvalStatus: ApprovalStatus.ESCALATED },
+      data: TASK_WORKFLOW_TRANSITIONS.escalate,
     })
     await audit(req as AuthRequest, {
       action: 'task.escalate',
@@ -618,16 +745,18 @@ router.post('/:id/escalate', isManager, async (req, res) => {
   }
 })
 
-router.post('/:id/verify', isCEO, async (req: AuthRequest, res) => {
+router.post('/:id/verify', requirePermission('task.verify'), async (req: AuthRequest, res) => {
   try {
     const task = await prisma.task.findUnique({ where: { id: req.params.id } })
     if (!task) return notFound(res, 'Task')
 
+    const state = canVerifyTask(task)
+    if (!state.ok) return badRequest(res, state.error)
+
     const updated = await prisma.task.update({
       where: { id: req.params.id },
       data: {
-        approvalStatus: ApprovalStatus.VERIFIED,
-        status: 'DONE',
+        ...TASK_WORKFLOW_TRANSITIONS.verify,
         ceoVerified: true,
         ceoVerifiedDate: new Date(),
         completedDate: new Date(),
@@ -655,12 +784,14 @@ router.post('/:id/verify', isCEO, async (req: AuthRequest, res) => {
 
 router.post(
   '/:id/rate',
-  isCEO,
+  requirePermission('task.verify'),
   validate(z.object({ rating: z.number().min(1).max(10), note: z.string().optional() })),
   async (req: AuthRequest, res) => {
     try {
       const task = await prisma.task.findUnique({ where: { id: req.params.id } })
       if (!task) return notFound(res, 'Task')
+      const state = canRateTask(task)
+      if (!state.ok) return badRequest(res, state.error)
 
       const updated = await prisma.task.update({
         where: { id: req.params.id },
@@ -692,8 +823,13 @@ router.post(
   },
 )
 
-router.get('/:id/comments', async (req, res) => {
+router.get('/:id/comments', async (req: AuthRequest, res) => {
   try {
+    const task = await prisma.task.findUnique({ where: { id: req.params.id } })
+    if (!task) return notFound(res, 'Task')
+    const readable = await canReadTask(req, task)
+    if (!readable) return notFound(res, 'Task')
+
     const comments = await prisma.taskComment.findMany({
       where: { taskId: req.params.id },
       orderBy: { createdAt: 'asc' },
@@ -706,6 +842,11 @@ router.get('/:id/comments', async (req, res) => {
 
 router.post('/:id/comments', validate(z.object({ content: z.string().min(1) })), async (req: AuthRequest, res) => {
   try {
+    const task = await prisma.task.findUnique({ where: { id: req.params.id } })
+    if (!task) return notFound(res, 'Task')
+    const readable = await canReadTask(req, task)
+    if (!readable) return notFound(res, 'Task')
+
     const author = await prisma.staffMember.findUnique({ where: { id: req.user!.id }, select: { name: true } })
     const comment = await prisma.taskComment.create({
       data: {

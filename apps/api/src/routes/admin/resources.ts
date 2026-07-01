@@ -36,16 +36,43 @@ import {
 const router = Router();
 router.use(authenticate);
 
+async function branchScopeWhere(req: AuthRequest): Promise<{ id?: string } | null> {
+  if (!req.user || req.user.type !== "staff") return null;
+  const scope = await resolveMonitorBranchScope(req.user.id, req.user.role);
+  if (scope.kind === "global") return {};
+  if (scope.kind === "unassigned") return { id: "__no_branch__" };
+  return { id: scope.branchId };
+}
+
+async function assertBranchRouteAccess(
+  req: AuthRequest,
+  branchId: string,
+): Promise<boolean> {
+  if (!req.user || req.user.type !== "staff") return false;
+  const scope = await resolveMonitorBranchScope(req.user.id, req.user.role);
+  if (scope.kind === "global") return true;
+  if (scope.kind === "unassigned") return false;
+  return scope.branchId === branchId;
+}
+
+async function assertGlobalBranchAdmin(req: AuthRequest): Promise<boolean> {
+  if (!req.user || req.user.type !== "staff") return false;
+  const scope = await resolveMonitorBranchScope(req.user.id, req.user.role);
+  return scope.kind === "global";
+}
+
 // Branches
 router.get(
   "/branches",
   requirePermission("staff.branches"),
-  async (req, res) => {
+  async (req: AuthRequest, res) => {
     try {
       const { page, limit, skip } = getPaginationParams(req.query as any);
       const q = String(req.query.q ?? "").trim();
       const status = String(req.query.status ?? "").trim();
       const where: any = {};
+      const scopeWhere = await branchScopeWhere(req);
+      if (scopeWhere?.id) where.id = scopeWhere.id;
       if (q) {
         where.OR = [
           { name: { contains: q } },
@@ -73,9 +100,11 @@ router.get(
 router.get(
   "/branches/:id/members",
   requirePermission("staff.branches"),
-  async (req, res) => {
+  async (req: AuthRequest, res) => {
     try {
       const { id } = req.params;
+      const allowed = await assertBranchRouteAccess(req, id);
+      if (!allowed) return forbidden(res, "Branch access denied");
       const branch = await prisma.branch.findUnique({ where: { id } });
       if (!branch) return notFound(res, "Branch");
       const { page, limit, skip } = getPaginationParams(req.query as any);
@@ -127,13 +156,10 @@ router.get("/branches/:id", async (req: AuthRequest, res) => {
     if (!req.user || req.user.type !== "staff")
       return forbidden(res, "Staff access required");
     const { id } = req.params;
-    const canAdmin = await isStaffAllowed(req.user.role, "staff.branches");
-    const scope = await resolveMonitorBranchScope(req.user.id, req.user.role);
-    if (!canAdmin) {
-      if (scope.kind !== "branch" || scope.branchId !== id) {
-        return forbidden(res, "Branch access denied");
-      }
-    }
+    const canOpen = await isStaffAllowed(req.user.role, "staff.branches");
+    if (!canOpen) return forbidden(res, "Branch access denied");
+    const allowed = await assertBranchRouteAccess(req, id);
+    if (!allowed) return forbidden(res, "Branch access denied");
     const branch = await prisma.branch.findUnique({ where: { id } });
     if (!branch) return notFound(res, "Branch");
 
@@ -244,8 +270,10 @@ router.post(
   "/branches",
   requirePermission("staff.branches"),
   validate(branchCreateSchema),
-  async (req, res) => {
+  async (req: AuthRequest, res) => {
     try {
+      const isGlobal = await assertGlobalBranchAdmin(req);
+      if (!isGlobal) return forbidden(res, "Only global admins can create branches");
       const item = await prisma.branch.create({ data: req.body });
       await audit(req as AuthRequest, {
         action: "branch.create",
@@ -264,9 +292,11 @@ router.put(
   "/branches/:id",
   requirePermission("staff.branches"),
   validate(branchUpdateSchema),
-  async (req, res) => {
+  async (req: AuthRequest, res) => {
     try {
       const { id } = req.params;
+      const allowed = await assertBranchRouteAccess(req, id);
+      if (!allowed) return forbidden(res, "Branch access denied");
       const existing = await prisma.branch.findUnique({ where: { id } });
       if (!existing) return notFound(res, "Branch");
 
@@ -304,9 +334,11 @@ router.put(
 router.delete(
   "/branches/:id",
   requirePermission("staff.branches"),
-  async (req, res) => {
+  async (req: AuthRequest, res) => {
     try {
       const { id } = req.params;
+      const allowed = await assertBranchRouteAccess(req, id);
+      if (!allowed) return forbidden(res, "Branch access denied");
       const existing = await prisma.branch.findUnique({ where: { id } });
       if (!existing) return notFound(res, "Branch");
 
@@ -344,9 +376,11 @@ router.delete(
 router.get(
   "/branches/:id/manager-candidates",
   requirePermission("staff.branches"),
-  async (req, res) => {
+  async (req: AuthRequest, res) => {
     try {
       const { id } = req.params;
+      const allowed = await assertBranchRouteAccess(req, id);
+      if (!allowed) return forbidden(res, "Branch access denied");
       const branch = await prisma.branch.findUnique({ where: { id } });
       if (!branch) return notFound(res, "Branch");
 

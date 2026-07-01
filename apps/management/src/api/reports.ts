@@ -15,6 +15,15 @@ type RawDailyReport = {
   status?: string | null;
 };
 
+export type DailyReportStats = {
+  total: number;
+  submitted: number;
+  approved: number;
+  rejected: number;
+  avgHours: number;
+  avgTasks: number;
+};
+
 function normalizeMood(mood?: string | null): DailyReport['mood'] {
   const value = (mood ?? '').trim().toLowerCase();
   if (value === 'great' || value === 'good' || value === 'okay' || value === 'bad') return value;
@@ -77,12 +86,25 @@ export function useDailyReports(params?: QueryParams) {
   });
 }
 
+export function useDailyReportStats() {
+  return useQuery<DailyReportStats>({
+    queryKey: ['daily-report-stats'],
+    queryFn: async () => {
+      const { data } = await api.get('/reports/daily/stats');
+      return data as DailyReportStats;
+    },
+  });
+}
+
 export function useSubmitReport() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: { tasksCompleted: string; plannedTomorrow: string; blockers?: string; hoursWorked: number; mood?: string }) =>
       api.post('/reports/daily', body),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['daily-reports'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['daily-reports'] });
+      qc.invalidateQueries({ queryKey: ['daily-report-stats'] });
+    },
   });
 }
 
@@ -90,6 +112,9 @@ export function useReviewReport() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, note }: { id: string; note: string }) => api.put(`/reports/daily/${id}/review`, { note }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['daily-reports'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['daily-reports'] });
+      qc.invalidateQueries({ queryKey: ['daily-report-stats'] });
+    },
   });
 }

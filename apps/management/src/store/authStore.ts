@@ -10,7 +10,13 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
 
-  setAuth: (user: StaffUser | PortalUser, accessToken: string, refreshToken: string, userType: 'staff' | 'portal') => void;
+  setAuth: (
+    user: StaffUser | PortalUser,
+    accessToken: string,
+    refreshToken: string,
+    userType: 'staff' | 'portal',
+    remember?: boolean,
+  ) => void;
   setUser: (user: StaffUser | PortalUser) => void;
   updateTokens: (accessToken: string, refreshToken?: string) => void;
   updateUser: (user: Partial<StaffUser> | Partial<PortalUser>) => void;
@@ -26,10 +32,10 @@ export const useAuthStore = create<AuthState>((set) => ({
   isAuthenticated: !!getAccessToken(),
   isLoading: true,
 
-  setAuth: (user, accessToken, refreshToken, userType) => {
-    setAccessToken(accessToken);
-    setRefreshToken(refreshToken);
-    setUserType(userType);
+  setAuth: (user, accessToken, refreshToken, userType, remember = true) => {
+    setAccessToken(accessToken, remember);
+    setRefreshToken(refreshToken, remember);
+    setUserType(userType, remember);
     set({ user, accessToken, refreshToken, userType, isAuthenticated: true, isLoading: false });
   },
 

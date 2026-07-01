@@ -38,6 +38,7 @@ const emailSchema = z
 
 const OTP_TTL_SECONDS = 10 * 60;
 const OTP_MAX_ATTEMPTS = 5;
+const PORTAL_REFRESH_TTL_SECONDS = 7 * 24 * 60 * 60;
 
 const registerSchema = z.object({
   fullName: z.string().trim().min(2),
@@ -77,6 +78,55 @@ function hashOtp(otp: string) {
     .createHash("sha256")
     .update(`${otp}:${env.JWT_SECRET}`)
     .digest("hex");
+}
+
+function hashRefreshToken(token: string) {
+  return crypto
+    .createHash("sha256")
+    .update(`${token}:${env.JWT_SECRET}`)
+    .digest("hex");
+}
+
+function portalRefreshKey(hash: string) {
+  return `portal:refresh:${hash}`;
+}
+
+function portalRefreshIndexKey(memberId: string) {
+  return `portal:refresh:index:${memberId}`;
+}
+
+async function trackPortalRefreshToken(memberId: string, token: string) {
+  const tokenHash = hashRefreshToken(token);
+  const tokenKey = portalRefreshKey(tokenHash);
+  const indexKey = portalRefreshIndexKey(memberId);
+  await Promise.all([
+    redis.setex(tokenKey, PORTAL_REFRESH_TTL_SECONDS, memberId),
+    redis.sadd(indexKey, tokenHash),
+    redis.expire(indexKey, PORTAL_REFRESH_TTL_SECONDS),
+  ]);
+}
+
+async function isPortalRefreshTokenActive(memberId: string, token: string) {
+  const tokenKey = portalRefreshKey(hashRefreshToken(token));
+  const owner = await redis.get(tokenKey);
+  return owner === memberId;
+}
+
+async function revokePortalRefreshToken(memberId: string, token: string) {
+  const tokenHash = hashRefreshToken(token);
+  const tokenKey = portalRefreshKey(tokenHash);
+  const indexKey = portalRefreshIndexKey(memberId);
+  await Promise.all([redis.del(tokenKey), redis.srem(indexKey, tokenHash)]);
+}
+
+async function revokeAllPortalRefreshTokens(memberId: string) {
+  const indexKey = portalRefreshIndexKey(memberId);
+  const hashes = await redis.smembers(indexKey);
+  const keys = hashes.map((hash) => portalRefreshKey(hash));
+  if (keys.length) {
+    await redis.del(...keys);
+  }
+  await redis.del(indexKey);
 }
 
 async function issueVerification(member: { id: string; email: string }) {
@@ -212,6 +262,10 @@ router.post("/login", authLimiter, validate(loginSchema), async (req, res) => {
     };
     const access_token = await signAccess(payload);
     const refresh_token = signRefresh(payload);
+
+    await trackPortalRefreshToken(member.id, refresh_token).catch((err) => {
+      console.error("[portal/login] refresh token tracking failed:", err);
+    });
 
     await prisma.portalMember.update({
       where: { id: member.id },
@@ -412,6 +466,13 @@ router.post(
   authenticate,
   requirePortal,
   async (req: AuthRequest, res) => {
+    try {
+      const token = (req.body?.refresh_token as string | undefined)?.trim();
+      if (token) await revokePortalRefreshToken(req.user!.id, token);
+      else await revokeAllPortalRefreshTokens(req.user!.id);
+    } catch {
+      /* best effort; client still clears local auth */
+    }
     return ok(res, { message: "Logged out" });
   },
 );
@@ -427,6 +488,12 @@ router.post(
         where: { id: payload.sub },
       });
       if (!member) return unauthorized(res, "Invalid token");
+      const active = await isPortalRefreshTokenActive(member.id, req.body.refresh_token);
+      if (!active) return unauthorized(res, "Session expired or revoked");
+      if (member.status === "SUSPENDED") {
+        await revokeAllPortalRefreshTokens(member.id).catch(() => {});
+        return unauthorized(res, "Account suspended");
+      }
       const access_token = await signAccess({
         sub: member.id,
         role: "PORTAL_MEMBER" as any,
@@ -470,6 +537,7 @@ router.post(
         where: { id: member.id },
         data: { passwordHash },
       });
+      await revokeAllPortalRefreshTokens(member.id).catch(() => {});
 
       return ok(res, { message: "Password changed successfully" });
     } catch {
