@@ -35,11 +35,11 @@ export function LogoSpinner({
         />
         {/* Logo icon centered */}
         <img
-          src="/favicon-96x96.png"
+          src="/pouchcare-logo-nobg.png"
           alt=""
           aria-hidden
           className={cn(
-            "absolute inset-0 m-auto rounded-sm object-contain",
+            "absolute inset-0 m-auto bg-transparent object-contain",
             size === "sm" && "h-5 w-5",
             size === "md" && "h-8 w-8",
             size === "lg" && "h-11 w-11",

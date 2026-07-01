@@ -117,10 +117,12 @@ services:
     depends_on:
       api:
         condition: service_healthy
-    command: tunnel run
+    command: tunnel --config /etc/cloudflared/config.yml run
     environment:
       TUNNEL_TOKEN: ${TUNNEL_TOKEN:-}
-    # Reach Vite apps on the host while API stays in Docker (optional; map in tunnel ingress / dashboard).
+    volumes:
+      - ./deploy/cloudflared/config.yml:/etc/cloudflared/config.yml:ro
+    # Reach Vite apps on the host while API stays in Docker.
     extra_hosts:
       - "host.docker.internal:host-gateway"
 

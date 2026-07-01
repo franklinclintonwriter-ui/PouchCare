@@ -58,6 +58,20 @@ async function isBranchManagerSeed(
   return me.systemRole === 'BRANCH_MANAGER';
 }
 
+async function getAnotherOwnBranchMember(
+  branchApi: ReturnType<typeof authed>,
+  currentUserId: string,
+) {
+  const membersRes = await branchApi.get('/staff/members', { limit: 200 });
+  expect(membersRes.ok()).toBe(true);
+  const members = (await membersRes.json()).data ?? [];
+  const candidate = members.find(
+    (m: { id: string; systemRole?: string }) => m.id !== currentUserId && m.systemRole !== 'BRANCH_MANAGER',
+  );
+  expect(candidate).toBeTruthy();
+  return candidate as { id: string; email?: string | null; branch?: string | null };
+}
+
 // ─── Task CRUD ───────────────────────────────────────────────────────────────
 
 test.describe('Task CRUD', () => {
@@ -185,6 +199,50 @@ test.describe('My Tasks', () => {
     const res = await contentApi.get(`/tasks/${task.id}`);
     expect(res.status()).toBe(404);
   });
+
+  test('/tasks/mine supports priority + approval filters together', async ({ request }) => {
+    test.setTimeout(90_000);
+    const ops = await apiLogin(request, 'ops@pouchcare.com');
+    const dev = await apiLogin(request, 'dev1@pouchcare.com');
+    const opsApi = authed(request, ops.accessToken);
+    const devApi = authed(request, dev.accessToken);
+
+    const marker = `Mine-filters ${Date.now()}`;
+    const waitingHigh = await createTask(opsApi, {
+      title: `${marker} waiting-high`,
+      priority: 'HIGH',
+      assignedMemberId: dev.user.id,
+    });
+    const submittedHigh = await createTask(opsApi, {
+      title: `${marker} submitted-high`,
+      priority: 'HIGH',
+      assignedMemberId: dev.user.id,
+    });
+    const submittedLow = await createTask(opsApi, {
+      title: `${marker} submitted-low`,
+      priority: 'LOW',
+      assignedMemberId: dev.user.id,
+    });
+
+    const submitA = await devApi.post(`/tasks/${submittedHigh.id}/submit`, { staffSubmissionNote: 'submitted high' });
+    expect(submitA.ok()).toBe(true);
+    const submitB = await devApi.post(`/tasks/${submittedLow.id}/submit`, { staffSubmissionNote: 'submitted low' });
+    expect(submitB.ok()).toBe(true);
+
+    const mineRes = await devApi.get('/tasks/mine', {
+      q: marker,
+      approvalStatus: 'SUBMITTED',
+      priority: 'HIGH',
+      limit: 100,
+    });
+    expect(mineRes.ok()).toBe(true);
+    const rows = (await mineRes.json()).data ?? [];
+    const ids = rows.map((row: { id: string }) => row.id);
+
+    expect(ids).toContain(submittedHigh.id);
+    expect(ids).not.toContain(waitingHigh.id);
+    expect(ids).not.toContain(submittedLow.id);
+  });
 });
 
 // ─── Task lifecycle ──────────────────────────────────────────────────────────
@@ -310,6 +368,96 @@ test.describe('Task RBAC', () => {
   });
 });
 
+// ─── Task bulk assignment ───────────────────────────────────────────────────
+
+test.describe('Task bulk assignment', () => {
+  test('ops manager can bulk reassign tasks to another staff member', async ({ request }) => {
+    test.setTimeout(90_000);
+    const ops = await apiLogin(request, 'ops@pouchcare.com');
+    const dev = await apiLogin(request, 'dev1@pouchcare.com');
+    const content = await apiLogin(request, 'content1@pouchcare.com');
+    const opsApi = authed(request, ops.accessToken);
+    const contentApi = authed(request, content.accessToken);
+
+    const marker = `Bulk-reassign ${Date.now()}`;
+    const taskA = await createTask(opsApi, { title: `${marker} A`, assignedMemberId: dev.user.id });
+    const taskB = await createTask(opsApi, { title: `${marker} B`, assignedMemberId: dev.user.id });
+
+    const bulkRes = await opsApi.post('/tasks/bulk/assign', {
+      ids: [taskA.id, taskB.id],
+      assignedMemberId: content.user.id,
+    });
+    expect(bulkRes.ok()).toBe(true);
+    const payload = (await bulkRes.json()).data ?? {};
+    expect(payload.okCount).toBe(2);
+
+    const contentMine = await contentApi.get('/tasks/mine', { q: marker, limit: 100 });
+    expect(contentMine.ok()).toBe(true);
+    const contentTaskIds = ((await contentMine.json()).data ?? []).map((task: { id: string }) => task.id);
+    expect(contentTaskIds).toContain(taskA.id);
+    expect(contentTaskIds).toContain(taskB.id);
+  });
+
+  test('branch manager bulk reassign skips tasks outside their branch', async ({ request }) => {
+    test.setTimeout(90_000);
+    const ceo = await apiLogin(request, 'ceo@pouchcare.com');
+    const branch = await apiLogin(request, 'branch@pouchcare.com');
+    const ceoApi = authed(request, ceo.accessToken);
+    const branchApi = authed(request, branch.accessToken);
+    test.skip(!(await isBranchManagerSeed(branchApi, branch.user.id)), 'Seed account is not BRANCH_MANAGER');
+
+    const outsider = await getOutsideBranchMember(branchApi, ceoApi);
+    const task = await createTask(ceoApi, {
+      title: `Bulk-cross-branch ${Date.now()}`,
+      assignedMemberId: outsider.id,
+    });
+
+    const bulkRes = await branchApi.post('/tasks/bulk/assign', {
+      ids: [task.id],
+      assignedMemberId: branch.user.id,
+    });
+    expect(bulkRes.ok()).toBe(true);
+    const payload = (await bulkRes.json()).data ?? {};
+    expect(payload.okCount).toBe(0);
+    expect(payload.total).toBe(1);
+    expect(payload.results?.[0]?.error).toBe('forbidden');
+
+    const detailRes = await ceoApi.get(`/tasks/${task.id}`);
+    expect(detailRes.ok()).toBe(true);
+    const detail = (await detailRes.json()).data ?? {};
+    expect(detail.assignedMemberId).toBe(outsider.id);
+  });
+
+  test('branch manager can bulk reassign between own branch members', async ({ request }) => {
+    test.setTimeout(90_000);
+    const ceo = await apiLogin(request, 'ceo@pouchcare.com');
+    const branch = await apiLogin(request, 'branch@pouchcare.com');
+    const ceoApi = authed(request, ceo.accessToken);
+    const branchApi = authed(request, branch.accessToken);
+    test.skip(!(await isBranchManagerSeed(branchApi, branch.user.id)), 'Seed account is not BRANCH_MANAGER');
+
+    const member = await getAnotherOwnBranchMember(branchApi, branch.user.id);
+    const marker = `Bulk-own-branch ${Date.now()}`;
+    const task = await createTask(ceoApi, {
+      title: marker,
+      assignedMemberId: branch.user.id,
+    });
+
+    const bulkRes = await branchApi.post('/tasks/bulk/assign', {
+      ids: [task.id],
+      assignedMemberId: member.id,
+    });
+    expect(bulkRes.ok()).toBe(true);
+    const payload = (await bulkRes.json()).data ?? {};
+    expect(payload.okCount).toBe(1);
+
+    const detailRes = await ceoApi.get(`/tasks/${task.id}`);
+    expect(detailRes.ok()).toBe(true);
+    const detail = (await detailRes.json()).data ?? {};
+    expect(detail.assignedMemberId).toBe(member.id);
+  });
+});
+
 // ─── Branch manager scope ───────────────────────────────────────────────────
 
 test.describe('Branch manager scope on tasks', () => {
@@ -417,6 +565,77 @@ test.describe('Branch manager scope on tasks', () => {
 
     expect(actions).toContain('task.create');
     expect(actions).toContain('task.update');
+  });
+
+  test('branch manager list includes own-branch member tasks and excludes cross-branch tasks', async ({ request }) => {
+    test.setTimeout(90_000);
+    const ceo = await apiLogin(request, 'ceo@pouchcare.com');
+    const branch = await apiLogin(request, 'branch@pouchcare.com');
+    const ceoApi = authed(request, ceo.accessToken);
+    const branchApi = authed(request, branch.accessToken);
+    test.skip(!(await isBranchManagerSeed(branchApi, branch.user.id)), 'Seed account is not BRANCH_MANAGER');
+
+    const ownMember = await getAnotherOwnBranchMember(branchApi, branch.user.id);
+    const outsider = await getOutsideBranchMember(branchApi, ceoApi);
+    const marker = `Branch-list-scope ${Date.now()}`;
+
+    const ownTask = await createTask(ceoApi, {
+      title: `${marker} own`,
+      assignedMemberId: ownMember.id,
+    });
+    const outsiderTask = await createTask(ceoApi, {
+      title: `${marker} outside`,
+      assignedMemberId: outsider.id,
+    });
+
+    const listRes = await branchApi.get('/tasks', { q: marker, limit: 200 });
+    expect(listRes.ok()).toBe(true);
+    const ids = ((await listRes.json()).data ?? []).map((t: { id: string }) => t.id);
+
+    expect(ids).toContain(ownTask.id);
+    expect(ids).not.toContain(outsiderTask.id);
+  });
+
+  test('branch manager cannot read or update cross-branch task detail endpoints', async ({ request }) => {
+    test.setTimeout(90_000);
+    const ceo = await apiLogin(request, 'ceo@pouchcare.com');
+    const branch = await apiLogin(request, 'branch@pouchcare.com');
+    const ceoApi = authed(request, ceo.accessToken);
+    const branchApi = authed(request, branch.accessToken);
+    test.skip(!(await isBranchManagerSeed(branchApi, branch.user.id)), 'Seed account is not BRANCH_MANAGER');
+
+    const outsider = await getOutsideBranchMember(branchApi, ceoApi);
+    const task = await createTask(ceoApi, {
+      title: `Cross-branch-detail-blocked ${Date.now()}`,
+      assignedMemberId: outsider.id,
+    });
+
+    const detailRes = await branchApi.get(`/tasks/${task.id}`);
+    expect(detailRes.status()).toBe(404);
+
+    const updateRes = await branchApi.put(`/tasks/${task.id}`, { notes: 'not allowed from another branch' });
+    expect(updateRes.status()).toBe(403);
+  });
+
+  test('branch manager cannot access cross-branch task comments endpoints', async ({ request }) => {
+    test.setTimeout(90_000);
+    const ceo = await apiLogin(request, 'ceo@pouchcare.com');
+    const branch = await apiLogin(request, 'branch@pouchcare.com');
+    const ceoApi = authed(request, ceo.accessToken);
+    const branchApi = authed(request, branch.accessToken);
+    test.skip(!(await isBranchManagerSeed(branchApi, branch.user.id)), 'Seed account is not BRANCH_MANAGER');
+
+    const outsider = await getOutsideBranchMember(branchApi, ceoApi);
+    const task = await createTask(ceoApi, {
+      title: `Cross-branch-comments-blocked ${Date.now()}`,
+      assignedMemberId: outsider.id,
+    });
+
+    const listCommentsRes = await branchApi.get(`/tasks/${task.id}/comments`);
+    expect(listCommentsRes.status()).toBe(404);
+
+    const createCommentRes = await branchApi.post(`/tasks/${task.id}/comments`, { content: 'not allowed' });
+    expect(createCommentRes.status()).toBe(404);
   });
 });
 

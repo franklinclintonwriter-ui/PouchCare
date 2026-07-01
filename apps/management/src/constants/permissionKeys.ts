@@ -2,6 +2,11 @@
 export const PERMISSION_KEYS = [
   'staff.branches',
   'staff.manage_profiles',
+  'task.create',
+  'task.assign',
+  'task.approve',
+  'task.verify',
+  'task.delete',
   'payroll.access',
   'finance.access',
   'finance.exchange_rates',
@@ -50,6 +55,11 @@ export type PermissionKey = (typeof PERMISSION_KEYS)[number];
 export const PERMISSION_LABELS: Record<PermissionKey, string> = {
   'staff.branches': 'Branches',
   'staff.manage_profiles': 'Staff profiles (view/edit other users)',
+  'task.create': 'Tasks: create',
+  'task.assign': 'Tasks: assign/reassign',
+  'task.approve': 'Tasks: approve/reject/escalate',
+  'task.verify': 'Tasks: verify and rate',
+  'task.delete': 'Tasks: delete',
   'payroll.access': 'Payroll',
   'finance.access': 'Finance (invoices, expenses, revenue, forecast)',
   'finance.exchange_rates': 'Exchange rates',

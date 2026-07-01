@@ -10,6 +10,12 @@ export const prismaMock = {
   staffMember: {
     findUnique: vi.fn(),
   },
+  project: {
+    findUnique: vi.fn(),
+  },
+  task: {
+    count: vi.fn(),
+  },
   staffSession: {
     create: vi.fn(),
     findUnique: vi.fn(),

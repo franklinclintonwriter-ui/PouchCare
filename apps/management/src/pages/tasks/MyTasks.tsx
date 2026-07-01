@@ -11,6 +11,7 @@ import { StatsRow } from '@/components/shared/StatsRow';
 import { Card } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { Select } from '@/components/ui/Select';
 import { toast } from 'sonner';
 import type { Task } from '@/types/models';
 
@@ -21,31 +22,32 @@ export default function MyTasks() {
   const navigate = useNavigate();
   const [tab, setTab] = useState<StatusFilter>('all');
   const [viewMode, setViewMode] = useState<ViewMode>('table');
-  const { data: tasks = [], isLoading } = useMyTasks();
+  const [priority, setPriority] = useState('');
+  const [approvalStatus, setApprovalStatus] = useState('');
+  const statusParam = tab === 'all'
+    ? undefined
+    : ({ active: 'IN_PROGRESS', blocked: 'BLOCKED', done: 'DONE' } as const)[tab];
+  const { data: allTasks = [] } = useMyTasks();
+  const { data: tasks = [], isLoading } = useMyTasks({
+    status: statusParam,
+    priority: priority || undefined,
+    approvalStatus: approvalStatus || undefined,
+    limit: 100,
+  });
   const submitTask = useSubmitTask();
 
-  const filtered = useMemo(() => {
-    if (tab === 'all') return tasks;
-    const statusMap: Record<string, string> = {
-      active: 'IN_PROGRESS',
-      blocked: 'BLOCKED',
-      done: 'DONE',
-    };
-    return tasks.filter(t => t.status === statusMap[tab]);
-  }, [tasks, tab]);
-
   const stats = useMemo(() => {
-    const total = tasks.length;
-    const active = tasks.filter(t => t.status === 'IN_PROGRESS').length;
-    const blocked = tasks.filter(t => t.status === 'BLOCKED').length;
-    const done = tasks.filter(t => t.status === 'DONE').length;
+    const total = allTasks.length;
+    const active = allTasks.filter(t => t.status === 'IN_PROGRESS').length;
+    const blocked = allTasks.filter(t => t.status === 'BLOCKED').length;
+    const done = allTasks.filter(t => t.status === 'DONE').length;
     return [
       { title: 'My Tasks', value: total, icon: <ListTodo />, iconBg: 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' },
       { title: 'Active', value: active, icon: <Clock />, iconBg: 'bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400' },
       { title: 'Blocked', value: blocked, icon: <AlertTriangle />, iconBg: 'bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400' },
       { title: 'Completed', value: done, icon: <CheckCircle2 />, iconBg: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400' },
     ];
-  }, [tasks]);
+  }, [allTasks]);
 
   const headerConfig = useMemo(() => ({
     title: 'My Tasks',
@@ -149,10 +151,47 @@ export default function MyTasks() {
       <div className="space-y-6">
         <StatsRow items={stats} loading={isLoading} />
 
+        <div className="grid gap-3 rounded-2xl border border-gray-200/80 bg-white p-4 shadow-soft dark:border-gray-700/60 dark:bg-gray-800/80 md:grid-cols-3">
+          <Select
+            value={priority}
+            onChange={(e) => setPriority(e.target.value)}
+            options={[
+              { value: 'CRITICAL', label: 'Critical' },
+              { value: 'HIGH', label: 'High' },
+              { value: 'MEDIUM', label: 'Medium' },
+              { value: 'LOW', label: 'Low' },
+            ]}
+            placeholder="Priority"
+          />
+          <Select
+            value={approvalStatus}
+            onChange={(e) => setApprovalStatus(e.target.value)}
+            options={[
+              { value: 'WAITING', label: 'Waiting for submission' },
+              { value: 'SUBMITTED', label: 'Submitted by staff' },
+              { value: 'APPROVED_MGR', label: 'Approved by manager' },
+              { value: 'REJECTED_MGR', label: 'Rejected by manager' },
+              { value: 'ESCALATED', label: 'Escalated to CEO' },
+              { value: 'VERIFIED', label: 'Completed and verified' },
+            ]}
+            placeholder="Approval status"
+          />
+          <Button
+            variant="outline"
+            onClick={() => {
+              setTab('all');
+              setPriority('');
+              setApprovalStatus('');
+            }}
+          >
+            Reset filters
+          </Button>
+        </div>
+
         {viewMode === 'table' ? (
           <DataTable
             columns={columns}
-            data={filtered}
+            data={tasks}
             isLoading={isLoading}
             onRowClick={(row) => navigate(`/tasks/${row.id}`)}
             emptyTitle="No tasks found"
@@ -166,7 +205,7 @@ export default function MyTasks() {
                   <Skeleton key={i} className="h-44 rounded-xl" />
                 ))}
               </div>
-            ) : filtered.length === 0 ? (
+            ) : tasks.length === 0 ? (
               <EmptyState
                 icon={<ListTodo />}
                 title="No tasks found"
@@ -175,7 +214,7 @@ export default function MyTasks() {
               />
             ) : (
               <div className="grid gap-4 p-4 sm:grid-cols-2 lg:grid-cols-3 lg:p-5">
-                {filtered.map((task) => (
+                {tasks.map((task) => (
                   <Card
                     key={task.id}
                     hover

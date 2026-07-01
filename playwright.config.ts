@@ -61,7 +61,7 @@ export default defineConfig({
   reporter: 'list',
   use: {
     ...devices['Desktop Chrome'],
-    baseURL: process.env.E2E_BASE_URL ?? 'http://localhost:3000',
+    baseURL: process.env.E2E_BASE_URL ?? 'http://127.0.0.1:3000',
     trace: 'on-first-retry',
   },
   webServer: e2eWebServers,

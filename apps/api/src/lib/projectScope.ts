@@ -2,6 +2,7 @@ import type { SystemRole } from '@prisma/client'
 import type { Prisma } from '@prisma/client'
 import prisma from '@/lib/prisma'
 import type { AuthRequest } from '@/middleware/auth'
+import { branchesMatch } from '@/lib/branchResolve'
 
 /** Roles that see all projects (no row-level filter). */
 const GLOBAL_PROJECT_ROLES: SystemRole[] = ['CEO', 'CO_MD', 'OP_MANAGER', 'HR_MANAGER']
@@ -12,7 +13,7 @@ export function isGlobalProjectRole(role: SystemRole): boolean {
 
 /**
  * Extra WHERE for project list/detail: Staff/Intern only see projects they own (`assignedTo`)
- * or that have at least one task assigned to them. Branch managers see projects for `assignedBranch ===` their staff.branch.
+ * or that have at least one task assigned to them. Branch managers see projects for their real `branchId`.
  */
 export async function projectWhereForRequest(
   userId: string,
@@ -23,11 +24,10 @@ export async function projectWhereForRequest(
   if (role === 'BRANCH_MANAGER') {
     const me = await prisma.staffMember.findUnique({
       where: { id: userId },
-      select: { branch: true },
+      select: { branchId: true },
     })
-    const b = me?.branch?.trim()
-    if (!b) return { id: { in: [] } }
-    return { assignedBranch: b }
+    if (!me?.branchId) return { id: { in: [] } }
+    return { branchId: me.branchId }
   }
 
   if (role === 'STAFF' || role === 'INTERN') {
@@ -49,17 +49,20 @@ export async function canAccessProject(req: AuthRequest, projectId: string): Pro
 
   const project = await prisma.project.findUnique({
     where: { id: projectId },
-    select: { assignedTo: true, assignedBranch: true },
+    select: { assignedTo: true, assignedBranch: true, branchId: true },
   })
   if (!project) return false
 
   if (role === 'BRANCH_MANAGER') {
     const me = await prisma.staffMember.findUnique({
       where: { id: userId },
-      select: { branch: true },
+      select: { branchId: true, branch: true },
     })
-    const b = me?.branch?.trim()
-    return !!(b && project.assignedBranch === b)
+    if (!me?.branchId) return false
+    return branchesMatch(
+      { branchId: project.branchId, branch: project.assignedBranch },
+      { branchId: me.branchId, branch: me.branch },
+    )
   }
 
   if (role === 'STAFF' || role === 'INTERN') {

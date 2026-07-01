@@ -6,6 +6,7 @@ import { validate } from '@/middleware/validate'
 import prisma from '@/lib/prisma'
 import { audit } from '@/lib/auditLog'
 import { canAccessProject, isGlobalProjectRole, projectWhereForRequest } from '@/lib/projectScope'
+import { isNonBranchLabel, resolveBranchId } from '@/lib/branchResolve'
 import { ok, created, notFound, serverError, paginated, forbidden } from '@/lib/response'
 import { getPagination, paginatedMeta, buildMeta} from '@/lib/pagination'
 import { ProjectStatus, Priority, ApprovalStatus, type SystemRole } from '@prisma/client'
@@ -33,21 +34,23 @@ router.get('/', async (req: AuthRequest, res) => {
     const { page, limit, skip } = getPagination(req)
     const { q, status, priority, branch } = req.query as Record<string, string>
     const role = req.user!.role as SystemRole
+    const branchId = branch ? await resolveBranchId(branch) : null
 
     if (role === 'BRANCH_MANAGER' && branch?.trim()) {
       const me = await prisma.staffMember.findUnique({
         where: { id: req.user!.id },
-        select: { branch: true },
+        select: { branchId: true },
       })
-      const mine = me?.branch?.trim()
-      if (mine && branch.trim() !== mine) return forbidden(res, 'Cannot filter another branch')
+      if (!me?.branchId) return forbidden(res, 'No branch assigned')
+      if (!branchId && !isNonBranchLabel(branch)) return forbidden(res, 'Cannot filter another branch')
+      if (branchId && branchId !== me.branchId) return forbidden(res, 'Cannot filter another branch')
     }
 
     const filter: Prisma.ProjectWhereInput = {}
     if (q) filter.name = { contains: q }
     if (status) filter.status = status as ProjectStatus
     if (priority) filter.priority = priority as Priority
-    if (branch) filter.assignedBranch = branch
+    if (branchId) filter.branchId = branchId
 
     const scopeW = await projectWhereForRequest(req.user!.id, role)
     let where: Prisma.ProjectWhereInput
@@ -99,17 +102,26 @@ router.get('/:id', async (req: AuthRequest, res) => {
 
 router.post('/', isManager, validate(schema), async (req: AuthRequest, res) => {
   try {
+    const assigned = (req.body.assignedBranch as string | undefined)?.trim()
+    const branchId = assigned ? await resolveBranchId(assigned) : null
+    if (assigned && !branchId && !isNonBranchLabel(assigned)) return forbidden(res, 'Unknown branch')
+
     if (req.user!.role === 'BRANCH_MANAGER') {
       const me = await prisma.staffMember.findUnique({
         where: { id: req.user!.id },
-        select: { branch: true },
+        select: { branchId: true },
       })
-      const mine = me?.branch?.trim()
-      const assigned = (req.body.assignedBranch as string | undefined)?.trim()
-      if (mine && assigned && assigned !== mine) return forbidden(res, 'Cannot assign another branch')
+      if (!me?.branchId) return forbidden(res, 'No branch assigned')
+      if (branchId && branchId !== me.branchId) return forbidden(res, 'Cannot assign another branch')
     }
     const project = await prisma.project.create({
-      data: { ...req.body, createdByRole: req.user!.role, startDate: req.body.startDate ? new Date(req.body.startDate) : undefined, deadline: req.body.deadline ? new Date(req.body.deadline) : undefined },
+      data: {
+        ...req.body,
+        branchId: branchId || undefined,
+        createdByRole: req.user!.role,
+        startDate: req.body.startDate ? new Date(req.body.startDate) : undefined,
+        deadline: req.body.deadline ? new Date(req.body.deadline) : undefined,
+      },
     })
     await audit(req, {
       action: 'project.create',
@@ -125,7 +137,30 @@ router.put('/:id', isManager, validate(schema.partial()), async (req: AuthReques
   try {
     const allowed = await canAccessProject(req, req.params.id)
     if (!allowed) return notFound(res, 'Project')
-    const project = await prisma.project.update({ where: { id: req.params.id }, data: req.body })
+    const assigned = (req.body.assignedBranch as string | undefined)?.trim()
+    const branchId = req.body.assignedBranch !== undefined
+      ? assigned
+        ? await resolveBranchId(assigned)
+        : null
+      : undefined
+    if (assigned && !branchId && !isNonBranchLabel(assigned)) return forbidden(res, 'Unknown branch')
+
+    if (req.user!.role === 'BRANCH_MANAGER' && branchId !== undefined) {
+      const me = await prisma.staffMember.findUnique({
+        where: { id: req.user!.id },
+        select: { branchId: true },
+      })
+      if (!me?.branchId) return forbidden(res, 'No branch assigned')
+      if (branchId && branchId !== me.branchId) return forbidden(res, 'Cannot assign another branch')
+    }
+
+    const project = await prisma.project.update({
+      where: { id: req.params.id },
+      data: {
+        ...req.body,
+        ...(branchId !== undefined ? { branchId } : {}),
+      },
+    })
     await audit(req, {
       action: 'project.update',
       resourceKind: 'Project',
