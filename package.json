@@ -53,6 +53,8 @@
     "test:e2e:ui": "playwright test --ui",
     "tunnel:dev": "cloudflared tunnel --config deploy/cloudflared/config.yml run",
     "tunnel:bootstrap": "powershell -ExecutionPolicy Bypass -File scripts/cloudflare-tunnel-bootstrap.ps1",
+    "tunnel:setup": "node scripts/cf-tunnel-setup.mjs",
+    "tunnel:up": "bash scripts/cf-tunnel-up.sh",
     "pages:build:management": "npm run build:vite -w m.pouchcare.com",
     "pages:build:landing": "npm run build -w pouchcare.com",
     "pages:deploy:management": "npm run pages:deploy -w m.pouchcare.com",

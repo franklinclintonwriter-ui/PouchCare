@@ -1,0 +1,15 @@
+[Unit]
+Description=PouchCare API (live, auto-deployed from main)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/.pouchcare/live/apps/api
+Environment=PATH=/usr/local/bin:/usr/bin:/bin:%h/.local/bin
+ExecStart=/usr/bin/npx tsx src/server.ts
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

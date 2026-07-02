@@ -1,0 +1,15 @@
+# PouchCare — Cloudflare Tunnel (locally-managed config, native host)
+# Frontends are on Cloudflare Pages; this tunnel exposes only the API origin
+# running directly on this machine (localhost:7000).
+#
+# Credentials are derived from TUNNEL_TOKEN by scripts/cf-tunnel-up.sh into
+#   ~/.cloudflared/<TUNNEL_ID>.json
+# Run:  npm run tunnel:up
+
+tunnel: 539fcc52-5959-4a4c-8c04-cbf2d09fe12c
+credentials-file: /home/franklin/.cloudflared/539fcc52-5959-4a4c-8c04-cbf2d09fe12c.json
+
+ingress:
+  - hostname: api.pouchcare.com.bd
+    service: http://localhost:7348
+  - service: http_status:404

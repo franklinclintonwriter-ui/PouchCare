@@ -1,0 +1,13 @@
+[Unit]
+Description=PouchCare Cloudflare Tunnel (API -> api.pouchcare.com.bd)
+After=network-online.target pouchcare-api.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/cloudflared tunnel --no-autoupdate --config %h/.cloudflared/pouchcare.yml run
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

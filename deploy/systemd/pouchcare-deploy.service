@@ -1,0 +1,11 @@
+[Unit]
+Description=PouchCare auto-deploy (pull main, restart API on change)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=%h/.pouchcare/deploy.sh
+
+[Install]
+WantedBy=default.target
